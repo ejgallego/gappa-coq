@@ -25,6 +25,44 @@ replace (xr + yr - (xa + ya))%R with ((xr - xa) + (yr - ya))%R. 2: ring.
 apply Hz; trivial.
 Qed.
 
+Lemma Eabs_minusR:
+ forall xi yi zi : RR, forall xr xa yr ya : R,
+ IminusR_property xi yi zi ->
+ EabsoluteR xi xr xa -> EabsoluteR yi yr ya ->
+ EabsoluteR zi (xr - yr) (xa - ya).
+intros xi yi zi xr xa yr ya Hz Hx Hy.
+unfold EabsoluteR in *.
+replace (xr - yr - (xa - ya))%R with ((xr - xa) - (yr - ya))%R. 2: ring.
+apply Hz; trivial.
+Qed.
+
+Lemma Eabs_oppR:
+ forall xi : RR, forall xr xa : R,
+ EabsoluteR xi xr xa ->
+ EabsoluteR (IoppR_fun xi) (-xr) (-xa).
+intros xi xr xa Hx.
+unfold EabsoluteR in *.
+replace (-xr - -xa)%R with (- (xr - xa))%R. 2: ring.
+apply IoppR_exact. exact Hx.
+Qed.
+
+Lemma Erel_oppR:
+ forall xi : RR, forall xr xa : R,
+ ErelativeR xi xr xa ->
+ ErelativeR xi (-xr) (-xa).
+intros xi xr xa Hx.
+unfold ErelativeR in *.
+split. exact (proj1 Hx).
+assert (xa <> 0)%R. exact (proj1 (proj2 Hx)).
+split. apply Ropp_neq_0_compat with (1 := H).
+replace (-xr / -xa)%R with (xr / xa)%R.
+exact (proj2 (proj2 Hx)).
+unfold Rdiv.
+rewrite <- (Ropp_inv_permute xa H).
+rewrite Rmult_opp_opp.
+trivial.
+Qed.
+
 Lemma Erel_multR:
  forall xi yi zi : RR, forall xr xa yr ya : R,
  ImultR_property (Iplus1R xi) (Iplus1R yi) (Iplus1R zi) ->
