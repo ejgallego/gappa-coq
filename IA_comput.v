@@ -34,7 +34,8 @@ Definition constant2_helper (x : float) (zi : FF) :=
 
 Theorem constant2 :
  forall x : float, forall zi : FF,
- constant2_helper x zi = true -> IintF zi x.
+ constant2_helper x zi = true ->
+ IintF zi x.
 intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
@@ -44,7 +45,8 @@ Qed.
 
 Theorem constant1 :
  forall x : Z, forall zi : FF,
- constant2_helper (Float x 0) zi = true -> IintF zi x.
+ constant2_helper (Float x 0) zi = true ->
+ IintF zi x.
 intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
