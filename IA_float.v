@@ -193,10 +193,12 @@ split.
 simpl.
 apply Ropp_lt_contravar.
 exact hulp1_lt_1.
-split.
+assert (float2R (value xa) <> 0)%R.
 intro Hz.
 elim (FnormalNotZero _ _ (value xa) Hn).
 exact (is_Fzero_rep2 _ radixMoreThanOne _ Hz).
+split.
+exact H.
 unfold IintR, Iplus1R.
 simpl.
 cut (-hulp1 <= xr / xa - 1 <= hulp1)%R. intros (H1, H2).
@@ -206,6 +208,17 @@ exact H1.
 exact H2.
 ring.
 apply Rabs_ineq.
+replace (xr / xa - 1)%R with ((xr - xa) * /xa)%R.
+2: field; exact H.
+rewrite Rabs_mult.
+rewrite (Rabs_Rinv xa H).
+apply Rmult_le_reg_l with (Rabs xa).
+exact (Rabs_pos_lt _ H).
+replace (Rabs xa * (Rabs (xr - xa) * / Rabs xa))%R with (Rabs (xr - xa))%R.
+apply Rle_trans with (RError xa).
+exact (RError_correct _ _ Hr).
+
+
 apply plouf.
 Qed.
 
