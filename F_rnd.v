@@ -452,6 +452,17 @@ Definition rnd (m : positive) (e : Z) : rnd_record :=
   shr r (Zabs_nat (bExp + (rnd_e r)))
  else r.
 
+Lemma Zabs_nat_Zabs :
+ forall n : Z, Z_of_nat (Zabs_nat n) = Zabs n.
+destruct n ; simpl ;
+ try rewrite Zpos_eq_Z_of_nat_o_nat_of_P ; trivial.
+Qed.
+
+Lemma Zabs_N :
+ forall n : N, Zabs (Z_of_N n) = Z_of_N n.
+destruct n ; trivial.
+Qed.
+
 Lemma rnd_canonic :
  forall m : positive, forall e : Z,
  let r := rnd m e in
@@ -459,20 +470,48 @@ Lemma rnd_canonic :
 intros m e.
 unfold rnd.
 generalize (Zle_cases (rnd_e (rnd_aux m e)) (-bExp)%Z).
-destruct (Zle_bool (rnd_e (rnd_aux m e)) (-bExp)%Z) ; intro H.
+intro H.
+destruct (Zle_bool (rnd_e (rnd_aux m e)) (-bExp)%Z).
 apply fast_canonic.
-apply plouf.
+unfold Fbounded.
+split.
+rewrite pGivesBound.
+rewrite <- (rnd_aux_mantissa_digit m e).
+simpl.
+rewrite Zabs_N.
+apply Zle_lt_trans with (Z_of_N (rnd_m (rnd_aux m e))).
+generalize (Zabs_nat (bExp + rnd_e (rnd_aux m e))).
+intro n.
+generalize (rnd_aux m e).
+induction n ; intro r.
+simpl.
+apply Zle_refl.
+unfold shr. fold shr.
+apply Zle_trans with (Z_of_N (rnd_m (shr_aux r))).
+apply IHn.
+unfold shr_aux.
+destruct (rnd_m r).
+apply Zle_refl.
+destruct p ; simpl ; apply plouf.
+destruct (rnd_m (rnd_aux m e)).
+unfold Zpower_nat.
+auto with zarith.
+unfold Z_of_N, digit2_N.
+apply (proj2 (digit2_size p)).
+rewrite shr_exp.
+rewrite Zabs_nat_Zabs.
+apply Zeq_le.
+rewrite Zabs_non_eq.
+simpl.
+ring.
+auto with zarith.
 left.
 simpl.
 rewrite shr_exp.
-assert (forall n : Z, Z_of_nat (Zabs_nat n) = Zabs n).
-destruct n ; simpl ; try rewrite Zpos_eq_Z_of_nat_o_nat_of_P ; trivial.
-rewrite H0. clear H0.
+rewrite Zabs_nat_Zabs.
 rewrite Zabs_non_eq.
 ring.
 auto with zarith.
-assert (forall n : N, Zabs (Z_of_N n) = Z_of_N n).
-destruct n ; trivial.
 apply fast_canonic.
 generalize (Zgt_lt _ _ H). clear H. intro H.
 unfold Fbounded.
@@ -481,7 +520,7 @@ split.
 rewrite pGivesBound.
 rewrite <- (rnd_aux_mantissa_digit m e).
 simpl.
-rewrite H0. clear H0.
+rewrite Zabs_N.
 destruct (rnd_m (rnd_aux m e)).
 unfold Zpower_nat.
 auto with zarith.
@@ -491,7 +530,7 @@ right.
 rewrite Zabs_Zmult.
 rewrite pGivesBound.
 simpl.
-rewrite H0. clear H0.
+rewrite Zabs_N.
 generalize precisionNotZero.
 rewrite <- (rnd_aux_mantissa_digit m e).
 destruct (rnd_m (rnd_aux m e)) ; intro H0.
