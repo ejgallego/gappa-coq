@@ -1,4 +1,4 @@
-Add LoadPath "Float".
+Add LoadPath "/usr/src/coq/Float".
 Require Export AllFloat.
 Require Export IA_real.
 Require Export IA_error.
