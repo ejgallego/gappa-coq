@@ -355,16 +355,15 @@ exact Hx.
 rewrite H0. exact Hy.
 Qed.
 
-Definition cFloat_add (a b c : cFloat) := Rounded (a+b)%R c.
-Definition cFloat_sub (a b c : cFloat) := Rounded (a-b)%R c.
-Definition cFloat_mul (a b c : cFloat) := Rounded (a*b)%R c.
-Definition cFloat_div (a b c : cFloat) := Rounded (a/b)%R c.
+Definition cFloat_add (a b c : cFloat) := Rounded (a + b)%R c.
+Definition cFloat_sub (a b c : cFloat) := Rounded (a - b)%R c.
+Definition cFloat_mul (a b c : cFloat) := Rounded (a * b)%R c.
+Definition cFloat_div (a b c : cFloat) := Rounded (a / b)%R c.
 
 Definition add_bound_helper (xi yi zi : FF) :=
- (andb
+ andb
   (evaluate_Rounded (Fplus radix (value (lower xi)) (value (lower yi))) (value (lower zi)))
-  (evaluate_Rounded (Fplus radix (value (upper xi)) (value (upper yi))) (value (upper zi)))
- ).
+  (evaluate_Rounded (Fplus radix (value (upper xi)) (value (upper yi))) (value (upper zi))).
 
 Lemma add_bound :
  forall xi yi zi : FF, forall xa ya za : cFloat,
@@ -380,6 +379,30 @@ generalize (evaluate_Rounded_correct _ _ H2).
 rewrite Fplus_correct with (1 := radixNotZero).
 clear H2. intro H2.
 generalize (IplusR_fun_correct xi yi _ _ Hx Hy). intro H.
+split.
+exact (Rounded_monotone _ _ _ _ (proj1 H) H1 Hz).
+exact (Rounded_monotone _ _ _ _ (proj2 H) Hz H2).
+Qed.
+
+Definition sub_bound_helper (xi yi zi : FF) :=
+ andb
+  (evaluate_Rounded (Fminus radix (value (lower xi)) (value (upper yi))) (value (lower zi)))
+  (evaluate_Rounded (Fminus radix (value (upper xi)) (value (lower yi))) (value (upper zi))).
+
+Lemma sub_bound :
+ forall xi yi zi : FF, forall xa ya za : cFloat,
+ IintF xi xa -> IintF yi ya -> cFloat_sub xa ya za ->
+ sub_bound_helper xi yi zi = true ->
+ IintF zi za.
+intros xi yi zi xa ya za Hx Hy Hz H.
+generalize (andb_prop _ _ H). clear H. intros (H1,H2).
+generalize (evaluate_Rounded_correct _ _ H1).
+rewrite Fminus_correct with (1 := radixNotZero).
+clear H1. intro H1.
+generalize (evaluate_Rounded_correct _ _ H2).
+rewrite Fminus_correct with (1 := radixNotZero).
+clear H2. intro H2.
+generalize (IminusR_fun_correct xi yi _ _ Hx Hy). intro H.
 split.
 exact (Rounded_monotone _ _ _ _ (proj1 H) H1 Hz).
 exact (Rounded_monotone _ _ _ _ (proj2 H) Hz H2).
