@@ -10,7 +10,7 @@ Lemma radixNotZero: (0 < radix)%Z.
 auto with zarith.
 Qed.
 
-Coercion Local float2R := FtoR radix.
+Coercion float2R := FtoR radix.
 Record FF: Set := makepairF { lower : float ; upper : float }.
 Coercion Local FF2RR := fun x : FF => makepairR (lower x) (upper x).
 Definition IintF (xi : FF) (x : R) := IintR xi x.
@@ -24,10 +24,27 @@ apply (Fle_bool_correct_t radix radixMoreThanOne).
 exact H.
 Qed.
 
+Definition Float1 (x : Z) := x.
+Definition Float2 := Float.
+Record deci : Set := Float10 { Fnum10 : Z ; Fexp10 : Z }.
+Coercion deci2R := fun x : deci => (Fnum10 x * powerRZ 10 (Fexp10 x))%R.
+
+Definition constant2_helper (x : float) (zi : FF) :=
+ Fle_b (lower zi) x && Fle_b x (upper zi).
+
+Theorem constant2 :
+ forall x : float, forall zi : FF,
+ constant2_helper x zi = true -> IintF zi x.
+intros x zi Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). clear H2. intro H2.
+split ; assumption.
+Qed.
+
 Definition add_helper (xi yi zi : FF) :=
- andb
-  (Fle_b (lower zi) (Fplus radix (lower xi) (lower yi)))
-  (Fle_b (Fplus radix (upper xi) (upper yi)) (upper zi)).
+ Fle_b (lower zi) (Fplus radix (lower xi) (lower yi)) &&
+ Fle_b (Fplus radix (upper xi) (upper yi)) (upper zi).
 
 Theorem add :
  forall xi yi zi : FF, forall x y : R,
@@ -36,12 +53,8 @@ Theorem add :
  IintF zi (x + y).
 intros xi yi zi x y Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fle_b_correct _ _ H1).
-rewrite Fplus_correct with (1 := radixNotZero).
-clear H1. intro H1.
-generalize (Fle_b_correct _ _ H2).
-rewrite Fplus_correct with (1 := radixNotZero).
-clear H2. intro H2.
+generalize (Fle_b_correct _ _ H1). rewrite Fplus_correct with (1 := radixNotZero). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). rewrite Fplus_correct with (1 := radixNotZero). clear H2. intro H2.
 generalize (IplusR_fun_correct xi yi _ _ Hx Hy). intro H.
 split ; unfold FF2RR ; simpl.
 apply Rle_trans with (1 := H1) (2 := (proj1 H)).
@@ -49,9 +62,8 @@ apply Rle_trans with (1 := (proj2 H)) (2 := H2).
 Qed.
 
 Definition sub_helper (xi yi zi : FF) :=
- andb
-  (Fle_b (lower zi) (Fminus radix (lower xi) (upper yi)))
-  (Fle_b (Fminus radix (upper xi) (lower yi)) (upper zi)).
+ Fle_b (lower zi) (Fminus radix (lower xi) (upper yi)) &&
+ Fle_b (Fminus radix (upper xi) (lower yi)) (upper zi).
 
 Theorem sub :
  forall xi yi zi : FF, forall x y : R,
@@ -60,12 +72,8 @@ Theorem sub :
  IintF zi (x - y).
 intros xi yi zi x y Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fle_b_correct _ _ H1).
-rewrite Fminus_correct with (1 := radixNotZero).
-clear H1. intro H1.
-generalize (Fle_b_correct _ _ H2).
-rewrite Fminus_correct with (1 := radixNotZero).
-clear H2. intro H2.
+generalize (Fle_b_correct _ _ H1). rewrite Fminus_correct with (1 := radixNotZero). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). rewrite Fminus_correct with (1 := radixNotZero). clear H2. intro H2.
 generalize (IminusR_fun_correct xi yi _ _ Hx Hy). intro H.
 split ; unfold FF2RR ; simpl.
 apply Rle_trans with (1 := H1) (2 := (proj1 H)).
@@ -247,7 +255,7 @@ Definition mul_pm_helper (xi yi zi : FF) :=
  Fle_b (lower zi) (Fmult (upper xi) (lower yi)) &&
  Fle_b (Fmult (upper xi) (upper yi)) (upper zi).
 
-Theorem mul_pm :
+Theorem mul_po :
  forall xi yi zi : FF, forall x y : R,
  IintF xi x -> IintF yi y ->
  mul_pm_helper xi yi zi = true ->
@@ -267,14 +275,14 @@ apply ImultR_pm with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
-Theorem mul_mp :
+Theorem mul_op :
  forall xi yi zi : FF, forall x y : R,
  IintF xi x -> IintF yi y ->
  mul_pm_helper yi xi zi = true ->
  IintF zi (x * y).
 intros xi yi zi x y Hx Hy Hb.
 rewrite Rmult_comm.
-apply mul_pm with (1 := Hy) (2 := Hx) (3 := Hb).
+apply mul_po with (1 := Hy) (2 := Hx) (3 := Hb).
 Qed.
 
 Definition mul_nm_helper (xi yi zi : FF) :=
@@ -283,7 +291,7 @@ Definition mul_nm_helper (xi yi zi : FF) :=
  Fle_b (lower zi) (Fmult (lower xi) (upper yi)) &&
  Fle_b (Fmult (lower xi) (lower yi)) (upper zi).
 
-Theorem mul_nm :
+Theorem mul_no :
  forall xi yi zi : FF, forall x y : R,
  IintF xi x -> IintF yi y ->
  mul_nm_helper xi yi zi = true ->
@@ -303,14 +311,14 @@ apply ImultR_nm with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
-Theorem mul_mn :
+Theorem mul_on :
  forall xi yi zi : FF, forall x y : R,
  IintF xi x -> IintF yi y ->
  mul_nm_helper yi xi zi = true ->
  IintF zi (x * y).
 intros xi yi zi x y Hx Hy Hb.
 rewrite Rmult_comm.
-apply mul_nm with (1 := Hy) (2 := Hx) (3 := Hb).
+apply mul_no with (1 := Hy) (2 := Hx) (3 := Hb).
 Qed.
 
 Definition mul_mm_helper (xi yi zi : FF) :=
@@ -321,7 +329,7 @@ Definition mul_mm_helper (xi yi zi : FF) :=
  Fle_b (Fmult (lower xi) (lower yi)) (upper zi) &&
  Fle_b (Fmult (upper xi) (upper yi)) (upper zi).
 
-Theorem mul_mm :
+Theorem mul_oo :
  forall xi yi zi : FF, forall x y : R,
  IintF xi x -> IintF yi y ->
  mul_mm_helper xi yi zi = true ->
@@ -395,7 +403,7 @@ Definition square_m_helper (xi zi : FF) :=
  Fle_b (Fmult (upper xi) (upper xi)) (upper zi) &&
  Fle_b (Fmult (lower xi) (lower xi)) (upper zi).
 
-Theorem square_m :
+Theorem square_o :
  forall xi zi : FF, forall x : R,
  IintF xi x ->
  square_m_helper xi zi = true ->
