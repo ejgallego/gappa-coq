@@ -466,11 +466,13 @@ left.
 simpl.
 rewrite shr_exp.
 assert (forall n : Z, Z_of_nat (Zabs_nat n) = Zabs n).
-apply plouf.
-rewrite H0.
+destruct n ; simpl ; try rewrite Zpos_eq_Z_of_nat_o_nat_of_P ; trivial.
+rewrite H0. clear H0.
 rewrite Zabs_non_eq.
 ring.
 auto with zarith.
+assert (forall n : N, Zabs (Z_of_N n) = Z_of_N n).
+destruct n ; trivial.
 apply fast_canonic.
 generalize (Zgt_lt _ _ H). clear H. intro H.
 unfold Fbounded.
@@ -479,8 +481,6 @@ split.
 rewrite pGivesBound.
 rewrite <- (rnd_aux_mantissa_digit m e).
 simpl.
-assert (forall n : N, Zabs (Z_of_N n) = Z_of_N n).
-destruct n ; trivial.
 rewrite H0. clear H0.
 destruct (rnd_m (rnd_aux m e)).
 unfold Zpower_nat.
@@ -491,8 +491,6 @@ right.
 rewrite Zabs_Zmult.
 rewrite pGivesBound.
 simpl.
-assert (forall n : N, Zabs (Z_of_N n) = Z_of_N n).
-destruct n ; trivial.
 rewrite H0. clear H0.
 generalize precisionNotZero.
 rewrite <- (rnd_aux_mantissa_digit m e).
