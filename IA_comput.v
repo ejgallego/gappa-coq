@@ -347,5 +347,82 @@ apply ImultR_mm with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
+Definition square_p_helper (xi zi : FF) :=
+ Fpos (lower xi) &&
+ Fle_b (lower zi) (Fmult (lower xi) (lower xi)) &&
+ Fle_b (Fmult (upper xi) (upper xi)) (upper zi).
+
+Theorem square_p :
+ forall xi zi : FF, forall x : R,
+ IintF xi x ->
+ square_p_helper xi zi = true ->
+ IintF zi (x * x).
+intros xi zi x Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fpos_correct _ H1). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). rewrite Fmult_correct with (1 := radixNotZero). clear H2. intro H2.
+generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
+unfold IintF, IintR.
+apply ImultR_pp with (lower xi) (upper xi) (lower xi) (upper xi)
+ ; auto with real.
+Qed.
+
+Definition square_n_helper (xi zi : FF) :=
+ Fneg (upper xi) &&
+ Fle_b (lower zi) (Fmult (upper xi) (upper xi)) &&
+ Fle_b (Fmult (lower xi) (lower xi)) (upper zi).
+
+Theorem square_n :
+ forall xi zi : FF, forall x : R,
+ IintF xi x ->
+ square_n_helper xi zi = true ->
+ IintF zi (x * x).
+intros xi zi x Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fneg_correct _ H1). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). rewrite Fmult_correct with (1 := radixNotZero). clear H2. intro H2.
+generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
+unfold IintF, IintR.
+apply ImultR_nn with (lower xi) (upper xi) (lower xi) (upper xi)
+ ; auto with real.
+Qed.
+
+Definition square_m_helper (xi zi : FF) :=
+ Fneg0 (lower xi) && Fpos0 (upper xi) &&
+ Fneg0 (lower zi) &&
+ Fle_b (Fmult (upper xi) (upper xi)) (upper zi) &&
+ Fle_b (Fmult (lower xi) (lower xi)) (upper zi).
+
+Theorem square_m :
+ forall xi zi : FF, forall x : R,
+ IintF xi x ->
+ square_m_helper xi zi = true ->
+ IintF zi (x * x).
+intros xi zi x Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fneg0_correct _ H1). clear H1. intro H1.
+generalize (Fpos0_correct _ H2). clear H2. intro H2.
+generalize (Fneg0_correct _ H3). clear H3. intro H3.
+generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
+generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero). clear H5. intro H5.
+unfold IintF, IintR.
+split.
+replace (x * x)%R with (Rsqr x). 2: trivial.
+apply Rle_trans with 0%R ; auto with real.
+case (Rlt_le_dec 0 x); intro H.
+generalize (Rlt_le _ _ H). clear H. intro H.
+generalize (proj2 Hx). intro H0.
+apply Rle_trans with ((upper xi) * (upper xi))%R ; auto with real.
+apply Rle_trans with ((lower xi) * (lower xi))%R.
+2: exact H5.
+apply Rle_trans with (x * lower xi)%R.
+exact (monotony_1n _ _ _ H (proj1 Hx)).
+exact (monotony_2n _ _ _ H1 (proj1 Hx)).
+Qed.
 
 End IA_comput.
