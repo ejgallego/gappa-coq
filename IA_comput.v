@@ -47,11 +47,11 @@ Definition add_helper (xi yi zi : FF) :=
  Fle_b (Fplus radix (upper xi) (upper yi)) (upper zi).
 
 Theorem add :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
  add_helper xi yi zi = true ->
  IintF zi (x + y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). rewrite Fplus_correct with (1 := radixNotZero). clear H1. intro H1.
 generalize (Fle_b_correct _ _ H2). rewrite Fplus_correct with (1 := radixNotZero). clear H2. intro H2.
@@ -66,11 +66,11 @@ Definition sub_helper (xi yi zi : FF) :=
  Fle_b (Fminus radix (upper xi) (lower yi)) (upper zi).
 
 Theorem sub :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
  sub_helper xi yi zi = true ->
  IintF zi (x - y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). rewrite Fminus_correct with (1 := radixNotZero). clear H1. intro H1.
 generalize (Fle_b_correct _ _ H2). rewrite Fminus_correct with (1 := radixNotZero). clear H2. intro H2.
@@ -174,11 +174,11 @@ Definition mul_pp_helper (xi yi zi : FF) :=
  Fle_b (Fmult (upper xi) (upper yi)) (upper zi).
 
 Theorem mul_pp :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
  mul_pp_helper xi yi zi = true ->
  IintF zi (x * y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -198,11 +198,11 @@ Definition mul_pn_helper (xi yi zi : FF) :=
  Fle_b (Fmult (lower xi) (upper yi)) (upper zi).
 
 Theorem mul_pn :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
  mul_pn_helper xi yi zi = true ->
  IintF zi (x * y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -216,11 +216,11 @@ apply ImultR_pn with (lower xi) (upper xi) (lower yi) (upper yi)
 Qed.
 
 Theorem mul_np :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
  mul_pn_helper yi xi zi = true ->
  IintF zi (x * y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
 apply mul_pn with (1 := Hy) (2 := Hx) (3 := Hb).
 Qed.
@@ -232,11 +232,11 @@ Definition mul_nn_helper (xi yi zi : FF) :=
  Fle_b (Fmult (lower xi) (lower yi)) (upper zi).
 
 Theorem mul_nn :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
  mul_nn_helper xi yi zi = true ->
  IintF zi (x * y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -249,18 +249,18 @@ apply ImultR_nn with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
-Definition mul_pm_helper (xi yi zi : FF) :=
+Definition mul_po_helper (xi yi zi : FF) :=
  Fpos (lower xi) &&
  Fneg0 (lower yi) && Fpos0 (upper yi) &&
  Fle_b (lower zi) (Fmult (upper xi) (lower yi)) &&
  Fle_b (Fmult (upper xi) (upper yi)) (upper zi).
 
 Theorem mul_po :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
- mul_pm_helper xi yi zi = true ->
+ mul_po_helper xi yi zi = true ->
  IintF zi (x * y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -276,27 +276,27 @@ apply ImultR_pm with (lower xi) (upper xi) (lower yi) (upper yi)
 Qed.
 
 Theorem mul_op :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
- mul_pm_helper yi xi zi = true ->
+ mul_po_helper yi xi zi = true ->
  IintF zi (x * y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
 apply mul_po with (1 := Hy) (2 := Hx) (3 := Hb).
 Qed.
 
-Definition mul_nm_helper (xi yi zi : FF) :=
+Definition mul_no_helper (xi yi zi : FF) :=
  Fneg (upper xi) &&
  Fneg0 (lower yi) && Fpos0 (upper yi) &&
  Fle_b (lower zi) (Fmult (lower xi) (upper yi)) &&
  Fle_b (Fmult (lower xi) (lower yi)) (upper zi).
 
 Theorem mul_no :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
- mul_nm_helper xi yi zi = true ->
+ mul_no_helper xi yi zi = true ->
  IintF zi (x * y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -312,16 +312,16 @@ apply ImultR_nm with (lower xi) (upper xi) (lower yi) (upper yi)
 Qed.
 
 Theorem mul_on :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
- mul_nm_helper yi xi zi = true ->
+ mul_no_helper yi xi zi = true ->
  IintF zi (x * y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
 apply mul_no with (1 := Hy) (2 := Hx) (3 := Hb).
 Qed.
 
-Definition mul_mm_helper (xi yi zi : FF) :=
+Definition mul_oo_helper (xi yi zi : FF) :=
  Fneg0 (lower xi) && Fpos0 (upper xi) &&
  Fneg0 (lower yi) && Fpos0 (upper yi) &&
  Fle_b (lower zi) (Fmult (lower xi) (upper yi)) &&
@@ -330,11 +330,11 @@ Definition mul_mm_helper (xi yi zi : FF) :=
  Fle_b (Fmult (upper xi) (upper yi)) (upper zi).
 
 Theorem mul_oo :
- forall xi yi zi : FF, forall x y : R,
+ forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
- mul_mm_helper xi yi zi = true ->
+ mul_oo_helper xi yi zi = true ->
  IintF zi (x * y).
-intros xi yi zi x y Hx Hy Hb.
+intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H8).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H7).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H6).
@@ -361,11 +361,11 @@ Definition square_p_helper (xi zi : FF) :=
  Fle_b (Fmult (upper xi) (upper xi)) (upper zi).
 
 Theorem square_p :
- forall xi zi : FF, forall x : R,
+ forall x : R, forall xi zi : FF,
  IintF xi x ->
  square_p_helper xi zi = true ->
  IintF zi (x * x).
-intros xi zi x Hx Hb.
+intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fpos_correct _ H1). clear H1. intro H1.
@@ -382,11 +382,11 @@ Definition square_n_helper (xi zi : FF) :=
  Fle_b (Fmult (lower xi) (lower xi)) (upper zi).
 
 Theorem square_n :
- forall xi zi : FF, forall x : R,
+ forall x : R, forall xi zi : FF,
  IintF xi x ->
  square_n_helper xi zi = true ->
  IintF zi (x * x).
-intros xi zi x Hx Hb.
+intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fneg_correct _ H1). clear H1. intro H1.
@@ -397,18 +397,18 @@ apply ImultR_nn with (lower xi) (upper xi) (lower xi) (upper xi)
  ; auto with real.
 Qed.
 
-Definition square_m_helper (xi zi : FF) :=
+Definition square_o_helper (xi zi : FF) :=
  Fneg0 (lower xi) && Fpos0 (upper xi) &&
  Fneg0 (lower zi) &&
  Fle_b (Fmult (upper xi) (upper xi)) (upper zi) &&
  Fle_b (Fmult (lower xi) (lower xi)) (upper zi).
 
 Theorem square_o :
- forall xi zi : FF, forall x : R,
+ forall x : R, forall xi zi : FF,
  IintF xi x ->
- square_m_helper xi zi = true ->
+ square_o_helper xi zi = true ->
  IintF zi (x * x).
-intros xi zi x Hx Hb.
+intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
