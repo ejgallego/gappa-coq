@@ -77,6 +77,32 @@ intros xi x (H1,H2).
 auto with real.
 Qed.
 
+Definition IminusR_property (xi yi zi : RR) :=
+ forall x y : R,
+ IintR xi x -> IintR yi y -> IintR zi (x - y).
+
+Lemma IminusR :
+ forall xi yi zi : RR,
+ (lower zi <= lower xi - upper yi)%R ->
+ (upper xi - lower yi <= upper zi)%R ->
+ IminusR_property xi yi zi.
+intros xi yi zi Hl Hu x y Hx Hy.
+unfold Rminus in *.
+apply (IplusR _ (makepairR (-upper yi) (-lower yi)) _ Hl Hu _ (-y)%R Hx).
+apply (IoppR_exact yi).
+exact Hy.
+Qed.
+
+Definition IminusR_fun (xi yi : RR) :=
+ (makepairR (lower xi - upper yi)%R (upper xi - lower yi)%R).
+ 
+Lemma IminusR_fun_correct :
+ forall xi yi : RR,
+ IminusR_property xi yi (IminusR_fun xi yi).
+intros xi yi x y Ix Iy.
+apply IminusR with xi yi; auto with real.
+Qed.
+
 Lemma Rle_trans_and : forall a b c : R, (a <= b <= c)%R -> (a <= c)%R.
 intros a b c H.
 decompose [and] H.
@@ -469,6 +495,21 @@ apply (IinvR _ (makepairR (/yu) (/yl)) y Hylu).
 exact Hy.
 apply Req_le. trivial.
 apply Req_le. trivial.
+Qed.
+
+Definition IdivR_fun (xi yi : RR) :=
+ let xl := lower xi in let xu := upper xi in
+ let yl := lower yi in let yu := upper yi in
+ makepairR
+ (Rmin (Rmin (xl / yu) (xl / yl)) (Rmin (xu / yu) (xu / yl)))%R
+ (Rmax (Rmax (xl / yu) (xl / yl)) (Rmax (xu / yu) (xu / yl)))%R.
+
+Lemma IdivR_fun_correct :
+ forall xi yi : RR,
+ (upper yi < 0)%R \/ (lower yi > 0)%R ->
+ IdivR_property xi yi (IdivR_fun xi yi).
+intros xi yi H x y Ix Iy.
+apply IdivR with xi yi; auto with real.
 Qed.
 
 End IA_real.
