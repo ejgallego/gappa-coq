@@ -42,12 +42,8 @@ Record cFloat : Set := CFloat {
 Coercion Local cFloat2R (x : cFloat) := FtoR radix (value x).
 Coercion Local float2R := FtoR radix.
 
-Definition Rounded (a : R) (b : cFloat) := EvenClosest bound radix precision a (value b).
-
-Definition cFloat_plus (a b c : cFloat) := Rounded (a+b)%R c.
-Definition cFloat_minus (a b c : cFloat) := Rounded (a-b)%R c.
-Definition cFloat_mult (a b c : cFloat) := Rounded (a*b)%R c.
-Definition cFloat_div (a b c : cFloat) := Rounded (a/b)%R c.
+Definition Rounded (xr : R) (xa : cFloat) :=
+ EvenClosest bound radix precision xr (value xa).
 
 Definition RError (x : cFloat) := Float 1 ((Fexp (value x)) - 1)%Z.
 
@@ -99,7 +95,7 @@ Definition IintF (xi : FF) (x : cFloat) := IintR xi x.
 
 Lemma RError_range_correct :
  forall xi : FF, forall x : cFloat, forall e : float,
- (IintF xi x) ->
+ IintF xi x ->
  (RError (lower xi) <= e)%R -> (RError (upper xi) <= e)%R ->
  (RError x <= e)%R.
 intros xi x e H Hle Hue.
@@ -128,12 +124,49 @@ Qed.
 
 Lemma cFloat_error_RError :
  forall xi : FF, forall x : cFloat,
- (IintF xi x) ->
+ IintF xi x ->
  (RError x <= cFloat_error xi)%R.
 intros xi x H.
 apply (RError_range_correct _ _ (cFloat_error xi) H); unfold cFloat_error, RError.
 apply float_le_exp. unfold Zminus. apply Zplus_le_compat_r. apply ZmaxLe1.
 apply float_le_exp. unfold Zminus. apply Zplus_le_compat_r. apply ZmaxLe2.
+Qed.
+
+Lemma Rabs_ineq :
+ forall a b : R, (Rabs a <= b)%R ->
+ (-b <= a <= b)%R.
+intros a b H.
+assert (0 <= b)%R.
+apply Rle_trans with (Rabs a)%R.
+apply Rabs_pos.
+exact H.
+elim (Rcase_abs a); intro H1; split.
+replace a with (-Rabs a)%R.
+exact (Ropp_le_contravar _ _ H).
+pattern a at 2; rewrite <- Ropp_involutive.
+apply Ropp_eq_compat.
+exact (Rabs_left _ H1).
+apply Rlt_le.
+exact (Rlt_le_trans _ _ _ H1 H0).
+apply Rle_trans with 0%R.
+rewrite <- Ropp_0.
+exact (Ropp_le_contravar _ _ H0).
+exact (Rge_le _ _ H1).
+exact (Rle_trans _ _ _ (RRle_abs _) H).
+Qed.
+
+Lemma Eabsolute_RError :
+ forall xi : FF, forall xa : cFloat, forall xr : R,
+ Rounded xr xa -> IintF xi xa ->
+ let e := cFloat_error xi in
+ EabsoluteR (makepairR (-e) e) xr xa.
+intros xi xa xr Hr Hi e.
+unfold EabsoluteR, IintR. simpl.
+assert (Rabs (xr - xa) <= e)%R.
+apply Rle_trans with (RError xa).
+apply (RError_correct _ _ Hr).
+apply (cFloat_error_RError _ _ Hi).
+exact (Rabs_ineq _ _ H).
 Qed.
 
 End IA_float.
