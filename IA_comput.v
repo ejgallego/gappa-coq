@@ -29,6 +29,39 @@ Definition Float2 := Float.
 Record deci : Set := Float10 { Fnum10 : Z ; Fexp10 : Z }.
 Coercion deci2R := fun x : deci => (Fnum10 x * powerRZ 10 (Fexp10 x))%R.
 
+Definition Dcompare (x : float) (y : deci) :=
+ let m := Fnum10 y in let e := Fexp10 y in
+ let f := Zpower_nat 5 (Zabs_nat e) in
+ match e with
+   Zpos _ => Fcompare radix x (Float (m * f) e)
+ | Zneg _ => Fcompare radix (Float (Fnum x * f) (Fexp x)) (Float m e)
+ | Z0 => Fcompare radix x (Float m 0)
+ end.
+
+Definition Dle_fd (x : float) (y : deci) :=
+ match (Dcompare x y) with
+  Gt => false
+ | _ => true
+ end.
+
+Lemma Dle_fd_correct :
+ forall x : float, forall y : deci,
+ Dle_fd x y = true ->
+ (x <= y)%R.
+Admitted.
+
+Definition Dle_df (x : deci) (y : float) :=
+ match (Dcompare y x) with
+  Lt => false
+ | _ => true
+ end.
+
+Lemma Dle_df_correct :
+ forall x : deci, forall y : float,
+ Dle_df x y = true ->
+ (x <= y)%R.
+Admitted.
+
 Definition constant2_helper (x : float) (zi : FF) :=
  Fle_b (lower zi) x && Fle_b x (upper zi).
 
@@ -56,6 +89,20 @@ split ; assumption.
 unfold float2R, FtoR.
 simpl.
 apply Rmult_1_r.
+Qed.
+
+Definition constant10_helper (x : deci) (zi : FF) :=
+ Dle_fd (lower zi) x && Dle_df x (upper zi).
+
+Theorem constant10 :
+ forall x : deci, forall zi : FF,
+ constant10_helper x zi = true ->
+ IintF zi x.
+intros x zi Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Dle_fd_correct _ _ H1). clear H1. intro H1.
+generalize (Dle_df_correct _ _ H2). clear H2. intro H2.
+split ; assumption.
 Qed.
 
 Definition subset_helper (xi zi : FF) :=
