@@ -42,6 +42,20 @@ generalize (Fle_b_correct _ _ H2). clear H2. intro H2.
 split ; assumption.
 Qed.
 
+Theorem constant1 :
+ forall x : Z, forall zi : FF,
+ constant2_helper (Float x 0) zi = true -> IintF zi x.
+intros x zi Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). clear H2. intro H2.
+replace (IZR x) with (float2R (Float x 0)).
+split ; assumption.
+unfold float2R, FtoR.
+simpl.
+apply Rmult_1_r.
+Qed.
+
 Definition add_helper (xi yi zi : FF) :=
  Fle_b (lower zi) (Fplus radix (lower xi) (lower yi)) &&
  Fle_b (Fplus radix (upper xi) (upper yi)) (upper zi).
