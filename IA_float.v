@@ -2,7 +2,7 @@ Add LoadPath "Float".
 Require Export AllFloat.
 Require Export IA_real.
 Require Export IA_error.
-Require Export ZArith.
+Require Import ZArith.
 
 Section IA_float.
 
@@ -181,8 +181,6 @@ apply Rlt_plus_1.
 auto with zarith.
 Qed.
 
-Axiom plouf : forall P : Prop, P.
-
 Lemma Rabsolute_hulp :
  forall xa : cFloat, forall xr : R,
  Rounded xr xa -> Fnormal radix bound (value xa) ->
@@ -254,6 +252,137 @@ exact Hb.
 apply H0.
 apply Rgt_not_eq.
 exact (Rabs_pos_lt _ H).
+Qed.
+
+Definition is_positive_even (x : positive) :=
+ match x with
+ | (xO _) => true
+ | _ => false
+ end.
+
+Definition is_float_even (x : float) :=
+ match (Fnum x) with
+ | (Zpos y) => (is_positive_even y)
+ | (Zneg y) => (is_positive_even y)
+ | Z0 => true
+ end.
+
+Lemma is_float_even_correct:
+ forall x : cFloat,
+ is_float_even (value x) = true ->
+ FNeven bound radix precision (value x).
+intros x H.
+unfold FNeven.
+rewrite (FcanonicFnormalizeEq _ radixMoreThanOne _ _ precisionNotZero pGivesBound).
+2: exact (cFloat_canonic x).
+generalize H. clear H.
+unfold is_float_even, Feven.
+case (Fnum (value x)); intros.
+exists 0%Z. apply refl_equal.
+unfold Even.
+generalize H. clear H.
+case p; intros.
+discriminate H.
+exists (Zpos p0). apply refl_equal.
+discriminate H.
+generalize H. clear H.
+case p; intros.
+discriminate H.
+exists (Zneg p0). apply refl_equal.
+discriminate H.
+Qed.
+
+Inductive validity : Set :=
+ | bad : validity
+ | tie : validity
+ | good : validity.
+
+Let dp (x r : float) (f : float -> float) :=
+ (Fminus radix x (f (FPred bound radix precision r))).
+
+Let dd (x r : float) (f : float -> float) :=
+ (Fabs (Fminus radix (f r) x)).
+
+Let ds (x r : float) (f : float -> float) :=
+ (Fminus radix (f (FSucc bound radix precision r)) x).
+
+Definition evaluate_rounding (x r : float) (f : float -> float) :=
+ let dd := (dd x r f) in
+ match (Fcompare radix dd (dp x r f)) with
+ | Gt => bad
+ | Eq => (* excessif, en theorie on pourrait de suite repondre 'tie' *)
+  (match (Fcompare radix dd (ds x r f)) with
+  | Gt => bad
+  | Eq => tie
+  | Lt => tie
+  end)
+ | Lt =>
+  match (Fcompare radix dd (ds x r f)) with
+  | Gt => bad
+  | Eq => tie
+  | Lt => good
+  end
+ end.
+
+Definition evaluate_Rounded (x r : float) := 
+ match (evaluate_rounding x r (fun y => y)) with
+ | bad => false
+ | tie => (is_float_even r)
+ | _ => true
+ end.
+
+Axiom evaluate_Rounded_correct :
+ forall x : float, forall r : cFloat,
+ evaluate_Rounded x (value r) = true ->
+ Rounded x r.
+
+Lemma Rounded_monotone :
+ forall x y : R, forall a b : cFloat,
+ (x <= y)%R -> Rounded x a -> Rounded y b ->
+ (a <= b)%R.
+intros x y a b H Hx Hy.
+unfold Rle in H. decompose [or] H; clear H.
+assert (MonotoneP radix (EvenClosest bound radix precision)).
+apply EvenClosestMonotone.
+apply (H x y (value a) (value b) H0).
+exact Hx.
+exact Hy.
+assert (UniqueP radix (EvenClosest bound radix precision)).
+apply (EvenClosestUniqueP _ _ _ radixMoreThanOne precisionMoreThanOne pGivesBound).
+right.
+apply (H x (value a) (value b)).
+exact Hx.
+rewrite H0. exact Hy.
+Qed.
+
+Definition cFloat_add (a b c : cFloat) := Rounded (a+b)%R c.
+Definition cFloat_sub (a b c : cFloat) := Rounded (a-b)%R c.
+Definition cFloat_mul (a b c : cFloat) := Rounded (a*b)%R c.
+Definition cFloat_div (a b c : cFloat) := Rounded (a/b)%R c.
+
+Definition add_bound_helper (xi yi zi : FF) :=
+ (andb
+  (evaluate_Rounded (Fplus radix (value (lower xi)) (value (lower yi))) (value (lower zi)))
+  (evaluate_Rounded (Fplus radix (value (upper xi)) (value (upper yi))) (value (upper zi)))
+ ).
+
+Lemma add_bound :
+ forall xi yi zi : FF, forall xa ya za : cFloat,
+ IintF xi xa -> IintF yi ya -> cFloat_add xa ya za ->
+ add_bound_helper xi yi zi = true ->
+ IintF zi za.
+intros xi yi zi xa ya za Hx Hy Hz H.
+generalize (andb_prop _ _ H). clear H. intros (H1,H2).
+generalize (evaluate_Rounded_correct _ _ H1).
+rewrite Fplus_correct with (1 := radixNotZero).
+clear H1. intro H1.
+generalize (evaluate_Rounded_correct _ _ H2).
+rewrite Fplus_correct with (1 := radixNotZero).
+clear H2. intro H2.
+generalize (IplusR_fun_correct xi yi _ _ Hx Hy). intro H.
+split.
+exact (Rounded_monotone _ _ _ _ (proj1 H) H1 Hz).
+exact (Rounded_monotone _ _ _ _ (proj2 H) Hz H2).
 Qed.
 
 End IA_float.
