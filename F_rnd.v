@@ -79,6 +79,26 @@ exists p.
 trivial.
 Qed.
 
+Definition Ndiv2 (n : N) : N :=
+ match n with
+ | N0 => N0
+ | Npos n1 =>
+  match n1 with
+  | xH => N0
+  | xO n2 => Npos n2
+  | xI n2 => Npos n2
+  end
+ end.
+
+Lemma Ndiv2_mul2 :
+ forall n : N,
+ n = Ndouble (Ndiv2 n) \/ n = Ndouble_plus_one (Ndiv2 n).
+intro n.
+destruct n.
+left. trivial.
+destruct p ; [ right | left | right ] ; trivial.
+Qed.
+
 Record rnd_record : Set := rnd_record_mk {
   rnd_m : N ;
   rnd_e : Z ;
@@ -87,7 +107,7 @@ Record rnd_record : Set := rnd_record_mk {
 }.
 
 Definition shr_aux (p : rnd_record) : rnd_record :=
- let s := orb (rnd_g p) (rnd_s p) in
+ let s := rnd_g p || rnd_s p in
  let e := Zsucc (rnd_e p) in
  match (rnd_m p) with
  | N0 => rnd_record_mk N0 e false s
@@ -100,6 +120,14 @@ Definition shr_aux (p : rnd_record) : rnd_record :=
  end.
 
 Lemma shr_aux_mantissa :
+ forall p : rnd_record,
+ rnd_m (shr_aux p) = Ndiv2 (rnd_m p).
+intro p.
+unfold shr_aux, Ndiv2.
+destruct (rnd_m p) ; try destruct p0 ; trivial.
+Qed.
+
+Lemma shr_aux_mantissa_digit :
  forall p : rnd_record,
  digit2_N (rnd_m (shr_aux p)) = pred (digit2_N (rnd_m p)).
 intro p.
@@ -131,9 +159,9 @@ Qed.
 
 Lemma shr_aux_sticky :
  forall p : rnd_record,
- rnd_g (shr_aux p) = negb (is_even (rnd_m p)).
+ rnd_s (shr_aux p) = rnd_g p || rnd_s p.
 intro p.
-unfold shr_aux, is_even.
+unfold shr_aux.
 destruct (rnd_m p) ; try destruct p0 ; trivial.
 Qed.
 
@@ -148,16 +176,26 @@ Definition bracket (r : R) (p : rnd_record) :=
  else
   if (rnd_s p) then (f0 < r < f1)%R else (r = f0)%R.
 
-
-(*Axiom shr_bracket :*)
 Lemma shr_bracket :
  forall r : R, forall p : rnd_record,
  bracket r p -> bracket r (shr_aux p).
 intros r p H.
 unfold bracket.
-destruct p.
-
-
+rewrite (shr_aux_guard p).
+rewrite (shr_aux_sticky p).
+rewrite (shr_aux_mantissa p).
+rewrite (shr_aux_exp p).
+assert (forall z : Z, (Zsucc z - 1)%Z = z).
+intro z.
+auto with zarith.
+rewrite H0. clear H0.
+CaseEq (is_even (rnd_m p)) ; intro H0 ;
+ CaseEq (rnd_g p) ; intro H1 ; simpl.
+unfold bracket in H. rewrite H1 in H.
+destruct (rnd_s p).
+split.
+apply Rlt_trans with (2 := proj1 H). clear H.
+Admitted.
 
 Fixpoint shr (p : rnd_record) (n : nat) { struct n } : rnd_record :=
  match n with
