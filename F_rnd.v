@@ -352,6 +352,18 @@ apply IHn.
 destruct (digit2_N (rnd_m p)) ; trivial.
 Qed.
 
+Lemma shr_exp :
+ forall n : nat, forall p : rnd_record,
+ rnd_e (shr p n) = (rnd_e p + n)%Z.
+induction n ; intro p.
+auto with zarith.
+unfold shr. fold shr.
+rewrite IHn.
+rewrite shr_aux_exp.
+rewrite inj_S.
+auto with zarith.
+Qed.
+
 Lemma shr_bracket :
  forall r : R, forall n : nat, forall p : rnd_record,
  bracket r p -> bracket r (shr p n).
@@ -388,18 +400,18 @@ simpl.
 apply H.
 Qed.
 
-Definition rnd_aux1 (m : positive) (e : Z) : rnd_record :=
+Definition rnd_aux (m : positive) (e : Z) : rnd_record :=
  let n := digit2 m in
  if le_lt_dec n precision then
   shl m e (precision - n)
  else
   shr (rnd_record_mk (Npos m) e false false) (n - precision).
 
-Lemma rnd_aux1_mantissa_digit :
+Lemma rnd_aux_mantissa_digit :
  forall m : positive, forall e : Z,
- digit2_N (rnd_m (rnd_aux1 m e)) = precision.
+ digit2_N (rnd_m (rnd_aux m e)) = precision.
 intros m e.
-unfold rnd_aux1.
+unfold rnd_aux.
 destruct (le_lt_dec (digit2 m) precision).
 rewrite shl_mantissa_digit.
 auto with arith.
@@ -411,26 +423,60 @@ rewrite plus_comm.
 info auto with arith.
 Qed.
 
-Definition rnd_aux (m : positive) (e : Z) : rnd_record :=
- let r := rnd_aux1 m e in
+Lemma digit2_size :
+ forall m : positive,
+ let n := digit2 m in
+ (Zpower_nat 2 (pred n) <= Zpos m < Zpower_nat 2 n)%Z.
+induction m.
+simpl.
+Admitted.
+
+Definition rnd (m : positive) (e : Z) : rnd_record :=
+ let r := rnd_aux m e in
  if Zle_bool (-bExp) (rnd_e r) then r
  else shr r (Zabs_nat (bExp + (rnd_e r))).
 
-(* r.m est non nul puisque le shr n'a lieu que si n >
-   prec donc il reste des bits. r.m a exactement prec
-   bits. res.m a au plus prec bits, et res.e vaut au
-   moins -bExp. S'il y a eu un décalage, res.e vaut
-   -bExp. res.m n'est différent de r.m que s'il y a
-   eu décalage, cad si res.e vaut -bExp. De meme,
-   res.m n'a moins de prec bits que si res.e vaut -bExp. *)
+Lemma fast_canonic :
+ forall f : float,
+ Fbounded bound f ->
+ (Fexp f = -bExp)%Z \/ (Zpos bNum <= Zabs (radix * Fnum f))%Z ->
+ Fcanonic radix bound f.
+intros f B H.
+destruct H.
+destruct (Z_lt_le_dec (Zabs (radix * Fnum f))%Z (Zpos bNum)).
+right. repeat ( split ; trivial ).
+left. repeat ( split ; trivial ).
+left. repeat ( split ; trivial ).
+Qed.
+
+Lemma rnd_canonic :
+ forall m : positive, forall e : Z,
+ let r := rnd m e in
+ Fcanonic radix bound (Float (Z_of_N (rnd_m r)) (rnd_e r)).
+intros m e.
+unfold rnd.
+destruct (Zle_or_lt (-bExp)%Z (rnd_e (rnd_aux m e))).
+rewrite (Zle_imp_le_bool _ _ H).
+apply fast_canonic.
+unfold Fbounded.
+split.
+2: exact H.
+rewrite pGivesBound.
+rewrite <- (rnd_aux_mantissa_digit m e).
+simpl.
+assert (forall n : N, Zabs (Z_of_N n) = Z_of_N n).
+destruct n ; trivial.
+rewrite H0.
+(*apply (proj2 (digit2_size (rnd_m (rnd_aux m e)))).*)
+Admitted.
 
 Axiom rnd_bracket :
  forall m : positive, forall e : Z,
- bracket (Float (Zpos m) e) (rnd_aux m e).
+ bracket (Float (Zpos m) e) (rnd m e).
 
 Axiom rnd_exp_zero :
  forall m : positive, forall e : Z,
- let r := rnd_aux m e in
+ let r := rnd m e in
  rnd_m r = N0 -> (rnd_e r = -bExp)%Z.
 
 Definition rndZ_fun (r : rnd_record) : bool := false.
