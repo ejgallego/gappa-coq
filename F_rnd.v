@@ -372,6 +372,22 @@ Fixpoint shl_aux (p : positive) (n : nat) { struct n } : positive :=
 Definition shl (m : positive) (e : Z) (n : nat) : rnd_record :=
  rnd_record_mk (Npos (shl_aux m n)) (e - n) false false.
 
+Lemma shl_mantissa_digit :
+ forall m : positive, forall e : Z, forall n : nat,
+ digit2_N (rnd_m (shl m e n)) = digit2 m + n.
+assert (forall n : nat, forall p : positive, digit2 (shl_aux p n) = digit2 p + n).
+induction n.
+trivial.
+intro p.
+simpl.
+rewrite IHn.
+simpl.
+apply plus_n_Sm.
+intros.
+simpl.
+apply H.
+Qed.
+
 Definition rnd_aux1 (m : positive) (e : Z) : rnd_record :=
  let n := digit2 m in
  if le_lt_dec n precision then
@@ -382,7 +398,18 @@ Definition rnd_aux1 (m : positive) (e : Z) : rnd_record :=
 Lemma rnd_aux1_mantissa_digit :
  forall m : positive, forall e : Z,
  digit2_N (rnd_m (rnd_aux1 m e)) = precision.
-Admitted.
+intros m e.
+unfold rnd_aux1.
+destruct (le_lt_dec (digit2 m) precision).
+rewrite shl_mantissa_digit.
+auto with arith.
+rewrite shr_mantissa_digit.
+simpl.
+apply sym_eq.
+apply plus_minus.
+rewrite plus_comm.
+info auto with arith.
+Qed.
 
 Definition rnd_aux (m : positive) (e : Z) : rnd_record :=
  let r := rnd_aux1 m e in
