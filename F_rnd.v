@@ -34,6 +34,51 @@ Qed.
 
 Coercion Local float2R := FtoR radix.
 
+Definition is_even (n : N) : bool :=
+ match n with
+ | N0 => true
+ | Npos p =>
+  match p with
+  | xO _ => true
+  | _ => false
+  end
+ end.
+
+Fixpoint digit2 (p : positive) : nat :=
+ match p with
+ | xH => 1
+ | xO p1 => S (digit2 p1)
+ | xI p1 => S (digit2 p1)
+ end.
+
+Definition digit2_N (n : N) : nat :=
+ match n with
+ | N0 => 0
+ | Npos p => digit2 p
+ end.
+
+Lemma digit2_N_0 :
+ forall n : N,
+ digit2_N n = 0 -> n = N0.
+intro n.
+unfold digit2_N, digit2.
+destruct n.
+trivial.
+destruct p ; intro ; discriminate H.
+Qed.
+
+Lemma digit2_N_S :
+ forall n : N, forall n0 : nat,
+ digit2_N n = S n0 -> exists p, n = Npos p.
+intros n n0.
+unfold digit2_N.
+destruct n.
+intro H. discriminate H.
+intro.
+exists p.
+trivial.
+Qed.
+
 Record rnd_record : Set := rnd_record_mk {
   rnd_m : N ;
   rnd_e : Z ;
@@ -54,6 +99,44 @@ Definition shr_aux (p : rnd_record) : rnd_record :=
   end
  end.
 
+Lemma shr_aux_mantissa :
+ forall p : rnd_record,
+ digit2_N (rnd_m (shr_aux p)) = pred (digit2_N (rnd_m p)).
+intro p.
+CaseEq (digit2_N (rnd_m p)) ; intros ; unfold shr_aux.
+rewrite (digit2_N_0 _ H).
+trivial.
+generalize (digit2_N_S _ _ H).
+rewrite <- H.
+intro H0. elim H0. clear H H0. intros p0 H.
+rewrite H.
+destruct p0 ; trivial.
+Qed.
+
+Lemma shr_aux_exp :
+ forall p : rnd_record,
+ rnd_e (shr_aux p) = Zsucc (rnd_e p).
+intro p.
+unfold shr_aux.
+destruct (rnd_m p) ; try destruct p0 ; trivial.
+Qed.
+
+Lemma shr_aux_guard :
+ forall p : rnd_record,
+ rnd_g (shr_aux p) = negb (is_even (rnd_m p)).
+intro p.
+unfold shr_aux, is_even.
+destruct (rnd_m p) ; try destruct p0 ; trivial.
+Qed.
+
+Lemma shr_aux_sticky :
+ forall p : rnd_record,
+ rnd_g (shr_aux p) = negb (is_even (rnd_m p)).
+intro p.
+unfold shr_aux, is_even.
+destruct (rnd_m p) ; try destruct p0 ; trivial.
+Qed.
+
 Definition bracket (r : R) (p : rnd_record) :=
  let m := Z_of_N (Ndouble (rnd_m p)) in
  let e := (rnd_e p - 1)%Z in
@@ -65,21 +148,21 @@ Definition bracket (r : R) (p : rnd_record) :=
  else
   if (rnd_s p) then (f0 < r < f1)%R else (r = f0)%R.
 
-Axiom shr_bracket :
+
+(*Axiom shr_bracket :*)
+Lemma shr_bracket :
  forall r : R, forall p : rnd_record,
  bracket r p -> bracket r (shr_aux p).
+intros r p H.
+unfold bracket.
+destruct p.
+
+
 
 Fixpoint shr (p : rnd_record) (n : nat) { struct n } : rnd_record :=
  match n with
  | O => p
  | S n1 => shr (shr_aux p) n1
- end.
-
-Fixpoint digit2 (p : positive) : nat :=
- match p with
- | xH => 1
- | xO p1 => S (digit2 p1)
- | xI p1 => S (digit2 p1)
  end.
 
 Fixpoint shl_aux (p : positive) (n : nat) { struct n } : positive :=
@@ -118,16 +201,6 @@ Axiom rnd_exp_zero :
  forall m : positive, forall e : Z,
  let r := rnd_aux m e in
  rnd_m r = N0 -> (rnd_e r = -bExp)%Z.
-
-Definition is_even (n : N) : bool :=
- match n with
- | N0 => true
- | Npos p =>
-  match p with
-  | xO _ => true
-  | _ => false
-  end
- end.
 
 Definition rndZ_fun (r : rnd_record) : bool := false.
 
