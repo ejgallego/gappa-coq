@@ -7,6 +7,25 @@ Record RR: Set := makepairR { lower : R ; upper : R }.
 Definition IintR (xi : RR) (x : R) :=
  (lower xi <= x <= upper xi)%R.
 
+Lemma IintR_abs :
+ forall xi : RR, forall x : R,
+ IintR xi x ->
+ (Rabs x <= Rabs (lower xi))%R \/ (Rabs x <= Rabs (upper xi))%R.
+intros xi x H.
+case (Rle_or_lt 0 x); intro H0.
+right.
+repeat rewrite Rabs_right.
+exact (proj2 H).
+apply Rle_ge.
+exact (Rle_trans _ _ _ H0 (proj2 H)).
+exact (Rle_ge _ _ H0).
+left.
+repeat rewrite Rabs_left.
+exact (Ropp_le_contravar _ _ (proj1 H)).
+exact (Rle_lt_trans _ _ _ (proj1 H) H0).
+exact H0.
+Qed.
+
 Definition IplusR_property (xi yi zi : RR) :=
  forall x y : R,
  IintR xi x -> IintR yi y -> IintR zi (x + y).
