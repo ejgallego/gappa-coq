@@ -1,4 +1,3 @@
-Add LoadPath "/usr/src/coq/Float".
 Require Export IA_float.
 
 Section IA_754s.

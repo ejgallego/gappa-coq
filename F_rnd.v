@@ -1,4 +1,3 @@
-Add LoadPath "/usr/src/coq/Float".
 Require Export AllFloat.
 
 Section F_rnd.
@@ -420,7 +419,7 @@ simpl.
 apply sym_eq.
 apply plus_minus.
 rewrite plus_comm.
-info auto with arith.
+auto with arith.
 Qed.
 
 Lemma digit2_size :
