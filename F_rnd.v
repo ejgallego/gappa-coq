@@ -426,20 +426,15 @@ Qed.
 Lemma digit2_size :
  forall m : positive,
  let n := digit2 m in
- (Zpower_nat 2 (pred n) <= Zpos m < Zpower_nat 2 n)%Z.
+ (Zpower_nat 2 n <= 2 * Zpos m)%Z /\ (Zpos m < Zpower_nat 2 n)%Z.
 induction m.
 simpl.
 Admitted.
 
-Definition rnd (m : positive) (e : Z) : rnd_record :=
- let r := rnd_aux m e in
- if Zle_bool (-bExp) (rnd_e r) then r
- else shr r (Zabs_nat (bExp + (rnd_e r))).
-
 Lemma fast_canonic :
  forall f : float,
  Fbounded bound f ->
- (Fexp f = -bExp)%Z \/ (Zpos bNum <= Zabs (radix * Fnum f))%Z ->
+ (Fexp f = -bExp)%Z \/ (Zpos (vNum bound) <= Zabs (radix * Fnum f))%Z ->
  Fcanonic radix bound f.
 intros f B H.
 destruct H.
@@ -449,26 +444,63 @@ left. repeat ( split ; trivial ).
 left. repeat ( split ; trivial ).
 Qed.
 
+Axiom plouf : forall P, P.
+
+Definition rnd (m : positive) (e : Z) : rnd_record :=
+ let r := rnd_aux m e in
+ if Zle_bool (rnd_e r) (-bExp) then
+  shr r (Zabs_nat (bExp + (rnd_e r)))
+ else r.
+
 Lemma rnd_canonic :
  forall m : positive, forall e : Z,
  let r := rnd m e in
  Fcanonic radix bound (Float (Z_of_N (rnd_m r)) (rnd_e r)).
 intros m e.
 unfold rnd.
-destruct (Zle_or_lt (-bExp)%Z (rnd_e (rnd_aux m e))).
-rewrite (Zle_imp_le_bool _ _ H).
+generalize (Zle_cases (rnd_e (rnd_aux m e)) (-bExp)%Z).
+destruct (Zle_bool (rnd_e (rnd_aux m e)) (-bExp)%Z) ; intro H.
 apply fast_canonic.
+apply plouf.
+left.
+simpl.
+rewrite shr_exp.
+assert (forall n : Z, Z_of_nat (Zabs_nat n) = Zabs n).
+apply plouf.
+rewrite H0.
+rewrite Zabs_non_eq.
+ring.
+auto with zarith.
+apply fast_canonic.
+generalize (Zgt_lt _ _ H). clear H. intro H.
 unfold Fbounded.
 split.
-2: exact H.
+2: auto with zarith.
 rewrite pGivesBound.
 rewrite <- (rnd_aux_mantissa_digit m e).
 simpl.
 assert (forall n : N, Zabs (Z_of_N n) = Z_of_N n).
 destruct n ; trivial.
-rewrite H0.
-(*apply (proj2 (digit2_size (rnd_m (rnd_aux m e)))).*)
-Admitted.
+rewrite H0. clear H0.
+destruct (rnd_m (rnd_aux m e)).
+unfold Zpower_nat.
+auto with zarith.
+unfold Z_of_N, digit2_N.
+apply (proj2 (digit2_size p)).
+right.
+rewrite Zabs_Zmult.
+rewrite pGivesBound.
+simpl.
+assert (forall n : N, Zabs (Z_of_N n) = Z_of_N n).
+destruct n ; trivial.
+rewrite H0. clear H0.
+generalize precisionNotZero.
+rewrite <- (rnd_aux_mantissa_digit m e).
+destruct (rnd_m (rnd_aux m e)) ; intro H0.
+elim H0. trivial.
+clear H0. simpl.
+apply (proj1 (digit2_size p)).
+Qed.
 
 Axiom rnd_bracket :
  forall m : positive, forall e : Z,
