@@ -74,6 +74,24 @@ apply Rle_trans with (1 := H1) (2 := (proj1 Hx)).
 apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
 
+Definition intersect_helper (xi yi zi : FF) :=
+ Fle_b (lower zi) (lower yi) &&
+ Fle_b (upper xi) (upper zi).
+
+Theorem intersect :
+ forall z : R, forall xi yi zi : FF,
+ IintF xi z -> IintF yi z ->
+ intersect_helper xi yi zi = true ->
+ IintF zi z.
+intros z xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). clear H2. intro H2.
+split ; unfold FF2RR ; simpl.
+apply Rle_trans with (1 := H1) (2 := (proj1 Hy)).
+apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
+Qed.
+
 Definition add_helper (xi yi zi : FF) :=
  Fle_b (lower zi) (Fplus radix (lower xi) (lower yi)) &&
  Fle_b (Fplus radix (upper xi) (upper yi)) (upper zi).
