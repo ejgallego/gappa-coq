@@ -217,9 +217,52 @@ exact (Rabs_pos_lt _ H).
 replace (Rabs xa * (Rabs (xr - xa) * / Rabs xa))%R with (Rabs (xr - xa))%R.
 apply Rle_trans with (RError xa).
 exact (RError_correct _ _ Hr).
+unfold RError, hulp1, cFloat2R, float2R, FtoR.
+simpl.
+repeat rewrite Rmult_1_l.
+apply Rmult_le_reg_l with 2%R.
+exact Rlt2.
+apply Rle_trans with (Zpos (vNum bound) * powerRZ 2 (Fexp (value xa)) * powerRZ 2 (-precision))%R.
+rewrite pGivesBound.
+replace radix with (Z_of_nat 2%nat). 2: apply refl_equal.
+rewrite Zpower_nat_powerRZ.
+pattern 2%R at 1; replace 2%R with (powerRZ 2 1). 2: auto with real.
+repeat rewrite <- powerRZ_add; auto with real.
+apply Rle_powerRZ.
+auto with real.
+omega.
 
 
+
+rewrite <- Rmult_assoc.
+
+rewrite Rabs_mult.
+rewrite Rmult_assoc.
+apply Rmult_le_compat.
+auto with real.
+auto with real.
+case (total_order_T (value xa) 0); intro H0.
+case H0; clear H0; intro H0.
+2: contradiction.
 apply plouf.
+apply plouf.
+rewrite Rmult_1_l.
+rewrite Rabs_right.
+rewrite <- powerRZ_add.
+2: auto with real.
+apply Rle_powerRZ.
+auto with real.
+unfold Zminus.
+apply Zplus_le_compat_l.
+auto with zarith.
+
+assert (forall a b : R, (b <> 0)%R -> (a = b * (a * /b))%R).
+intros a b Hb.
+field.
+exact Hb.
+apply H0.
+apply Rgt_not_eq.
+exact (Rabs_pos_lt _ H).
 Qed.
 
 End IA_float.
