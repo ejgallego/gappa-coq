@@ -14,6 +14,17 @@ exact Hz.
 ring.
 Qed.
 
+Theorem absolute_transitivity :
+ forall a b c : R, forall zi : FF,
+ IintF zi ((a - c) + (c - b)) ->
+ true = true ->
+ IintF zi (a - b).
+intros a b c zi Hz _.
+replace (a - b)%R with ((a - c) + (c - b))%R.
+exact Hz.
+ring.
+Qed.
+
 Theorem add_decomposition :
  forall a b c d : R, forall zi : FF,
  IintF zi ((a - c) + (b - d)) ->
