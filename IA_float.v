@@ -155,7 +155,7 @@ exact (Rge_le _ _ H1).
 exact (Rle_trans _ _ _ (RRle_abs _) H).
 Qed.
 
-Lemma Eabsolute_RError :
+Lemma Eabsolute_hulp :
  forall xi : FF, forall xa : cFloat, forall xr : R,
  Rounded xr xa -> IintF xi xa ->
  let e := cFloat_error xi in
@@ -167,6 +167,46 @@ apply Rle_trans with (RError xa).
 apply (RError_correct _ _ Hr).
 apply (cFloat_error_RError _ _ Hi).
 exact (Rabs_ineq _ _ H).
+Qed.
+
+Definition hulp1 := Float 1 (-precision)%Z.
+
+Lemma hulp1_lt_1 : (hulp1 < 1)%R.
+unfold hulp1, float2R, FtoR.
+simpl.
+rewrite Rmult_1_l.
+pattern 1%R at 3; rewrite <- (powerRZ_O 2).
+apply Rlt_powerRZ.
+apply Rlt_plus_1.
+auto with zarith.
+Qed.
+
+Axiom plouf : forall P : Prop, P.
+
+Lemma Rabsolute_hulp :
+ forall xa : cFloat, forall xr : R,
+ Rounded xr xa -> Fnormal radix bound (value xa) ->
+ ErelativeR (makepairR (-hulp1) hulp1) xr xa.
+intros xa xr Hr Hn.
+unfold ErelativeR.
+split.
+simpl.
+apply Ropp_lt_contravar.
+exact hulp1_lt_1.
+split.
+intro Hz.
+elim (FnormalNotZero _ _ (value xa) Hn).
+exact (is_Fzero_rep2 _ radixMoreThanOne _ Hz).
+unfold IintR, Iplus1R.
+simpl.
+cut (-hulp1 <= xr / xa - 1 <= hulp1)%R. intros (H1, H2).
+replace (xr / xa)%R with (1 + (xr / xa - 1))%R.
+split; apply Rplus_le_compat_l.
+exact H1.
+exact H2.
+ring.
+apply Rabs_ineq.
+apply plouf.
 Qed.
 
 End IA_float.
