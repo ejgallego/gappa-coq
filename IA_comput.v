@@ -199,6 +199,32 @@ induction (Fnum x) ; intro H0 ; try discriminate
  ; unfold Zopp ; auto with real.
 Qed.
 
+Definition contains_zero_helper (zi : FF) :=
+ Fneg0 (lower zi) &&
+ Fpos0 (upper zi).
+
+Lemma contains_zero :
+ forall zi : FF,
+ contains_zero_helper zi = true ->
+ IintF zi 0.
+intros zi Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fneg0_correct _ H1). clear H1. intro H1.
+generalize (Fpos0_correct _ H2). clear H2. intro H2.
+split ; assumption.
+Qed.
+
+Lemma sub_refl :
+ forall x : R, forall zi : FF,
+ contains_zero_helper zi = true ->
+ IintF zi (x - x).
+intros x zi Hb.
+replace (x - x)%R with R0.
+apply contains_zero with (1 := Hb).
+rewrite <- Rplus_opp_r with x.
+apply refl_equal.
+Qed.
+
 Definition mul_pp_helper (xi yi zi : FF) :=
  Fpos (lower xi) &&
  Fpos (lower yi) &&
