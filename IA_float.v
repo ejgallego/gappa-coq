@@ -231,6 +231,14 @@ repeat rewrite <- powerRZ_add; auto with real.
 apply Rle_powerRZ.
 auto with real.
 omega.
+repeat rewrite <- Rmult_assoc.
+apply Rmult_le_compat_r.
+exact (powerRZ_le _ _ Rlt2).
+rewrite Rabs_mult.
+rewrite (Rabs_right (powerRZ 2 (Fexp (value xa)))).
+rewrite <- Rmult_assoc.
+apply Rmult_le_compat_r.
+exact (powerRZ_le _ _ Rlt2).
 
 
 
