@@ -249,7 +249,7 @@ rewrite Zmult_comm.
 trivial.
 Qed.
 
-Lemma shr_bracket :
+Lemma shr_aux_bracket :
  forall r : R, forall p : rnd_record,
  bracket r p -> bracket r (shr_aux p).
 intros r p H.
@@ -339,6 +339,30 @@ Fixpoint shr (p : rnd_record) (n : nat) { struct n } : rnd_record :=
  | S n1 => shr (shr_aux p) n1
  end.
 
+Lemma shr_mantissa_digit :
+ forall n : nat, forall p : rnd_record,
+ digit2_N (rnd_m (shr p n)) = digit2_N (rnd_m p) - n.
+induction n ; intro p.
+apply minus_n_O.
+unfold shr. fold shr.
+replace (digit2_N (rnd_m p) - S n) with
+ (pred (digit2_N (rnd_m p)) - n).
+rewrite <- shr_aux_mantissa_digit.
+apply IHn.
+destruct (digit2_N (rnd_m p)) ; trivial.
+Qed.
+
+Lemma shr_bracket :
+ forall r : R, forall n : nat, forall p : rnd_record,
+ bracket r p -> bracket r (shr p n).
+induction n ; intro p.
+trivial.
+unfold shr. fold shr.
+intro H.
+apply IHn.
+apply shr_aux_bracket with (1 := H).
+Qed.
+
 Fixpoint shl_aux (p : positive) (n : nat) { struct n } : positive :=
  match n with
  | O => p
@@ -348,14 +372,20 @@ Fixpoint shl_aux (p : positive) (n : nat) { struct n } : positive :=
 Definition shl (m : positive) (e : Z) (n : nat) : rnd_record :=
  rnd_record_mk (Npos (shl_aux m n)) (e - n) false false.
 
-Definition rnd_aux (m : positive) (e : Z) : rnd_record :=
+Definition rnd_aux1 (m : positive) (e : Z) : rnd_record :=
  let n := digit2 m in
- let r :=
-  if le_lt_dec n precision then
-   shl m e (precision - n)
-  else
-   shr (rnd_record_mk (Npos m) e false false) (n - precision)
-  in
+ if le_lt_dec n precision then
+  shl m e (precision - n)
+ else
+  shr (rnd_record_mk (Npos m) e false false) (n - precision).
+
+Lemma rnd_aux1_mantissa_digit :
+ forall m : positive, forall e : Z,
+ digit2_N (rnd_m (rnd_aux1 m e)) = precision.
+Admitted.
+
+Definition rnd_aux (m : positive) (e : Z) : rnd_record :=
+ let r := rnd_aux1 m e in
  if Zle_bool (-bExp) (rnd_e r) then r
  else shr r (Zabs_nat (bExp + (rnd_e r))).
 
