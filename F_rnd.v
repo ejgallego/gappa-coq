@@ -166,15 +166,88 @@ destruct (rnd_m p) ; try destruct p0 ; trivial.
 Qed.
 
 Definition bracket (r : R) (p : rnd_record) :=
- let m := Z_of_N (Ndouble (rnd_m p)) in
+ let m := (Z_of_N (rnd_m p) * 2)%Z in
  let e := (rnd_e p - 1)%Z in
  let f0 := Float m e in
- let f1 := Float (Zsucc m) e in
- let f2 := Float (Zsucc (Zsucc m)) e in
+ let f1 := Float (m + 1)%Z e in
+ let f2 := Float (m + 2)%Z e in
  if (rnd_g p) then
   if (rnd_s p) then (f1 < r < f2)%R else (r = f1)%R
  else
   if (rnd_s p) then (f0 < r < f1)%R else (r = f0)%R.
+
+Lemma Rlt_Float_exp :
+ forall m1 m2 : Z, forall e : Z,
+ (m1 < m2)%Z -> (Float m1 e < Float m2 e)%R.
+intros m1 m2 e H.
+unfold float2R, FtoR.
+apply Rlt_monotony_exp with (1 := radixMoreThanOne).
+apply Rlt_IZR.
+exact H.
+Qed.
+
+Lemma Rle_Float_exp :
+ forall m1 m2 : Z, forall e : Z,
+ (m1 <= m2)%Z -> (Float m1 e <= Float m2 e)%R.
+intros m1 m2 e H.
+unfold float2R, FtoR.
+apply Rle_monotone_exp with (1 := radixMoreThanOne).
+apply Rle_IZR.
+exact H.
+Qed.
+
+Lemma Req_Float_exp :
+ forall m1 m2 : Z, forall e : Z,
+ (m1 = m2)%Z -> float2R (Float m1 e) = float2R (Float m2 e).
+intros m1 m2 e H.
+unfold float2R, FtoR.
+simpl.
+ring.
+apply Rmult_eq_compat_l.
+apply IZR_eq.
+exact H.
+Qed.
+
+Lemma shift_float :
+ forall m e : Z,
+ float2R (Float m e) = float2R (Float (m * 2) (e - 1)).
+intros m e.
+unfold float2R, FtoR.
+simpl.
+rewrite mult_IZR.
+replace (IZR (Zpos 2)) with 2%R.
+2: trivial.
+unfold Zminus.
+assert (2 <> 0)%R.
+auto with real.
+rewrite powerRZ_add with (1 := H).
+rewrite powerRZ_Zopp with (1 := H).
+rewrite powerRZ_1.
+field.
+exact H.
+Qed.
+
+Lemma Ndiv2_even :
+ forall n : N,
+ is_even n = true -> (Z_of_N (Ndiv2 n) * 2)%Z = (Z_of_N n)%Z.
+unfold is_even, Ndiv2.
+intros n H.
+destruct n ; try destruct p ; try discriminate H.
+trivial.
+rewrite Zmult_comm.
+trivial.
+Qed.
+
+Lemma Ndiv2_odd :
+ forall n : N,
+ is_even n = false -> (Z_of_N (Ndiv2 n) * 2)%Z = (Z_of_N n - 1)%Z.
+unfold is_even, Ndiv2.
+intros n H.
+destruct n ; try destruct p ; try discriminate H.
+2: trivial.
+rewrite Zmult_comm.
+trivial.
+Qed.
 
 Lemma shr_bracket :
  forall r : R, forall p : rnd_record,
@@ -185,17 +258,80 @@ rewrite (shr_aux_guard p).
 rewrite (shr_aux_sticky p).
 rewrite (shr_aux_mantissa p).
 rewrite (shr_aux_exp p).
-assert (forall z : Z, (Zsucc z - 1)%Z = z).
-intro z.
-auto with zarith.
-rewrite H0. clear H0.
+replace (Zsucc (rnd_e p) - 1)%Z with (rnd_e p).
+2: auto with zarith.
 CaseEq (is_even (rnd_m p)) ; intro H0 ;
+ [ rewrite Ndiv2_even with (1 := H0) | rewrite Ndiv2_odd with (1 := H0) ] ;
  CaseEq (rnd_g p) ; intro H1 ; simpl.
 unfold bracket in H. rewrite H1 in H.
+clear H1.
+assert (Float (Z_of_N (rnd_m p) * 2 + 1) (rnd_e p - 1) <= r < Float (Z_of_N (rnd_m p) * 2 + 2) (rnd_e p - 1))%R.
 destruct (rnd_s p).
 split.
-apply Rlt_trans with (2 := proj1 H). clear H.
-Admitted.
+apply Rlt_le with (1 := proj1 H).
+exact (proj2 H).
+split.
+apply Req_le with (1 := (sym_eq H)).
+rewrite H.
+apply Rlt_Float_exp.
+auto with zarith.
+clear H.
+split ; rewrite shift_float.
+apply Rlt_le_trans with (2 := proj1 H1). clear H1.
+apply Rlt_Float_exp.
+auto with zarith.
+apply Rlt_le_trans with (1 := proj2 H1). clear H1.
+apply Rle_Float_exp.
+auto with zarith.
+CaseEq (rnd_s p) ; intro H2.
+unfold bracket in H. rewrite H1 in H. rewrite H2 in H.
+split ; rewrite shift_float.
+apply Rle_lt_trans with (2 := proj1 H). clear H.
+apply Rle_Float_exp.
+auto with zarith.
+apply Rlt_le_trans with (1 := proj2 H). clear H1.
+apply Rle_Float_exp.
+auto with zarith.
+unfold bracket in H. rewrite H1 in H. rewrite H2 in H.
+rewrite shift_float.
+rewrite H.
+apply Req_Float_exp.
+apply refl_equal.
+unfold bracket in H. rewrite H1 in H.
+clear H1.
+assert (Float (Z_of_N (rnd_m p) * 2 + 1) (rnd_e p - 1) <= r < Float (Z_of_N (rnd_m p) * 2 + 2) (rnd_e p - 1))%R.
+destruct (rnd_s p).
+split.
+apply Rlt_le with (1 := proj1 H).
+exact (proj2 H).
+split.
+apply Req_le with (1 := (sym_eq H)).
+rewrite H.
+apply Rlt_Float_exp.
+auto with zarith.
+clear H.
+split ; rewrite shift_float.
+apply Rlt_le_trans with (2 := proj1 H1). clear H1.
+apply Rlt_Float_exp.
+auto with zarith.
+apply Rlt_le_trans with (1 := proj2 H1). clear H1.
+apply Rle_Float_exp.
+auto with zarith.
+CaseEq (rnd_s p) ; intro H2.
+unfold bracket in H. rewrite H1 in H. rewrite H2 in H.
+split ; rewrite shift_float.
+apply Rle_lt_trans with (2 := proj1 H). clear H.
+apply Rle_Float_exp.
+auto with zarith.
+apply Rlt_le_trans with (1 := proj2 H). clear H1.
+apply Rle_Float_exp.
+auto with zarith.
+unfold bracket in H. rewrite H1 in H. rewrite H2 in H.
+rewrite shift_float.
+rewrite H.
+apply Req_Float_exp.
+ring.
+Qed.
 
 Fixpoint shr (p : rnd_record) (n : nat) { struct n } : rnd_record :=
  match n with
