@@ -63,6 +63,35 @@ rewrite Rmult_opp_opp.
 trivial.
 Qed.
 
+Definition Iabs_multR_property (xb yb xi yi zi : RR) :=
+ forall x y xe ye : R,
+ IintR xb x -> IintR yb y -> IintR xi xe -> IintR yi ye ->
+ IintR zi (x * ye + y * xe + xe * ye).
+
+Definition Iabs_multR_fun (xb yb xi yi : RR) :=
+ IplusR_fun (IplusR_fun (ImultR_fun xb yi) (ImultR_fun yb xi)) (ImultR_fun xi yi).
+ 
+Lemma Iabs_multR_fun_correct :
+ forall xb yb xi yi : RR,
+ Iabs_multR_property xb yb xi yi (Iabs_multR_fun xb yb xi yi).
+intros xb yb xi yi x y xe ye Ix Iy Ixe Iye.
+unfold Iabs_multR_fun.
+repeat apply IplusR_fun_correct ; apply ImultR_fun_correct; trivial.
+Qed.
+
+Lemma Eabs_multR:
+ forall xi yi zi xb yb : RR, forall xr xa yr ya : R,
+ Iabs_multR_property xb yb xi yi zi ->
+ IintR xb xa -> IintR yb ya ->
+ EabsoluteR xi xr xa -> EabsoluteR yi yr ya ->
+ EabsoluteR zi (xr * yr) (xa * ya).
+intros xi yi zi xb yb xr xa yr ya Hz Hxb Hyb Hx Hy.
+unfold EabsoluteR in *.
+replace (xr * yr - xa * ya)%R with (xa * (yr - ya) + ya * (xr - xa) + (xr - xa) * (yr - ya))%R.
+2: ring.
+apply Hz; trivial.
+Qed.
+
 Lemma Erel_multR:
  forall xi yi zi : RR, forall xr xa yr ya : R,
  ImultR_property (Iplus1R xi) (Iplus1R yi) (Iplus1R zi) ->
