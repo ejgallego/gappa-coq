@@ -235,35 +235,18 @@ repeat rewrite <- Rmult_assoc.
 apply Rmult_le_compat_r.
 exact (powerRZ_le _ _ Rlt2).
 rewrite Rabs_mult.
-rewrite (Rabs_right (powerRZ 2 (Fexp (value xa)))).
+rewrite (Rabs_pos_eq (powerRZ 2 (Fexp (value xa)))).
+2: exact (powerRZ_le _ _ Rlt2).
 rewrite <- Rmult_assoc.
 apply Rmult_le_compat_r.
 exact (powerRZ_le _ _ Rlt2).
-
-
-
-rewrite <- Rmult_assoc.
-
-rewrite Rabs_mult.
-rewrite Rmult_assoc.
-apply Rmult_le_compat.
-auto with real.
-auto with real.
-case (total_order_T (value xa) 0); intro H0.
-case H0; clear H0; intro H0.
-2: contradiction.
-apply plouf.
-apply plouf.
-rewrite Rmult_1_l.
-rewrite Rabs_right.
-rewrite <- powerRZ_add.
-2: auto with real.
-apply Rle_powerRZ.
-auto with real.
-unfold Zminus.
-apply Zplus_le_compat_l.
-auto with zarith.
-
+rewrite <- (Rabs_pos_eq 2). 2: exact (Rlt_le _ _ Rlt2).
+rewrite <- Rabs_mult.
+replace 2%R with (IZR 2). 2: apply refl_equal.
+rewrite <- mult_IZR.
+rewrite Rabs_Zabs.
+apply IZR_le.
+exact (proj2 Hn).
 assert (forall a b : R, (b <> 0)%R -> (a = b * (a * /b))%R).
 intros a b Hb.
 field.
