@@ -141,6 +141,28 @@ apply Rle_trans with (1 := H1) (2 := (proj1 Hy)).
 apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
 
+Definition neg_helper (xi zi : FF) :=
+ Fle_b (lower zi) (Fopp (upper xi)) &&
+ Fle_b (Fopp (lower xi)) (upper zi).
+
+Theorem neg :
+ forall x : R, forall xi zi : FF,
+ IintF xi x ->
+ neg_helper xi zi = true ->
+ IintF zi (-x).
+intros x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). clear H2. intro H2.
+split ; unfold FF2RR ; simpl.
+apply Rle_trans with (1 := H1).
+unfold float2R. rewrite Fopp_correct.
+apply Ropp_le_contravar with (1 := (proj2 Hx)).
+apply Rle_trans with (2 := H2).
+unfold float2R. rewrite Fopp_correct.
+apply Ropp_le_contravar with (1 := (proj1 Hx)).
+Qed.
+
 Definition add_helper (xi yi zi : FF) :=
  Fle_b (lower zi) (Fplus radix (lower xi) (lower yi)) &&
  Fle_b (Fplus radix (upper xi) (upper yi)) (upper zi).
