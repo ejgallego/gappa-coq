@@ -41,7 +41,7 @@ Qed.
 Definition f32e := 149.
 Definition f32p := 24.
 Definition f64e := 1074.
-Definition f64p := 63.
+Definition f64p := 53.
 
 Definition float32ne_round := f_round (rndNE f32p f32e).
 Definition rounding_float32ne := (rounding_f (rndNE f32p f32e)).
