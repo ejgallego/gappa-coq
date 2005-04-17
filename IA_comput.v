@@ -141,6 +141,25 @@ apply Rle_trans with (1 := H1) (2 := (proj1 Hy)).
 apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
 
+Theorem union :
+ forall x z : R, forall xi xi1 zi : FF,
+ (IintF xi1 x -> IintF zi z) ->
+ Fle_b (lower xi1) (lower xi) = true ->
+ (IintF (makepairF (upper xi1) (upper xi)) x -> IintF zi z) ->
+ IintF xi x ->
+ IintF zi z.
+intros x z xi xi1 zi Hx1 Hb Hx2 Hx.
+generalize (Fle_b_correct _ _ Hb). clear Hb. intro H1.
+case (Rlt_le_dec x (upper xi1)) ; intro H.
+apply Hx1.
+split ; auto with real.
+apply Rle_trans with (1 := H1) (2 := (proj1 Hx)).
+apply Hx2.
+split.
+exact H.
+exact (proj2 Hx).
+Qed.
+
 Definition neg_helper (xi zi : FF) :=
  Fle_b (lower zi) (Fopp (upper xi)) &&
  Fle_b (Fopp (lower xi)) (upper zi).
