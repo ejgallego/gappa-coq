@@ -555,10 +555,10 @@ Definition rndU_fun (r : rnd_record) : bool :=
 Definition rndO_fun (r : rnd_record) : bool :=
  (rnd_g r || rnd_s r) && is_even (rnd_m r).
 
-Definition rndCE_fun (r : rnd_record) : bool :=
+Definition rndNE_fun (r : rnd_record) : bool :=
  rnd_g r && (rnd_s r || negb (is_even (rnd_m r))).
 
-Definition rndCU_fun (r : rnd_record) : bool :=
+Definition rndNU_fun (r : rnd_record) : bool :=
  rnd_g r.
 
 Definition do_rnd (m : positive) (e : Z) (g : rnd_record -> bool) : float :=
@@ -579,7 +579,7 @@ Definition rndZ := do_rnd2 rndZ_fun rndZ_fun.
 Definition rndU := do_rnd2 rndU_fun rndZ_fun.
 Definition rndD := do_rnd2 rndZ_fun rndU_fun.
 Definition rndO := do_rnd2 rndO_fun rndO_fun.
-Definition rndCE := do_rnd2 rndCE_fun rndCE_fun.
-Definition rndCU := do_rnd2 rndCU_fun rndCU_fun.
+Definition rndNE := do_rnd2 rndNE_fun rndNE_fun.
+Definition rndNU := do_rnd2 rndNU_fun rndNU_fun.
 
 End F_rnd.
