@@ -12,7 +12,7 @@ Qed.
 
 Coercion float2R := FtoR radix.
 Record FF: Set := makepairF { lower : float ; upper : float }.
-Coercion Local FF2RR := fun x : FF => makepairR (lower x) (upper x).
+Coercion FF2RR := fun x : FF => makepairR (lower x) (upper x).
 Definition IintF (xi : FF) (x : R) := IintR xi x.
 
 Definition Fle_b (x y : float) := Fle_bool radix x y.
