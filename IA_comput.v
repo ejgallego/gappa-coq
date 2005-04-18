@@ -631,4 +631,30 @@ exact (monotony_1n _ _ _ H (proj1 Hx)).
 exact (monotony_2n _ _ _ H1 (proj1 Hx)).
 Qed.
 
+Definition div_op_helper (xi yi zi : FF) :=
+ Fpos (lower yi) &&
+ Fneg0 (lower xi) && Fpos0 (upper xi) &&
+ Fle_b (Fmult (lower yi) (lower zi)) (lower xi) &&
+ Fle_b (upper xi) (Fmult (lower yi) (upper zi)).
+
+Theorem div_op :
+ forall x y : R, forall xi yi zi : FF,
+ IintF xi x -> IintF yi y ->
+ div_op_helper xi yi zi = true ->
+ IintF zi (x / y).
+intros x y xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fpos_correct _ H1). clear H1. intro H1.
+generalize (Fneg0_correct _ H2). clear H2. intro H2.
+generalize (Fpos0_correct _ H3). clear H3. intro H3.
+generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
+generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero). clear H5. intro H5.
+unfold IintF, IintR.
+apply IdivR_op with (lower xi) (upper xi) (lower yi) (upper yi)
+ ; auto with real.
+Qed.
+
 End IA_comput.

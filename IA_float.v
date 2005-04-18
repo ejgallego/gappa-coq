@@ -96,9 +96,6 @@ Axiom float64ne_absolute: forall A B: Prop, B -> true = true -> A.
 Axiom float64ne_relative: forall A B: Prop, B -> true = true -> A.
 Axiom float80ne_absolute: forall A B: Prop, B -> true = true -> A.
 Axiom float80ne_relative: forall A B: Prop, B -> true = true -> A.
-Axiom relative_to_absolute: forall A B: Prop, B -> true = true -> A.
-Axiom divop: forall A B C: Prop, B -> C -> true = true -> A.
-
 
 Axiom sterbenz :
  forall A B C D : Prop,

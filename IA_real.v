@@ -512,4 +512,42 @@ intros xi yi H x y Ix Iy.
 apply IdivR with xi yi; auto with real.
 Qed.
 
+Lemma IdivR_op :
+ forall xl xu yl yu zl zu x y : R,
+ (xl <= 0)%R ->
+ (0 <= xu)%R ->
+ (0 < yl)%R ->
+ (yl * zl <= xl)%R ->
+ (xu <= yl * zu)%R ->
+ (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
+ (zl <= x / y <= zu)%R.
+intros xl xu yl yu zl zu x y Hxl Hxu Hyl Hzl Hzu Hx Hy.
+assert (Hy1 : (0 <= / yl)%R). auto with real.
+assert (Hy2 : (yl <> 0)%R). auto with real.
+assert (Hy3 : (/ y <= / yl)%R).
+exact (Rle_Rinv _ _ Hyl (proj1 Hy)).
+assert (Hy4 : (0 <= / y)%R).
+left.
+apply Rinv_0_lt_compat.
+exact (Rlt_le_trans _ _ _ Hyl (proj1 Hy)).
+unfold Rdiv.
+split.
+apply Rle_trans with (xl * / yl)%R.
+replace zl with (yl * zl * / yl)%R.
+exact (monotony_2p _ _ _ Hy1 Hzl).
+field.
+exact Hy2.
+apply Rle_trans with (xl * / y)%R.
+exact (monotony_1n _ _ _ Hxl Hy3).
+exact (monotony_2p _ _ _ Hy4 (proj1 Hx)).
+apply Rle_trans with (xu * / yl)%R.
+apply Rle_trans with (xu * / y)%R.
+exact (monotony_2p _ _ _ Hy4 (proj2 Hx)).
+exact (monotony_1p _ _ _ Hxu Hy3).
+replace zu with (yl * zu * / yl)%R.
+exact (monotony_2p _ _ _ Hy1 Hzu).
+field.
+apply Hy2.
+Qed.
+
 End IA_real.
