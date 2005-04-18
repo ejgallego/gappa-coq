@@ -42,11 +42,15 @@ Definition f32e := 149.
 Definition f32p := 24.
 Definition f64e := 1074.
 Definition f64p := 53.
+Definition f80e := 1074. (*16445.*)
+Definition f80p := 64.
 
 Definition float32ne_round := f_round (rndNE f32p f32e).
 Definition rounding_float32ne := (rounding_f (rndNE f32p f32e)).
 Definition float64ne_round := f_round (rndNE f64p f64e).
 Definition rounding_float64ne := (rounding_f (rndNE f64p f64e)).
+Definition float80ne_round := f_round (rndNE f80p f80e).
+Definition rounding_float80ne := (rounding_f (rndNE f80p f80e)).
 
 Definition float32ne_absolute_wide_helper (xi zi : FF) :=
  true.
@@ -90,6 +94,8 @@ Admitted.
 
 Axiom float64ne_absolute: forall A B: Prop, B -> true = true -> A.
 Axiom float64ne_relative: forall A B: Prop, B -> true = true -> A.
+Axiom float80ne_absolute: forall A B: Prop, B -> true = true -> A.
+Axiom float80ne_relative: forall A B: Prop, B -> true = true -> A.
 Axiom relative_to_absolute: forall A B: Prop, B -> true = true -> A.
 Axiom divop: forall A B C: Prop, B -> C -> true = true -> A.
 
