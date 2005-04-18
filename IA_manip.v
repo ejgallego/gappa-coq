@@ -116,4 +116,17 @@ exact Hz.
 ring.
 Qed.
 
+Theorem relative_to_absolute :
+ forall a b : R, forall bi zi : FF,
+ IintF bi b -> IintF zi (a / b * b) ->
+ not_zero bi = true ->
+ IintF zi a.
+intros a b bi zi Hd Hz Hb.
+generalize (not_zero_correct _ _ Hd Hb). clear Hd Hb. intro H.
+replace a with (a / b * b)%R.
+exact Hz.
+field.
+exact H.
+Qed.
+
 End IA_manip.
