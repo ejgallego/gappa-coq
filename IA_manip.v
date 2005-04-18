@@ -72,13 +72,24 @@ exact Hz.
 ring.
 Qed.
 
-Theorem mul_decomposition_simple :
+Theorem mul_decomposition_half_left :
  forall a b c d : R, forall zi : FF,
- IintF zi (a * (b - d) + d * (a - c)) ->
+ IintF zi (a * (b - d) + (a - c) * d) ->
  true = true ->
  IintF zi (a * b - c * d).
 intros a b c d zi Hz _.
-replace (a * b - c * d)%R with (a * (b - d) + d * (a - c))%R.
+replace (a * b - c * d)%R with (a * (b - d) + (a - c) * d)%R.
+exact Hz.
+ring.
+Qed.
+
+Theorem mul_decomposition_half_right :
+ forall a b c d : R, forall zi : FF,
+ IintF zi ((a - c) * b + c * (b - d)) ->
+ true = true ->
+ IintF zi (a * b - c * d).
+intros a b c d zi Hz _.
+replace (a * b - c * d)%R with ((a - c) * b + c * (b - d))%R.
 exact Hz.
 ring.
 Qed.
