@@ -121,12 +121,28 @@ Theorem relative_to_absolute :
  IintF bi b -> IintF zi (a / b * b) ->
  not_zero bi = true ->
  IintF zi a.
-intros a b bi zi Hd Hz Hb.
-generalize (not_zero_correct _ _ Hd Hb). clear Hd Hb. intro H.
+intros a b bi zi Hb Hz H.
+generalize (not_zero_correct _ _ Hb H). clear Hb H. intro H.
 replace a with (a / b * b)%R.
 exact Hz.
 field.
 exact H.
+Qed.
+
+Theorem relative_transitivity :
+ forall a b c : R, forall bi ci zi : FF,
+ IintF bi b -> IintF ci c ->
+ IintF zi ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b)) ->
+ not_zero bi && not_zero ci = true ->
+ IintF zi ((a - b) / b).
+intros a b c bi ci zi Hb Hc Hz H.
+generalize (andb_prop _ _ H). clear H. intros (H1, H2).
+generalize (not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
+generalize (not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
+replace ((a - b) / b)%R with ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b))%R.
+exact Hz.
+field.
+auto with real.
 Qed.
 
 End IA_manip.
