@@ -24,6 +24,15 @@ apply (Fle_bool_correct_t radix radixMoreThanOne).
 exact H.
 Qed.
 
+Definition Flt_b (x y : float) := Flt_bool radix x y.
+Lemma Flt_b_correct :
+ forall x y : float,
+ Flt_b x y = true -> (x < y)%R.
+intros x y H.
+apply (Flt_bool_correct_t radix radixMoreThanOne).
+exact H.
+Qed.
+
 Definition Float1 (x : Z) := x.
 Definition Float2 := Float.
 Record deci : Set := Float10 { Fnum10 : Z ; Fexp10 : Z }.
@@ -305,6 +314,29 @@ generalize H. clear H.
 unfold IZR, Fneg0.
 induction (Fnum x) ; intro H0 ; try discriminate
  ; unfold Zopp ; auto with real.
+Qed.
+
+Definition not_zero (zi : FF) :=
+ Fpos (lower zi) || Fneg (upper zi).
+
+Lemma not_zero_correct :
+ forall z : R, forall zi : FF,
+ IintF zi z ->
+ not_zero zi = true ->
+ (z <> 0)%R.
+intros z zi Hz Hb.
+apply Rlt_dichotomy_converse.
+generalize (orb_prop _ _ Hb). clear Hb.
+intro H. elim H; clear H; intro H.
+right.
+generalize (Fpos_correct _ H). clear H. intro H.
+unfold Rgt.
+apply Rlt_le_trans with (1 := H).
+exact (proj1 Hz).
+left.
+generalize (Fneg_correct _ H). clear H. intro H.
+apply Rle_lt_trans with (2 := H).
+exact (proj2 Hz).
 Qed.
 
 Definition contains_zero_helper (zi : FF) :=
