@@ -657,4 +657,16 @@ apply IdivR_op with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
+Definition div_np_helper (xi yi zi : FF) :=
+ Fpos (lower yi) &&
+ Fneg0 (upper xi) &&
+ Fle_b (Fmult (lower yi) (lower zi)) (lower xi) &&
+ Fle_b (upper xi) (Fmult (lower yi) (upper zi)).
+
+Axiom div_np :
+ forall x y : R, forall xi yi zi : FF,
+ IintF xi x -> IintF yi y ->
+ div_np_helper xi yi zi = true ->
+ IintF zi (x / y).
+
 End IA_comput.
