@@ -47,6 +47,17 @@ Definition Dcompare (x : float) (y : deci) :=
  | Z0 => Fcompare radix x (Float m 0)
  end.
 
+Lemma Dcompare_correct :
+ forall x : float, forall y : deci,
+ match (Dcompare x y) with
+   Lt => (x < y)%R
+ | Eq => (float2R x = y)%R
+ | Gt => (x > y)%R
+ end.
+intros x y.
+CaseEq (Dcompare x y) ; intro H.
+Admitted.
+
 Definition Dle_fd (x : float) (y : deci) :=
  match (Dcompare x y) with
   Gt => false
@@ -57,7 +68,12 @@ Lemma Dle_fd_correct :
  forall x : float, forall y : deci,
  Dle_fd x y = true ->
  (x <= y)%R.
-Admitted.
+intros x y.
+unfold Dle_fd.
+generalize (Dcompare_correct x y).
+CaseEq (Dcompare x y) ; intros ; auto with real.
+discriminate.
+Qed.
 
 Definition Dle_df (x : deci) (y : float) :=
  match (Dcompare y x) with
@@ -69,7 +85,12 @@ Lemma Dle_df_correct :
  forall x : deci, forall y : float,
  Dle_df x y = true ->
  (x <= y)%R.
-Admitted.
+intros x y.
+unfold Dle_df.
+generalize (Dcompare_correct y x).
+CaseEq (Dcompare y x) ; intros ; auto with real.
+discriminate.
+Qed.
 
 Definition constant2_helper (x : float) (zi : FF) :=
  Fle_b (lower zi) x && Fle_b x (upper zi).
