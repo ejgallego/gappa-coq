@@ -38,29 +38,97 @@ Definition Float2 := Float.
 Record deci : Set := Float10 { Fnum10 : Z ; Fexp10 : Z }.
 Coercion deci2R := fun x : deci => (Fnum10 x * powerRZ 10 (Fexp10 x))%R.
 
+
+Lemma Fcompare_Eq :
+ forall x y : float,
+ Fcompare radix x y = Eq ->
+ float2R x = float2R y.
+intros x y H.
+apply Feq_bool_correct_t with (1 := radixMoreThanOne).
+unfold radix in H.
+unfold Feq_bool. rewrite H. trivial.
+Qed.
+
+Lemma Fcompare_Lt :
+ forall x y : float,
+ Fcompare radix x y = Lt ->
+ (x < y)%R.
+intros x y H.
+apply Flt_bool_correct_t with (1 := radixMoreThanOne).
+unfold radix in H.
+unfold Flt_bool. rewrite H. trivial.
+Qed.
+
+Lemma Fcompare_Gt :
+ forall x y : float,
+ Fcompare radix x y = Gt ->
+ (x > y)%R.
+intros x y H.
+unfold float2R.
+apply Flt_Fgt.
+apply Fle_bool_correct_f with (1 := radixMoreThanOne).
+unfold radix in H.
+unfold Fle_bool. rewrite H. trivial.
+Qed.
+
 Definition Dcompare (x : float) (y : deci) :=
  let m := Fnum10 y in let e := Fexp10 y in
- let f := Zpower_nat 5 (Zabs_nat e) in
  match e with
-   Zpos _ => Fcompare radix x (Float (m * f) e)
- | Zneg _ => Fcompare radix (Float (Fnum x * f) (Fexp x)) (Float m e)
+ | Zpos p => Fcompare radix x (Float (m * Zpower_pos 5 p) e)
+ | Zneg p => Fcompare radix (Float (Fnum x * Zpower_pos 5 p) (Fexp x)) (Float m e)
  | Z0 => Fcompare radix x (Float m 0)
  end.
+
+Axiom pow_exp :
+ forall x y : R, forall n : nat,
+ ((pow x n) * (pow y n) = (pow (x * y) n))%R.
 
 Lemma Dcompare_correct :
  forall x : float, forall y : deci,
  match (Dcompare x y) with
-   Lt => (x < y)%R
+ | Lt => (x < y)%R
  | Eq => (float2R x = y)%R
  | Gt => (x > y)%R
  end.
 intros x y.
-CaseEq (Dcompare x y) ; intro H.
+unfold Dcompare.
+case y. intros ym ye.
+simpl.
+induction ye ; unfold deci2R ;
+simpl.
+rewrite Rmult_1_r.
+replace (IZR ym) with (FtoR radix (Float ym 0)).
+2: unfold FtoR ; auto with real.
+unfold float2R, radix.
+CaseEq (Fcompare 2 x (Float ym 0)) ; intro H.
+apply Fcompare_Eq with (1 := H).
+apply Fcompare_Lt with (1 := H).
+apply Fcompare_Gt with (1 := H).
+unfold float2R, radix.
+assert (H0: (float2R (Float (ym * Zpower_pos 5 p) (Zpos p)) = ym * 10 ^ nat_of_P p)%R).
+unfold float2R, radix, FtoR.
+simpl.
+rewrite mult_IZR.
+rewrite Zpower_pos_nat.
+rewrite Zpower_nat_Z_powerRZ.
+unfold powerRZ.
+rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+rewrite Rmult_assoc.
+rewrite pow_exp.
+cutrewrite (Zpos 5 * 2 = 10)%R.
+trivial.
+compute. ring.
+CaseEq (Fcompare 2 x (Float (ym * Zpower_pos 5 p) (Zpos p))) ;
+ intro H ;
+ [ generalize (Fcompare_Eq _ _ H) |
+   generalize (Fcompare_Lt _ _ H) |
+   generalize (Fcompare_Gt _ _ H) ] ;
+ clear H ; rewrite H0 ; trivial.
 Admitted.
 
 Definition Dle_fd (x : float) (y : deci) :=
  match (Dcompare x y) with
-  Gt => false
+ | Gt => false
  | _ => true
  end.
 
@@ -77,7 +145,7 @@ Qed.
 
 Definition Dle_df (x : deci) (y : float) :=
  match (Dcompare y x) with
-  Lt => false
+ | Lt => false
  | _ => true
  end.
 
