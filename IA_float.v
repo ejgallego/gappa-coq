@@ -110,30 +110,4 @@ Axiom user_defined :
  true = true ->
  IintF xi x.
 
-(*
-Definition union_helper (xi1 xi2 zi zi1 zi2 : FF) :=
- true.
-
-Axiom union :
- forall x z : R, forall xi1 xi2 zi zi1 zi2 : FF,
- (IintF xi1 x -> IintF zi1 z) ->
- (IintF xi2 x -> IintF zi2 z) ->
- union_helper xi1 xi2 zi zi1 zi2 = true ->
- IintF (makepairF (lower xi1) (upper xi2)) x ->
- IintF zi z.
-
-Lemma l1 : p1 -> p2.
- intros h0.
- unfold p2.
- assert (u0 : p3 -> p2).
- intros u0h. apply l2. exact u0h.
- assert (u1 : p7 -> p8).
- intros u1h. apply l9. exact u1h.
- unfold p2, p3, p7, p8 in u0, u1.
- apply union with (1 := u0) (2 := u1).
- reflexivity.
- exact h0.
-Qed.
-*)
-
 End IA_float.
