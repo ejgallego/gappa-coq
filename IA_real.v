@@ -30,7 +30,7 @@ Definition IplusR_property (xi yi zi : RR) :=
  forall x y : R,
  IintR xi x -> IintR yi y -> IintR zi (x + y).
 
-Lemma IplusR :
+Theorem IplusR :
  forall xi yi zi : RR,
  (lower zi <= lower xi + lower yi)%R ->
  (upper xi + upper yi <= upper zi)%R ->
@@ -81,7 +81,7 @@ Definition IminusR_property (xi yi zi : RR) :=
  forall x y : R,
  IintR xi x -> IintR yi y -> IintR zi (x - y).
 
-Lemma IminusR :
+Theorem IminusR :
  forall xi yi zi : RR,
  (lower zi <= lower xi - upper yi)%R ->
  (upper xi - lower yi <= upper zi)%R ->
@@ -132,7 +132,7 @@ apply Rge_le.
 auto with real.
 Qed.
 
-Lemma ImultR_pp :
+Theorem ImultR_pp :
  forall xl xu yl yu zl zu x y : R,
  (0 <= xl)%R -> (0 <= yl)%R ->
  (zl <= xl * yl)%R -> (xu * yu <= zu)%R ->
@@ -151,7 +151,7 @@ exact
  (monotony_2p _ _ _ (Rle_trans _ _ _ Hyl (Rle_trans_and _ _ _ Hy)) (proj2 Hx)).
 Qed.
 
-Lemma ImultR_pm :
+Theorem ImultR_po :
  forall xl xu yl yu zl zu x y : R,
  (0 <= xl)%R -> (yl <= 0)%R -> (0 <= yu)%R ->
  (zl <= xu * yl)%R -> (xu * yu <= zu)%R ->
@@ -169,7 +169,7 @@ exact (monotony_1p _ _ _ (Rle_trans _ _ _ Hxl (proj1 Hx)) (proj2 Hy)).
 exact (monotony_2p _ _ _ Hyu (proj2 Hx)).
 Qed.
 
-Lemma ImultR_pn :
+Theorem ImultR_pn :
  forall xl xu yl yu zl zu x y : R,
  (0 <= xl)%R -> (yu <= 0)%R ->
  (zl <= xu * yl)%R -> (xl * yu <= zu)%R ->
@@ -188,7 +188,7 @@ exact (monotony_1p _ _ _ (Rle_trans _ _ _ Hxl (proj1 Hx)) (proj2 Hy)).
 exact (monotony_2n _ _ _ Hyu (proj1 Hx)).
 Qed.
 
-Lemma ImultR_mp :
+Theorem ImultR_op :
  forall xl xu yl yu zl zu x y : R,
  (xl <= 0)%R ->
  (0 <= xu)%R ->
@@ -209,7 +209,7 @@ exact (monotony_2p _ _ _ (Rle_trans _ _ _ Hyl (proj1 Hy)) (proj2 Hx)).
 exact (monotony_1p _ _ _ Hxu (proj2 Hy)).
 Qed.
 
-Lemma ImultR_mm :
+Theorem ImultR_oo :
  forall xl xu yl yu zl zu x y : R,
  (xl <= 0)%R -> (0 <= xu)%R -> (yl <= 0)%R -> (0 <= yu)%R ->
  (zl <= xu * yl)%R -> (zl <= xl * yu)%R ->
@@ -239,7 +239,7 @@ exact (monotony_1n _ _ _ H (proj1 Hy)).
 exact (monotony_2n _ _ _ Hyl (proj1 Hx)).
 Qed.
 
-Lemma ImultR_mn :
+Theorem ImultR_on :
  forall xl xu yl yu zl zu x y : R,
  (xl <= 0)%R -> (0 <= xu)%R -> (yu <= 0)%R ->
  (zl <= xu * yl)%R -> (xl * yl <= zu)%R ->
@@ -257,7 +257,7 @@ exact (monotony_2n _ _ _ (Rle_trans _ _ _ (proj2 Hy) Hyu) (proj1 Hx)).
 exact (monotony_1n _ _ _ Hxl (proj1 Hy)).
 Qed.
 
-Lemma ImultR_np :
+Theorem ImultR_np :
  forall xl xu yl yu zl zu x y : R,
  (xu <= 0)%R -> (0 <= yl)%R ->
  (zl <= xl * yu)%R -> (xu * yl <= zu)%R ->
@@ -277,7 +277,7 @@ exact (monotony_1n _ _ _ Hxu (proj1 Hy)).
 Qed.
 
 
-Lemma ImultR_nm :
+Theorem ImultR_no :
  forall xl xu yl yu zl zu x y : R,
  (xu <= 0)%R -> (yl <= 0)%R -> (0 <= yu)%R ->
  (zl <= xl * yu)%R -> (xl * yl <= zu)%R ->
@@ -295,7 +295,7 @@ exact (monotony_1n _ _ _ (Rle_trans _ _ _ (proj2 Hx) Hxu) (proj1 Hy)).
 exact (monotony_2n _ _ _ Hyl (proj1 Hx)).
 Qed.
 
-Lemma ImultR_nn :
+Theorem ImultR_nn :
  forall xl xu yl yu zl zu x y : R,
  (xu <= 0)%R -> (yu <= 0)%R ->
  (zl <= xu * yu)%R -> (xl * yl <= zu)%R ->
@@ -378,13 +378,13 @@ clear Hzu H H0.
 unfold IintR.
 case (IintR_sign _ _ Hx); case (IintR_sign _ _ Hy); intros.
 apply ImultR_nn with xl xu yl yu; assumption.
-apply ImultR_nm with xl xu yl yu; assumption.
+apply ImultR_no with xl xu yl yu; assumption.
 apply ImultR_np with xl xu yl yu; assumption.
-apply ImultR_mn with xl xu yl yu; assumption.
-apply ImultR_mm with xl xu yl yu; assumption.
-apply ImultR_mp with xl xu yl yu; assumption.
+apply ImultR_on with xl xu yl yu; assumption.
+apply ImultR_oo with xl xu yl yu; assumption.
+apply ImultR_op with xl xu yl yu; assumption.
 apply ImultR_pn with xl xu yl yu; assumption.
-apply ImultR_pm with xl xu yl yu; assumption.
+apply ImultR_po with xl xu yl yu; assumption.
 apply ImultR_pp with xl xu yl yu; assumption.
 Qed.
 
@@ -512,7 +512,50 @@ intros xi yi H x y Ix Iy.
 apply IdivR with xi yi; auto with real.
 Qed.
 
-Lemma IdivR_op :
+Lemma IdivR_aux_p :
+ forall yl yu y : R,
+ (0 < yl)%R -> (yl <= y <= yu)%R ->
+ (0 <= / yl)%R /\ (0 <= / yu)%R /\ (yl <> 0)%R /\ (yu <> 0)%R /\ (/ yu <= /y <= / yl)%R.
+intros yl yu y Hyl Hy.
+split. left.
+apply Rinv_0_lt_compat.
+exact Hyl.
+split. left.
+apply Rinv_0_lt_compat.
+exact (Rlt_le_trans _ _ _ Hyl (Rle_trans _ _ _ (proj1 Hy) (proj2 Hy))).
+split.
+apply Rgt_not_eq.
+exact Hyl.
+split.
+apply Rgt_not_eq.
+exact (Rlt_le_trans _ _ _ Hyl (Rle_trans _ _ _ (proj1 Hy) (proj2 Hy))).
+split.
+exact (Rle_Rinv _ _ (Rlt_le_trans _ _ _ Hyl (proj1 Hy)) (proj2 Hy)).
+exact (Rle_Rinv _ _ Hyl (proj1 Hy)).
+Qed.
+
+Theorem IdivR_pp :
+ forall xl xu yl yu zl zu x y : R,
+ (0 <= xl)%R ->
+ (0 < yl)%R ->
+ (yu * zl <= xl)%R ->
+ (xu <= yl * zu)%R ->
+ (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
+ (zl <= x / y <= zu)%R.
+intros xl xu yl yu zl zu x y Hxl Hyl Hzl Hzu Hx Hy.
+generalize (IdivR_aux_p _ _ _ Hyl Hy).
+intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
+unfold Rdiv.
+apply ImultR_pp with (1 := Hxl) (2 := Hy2) (5 := Hx) (6 := Hy5).
+replace zl with (yu * zl * / yu)%R.
+exact (monotony_2p _ _ _ Hy2 Hzl).
+field. exact Hy4.
+replace zu with (yl * zu * / yl)%R.
+exact (monotony_2p _ _ _ Hy1 Hzu).
+field. exact Hy3.
+Qed.
+
+Theorem IdivR_op :
  forall xl xu yl yu zl zu x y : R,
  (xl <= 0)%R ->
  (0 <= xu)%R ->
@@ -522,32 +565,137 @@ Lemma IdivR_op :
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x / y <= zu)%R.
 intros xl xu yl yu zl zu x y Hxl Hxu Hyl Hzl Hzu Hx Hy.
-assert (Hy1 : (0 <= / yl)%R). auto with real.
-assert (Hy2 : (yl <> 0)%R). auto with real.
-assert (Hy3 : (/ y <= / yl)%R).
-exact (Rle_Rinv _ _ Hyl (proj1 Hy)).
-assert (Hy4 : (0 <= / y)%R).
-left.
-apply Rinv_0_lt_compat.
-exact (Rlt_le_trans _ _ _ Hyl (proj1 Hy)).
+generalize (IdivR_aux_p _ _ _ Hyl Hy).
+intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
 unfold Rdiv.
-split.
-apply Rle_trans with (xl * / yl)%R.
+apply ImultR_op with (1 := Hxl) (2 := Hxu) (3 := Hy2) (6 := Hx) (7 := Hy5).
 replace zl with (yl * zl * / yl)%R.
 exact (monotony_2p _ _ _ Hy1 Hzl).
-field.
-exact Hy2.
-apply Rle_trans with (xl * / y)%R.
-exact (monotony_1n _ _ _ Hxl Hy3).
-exact (monotony_2p _ _ _ Hy4 (proj1 Hx)).
-apply Rle_trans with (xu * / yl)%R.
-apply Rle_trans with (xu * / y)%R.
-exact (monotony_2p _ _ _ Hy4 (proj2 Hx)).
-exact (monotony_1p _ _ _ Hxu Hy3).
+field. exact Hy3.
 replace zu with (yl * zu * / yl)%R.
 exact (monotony_2p _ _ _ Hy1 Hzu).
-field.
-apply Hy2.
+field. exact Hy3.
+Qed.
+
+Theorem IdivR_np :
+ forall xl xu yl yu zl zu x y : R,
+ (xu <= 0)%R ->
+ (0 < yl)%R ->
+ (yl * zl <= xl)%R ->
+ (xu <= yu * zu)%R ->
+ (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
+ (zl <= x / y <= zu)%R.
+intros xl xu yl yu zl zu x y Hxu Hyl Hzl Hzu Hx Hy.
+generalize (IdivR_aux_p _ _ _ Hyl Hy).
+intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
+unfold Rdiv.
+apply ImultR_np with (1 := Hxu) (2 := Hy2) (5 := Hx) (6 := Hy5).
+replace zl with (yl * zl * / yl)%R.
+exact (monotony_2p _ _ _ Hy1 Hzl).
+field. exact Hy3.
+replace zu with (yu * zu * / yu)%R.
+exact (monotony_2p _ _ _ Hy2 Hzu).
+field. exact Hy4.
+Qed.
+
+Lemma Rle_Rinv_neg :
+ forall x y : R,
+ (y < 0)%R -> (x <= y)%R ->
+ (/ y <= / x)%R.
+intros x y Hy H.
+pattern (/ x)%R ; rewrite <- Ropp_involutive.
+pattern (/ y)%R ; rewrite <- Ropp_involutive.
+apply Ropp_le_contravar.
+repeat rewrite Ropp_inv_permute.
+apply Rle_Rinv ; auto with real.
+exact (Rlt_not_eq _ _ Hy).
+exact (Rlt_not_eq _ _ (Rle_lt_trans _ _ _ H Hy)).
+Qed.
+
+Lemma IdivR_aux_n :
+ forall yl yu y : R,
+ (yu < 0)%R -> (yl <= y <= yu)%R ->
+ (/ yl <= 0)%R /\ (/ yu <= 0)%R /\ (yl <> 0)%R /\ (yu <> 0)%R /\ (/ yu <= /y <= / yl)%R.
+intros yl yu y Hyu Hy.
+split. left.
+apply Rinv_lt_0_compat.
+exact (Rle_lt_trans _ _ _ (Rle_trans _ _ _ (proj1 Hy) (proj2 Hy)) Hyu).
+split. left.
+apply Rinv_lt_0_compat.
+exact Hyu.
+split.
+apply Rlt_not_eq.
+exact (Rle_lt_trans _ _ _ (Rle_trans _ _ _ (proj1 Hy) (proj2 Hy)) Hyu).
+split.
+apply Rlt_not_eq.
+exact Hyu.
+split.
+exact (Rle_Rinv_neg _ _ Hyu (proj2 Hy)).
+exact (Rle_Rinv_neg _ _ (Rle_lt_trans _ _ _ (proj2 Hy) Hyu) (proj1 Hy)).
+Qed.
+
+Theorem IdivR_pn :
+ forall xl xu yl yu zl zu x y : R,
+ (0 <= xl)%R ->
+ (yu < 0)%R ->
+ (xu <= yu * zl)%R ->
+ (yl * zu <= xl)%R ->
+ (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
+ (zl <= x / y <= zu)%R.
+intros xl xu yl yu zl zu x y Hxl Hyu Hzl Hzu Hx Hy.
+generalize (IdivR_aux_n _ _ _ Hyu Hy).
+intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
+unfold Rdiv.
+apply ImultR_pn with (1 := Hxl) (2 := Hy1) (5 := Hx) (6 := Hy5).
+replace zl with (yu * zl * / yu)%R.
+exact (monotony_2n _ _ _ Hy2 Hzl).
+field. exact Hy4.
+replace zu with (yl * zu * / yl)%R.
+exact (monotony_2n _ _ _ Hy1 Hzu).
+field. exact Hy3.
+Qed.
+
+Theorem IdivR_on :
+ forall xl xu yl yu zl zu x y : R,
+ (xl <= 0)%R ->
+ (0 <= xu)%R ->
+ (yu < 0)%R ->
+ (xu <= yu * zl)%R ->
+ (yu * zu <= xl)%R ->
+ (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
+ (zl <= x / y <= zu)%R.
+intros xl xu yl yu zl zu x y Hxl Hxu Hyu Hzl Hzu Hx Hy.
+generalize (IdivR_aux_n _ _ _ Hyu Hy).
+intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
+unfold Rdiv.
+apply ImultR_on with (1 := Hxl) (2 := Hxu) (3 := Hy1) (6 := Hx) (7 := Hy5).
+replace zl with (yu * zl * / yu)%R.
+exact (monotony_2n _ _ _ Hy2 Hzl).
+field. exact Hy4.
+replace zu with (yu * zu * / yu)%R.
+exact (monotony_2n _ _ _ Hy2 Hzu).
+field. exact Hy4.
+Qed.
+
+Theorem IdivR_nn :
+ forall xl xu yl yu zl zu x y : R,
+ (xu <= 0)%R ->
+ (yu < 0)%R ->
+ (xu <= yl * zl)%R ->
+ (yu * zu <= xl)%R ->
+ (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
+ (zl <= x / y <= zu)%R.
+intros xl xu yl yu zl zu x y Hxu Hyu Hzl Hzu Hx Hy.
+generalize (IdivR_aux_n _ _ _ Hyu Hy).
+intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
+unfold Rdiv.
+apply ImultR_nn with (1 := Hxu) (2 := Hy1) (5 := Hx) (6 := Hy5).
+replace zl with (yl * zl * / yl)%R.
+exact (monotony_2n _ _ _ Hy1 Hzl).
+field. exact Hy3.
+replace zu with (yu * zu * / yu)%R.
+exact (monotony_2n _ _ _ Hy2 Hzu).
+field. exact Hy4.
 Qed.
 
 End IA_real.

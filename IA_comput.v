@@ -469,7 +469,7 @@ generalize (Fpos0_correct _ H3). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
 generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero). clear H5. intro H5.
 unfold IintF, IintR.
-apply ImultR_pm with (lower xi) (upper xi) (lower yi) (upper yi)
+apply ImultR_po with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
@@ -505,7 +505,7 @@ generalize (Fpos0_correct _ H3). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
 generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero). clear H5. intro H5.
 unfold IintF, IintR.
-apply ImultR_nm with (lower xi) (upper xi) (lower yi) (upper yi)
+apply ImultR_no with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
@@ -549,7 +549,7 @@ generalize (Fle_b_correct _ _ H6). rewrite Fmult_correct with (1 := radixNotZero
 generalize (Fle_b_correct _ _ H7). rewrite Fmult_correct with (1 := radixNotZero). clear H7. intro H7.
 generalize (Fle_b_correct _ _ H8). rewrite Fmult_correct with (1 := radixNotZero). clear H8. intro H8.
 unfold IintF, IintR.
-apply ImultR_mm with (lower xi) (upper xi) (lower yi) (upper yi)
+apply ImultR_oo with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
@@ -631,6 +631,30 @@ exact (monotony_1n _ _ _ H (proj1 Hx)).
 exact (monotony_2n _ _ _ H1 (proj1 Hx)).
 Qed.
 
+Definition div_pp_helper (xi yi zi : FF) :=
+ Fpos (lower yi) &&
+ Fpos0 (lower xi) &&
+ Fle_b (Fmult (upper yi) (lower zi)) (lower xi) &&
+ Fle_b (upper xi) (Fmult (lower yi) (upper zi)).
+
+Theorem div_pp :
+ forall x y : R, forall xi yi zi : FF,
+ IintF xi x -> IintF yi y ->
+ div_pp_helper xi yi zi = true ->
+ IintF zi (x / y).
+intros x y xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fpos_correct _ H1). clear H1. intro H1.
+generalize (Fpos0_correct _ H2). clear H2. intro H2.
+generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
+generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
+unfold IintF, IintR.
+apply IdivR_pp with (lower xi) (upper xi) (lower yi) (upper yi)
+ ; auto with real.
+Qed.
+
 Definition div_op_helper (xi yi zi : FF) :=
  Fpos (lower yi) &&
  Fneg0 (lower xi) && Fpos0 (upper xi) &&
@@ -661,12 +685,98 @@ Definition div_np_helper (xi yi zi : FF) :=
  Fpos (lower yi) &&
  Fneg0 (upper xi) &&
  Fle_b (Fmult (lower yi) (lower zi)) (lower xi) &&
- Fle_b (upper xi) (Fmult (lower yi) (upper zi)).
+ Fle_b (upper xi) (Fmult (upper yi) (upper zi)).
 
-Axiom div_np :
+Theorem div_np :
  forall x y : R, forall xi yi zi : FF,
  IintF xi x -> IintF yi y ->
  div_np_helper xi yi zi = true ->
  IintF zi (x / y).
+intros x y xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fpos_correct _ H1). clear H1. intro H1.
+generalize (Fneg0_correct _ H2). clear H2. intro H2.
+generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
+generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
+unfold IintF, IintR.
+apply IdivR_np with (lower xi) (upper xi) (lower yi) (upper yi)
+ ; auto with real.
+Qed.
+
+Definition div_pn_helper (xi yi zi : FF) :=
+ Fneg (upper yi) &&
+ Fpos0 (lower xi) &&
+ Fle_b (upper xi) (Fmult (upper yi) (lower zi)) &&
+ Fle_b (Fmult (lower yi) (upper zi)) (lower xi).
+
+Theorem div_pn :
+ forall x y : R, forall xi yi zi : FF,
+ IintF xi x -> IintF yi y ->
+ div_pn_helper xi yi zi = true ->
+ IintF zi (x / y).
+intros x y xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fneg_correct _ H1). clear H1. intro H1.
+generalize (Fpos0_correct _ H2). clear H2. intro H2.
+generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
+generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
+unfold IintF, IintR.
+apply IdivR_pn with (lower xi) (upper xi) (lower yi) (upper yi)
+ ; auto with real.
+Qed.
+
+Definition div_on_helper (xi yi zi : FF) :=
+ Fneg (upper yi) &&
+ Fneg0 (lower xi) && Fpos0 (upper xi) &&
+ Fle_b (upper xi) (Fmult (upper yi) (lower zi)) &&
+ Fle_b (Fmult (upper yi) (upper zi)) (lower xi).
+
+Theorem div_on :
+ forall x y : R, forall xi yi zi : FF,
+ IintF xi x -> IintF yi y ->
+ div_on_helper xi yi zi = true ->
+ IintF zi (x / y).
+intros x y xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fneg_correct _ H1). clear H1. intro H1.
+generalize (Fneg0_correct _ H2). clear H2. intro H2.
+generalize (Fpos0_correct _ H3). clear H3. intro H3.
+generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
+generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero). clear H5. intro H5.
+unfold IintF, IintR.
+apply IdivR_on with (lower xi) (upper xi) (lower yi) (upper yi)
+ ; auto with real.
+Qed.
+
+Definition div_nn_helper (xi yi zi : FF) :=
+ Fneg (upper yi) &&
+ Fneg0 (upper xi) &&
+ Fle_b (upper xi) (Fmult (lower yi) (lower zi)) &&
+ Fle_b (Fmult (upper yi) (upper zi)) (lower xi).
+
+Theorem div_nn :
+ forall x y : R, forall xi yi zi : FF,
+ IintF xi x -> IintF yi y ->
+ div_nn_helper xi yi zi = true ->
+ IintF zi (x / y).
+intros x y xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fneg_correct _ H1). clear H1. intro H1.
+generalize (Fneg0_correct _ H2). clear H2. intro H2.
+generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
+generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
+unfold IintF, IintR.
+apply IdivR_nn with (lower xi) (upper xi) (lower yi) (upper yi)
+ ; auto with real.
+Qed.
 
 End IA_comput.
