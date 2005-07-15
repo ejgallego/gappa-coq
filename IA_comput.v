@@ -239,6 +239,18 @@ apply Rle_trans with (1 := H1) (2 := (proj1 Hy)).
 apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
 
+Theorem absurd_intersect :
+ forall z : R, forall xi yi : FF,
+ IintF xi z -> IintF yi z ->
+ Flt_b (upper xi) (lower yi) = true ->
+ forall P, P.
+intros z xi yi Hx Hy Hb.
+generalize (Flt_b_correct _ _ Hb). clear Hb. intro H.
+generalize (Rle_lt_trans _ _ _ (proj2 Hx) H). clear H. intro H.
+generalize (Rlt_le_trans _ _ _ H (proj1 Hy)). clear H. intro H.
+elim (Rlt_irrefl _ H).
+Qed.
+
 Theorem union :
  forall x z : R, forall xi xi1 zi : FF,
  (IintF xi1 x -> IintF zi z) ->
