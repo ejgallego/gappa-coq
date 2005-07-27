@@ -161,4 +161,36 @@ field.
 repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
 Qed.
 
+Theorem mul_rel_decomposition_left :
+ forall a b c : R, forall ai ci zi : FF,
+ IintF ai a -> IintF ci c ->
+ IintF zi ((b - c) / c) ->
+ not_zero ai && not_zero ci = true ->
+ IintF zi ((a * b - a * c) / (a * c)).
+intros a b c ai ci zi Ha Hc Hz H.
+generalize (andb_prop _ _ H). clear H. intros (H1, H2).
+generalize (not_zero_correct _ _ Ha H1). clear Ha H1. intro Ha.
+generalize (not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
+replace ((a * b - a * c) / (a * c))%R with ((b - c) / c)%R.
+exact Hz.
+field.
+repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
+Qed.
+
+Theorem mul_rel_decomposition_right :
+ forall a b c : R, forall bi ci zi : FF,
+ IintF bi b -> IintF ci c ->
+ IintF zi ((a - c) / c) ->
+ not_zero bi && not_zero ci = true ->
+ IintF zi ((a * b - c * b) / (c * b)).
+intros a b c bi ci zi Hb Hc Hz H.
+generalize (andb_prop _ _ H). clear H. intros (H1, H2).
+generalize (not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
+generalize (not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
+replace ((a * b - c * b) / (c * b))%R with ((a - c) / c)%R.
+exact Hz.
+field.
+repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
+Qed.
+
 End IA_manip.
