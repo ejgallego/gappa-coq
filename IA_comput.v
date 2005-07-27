@@ -880,4 +880,56 @@ apply IdivR_nn with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
+Definition compose_helper (xi yi zi : FF) :=
+ Fle_b (Float (-1) 0) (lower xi) &&
+ Fle_b (Float (-1) 0) (lower yi) &&
+ Fle_b (lower zi) (Fplus radix (Fplus radix (lower xi) (lower yi))
+                               (Fmult (lower xi) (lower yi))) &&
+ Fle_b (Fplus radix (Fplus radix (upper xi) (upper yi))
+                    (Fmult (upper xi) (upper yi))) (upper zi).
+
+Theorem compose :
+ forall x y : R, forall xi yi zi : FF,
+ IintF xi x -> IintF yi y ->
+ compose_helper xi yi zi = true ->
+ IintF zi ((x + y) + x * y).
+intros x y xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+assert (float2R (Float (-1) 0) = -1)%R.
+unfold float2R, FtoR. auto with real.
+generalize (Fle_b_correct _ _ H1). clear H1. rewrite H. intro H1.
+generalize (Fle_b_correct _ _ H2). clear H2. rewrite H. intro H2.
+generalize (Fle_b_correct _ _ H3). 
+repeat rewrite Fplus_correct with (1 := radixNotZero).
+rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
+generalize (Fle_b_correct _ _ H4).
+repeat rewrite Fplus_correct with (1 := radixNotZero).
+rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
+clear H.
+replace (x + y + x * y)%R with ((1 + x) * (1 + y) - 1)%R. 2: ring.
+assert (H : (1 + lower zi <= (1 + x) * (1 + y) <= 1 + upper zi)%R).
+assert (H0 : (0 = 1 + -1)%R). ring.
+assert (Hc : forall a b : R, ((1 + a) * (1 + b) = 1 + (a + b + a * b))%R).
+intros a b. ring.
+assert (Hi : forall a b c : R, (a <= b <= c)%R -> (1 + a <= 1 + b <= 1 + c)%R).
+intros a b c H. split.
+apply Rplus_le_compat_l with (1 := proj1 H).
+apply Rplus_le_compat_l with (1 := proj2 H).
+apply ImultR_pp with (1 + lower xi)%R (1 + upper xi)%R (1 + lower yi)%R (1 + upper yi)%R.
+rewrite H0. apply Rplus_le_compat_l with (1 := H1).
+rewrite H0. apply Rplus_le_compat_l with (1 := H2).
+rewrite Hc. apply Rplus_le_compat_l with (1 := H3).
+rewrite Hc. apply Rplus_le_compat_l with (1 := H4).
+apply Hi with (1 := Hx).
+apply Hi with (1 := Hy).
+unfold IintF, IintR, FF2RR, Rminus. simpl.
+assert (H0 : forall a : R, (a = (1 + a) + -1)%R).
+intros a. ring.
+split.
+rewrite (H0 (lower zi)). apply Rplus_le_compat_r with (1 := proj1 H).
+rewrite (H0 (upper zi)). apply Rplus_le_compat_r with (1 := proj2 H).
+Qed.
+
 End IA_comput.
