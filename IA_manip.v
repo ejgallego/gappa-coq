@@ -145,4 +145,20 @@ field.
 auto with real.
 Qed.
 
+Theorem mul_rel_decomposition :
+ forall a b c d : R, forall ci di zi : FF,
+ IintF ci c -> IintF di d ->
+ IintF zi ((a - c) / c + (b - d) / d + ((a - c) / c) * ((b - d) / d)) ->
+ not_zero ci && not_zero di = true ->
+ IintF zi ((a * b - c * d) / (c * d)).
+intros a b c d ci di zi Hc Hd Hz H.
+generalize (andb_prop _ _ H). clear H. intros (H1, H2).
+generalize (not_zero_correct _ _ Hc H1). clear Hc H1. intro Hc.
+generalize (not_zero_correct _ _ Hd H2). clear Hd H2. intro Hd.
+replace ((a * b - c * d) / (c * d))%R with ((a - c) / c + (b - d) / d + ((a - c) / c) * ((b - d) / d))%R.
+exact Hz.
+field.
+repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
+Qed.
+
 End IA_manip.
