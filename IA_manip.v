@@ -146,6 +146,17 @@ exact Hz.
 ring.
 Qed.
 
+Theorem mul_decomposition_factor_right :
+ forall a b c : R, forall zi : FF,
+ IintF zi ((a - c) * b) ->
+ true = true ->
+ IintF zi (a * b - c * b).
+intros a b c zi Hz _.
+replace (a * b - c * b)%R with ((a - c) * b)%R.
+exact Hz.
+ring.
+Qed.
+
 Theorem mul_decomposition_half_left :
  forall a b c d : R, forall zi : FF,
  IintF zi (a * (b - d) + (a - c) * d) ->
