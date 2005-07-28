@@ -36,6 +36,28 @@ exact Hz.
 ring.
 Qed.
 
+Theorem add_decomposition_rounded_left :
+ forall a b c : R, forall zi : FF,
+ IintF zi ((a - c) + (c + b)) ->
+ true = true ->
+ IintF zi (a + b).
+intros a b c zi Hz _.
+replace (a + b)%R with ((a - c) + (c + b))%R.
+exact Hz.
+ring.
+Qed.
+
+Theorem add_decomposition_rounded_right :
+ forall a b c : R, forall zi : FF,
+ IintF zi ((a + c) + (b - c)) ->
+ true = true ->
+ IintF zi (a + b).
+intros a b c zi Hz _.
+replace (a + b)%R with ((a + c) + (b - c))%R.
+exact Hz.
+ring.
+Qed.
+
 Theorem sub_decomposition :
  forall a b c d : R, forall zi : FF,
  IintF zi ((a - c) - (b - d)) ->
@@ -49,6 +71,17 @@ Qed.
 
 Definition sub_decomposition_rounded_left :=
  absolute_transitivity.
+
+Theorem sub_decomposition_rounded_right :
+ forall a b c : R, forall zi : FF,
+ IintF zi ((a - c) + -(b - c)) ->
+ true = true ->
+ IintF zi (a - b).
+intros a b c zi Hz _.
+replace (a - b)%R with ((a - c) + -(b - c))%R.
+exact Hz.
+ring.
+Qed.
 
 Theorem mul_decomposition_rounded_right :
  forall a b c : R, forall zi : FF,
