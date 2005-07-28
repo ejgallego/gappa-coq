@@ -15,7 +15,7 @@ Lemma precisionNotZero : ~(precision = (0)).
 auto with zarith.
 Qed.
 
-Variable bExp : nat.
+Variable bExp : N.
 Definition bNum := iter_nat precision positive xO xH.
 Definition bound := Bound bNum bExp.
 

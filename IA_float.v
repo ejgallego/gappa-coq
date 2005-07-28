@@ -38,11 +38,11 @@ apply rounding_f_correct_r.
 apply (proj2 Hx).
 Qed.
 
-Definition f32e := 149.
+Definition f32e := 149%N.
 Definition f32p := 24.
-Definition f64e := 1074.
+Definition f64e := 1074%N.
 Definition f64p := 53.
-Definition f80e := 1074. (*16445.*)
+Definition f80e := 16445%N.
 Definition f80p := 64.
 
 Definition float32ne_round := f_round (rndNE f32p f32e).
