@@ -932,4 +932,42 @@ rewrite (H0 (lower zi)). apply Rplus_le_compat_r with (1 := proj1 H).
 rewrite (H0 (upper zi)). apply Rplus_le_compat_r with (1 := proj2 H).
 Qed.
 
+Lemma Rabs_idem :
+ forall x : R, (x <= Rabs x)%R.
+intro x.
+unfold Rabs.
+case (Rcase_abs x) ; intro H.
+apply Rle_trans with (1 := (Rlt_le _ _ H)).
+auto with real.
+apply Req_le.
+apply refl_equal.
+Qed.
+
+Definition invert_abs_helper (xi zi : FF) :=
+ Fle_b (lower zi) (Fopp (upper xi)) &&
+ Fle_b (upper xi) (upper zi).
+
+Theorem invert_abs :
+ forall x : R, forall xi zi : FF,
+ IintF xi (Rabs x) ->
+ invert_abs_helper xi zi = true ->
+ IintF zi x.
+intros x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). clear H2. intro H2.
+split ; unfold FF2RR ; simpl.
+apply Rle_trans with (1 := H1).
+unfold float2R. rewrite Fopp_correct.
+apply Ropp_le_cancel.
+rewrite Ropp_involutive.
+apply Rle_trans with (2 := (proj2 Hx)).
+pattern x at 2 ; rewrite <- Ropp_involutive.
+rewrite Rabs_Ropp.
+apply Rabs_idem.
+apply Rle_trans with (2 := H2).
+apply Rle_trans with (2 := (proj2 Hx)).
+apply Rabs_idem.
+Qed.
+
 End IA_comput.
