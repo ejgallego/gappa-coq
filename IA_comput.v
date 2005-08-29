@@ -960,13 +960,38 @@ apply Rle_trans with (1 := H1).
 unfold float2R. rewrite Fopp_correct.
 apply Ropp_le_cancel.
 rewrite Ropp_involutive.
-apply Rle_trans with (2 := (proj2 Hx)).
+apply Rle_trans with (2 := proj2 Hx).
 pattern x at 2 ; rewrite <- Ropp_involutive.
 rewrite Rabs_Ropp.
 apply Rabs_idem.
 apply Rle_trans with (2 := H2).
-apply Rle_trans with (2 := (proj2 Hx)).
-apply Rabs_idem.
+apply Rle_trans with (1 := Rabs_idem x) (2 := proj2 Hx).
+Qed.
+
+Definition abs_p_helper (xi zi : FF) :=
+ Fpos0 (lower xi) &&
+ Fle_b (lower zi) (lower xi) &&
+ Fle_b (upper xi) (upper zi).
+
+Theorem abs_p :
+ forall x : R, forall xi zi : FF,
+ IintF xi x ->
+ abs_p_helper xi zi = true ->
+ IintF zi (Rabs x).
+intros x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fpos0_correct _ H1). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). clear H2. intro H2.
+generalize (Fle_b_correct _ _ H3). clear H3. intro H3.
+split ; unfold FF2RR ; simpl.
+apply Rle_trans with (1 := H2).
+apply Rle_trans with (1 := proj1 Hx) (2 := Rabs_idem x).
+apply Rle_trans with (2 := H3).
+apply Rle_trans with (2 := proj2 Hx).
+apply Req_le.
+apply Rabs_pos_eq.
+apply Rle_trans with (1 := H1) (2 := proj1 Hx).
 Qed.
 
 Definition abs_o_helper (xi zi : FF) :=
@@ -986,14 +1011,41 @@ generalize (Fneg0_correct _ H1). clear H1. intro H1.
 generalize (Fle_b_correct _ _ H2). clear H2. intro H2.
 generalize (Fle_b_correct _ _ H3). clear H3. intro H3.
 split ; unfold FF2RR ; simpl.
-apply Rle_trans with (1 := H1).
-apply Rabs_pos.
+apply Rle_trans with (1 := H1) (2 := Rabs_pos x).
 unfold Rabs. case Rcase_abs ; intro H.
 unfold float2R in H3. rewrite Fopp_correct in H3.
 apply Rle_trans with (2 := H3).
-apply Ropp_le_contravar with (1 := (proj1 Hx)).
-apply Rle_trans with (2 := H2).
-exact (proj2 Hx).
+apply Ropp_le_contravar with (1 := proj1 Hx).
+apply Rle_trans with (1 := proj2 Hx) (2 := H2).
+Qed.
+
+Definition abs_n_helper (xi zi : FF) :=
+ Fneg0 (upper xi) &&
+ Fle_b (lower zi) (Fopp (upper xi)) &&
+ Fle_b (Fopp (lower xi)) (upper zi).
+
+Theorem abs_n :
+ forall x : R, forall xi zi : FF,
+ IintF xi x ->
+ abs_n_helper xi zi = true ->
+ IintF zi (Rabs x).
+intros x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fneg0_correct _ H1). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). unfold float2R. rewrite Fopp_correct. clear H2. intro H2.
+generalize (Fle_b_correct _ _ H3). unfold float2R. rewrite Fopp_correct. clear H3. intro H3.
+split ; unfold FF2RR ; simpl.
+apply Rle_trans with (1 := H2).
+rewrite <- (Rabs_Ropp x).
+apply Rle_trans with (2 := Rabs_idem (-x)).
+apply Ropp_le_contravar with (1 := proj2 Hx).
+apply Rle_trans with (2 := H3).
+apply Rle_trans with (Ropp x).
+apply Req_le.
+apply Rabs_left1.
+apply Rle_trans with (1 := proj2 Hx) (2 := H1).
+apply Ropp_le_contravar with (1 := proj1 Hx).
 Qed.
 
 End IA_comput.
