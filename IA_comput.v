@@ -935,8 +935,7 @@ Qed.
 Lemma Rabs_idem :
  forall x : R, (x <= Rabs x)%R.
 intro x.
-unfold Rabs.
-case (Rcase_abs x) ; intro H.
+unfold Rabs. case Rcase_abs ; intro H.
 apply Rle_trans with (1 := (Rlt_le _ _ H)).
 auto with real.
 apply Req_le.
@@ -968,6 +967,33 @@ apply Rabs_idem.
 apply Rle_trans with (2 := H2).
 apply Rle_trans with (2 := (proj2 Hx)).
 apply Rabs_idem.
+Qed.
+
+Definition abs_o_helper (xi zi : FF) :=
+ Fneg0 (lower zi) &&
+ Fle_b (upper xi) (upper zi) &&
+ Fle_b (Fopp (lower xi)) (upper zi).
+
+Theorem abs_o :
+ forall x : R, forall xi zi : FF,
+ IintF xi x ->
+ abs_o_helper xi zi = true ->
+ IintF zi (Rabs x).
+intros x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fneg0_correct _ H1). clear H1. intro H1.
+generalize (Fle_b_correct _ _ H2). clear H2. intro H2.
+generalize (Fle_b_correct _ _ H3). clear H3. intro H3.
+split ; unfold FF2RR ; simpl.
+apply Rle_trans with (1 := H1).
+apply Rabs_pos.
+unfold Rabs. case Rcase_abs ; intro H.
+unfold float2R in H3. rewrite Fopp_correct in H3.
+apply Rle_trans with (2 := H3).
+apply Ropp_le_contravar with (1 := (proj1 Hx)).
+apply Rle_trans with (2 := H2).
+exact (proj2 Hx).
 Qed.
 
 End IA_comput.
