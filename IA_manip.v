@@ -278,4 +278,14 @@ field.
 repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
 Qed.
 
+Theorem abs_mul_xx :
+ forall a b : R, forall zi : FF,
+ IintF zi (Rabs a * Rabs b) ->
+ true = true ->
+ IintF zi (Rabs (a * b)).
+intros a b zi Hz _.
+rewrite Rabs_mult.
+exact Hz.
+Qed.
+
 End IA_manip.
