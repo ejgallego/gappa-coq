@@ -94,6 +94,7 @@ Admitted.
 
 Axiom float64ne_absolute: forall A B: Prop, B -> true = true -> A.
 Axiom float64ne_relative: forall A B: Prop, B -> true = true -> A.
+Axiom float64ne_relative_inv: forall A B: Prop, B -> true = true -> A.
 Axiom float80ne_absolute: forall A B: Prop, B -> true = true -> A.
 Axiom float80ne_relative: forall A B: Prop, B -> true = true -> A.
 
@@ -109,5 +110,9 @@ Axiom user_defined :
  IintF xi y ->
  true = true ->
  IintF xi x.
+
+Axiom relative_bound : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
+Axiom relative_error : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
+
 
 End IA_float.
