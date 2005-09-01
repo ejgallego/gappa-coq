@@ -111,7 +111,8 @@ Axiom user_defined :
  true = true ->
  IintF xi x.
 
-Axiom relative_bound : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
+Axiom rounding_relative : N -> R -> R.
+Axiom relative_round : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
 Axiom relative_error : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
 
 
