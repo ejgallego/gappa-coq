@@ -203,11 +203,11 @@ Qed.
 
 Theorem relative_to_absolute :
  forall a b : R, forall bi zi : FF,
- IintF bi b -> IintF zi (a / b * b) ->
- not_zero bi = true ->
+ IintF bi (Rabs b) -> IintF zi (a / b * b) ->
+ abs_not_zero bi = true ->
  IintF zi a.
 intros a b bi zi Hb Hz H.
-generalize (not_zero_correct _ _ Hb H). clear Hb H. intro H.
+generalize (abs_not_zero_correct _ _ Hb H). clear Hb H. intro H.
 replace a with (a / b * b)%R.
 exact Hz.
 field.
@@ -216,14 +216,14 @@ Qed.
 
 Theorem relative_transitivity :
  forall a b c : R, forall bi ci zi : FF,
- IintF bi b -> IintF ci c ->
+ IintF bi (Rabs b) -> IintF ci (Rabs c) ->
  IintF zi ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b)) ->
- not_zero bi && not_zero ci = true ->
+ abs_not_zero bi && abs_not_zero ci = true ->
  IintF zi ((a - b) / b).
 intros a b c bi ci zi Hb Hc Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
-generalize (not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
+generalize (abs_not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
+generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
 replace ((a - b) / b)%R with ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b))%R.
 exact Hz.
 field.
@@ -232,14 +232,14 @@ Qed.
 
 Theorem mul_rel_decomposition :
  forall a b c d : R, forall ci di zi : FF,
- IintF ci c -> IintF di d ->
+ IintF ci (Rabs c) -> IintF di (Rabs d) ->
  IintF zi ((a - c) / c + (b - d) / d + ((a - c) / c) * ((b - d) / d)) ->
- not_zero ci && not_zero di = true ->
+ abs_not_zero ci && abs_not_zero di = true ->
  IintF zi ((a * b - c * d) / (c * d)).
 intros a b c d ci di zi Hc Hd Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (not_zero_correct _ _ Hc H1). clear Hc H1. intro Hc.
-generalize (not_zero_correct _ _ Hd H2). clear Hd H2. intro Hd.
+generalize (abs_not_zero_correct _ _ Hc H1). clear Hc H1. intro Hc.
+generalize (abs_not_zero_correct _ _ Hd H2). clear Hd H2. intro Hd.
 replace ((a * b - c * d) / (c * d))%R with ((a - c) / c + (b - d) / d + ((a - c) / c) * ((b - d) / d))%R.
 exact Hz.
 field.
@@ -248,14 +248,14 @@ Qed.
 
 Theorem mul_rel_decomposition_left :
  forall a b c : R, forall ai ci zi : FF,
- IintF ai a -> IintF ci c ->
+ IintF ai (Rabs a) -> IintF ci (Rabs c) ->
  IintF zi ((b - c) / c) ->
- not_zero ai && not_zero ci = true ->
+ abs_not_zero ai && abs_not_zero ci = true ->
  IintF zi ((a * b - a * c) / (a * c)).
 intros a b c ai ci zi Ha Hc Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (not_zero_correct _ _ Ha H1). clear Ha H1. intro Ha.
-generalize (not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
+generalize (abs_not_zero_correct _ _ Ha H1). clear Ha H1. intro Ha.
+generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
 replace ((a * b - a * c) / (a * c))%R with ((b - c) / c)%R.
 exact Hz.
 field.
@@ -264,14 +264,14 @@ Qed.
 
 Theorem mul_rel_decomposition_right :
  forall a b c : R, forall bi ci zi : FF,
- IintF bi b -> IintF ci c ->
+ IintF bi (Rabs b) -> IintF ci (Rabs c) ->
  IintF zi ((a - c) / c) ->
- not_zero bi && not_zero ci = true ->
+ abs_not_zero bi && abs_not_zero ci = true ->
  IintF zi ((a * b - c * b) / (c * b)).
 intros a b c bi ci zi Hb Hc Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
-generalize (not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
+generalize (abs_not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
+generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
 replace ((a * b - c * b) / (c * b))%R with ((a - c) / c)%R.
 exact Hz.
 field.

@@ -440,6 +440,21 @@ apply Rle_lt_trans with (2 := H).
 exact (proj2 Hz).
 Qed.
 
+Definition abs_not_zero (zi : FF) := Fpos (lower zi).
+
+Lemma abs_not_zero_correct :
+ forall z : R, forall zi : FF,
+ IintF zi (Rabs z) ->
+ abs_not_zero zi = true ->
+ (z <> 0)%R.
+intros z. unfold Rabs.
+case (Rcase_abs z) ; intros H zi Hz Hb ; apply Rlt_dichotomy_converse.
+left. exact H.
+right. unfold Rgt. clear H.
+generalize (Fpos_correct _ Hb). clear Hb. intro H.
+apply Rlt_le_trans with (1 := H) (2 := proj1 Hz).
+Qed.
+
 Definition contains_zero_helper (zi : FF) :=
  Fneg0 (lower zi) &&
  Fpos0 (upper zi).
