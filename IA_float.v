@@ -114,6 +114,6 @@ Axiom user_defined :
 Axiom rounding_relative : N -> R -> R.
 Axiom relative_round : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
 Axiom relative_error : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
-
+Axiom relative_error_inv : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
 
 End IA_float.
