@@ -181,11 +181,11 @@ Qed.
 
 Theorem mul_decomposition_full_left :
  forall a b c d : R, forall zi : FF,
- IintF zi (a * (b - d) + b * (a - c) - (a - c) * (b - d)) ->
+ IintF zi (a * (b - d) + (a - c) * b + -((a - c) * (b - d))) ->
  true = true ->
  IintF zi (a * b - c * d).
 intros a b c d zi Hz _.
-replace (a * b - c * d)%R with (a * (b - d) + b * (a - c) - (a - c) * (b - d))%R.
+replace (a * b - c * d)%R with (a * (b - d) + (a - c) * b + -((a - c) * (b - d)))%R.
 exact Hz.
 ring.
 Qed.
