@@ -92,6 +92,8 @@ Lemma float64ne_absolute_inv :
  IintF zi (rounding_float64ne x - x).
 Admitted.
 
+Axiom float32ne_absolute: forall A B: Prop, B -> true = true -> A.
+Axiom float32ne_relative: forall A B: Prop, B -> true = true -> A.
 Axiom float64ne_absolute: forall A B: Prop, B -> true = true -> A.
 Axiom float64ne_relative: forall A B: Prop, B -> true = true -> A.
 Axiom float64ne_relative_inv: forall A B: Prop, B -> true = true -> A.
