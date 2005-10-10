@@ -38,67 +38,32 @@ apply rounding_f_correct_r.
 apply (proj2 Hx).
 Qed.
 
-Definition f32e := 149%N.
-Definition f32p := 24.
-Definition f64e := 1074%N.
-Definition f64p := 53.
-Definition f80e := 16445%N.
-Definition f80p := 64.
+Definition rounding_float_ne (p: nat) (e: N) := rounding_f (rndNE p e).
+Definition float_round_ne (p: nat) (e: N) := f_round (rndNE p e).
 
-Definition float32ne_round := f_round (rndNE f32p f32e).
-Definition rounding_float32ne := (rounding_f (rndNE f32p f32e)).
-Definition float64ne_round := f_round (rndNE f64p f64e).
-Definition rounding_float64ne := (rounding_f (rndNE f64p f64e)).
-Definition float80ne_round := f_round (rndNE f80p f80e).
-Definition rounding_float80ne := (rounding_f (rndNE f80p f80e)).
-
-Definition float32ne_absolute_wide_helper (xi zi : FF) :=
- true.
-
-Lemma float32ne_absolute_wide :
+Theorem float_absolute_ne:
+ forall p: nat, forall e: N,
  forall x : R, forall xi zi : FF,
  IintF xi x ->
- float32ne_absolute_wide_helper xi zi = true ->
- IintF zi (rounding_float32ne x - x).
+ true = true ->
+ IintF zi (rounding_float_ne p e x - x).
 Admitted.
 
-Definition float32ne_absolute_inv_helper (xi zi : FF) :=
- true.
-
-Lemma float32ne_absolute_inv :
- forall x : R, forall xi zi : FF,
- IintF xi (rounding_float32ne x) ->
- float32ne_absolute_inv_helper xi zi = true ->
- IintF zi (rounding_float32ne x - x).
-Admitted.
-
-Definition float64ne_absolute_wide_helper (xi zi : FF) :=
- true.
-
-Lemma float64ne_absolute_wide :
+Theorem float_absolute_wide_ne:
+ forall p: nat, forall e: N,
  forall x : R, forall xi zi : FF,
  IintF xi x ->
- float64ne_absolute_wide_helper xi zi = true ->
- IintF zi (rounding_float64ne x - x).
+ true = true ->
+ IintF zi (rounding_float_ne p e x - x).
 Admitted.
 
-Definition float64ne_absolute_inv_helper (xi zi : FF) :=
- true.
-
-Lemma float64ne_absolute_inv :
+Theorem float_absolute_inv_ne:
+ forall p: nat, forall e: N,
  forall x : R, forall xi zi : FF,
- IintF xi (rounding_float64ne x) ->
- float64ne_absolute_inv_helper xi zi = true ->
- IintF zi (rounding_float64ne x - x).
+ IintF xi (rounding_float_ne p e x) ->
+ true = true ->
+ IintF zi (rounding_float_ne p e x - x).
 Admitted.
-
-Axiom float32ne_absolute: forall A B: Prop, B -> true = true -> A.
-Axiom float32ne_relative: forall A B: Prop, B -> true = true -> A.
-Axiom float64ne_absolute: forall A B: Prop, B -> true = true -> A.
-Axiom float64ne_relative: forall A B: Prop, B -> true = true -> A.
-Axiom float64ne_relative_inv: forall A B: Prop, B -> true = true -> A.
-Axiom float80ne_absolute: forall A B: Prop, B -> true = true -> A.
-Axiom float80ne_relative: forall A B: Prop, B -> true = true -> A.
 
 Axiom sterbenz :
  forall A B C D : Prop,
@@ -106,12 +71,6 @@ Axiom sterbenz :
  A -> B -> C -> D ->
  true = true ->
  IintF zi z.
-
-Axiom user_defined :
- forall x y : R, forall xi : FF,
- IintF xi y ->
- true = true ->
- IintF xi x.
 
 Parameter add22_float64: R -> R -> R.
 Axiom add22_float64_round:
