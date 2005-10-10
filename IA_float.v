@@ -113,9 +113,21 @@ Axiom user_defined :
  true = true ->
  IintF xi x.
 
-Axiom rounding_relative : N -> R -> R.
-Axiom relative_round : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
-Axiom relative_error : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
-Axiom relative_error_inv : N -> forall A : Prop, A -> true = true -> forall B : Prop, B.
+Parameter add22_float64: R -> R -> R.
+Axiom add22_float64_round:
+ forall x y : R, forall wi zi : FF,
+ IintF wi (x + y) ->
+ true = true ->
+ IintF zi (add22_float64 x y).
+Axiom add22_float64_error:
+ forall x y : R, forall wi zi : FF,
+ IintF wi (Rabs (x + y)) ->
+ true = true ->
+ IintF zi (((add22_float64 x y) - (x + y)) / (x + y)).
+Axiom add22_float64_error_inv:
+ forall x y : R, forall wi zi : FF,
+ IintF wi (Rabs (add22_float64 x y)) ->
+ true = true ->
+ IintF zi (((add22_float64 x y) - (x + y)) / (x + y)).
 
 End IA_float.
