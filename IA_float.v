@@ -76,11 +76,25 @@ Theorem float_absolute_inv_ne:
  IintF zi (rounding_float_ne p e x - x).
 Admitted.
 
-Axiom sterbenz :
- forall A B C D : Prop,
- forall z : R, forall zi : FF,
- A -> B -> C -> D ->
- true = true ->
- IintF zi z.
+Parameter rounding_fixed_zr : Z -> R -> R.
+Parameter rounding_fixed_ne : Z -> R -> R.
+Definition FixP (n : Z) (x : R) :=
+ exists f : float, x = f /\ (n <= Fexp f)%Z.
+
+Axiom rounding_fixed_ne_correct_1 :
+ forall n : Z, forall x : R,
+ FixP n (rounding_fixed_ne n x).
+Axiom rounding_fixed_ne_correct_2 :
+ forall n e : Z, forall x : R,
+ FixP n x -> (n <= e)%Z ->
+ exists f : float, x = rounding_fixed_ne n f.
+Axiom fix_of_fixed :
+ forall n e : Z, forall x : R,
+ (Zle_bool n e) = true -> FixP n (rounding_fixed_ne e x).
+Axiom fixed_of_fix :
+ forall n e : Z, forall zi : FF, forall x : R,
+ FixP n x ->
+ Zle_bool e n && contains_zero_helper zi = true ->
+ IintF zi (rounding_fixed_ne e x - x).
 
 End IA_float.
