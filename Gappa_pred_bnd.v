@@ -1,37 +1,7 @@
-Require Export IA_real.
-Require Export AllFloat.
+Require Import AllFloat.
+Require Import Gappa_common.
 
-Section IA_comput.
-
-Definition radix := 2%Z.
-
-Definition radixMoreThanOne := TwoMoreThanOne.
-Lemma radixNotZero: (0 < radix)%Z.
-auto with zarith.
-Qed.
-
-Coercion float2R := FtoR radix.
-Record FF: Set := makepairF { lower : float ; upper : float }.
-Coercion FF2RR := fun x : FF => makepairR (lower x) (upper x).
-Definition IintF (xi : FF) (x : R) := IintR xi x.
-
-Definition Fle_b (x y : float) := Fle_bool radix x y.
-Lemma Fle_b_correct :
- forall x y : float,
- Fle_b x y = true -> (x <= y)%R.
-intros x y H.
-apply (Fle_bool_correct_t radix radixMoreThanOne).
-exact H.
-Qed.
-
-Definition Flt_b (x y : float) := Flt_bool radix x y.
-Lemma Flt_b_correct :
- forall x y : float,
- Flt_b x y = true -> (x < y)%R.
-intros x y H.
-apply (Flt_bool_correct_t radix radixMoreThanOne).
-exact H.
-Qed.
+Section Gappa_pred_bnd.
 
 Definition Float1 (x : Z) := x.
 Definition Float2 := Float.
@@ -166,7 +136,7 @@ Definition constant2_helper (x : float) (zi : FF) :=
 Theorem constant2 :
  forall x : float, forall zi : FF,
  constant2_helper x zi = true ->
- IintF zi x.
+ BND x zi.
 intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
@@ -177,7 +147,7 @@ Qed.
 Theorem constant1 :
  forall x : Z, forall zi : FF,
  constant2_helper (Float x 0) zi = true ->
- IintF zi x.
+ BND x zi.
 intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
@@ -195,7 +165,7 @@ Definition constant10_helper (x : deci) (zi : FF) :=
 Theorem constant10 :
  forall x : deci, forall zi : FF,
  constant10_helper x zi = true ->
- IintF zi x.
+ BND x zi.
 intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Dle_fd_correct _ _ H1). clear H1. intro H1.
@@ -209,9 +179,9 @@ Definition subset_helper (xi zi : FF) :=
 
 Theorem subset :
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  subset_helper xi zi = true ->
- IintF zi x.
+ BND x zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
@@ -229,9 +199,9 @@ Definition intersect_helper (xi yi zi : FF) :=
 
 Theorem intersect :
  forall z : R, forall xi yi zi : FF,
- IintF xi z -> IintF yi z ->
+ BND z xi -> BND z yi ->
  intersect_helper xi yi zi = true ->
- IintF zi z.
+ BND z zi.
 intros z xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
@@ -243,7 +213,7 @@ Qed.
 
 Theorem absurd_intersect :
  forall z : R, forall xi yi : FF,
- IintF xi z -> IintF yi z ->
+ BND z xi -> BND z yi ->
  Flt_b (upper xi) (lower yi) = true ->
  contradiction.
 intros z xi yi Hx Hy Hb.
@@ -255,11 +225,11 @@ Qed.
 
 Theorem union :
  forall x z : R, forall xi xi1 zi : FF,
- (IintF xi1 x -> IintF zi z) ->
+ (BND x xi1 -> BND z zi) ->
  Fle_b (lower xi1) (lower xi) = true ->
- (IintF (makepairF (upper xi1) (upper xi)) x -> IintF zi z) ->
- IintF xi x ->
- IintF zi z.
+ (BND x (makepairF (upper xi1) (upper xi)) -> BND z zi) ->
+ BND x xi ->
+ BND z zi.
 intros x z xi xi1 zi Hx1 Hb Hx2 Hx.
 generalize (Fle_b_correct _ _ Hb). clear Hb. intro H1.
 case (Rlt_le_dec x (upper xi1)) ; intro H.
@@ -274,10 +244,10 @@ Qed.
 
 Theorem absurd_union :
  forall x : R, forall xi xi1 : FF,
- (IintF xi1 x -> contradiction) ->
+ (BND x xi1 -> contradiction) ->
  Fle_b (lower xi1) (lower xi) = true ->
- (IintF (makepairF (upper xi1) (upper xi)) x -> contradiction) ->
- IintF xi x ->
+ (BND x (makepairF (upper xi1) (upper xi)) -> contradiction) ->
+ BND x xi ->
  contradiction.
 intros x xi xi1 Hx1 Hb Hx2 Hx.
 generalize (Fle_b_correct _ _ Hb). clear Hb. intro H1.
@@ -297,9 +267,9 @@ Definition neg_helper (xi zi : FF) :=
 
 Theorem neg :
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  neg_helper xi zi = true ->
- IintF zi (-x).
+ BND (-x) zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
@@ -319,9 +289,9 @@ Definition add_helper (xi yi zi : FF) :=
 
 Theorem add :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  add_helper xi yi zi = true ->
- IintF zi (x + y).
+ BND (x + y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). rewrite Fplus_correct with (1 := radixNotZero). clear H1. intro H1.
@@ -338,9 +308,9 @@ Definition sub_helper (xi yi zi : FF) :=
 
 Theorem sub :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  sub_helper xi yi zi = true ->
- IintF zi (x - y).
+ BND (x - y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). rewrite Fminus_correct with (1 := radixNotZero). clear H1. intro H1.
@@ -351,99 +321,12 @@ apply Rle_trans with (1 := H1) (2 := (proj1 H)).
 apply Rle_trans with (1 := (proj2 H)) (2 := H2).
 Qed.
 
-Definition Fpos (x : float) :=
- match (Fnum x) with
-   Zpos _ => true
- | _ => false
- end.
-
-Lemma Fpos_correct :
- forall x : float,
- Fpos x = true -> (0 < x)%R.
-intros x H.
-unfold float2R, FtoR.
-apply Rmult_lt_0_compat.
-2: auto with real.
-generalize H. clear H.
-unfold IZR, Fpos.
-induction (Fnum x) ; intro H0 ; try discriminate.
-apply INR_pos.
-Qed.
-
-Definition Fneg (x : float) :=
- match (Fnum x) with
-   Zneg _ => true
- | _ => false
- end.
-
-Lemma Fneg_correct :
- forall x : float,
- Fneg x = true -> (x < 0)%R.
-intros x H.
-unfold float2R, FtoR.
-replace (IZR (Fnum x)) with (-(IZR (- Fnum x)))%R.
-2: rewrite Ropp_Ropp_IZR ; auto with real.
-rewrite Ropp_mult_distr_l_reverse.
-apply Ropp_lt_gt_0_contravar.
-unfold Rgt.
-apply Rmult_lt_0_compat.
-2: auto with real.
-generalize H. clear H.
-unfold IZR, Fneg.
-induction (Fnum x) ; intro H0 ; try discriminate.
-unfold Zopp.
-apply INR_pos.
-Qed.
-
-Definition Fpos0 (x : float) :=
- match (Fnum x) with
-   Zneg _ => false
- | _ => true
- end.
-
-Lemma Fpos0_correct :
- forall x : float,
- Fpos0 x = true -> (0 <= x)%R.
-intros x H.
-unfold float2R, FtoR.
-apply Rmult_le_pos.
-2: auto with real.
-generalize H. clear H.
-unfold IZR, Fpos0.
-induction (Fnum x) ; intro H0 ; try discriminate
- ; auto with real.
-Qed.
-
-Definition Fneg0 (x : float) :=
- match (Fnum x) with
-   Zpos _ => false
- | _ => true
- end.
-
-Lemma Fneg0_correct :
- forall x : float,
- Fneg0 x = true -> (x <= 0)%R.
-intros x H.
-unfold float2R, FtoR.
-replace (IZR (Fnum x)) with (-(IZR (- Fnum x)))%R.
-2: rewrite Ropp_Ropp_IZR ; auto with real.
-rewrite Ropp_mult_distr_l_reverse.
-rewrite <- Ropp_0.
-apply Ropp_le_contravar.
-apply Rmult_le_pos.
-2: auto with real.
-generalize H. clear H.
-unfold IZR, Fneg0.
-induction (Fnum x) ; intro H0 ; try discriminate
- ; unfold Zopp ; auto with real.
-Qed.
-
 Definition not_zero (zi : FF) :=
  Fpos (lower zi) || Fneg (upper zi).
 
 Lemma not_zero_correct :
  forall z : R, forall zi : FF,
- IintF zi z ->
+ BND z zi ->
  not_zero zi = true ->
  (z <> 0)%R.
 intros z zi Hz Hb.
@@ -461,21 +344,6 @@ apply Rle_lt_trans with (2 := H).
 exact (proj2 Hz).
 Qed.
 
-Definition abs_not_zero (zi : FF) := Fpos (lower zi).
-
-Lemma abs_not_zero_correct :
- forall z : R, forall zi : FF,
- IintF zi (Rabs z) ->
- abs_not_zero zi = true ->
- (z <> 0)%R.
-intros z. unfold Rabs.
-case (Rcase_abs z) ; intros H zi Hz Hb ; apply Rlt_dichotomy_converse.
-left. exact H.
-right. unfold Rgt. clear H.
-generalize (Fpos_correct _ Hb). clear Hb. intro H.
-apply Rlt_le_trans with (1 := H) (2 := proj1 Hz).
-Qed.
-
 Definition contains_zero_helper (zi : FF) :=
  Fneg0 (lower zi) &&
  Fpos0 (upper zi).
@@ -483,7 +351,7 @@ Definition contains_zero_helper (zi : FF) :=
 Lemma contains_zero :
  forall zi : FF,
  contains_zero_helper zi = true ->
- IintF zi 0.
+ BND 0 zi.
 intros zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fneg0_correct _ H1). clear H1. intro H1.
@@ -494,7 +362,7 @@ Qed.
 Lemma sub_refl :
  forall x : R, forall zi : FF,
  contains_zero_helper zi = true ->
- IintF zi (x - x).
+ BND (x - x) zi.
 intros x zi Hb.
 replace (x - x)%R with R0.
 apply contains_zero with (1 := Hb).
@@ -510,9 +378,9 @@ Definition mul_pp_helper (xi yi zi : FF) :=
 
 Theorem mul_pp :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  mul_pp_helper xi yi zi = true ->
- IintF zi (x * y).
+ BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -521,7 +389,7 @@ generalize (Fpos_correct _ H1). clear H1. intro H1.
 generalize (Fpos_correct _ H2). clear H2. intro H2.
 generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply ImultR_pp with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
@@ -534,9 +402,9 @@ Definition mul_pn_helper (xi yi zi : FF) :=
 
 Theorem mul_pn :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  mul_pn_helper xi yi zi = true ->
- IintF zi (x * y).
+ BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -545,16 +413,16 @@ generalize (Fpos_correct _ H1). clear H1. intro H1.
 generalize (Fneg_correct _ H2). clear H2. intro H2.
 generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply ImultR_pn with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
 Theorem mul_np :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  mul_pn_helper yi xi zi = true ->
- IintF zi (x * y).
+ BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
 apply mul_pn with (1 := Hy) (2 := Hx) (3 := Hb).
@@ -568,9 +436,9 @@ Definition mul_nn_helper (xi yi zi : FF) :=
 
 Theorem mul_nn :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  mul_nn_helper xi yi zi = true ->
- IintF zi (x * y).
+ BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -579,7 +447,7 @@ generalize (Fneg_correct _ H1). clear H1. intro H1.
 generalize (Fneg_correct _ H2). clear H2. intro H2.
 generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply ImultR_nn with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
@@ -592,9 +460,9 @@ Definition mul_po_helper (xi yi zi : FF) :=
 
 Theorem mul_po :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  mul_po_helper xi yi zi = true ->
- IintF zi (x * y).
+ BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
@@ -605,16 +473,16 @@ generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fpos0_correct _ H3). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
 generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero). clear H5. intro H5.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply ImultR_po with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
 Theorem mul_op :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  mul_po_helper yi xi zi = true ->
- IintF zi (x * y).
+ BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
 apply mul_po with (1 := Hy) (2 := Hx) (3 := Hb).
@@ -628,9 +496,9 @@ Definition mul_no_helper (xi yi zi : FF) :=
 
 Theorem mul_no :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  mul_no_helper xi yi zi = true ->
- IintF zi (x * y).
+ BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
@@ -641,16 +509,16 @@ generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fpos0_correct _ H3). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
 generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero). clear H5. intro H5.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply ImultR_no with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
 
 Theorem mul_on :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  mul_no_helper yi xi zi = true ->
- IintF zi (x * y).
+ BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
 apply mul_no with (1 := Hy) (2 := Hx) (3 := Hb).
@@ -666,9 +534,9 @@ Definition mul_oo_helper (xi yi zi : FF) :=
 
 Theorem mul_oo :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  mul_oo_helper xi yi zi = true ->
- IintF zi (x * y).
+ BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H8).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H7).
@@ -685,7 +553,7 @@ generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero
 generalize (Fle_b_correct _ _ H6). rewrite Fmult_correct with (1 := radixNotZero). clear H6. intro H6.
 generalize (Fle_b_correct _ _ H7). rewrite Fmult_correct with (1 := radixNotZero). clear H7. intro H7.
 generalize (Fle_b_correct _ _ H8). rewrite Fmult_correct with (1 := radixNotZero). clear H8. intro H8.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply ImultR_oo with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
@@ -697,16 +565,16 @@ Definition square_p_helper (xi zi : FF) :=
 
 Theorem square_p :
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  square_p_helper xi zi = true ->
- IintF zi (x * x).
+ BND (x * x) zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fpos_correct _ H1). clear H1. intro H1.
 generalize (Fle_b_correct _ _ H2). rewrite Fmult_correct with (1 := radixNotZero). clear H2. intro H2.
 generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply ImultR_pp with (lower xi) (upper xi) (lower xi) (upper xi)
  ; auto with real.
 Qed.
@@ -718,16 +586,16 @@ Definition square_n_helper (xi zi : FF) :=
 
 Theorem square_n :
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  square_n_helper xi zi = true ->
- IintF zi (x * x).
+ BND (x * x) zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fneg_correct _ H1). clear H1. intro H1.
 generalize (Fle_b_correct _ _ H2). rewrite Fmult_correct with (1 := radixNotZero). clear H2. intro H2.
 generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply ImultR_nn with (lower xi) (upper xi) (lower xi) (upper xi)
  ; auto with real.
 Qed.
@@ -740,9 +608,9 @@ Definition square_o_helper (xi zi : FF) :=
 
 Theorem square_o :
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  square_o_helper xi zi = true ->
- IintF zi (x * x).
+ BND (x * x) zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
@@ -753,7 +621,7 @@ generalize (Fpos0_correct _ H2). clear H2. intro H2.
 generalize (Fneg0_correct _ H3). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
 generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero). clear H5. intro H5.
-unfold IintF, IintR.
+unfold BND, bndR.
 split.
 replace (x * x)%R with (Rsqr x). 2: trivial.
 apply Rle_trans with 0%R ; auto with real.
@@ -776,9 +644,9 @@ Definition div_pp_helper (xi yi zi : FF) :=
 
 Theorem div_pp :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  div_pp_helper xi yi zi = true ->
- IintF zi (x / y).
+ BND (x / y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -787,7 +655,7 @@ generalize (Fpos_correct _ H1). clear H1. intro H1.
 generalize (Fpos0_correct _ H2). clear H2. intro H2.
 generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply IdivR_pp with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
@@ -800,9 +668,9 @@ Definition div_op_helper (xi yi zi : FF) :=
 
 Theorem div_op :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  div_op_helper xi yi zi = true ->
- IintF zi (x / y).
+ BND (x / y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
@@ -813,7 +681,7 @@ generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fpos0_correct _ H3). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
 generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero). clear H5. intro H5.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply IdivR_op with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
@@ -826,9 +694,9 @@ Definition div_np_helper (xi yi zi : FF) :=
 
 Theorem div_np :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  div_np_helper xi yi zi = true ->
- IintF zi (x / y).
+ BND (x / y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -837,7 +705,7 @@ generalize (Fpos_correct _ H1). clear H1. intro H1.
 generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply IdivR_np with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
@@ -850,9 +718,9 @@ Definition div_pn_helper (xi yi zi : FF) :=
 
 Theorem div_pn :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  div_pn_helper xi yi zi = true ->
- IintF zi (x / y).
+ BND (x / y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -861,7 +729,7 @@ generalize (Fneg_correct _ H1). clear H1. intro H1.
 generalize (Fpos0_correct _ H2). clear H2. intro H2.
 generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply IdivR_pn with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
@@ -874,9 +742,9 @@ Definition div_on_helper (xi yi zi : FF) :=
 
 Theorem div_on :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  div_on_helper xi yi zi = true ->
- IintF zi (x / y).
+ BND (x / y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
@@ -887,7 +755,7 @@ generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fpos0_correct _ H3). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
 generalize (Fle_b_correct _ _ H5). rewrite Fmult_correct with (1 := radixNotZero). clear H5. intro H5.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply IdivR_on with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
@@ -900,9 +768,9 @@ Definition div_nn_helper (xi yi zi : FF) :=
 
 Theorem div_nn :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  div_nn_helper xi yi zi = true ->
- IintF zi (x / y).
+ BND (x / y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -911,7 +779,7 @@ generalize (Fneg_correct _ H1). clear H1. intro H1.
 generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fle_b_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
 generalize (Fle_b_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
-unfold IintF, IintR.
+unfold BND, bndR.
 apply IdivR_nn with (lower xi) (upper xi) (lower yi) (upper yi)
  ; auto with real.
 Qed.
@@ -926,9 +794,9 @@ Definition compose_helper (xi yi zi : FF) :=
 
 Theorem compose :
  forall x y : R, forall xi yi zi : FF,
- IintF xi x -> IintF yi y ->
+ BND x xi -> BND y yi ->
  compose_helper xi yi zi = true ->
- IintF zi ((x + y) + x * y).
+ BND ((x + y) + x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -960,7 +828,7 @@ rewrite Hc. apply Rplus_le_compat_l with (1 := H3).
 rewrite Hc. apply Rplus_le_compat_l with (1 := H4).
 apply Hi with (1 := Hx).
 apply Hi with (1 := Hy).
-unfold IintF, IintR, FF2RR, Rminus. simpl.
+unfold BND, bndR, FF2RR, Rminus. simpl.
 assert (H0 : forall a : R, (a = (1 + a) + -1)%R).
 intros a. ring.
 split.
@@ -984,9 +852,9 @@ Definition invert_abs_helper (xi zi : FF) :=
 
 Theorem invert_abs :
  forall x : R, forall xi zi : FF,
- IintF xi (Rabs x) ->
+ BND (Rabs x) xi ->
  invert_abs_helper xi zi = true ->
- IintF zi x.
+ BND x zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
@@ -1011,9 +879,9 @@ Definition abs_p_helper (xi zi : FF) :=
 
 Theorem abs_p :
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  abs_p_helper xi zi = true ->
- IintF zi (Rabs x).
+ BND (Rabs x) zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -1037,9 +905,9 @@ Definition abs_o_helper (xi zi : FF) :=
 
 Theorem abs_o :
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  abs_o_helper xi zi = true ->
- IintF zi (Rabs x).
+ BND (Rabs x) zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -1062,9 +930,9 @@ Definition abs_n_helper (xi zi : FF) :=
 
 Theorem abs_n :
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  abs_n_helper xi zi = true ->
- IintF zi (Rabs x).
+ BND (Rabs x) zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -1084,4 +952,4 @@ apply Rle_trans with (1 := proj2 Hx) (2 := H1).
 apply Ropp_le_contravar with (1 := proj1 Hx).
 Qed.
 
-End IA_comput.
+End Gappa_pred_bnd.

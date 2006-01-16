@@ -1,13 +1,13 @@
-Require Import IA_real.
-Require Import IA_comput.
+Require Import Reals.
+Require Import Gappa_common.
 
-Section IA_manip.
+Section Gappa_rewriting.
 
 Theorem add_decomposition_rounded_left :
  forall a b c : R, forall zi : FF,
- IintF zi ((a - c) + (c + b)) ->
+ BND ((a - c) + (c + b)) zi ->
  true = true ->
- IintF zi (a + b).
+ BND (a + b) zi.
 intros a b c zi Hz _.
 replace (a + b)%R with ((a - c) + (c + b))%R.
 exact Hz.
@@ -16,9 +16,9 @@ Qed.
 
 Theorem add_decomposition_rounded_right :
  forall a b c : R, forall zi : FF,
- IintF zi ((a + c) + (b - c)) ->
+ BND ((a + c) + (b - c)) zi ->
  true = true ->
- IintF zi (a + b).
+ BND (a + b) zi.
 intros a b c zi Hz _.
 replace (a + b)%R with ((a + c) + (b - c))%R.
 exact Hz.
@@ -27,9 +27,9 @@ Qed.
 
 Theorem sub_decomposition_rounded_left :
  forall a b c : R, forall zi : FF,
- IintF zi ((a - c) + (c - b)) ->
+ BND ((a - c) + (c - b)) zi ->
  true = true ->
- IintF zi (a - b).
+ BND (a - b) zi.
 intros a b c zi Hz _.
 replace (a - b)%R with ((a - c) + (c - b))%R.
 exact Hz.
@@ -38,9 +38,9 @@ Qed.
 
 Theorem sub_decomposition_rounded_right :
  forall a b c : R, forall zi : FF,
- IintF zi ((a - c) + -(b - c)) ->
+ BND ((a - c) + -(b - c)) zi ->
  true = true ->
- IintF zi (a - b).
+ BND (a - b) zi.
 intros a b c zi Hz _.
 replace (a - b)%R with ((a - c) + -(b - c))%R.
 exact Hz.
@@ -49,9 +49,9 @@ Qed.
 
 Theorem mul_decomposition_rounded_left :
  forall a b c : R, forall zi : FF,
- IintF zi ((a - c) * b + c * b) ->
+ BND ((a - c) * b + c * b) zi ->
  true = true ->
- IintF zi (a * b).
+ BND (a * b) zi.
 intros a b c zi Hz _.
 replace (a * b)%R with ((a - c) * b + c * b)%R.
 exact Hz.
@@ -60,9 +60,9 @@ Qed.
 
 Theorem mul_decomposition_rounded_right :
  forall a b c : R, forall zi : FF,
- IintF zi (a * (b - c) + a * c) ->
+ BND (a * (b - c) + a * c) zi ->
  true = true ->
- IintF zi (a * b).
+ BND (a * b) zi.
 intros a b c zi Hz _.
 replace (a * b)%R with (a * (b - c) + a * c)%R.
 exact Hz.
@@ -71,9 +71,9 @@ Qed.
 
 Theorem add_decomposition :
  forall a b c d : R, forall zi : FF,
- IintF zi ((a - c) + (b - d)) ->
+ BND ((a - c) + (b - d)) zi ->
  true = true ->
- IintF zi ((a + b) - (c + d)).
+ BND ((a + b) - (c + d)) zi.
 intros a b c d zi Hz _.
 replace ((a + b) - (c + d))%R with ((a - c) + (b - d))%R.
 exact Hz.
@@ -82,9 +82,9 @@ Qed.
 
 Theorem add_decomposition_left :
  forall a b c : R, forall zi : FF,
- IintF zi (b - c) ->
+ BND (b - c) zi ->
  true = true ->
- IintF zi ((a + b) - (a + c)).
+ BND ((a + b) - (a + c)) zi.
 intros a b c zi Hz _.
 replace ((a + b) - (a + c))%R with (b - c)%R.
 exact Hz.
@@ -93,9 +93,9 @@ Qed.
 
 Theorem add_decomposition_right :
  forall a b c : R, forall zi : FF,
- IintF zi (a - c) ->
+ BND (a - c) zi ->
  true = true ->
- IintF zi ((a + b) - (c + b)).
+ BND ((a + b) - (c + b)) zi.
 intros a b c zi Hz _.
 replace ((a + b) - (c + b))%R with (a - c)%R.
 exact Hz.
@@ -104,9 +104,9 @@ Qed.
 
 Theorem sub_decomposition :
  forall a b c d : R, forall zi : FF,
- IintF zi ((a - c) + -(b - d)) ->
+ BND ((a - c) + -(b - d)) zi ->
  true = true ->
- IintF zi ((a - b) - (c - d)).
+ BND ((a - b) - (c - d)) zi.
 intros a b c d zi Hz _.
 replace ((a - b) - (c - d))%R with ((a - c) + -(b - d))%R.
 exact Hz.
@@ -115,9 +115,9 @@ Qed.
 
 Theorem sub_decomposition_left :
  forall a b c : R, forall zi : FF,
- IintF zi (-(b - c)) ->
+ BND (-(b - c)) zi ->
  true = true ->
- IintF zi ((a - b) - (a - c)).
+ BND ((a - b) - (a - c)) zi.
 intros a b c zi Hz _.
 replace ((a - b) - (a - c))%R with (-(b - c))%R.
 exact Hz.
@@ -126,9 +126,9 @@ Qed.
 
 Theorem sub_decomposition_right :
  forall a b c : R, forall zi : FF,
- IintF zi (a - c) ->
+ BND (a - c) zi ->
  true = true ->
- IintF zi ((a - b) - (c - b)).
+ BND ((a - b) - (c - b)) zi.
 intros a b c zi Hz _.
 replace ((a - b) - (c - b))%R with (a - c)%R.
 exact Hz.
@@ -137,9 +137,9 @@ Qed.
 
 Theorem mul_decomposition_factor_left :
  forall a b c : R, forall zi : FF,
- IintF zi (a * (b - c)) ->
+ BND (a * (b - c)) zi ->
  true = true ->
- IintF zi (a * b - a * c).
+ BND (a * b - a * c) zi.
 intros a b c zi Hz _.
 replace (a * b - a * c)%R with (a * (b - c))%R.
 exact Hz.
@@ -148,9 +148,9 @@ Qed.
 
 Theorem mul_decomposition_factor_right :
  forall a b c : R, forall zi : FF,
- IintF zi ((a - c) * b) ->
+ BND ((a - c) * b) zi ->
  true = true ->
- IintF zi (a * b - c * b).
+ BND (a * b - c * b) zi.
 intros a b c zi Hz _.
 replace (a * b - c * b)%R with ((a - c) * b)%R.
 exact Hz.
@@ -159,9 +159,9 @@ Qed.
 
 Theorem mul_decomposition_half_left :
  forall a b c d : R, forall zi : FF,
- IintF zi (a * (b - d) + (a - c) * d) ->
+ BND (a * (b - d) + (a - c) * d) zi ->
  true = true ->
- IintF zi (a * b - c * d).
+ BND (a * b - c * d) zi.
 intros a b c d zi Hz _.
 replace (a * b - c * d)%R with (a * (b - d) + (a - c) * d)%R.
 exact Hz.
@@ -170,9 +170,9 @@ Qed.
 
 Theorem mul_decomposition_half_right :
  forall a b c d : R, forall zi : FF,
- IintF zi ((a - c) * b + c * (b - d)) ->
+ BND ((a - c) * b + c * (b - d)) zi ->
  true = true ->
- IintF zi (a * b - c * d).
+ BND (a * b - c * d) zi.
 intros a b c d zi Hz _.
 replace (a * b - c * d)%R with ((a - c) * b + c * (b - d))%R.
 exact Hz.
@@ -181,9 +181,9 @@ Qed.
 
 Theorem mul_decomposition_full_left :
  forall a b c d : R, forall zi : FF,
- IintF zi (a * (b - d) + (a - c) * b + -((a - c) * (b - d))) ->
+ BND (a * (b - d) + (a - c) * b + -((a - c) * (b - d))) zi ->
  true = true ->
- IintF zi (a * b - c * d).
+ BND (a * b - c * d) zi.
 intros a b c d zi Hz _.
 replace (a * b - c * d)%R with (a * (b - d) + (a - c) * b + -((a - c) * (b - d)))%R.
 exact Hz.
@@ -192,9 +192,9 @@ Qed.
 
 Theorem mul_decomposition_full_right :
  forall a b c d : R, forall zi : FF,
- IintF zi (c * (b - d) + d * (a - c) + (a - c) * (b - d)) ->
+ BND (c * (b - d) + d * (a - c) + (a - c) * (b - d)) zi ->
  true = true ->
- IintF zi (a * b - c * d).
+ BND (a * b - c * d) zi.
 intros a b c d zi Hz _.
 replace (a * b - c * d)%R with (c * (b - d) + d * (a - c) + (a - c) * (b - d))%R.
 exact Hz.
@@ -203,9 +203,9 @@ Qed.
 
 Theorem relative_to_absolute :
  forall a b : R, forall bi zi : FF,
- IintF bi (Rabs b) -> IintF zi (a / b * b) ->
+ ABS b bi -> BND (a / b * b) zi ->
  abs_not_zero bi = true ->
- IintF zi a.
+ BND a zi.
 intros a b bi zi Hb Hz H.
 generalize (abs_not_zero_correct _ _ Hb H). clear Hb H. intro H.
 replace a with (a / b * b)%R.
@@ -216,10 +216,10 @@ Qed.
 
 Theorem relative_transitivity :
  forall a b c : R, forall bi ci zi : FF,
- IintF bi (Rabs b) -> IintF ci (Rabs c) ->
- IintF zi ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b)) ->
+ ABS b bi -> ABS c ci ->
+ BND ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b)) zi ->
  abs_not_zero bi && abs_not_zero ci = true ->
- IintF zi ((a - b) / b).
+ BND ((a - b) / b) zi.
 intros a b c bi ci zi Hb Hc Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1, H2).
 generalize (abs_not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
@@ -232,10 +232,10 @@ Qed.
 
 Theorem mul_rel_decomposition :
  forall a b c d : R, forall ci di zi : FF,
- IintF ci (Rabs c) -> IintF di (Rabs d) ->
- IintF zi ((a - c) / c + (b - d) / d + ((a - c) / c) * ((b - d) / d)) ->
+ ABS c ci -> ABS d di ->
+ BND ((a - c) / c + (b - d) / d + ((a - c) / c) * ((b - d) / d)) zi ->
  abs_not_zero ci && abs_not_zero di = true ->
- IintF zi ((a * b - c * d) / (c * d)).
+ BND ((a * b - c * d) / (c * d)) zi.
 intros a b c d ci di zi Hc Hd Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1, H2).
 generalize (abs_not_zero_correct _ _ Hc H1). clear Hc H1. intro Hc.
@@ -248,10 +248,10 @@ Qed.
 
 Theorem mul_rel_decomposition_left :
  forall a b c : R, forall ai ci zi : FF,
- IintF ai (Rabs a) -> IintF ci (Rabs c) ->
- IintF zi ((b - c) / c) ->
+ ABS a ai -> ABS c ci ->
+ BND ((b - c) / c) zi ->
  abs_not_zero ai && abs_not_zero ci = true ->
- IintF zi ((a * b - a * c) / (a * c)).
+ BND ((a * b - a * c) / (a * c)) zi.
 intros a b c ai ci zi Ha Hc Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1, H2).
 generalize (abs_not_zero_correct _ _ Ha H1). clear Ha H1. intro Ha.
@@ -264,10 +264,10 @@ Qed.
 
 Theorem mul_rel_decomposition_right :
  forall a b c : R, forall bi ci zi : FF,
- IintF bi (Rabs b) -> IintF ci (Rabs c) ->
- IintF zi ((a - c) / c) ->
+ ABS b bi -> ABS c ci ->
+ BND ((a - c) / c) zi ->
  abs_not_zero bi && abs_not_zero ci = true ->
- IintF zi ((a * b - c * b) / (c * b)).
+ BND ((a * b - c * b) / (c * b)) zi.
 intros a b c bi ci zi Hb Hc Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1, H2).
 generalize (abs_not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
@@ -280,12 +280,12 @@ Qed.
 
 Theorem abs_mul_xx :
  forall a b : R, forall zi : FF,
- IintF zi (Rabs a * Rabs b) ->
+ BND (Rabs a * Rabs b) zi ->
  true = true ->
- IintF zi (Rabs (a * b)).
+ BND (Rabs (a * b)) zi.
 intros a b zi Hz _.
 rewrite Rabs_mult.
 exact Hz.
 Qed.
 
-End IA_manip.
+End Gappa_rewriting.

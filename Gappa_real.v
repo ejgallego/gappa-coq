@@ -1,15 +1,15 @@
 Require Import Reals.
 
-Section IA_real.
+Section Gappa_real.
 
 Record RR: Set := makepairR { lower : R ; upper : R }.
 
-Definition IintR (xi : RR) (x : R) :=
+Definition bndR (x : R) (xi : RR) :=
  (lower xi <= x <= upper xi)%R.
 
-Lemma IintR_abs :
+Lemma bndR_Rabs :
  forall xi : RR, forall x : R,
- IintR xi x ->
+ bndR x xi ->
  (Rabs x <= Rabs (lower xi))%R \/ (Rabs x <= Rabs (upper xi))%R.
 intros xi x H.
 case (Rle_or_lt 0 x); intro H0.
@@ -28,7 +28,7 @@ Qed.
 
 Definition IplusR_property (xi yi zi : RR) :=
  forall x y : R,
- IintR xi x -> IintR yi y -> IintR zi (x + y).
+ bndR x xi -> bndR y yi -> bndR (x + y) zi.
 
 Theorem IplusR :
  forall xi yi zi : RR,
@@ -36,7 +36,7 @@ Theorem IplusR :
  (upper xi + upper yi <= upper zi)%R ->
  IplusR_property xi yi zi.
 intros xi yi zi Hl Hu x y Hx Hy.
-unfold IintR in *.
+unfold bndR in *.
 split.
 apply Rle_trans with (lower xi + lower yi)%R.
 exact Hl.
@@ -61,7 +61,7 @@ Definition IoppR_fun (xi : RR) :=
 
 Lemma IoppR_exact :
  forall xi : RR, forall x : R,
- IintR xi x -> IintR (IoppR_fun xi) (-x).
+ bndR x xi -> bndR (-x) (IoppR_fun xi).
 intros xi x H.
 split.
 exact (Ropp_le_contravar _ _ (proj2 H)).
@@ -70,8 +70,8 @@ Qed.
 
 Lemma IoppR_exact_rev :
  forall xi : RR, forall x : R,
- IintR (IoppR_fun xi) (-x) -> IintR xi x.
-unfold IintR.
+ bndR (-x) (IoppR_fun xi) -> bndR x xi.
+unfold bndR.
 simpl.
 intros xi x (H1,H2).
 auto with real.
@@ -79,7 +79,7 @@ Qed.
 
 Definition IminusR_property (xi yi zi : RR) :=
  forall x y : R,
- IintR xi x -> IintR yi y -> IintR zi (x - y).
+ bndR x xi -> bndR y yi -> bndR (x - y) zi.
 
 Theorem IminusR :
  forall xi yi zi : RR,
@@ -329,12 +329,12 @@ exact (Msign _ (Rlt_le _ _ H1) H0).
 exact (Psign _ H1).
 Qed.
 
-Lemma IintR_sign :
+Lemma bndR_sign :
  forall xi : RR, forall x : R,
- IintR xi x -> interval_sign xi.
+ bndR x xi -> interval_sign xi.
 intros xi x H.
 apply interval_sign_correct.
-unfold IintR in H. decompose [and] H.
+unfold bndR in H. decompose [and] H.
 apply Rle_trans with x; assumption.
 Qed.
 
@@ -356,8 +356,8 @@ Qed.
 
 Definition ImultR_property (xi yi zi : RR) :=
  forall x y : R,
- IintR xi x -> IintR yi y ->
- IintR zi (x * y).
+ bndR x xi -> bndR y yi ->
+ bndR (x * y) zi.
 
 Lemma ImultR :
  forall xi yi zi : RR,
@@ -375,8 +375,8 @@ decompose [and] (Rmax_trans _ _ _ Hzu).
 decompose [and] (Rmax_trans _ _ _ H).
 decompose [and] (Rmax_trans _ _ _ H0).
 clear Hzu H H0.
-unfold IintR.
-case (IintR_sign _ _ Hx); case (IintR_sign _ _ Hy); intros.
+unfold bndR.
+case (bndR_sign _ _ Hx); case (bndR_sign _ _ Hy); intros.
 apply ImultR_nn with xl xu yl yu; assumption.
 apply ImultR_no with xl xu yl yu; assumption.
 apply ImultR_np with xl xu yl yu; assumption.
@@ -444,7 +444,7 @@ Lemma IinvR_n :
 intros yl yu zl zu y Hyu Hy Hzl Hzu.
 apply (IoppR_exact_rev (makepairR zl zu) (/y)).
 rewrite Ropp_inv_permute.
-unfold IintR. simpl.
+unfold bndR. simpl.
 apply IinvR_p with (-yu)%R (-yl)%R.
 apply Ropp_0_gt_lt_contravar. exact Hyu.
 apply (IoppR_exact (makepairR yl yu)).
@@ -466,9 +466,9 @@ Lemma IinvR :
  forall yi zi : RR, forall y : R,
  let yl := lower yi in let yu := upper yi in
  (yu < 0)%R \/ (0 < yl)%R ->
- IintR yi y ->
+ bndR y yi ->
  (lower zi <= /yu)%R -> (/yl <= upper zi)%R ->
- IintR zi (/y).
+ bndR (/y) zi.
 intros yi zi y yl yu Hylu Hy Hzl Hzu.
 decompose [or] Hylu.
 exact (IinvR_n _ _ _ _ _ H Hy Hzl Hzu).
@@ -477,8 +477,8 @@ Qed.
 
 Definition IdivR_property (xi yi zi : RR) :=
  forall x y : R,
- IintR xi x -> IintR yi y ->
- IintR zi (x / y).
+ bndR x xi -> bndR y yi ->
+ bndR (x / y) zi.
 
 Lemma IdivR :
  forall xi yi zi : RR,
@@ -698,4 +698,4 @@ exact (monotony_2n _ _ _ Hy2 Hzu).
 field. exact Hy4.
 Qed.
 
-End IA_real.
+End Gappa_real.
