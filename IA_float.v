@@ -91,6 +91,9 @@ Axiom rounding_fixed_ne_correct_2 :
 Axiom fix_of_fixed :
  forall n e : Z, forall x : R,
  (Zle_bool n e) = true -> FIX (rounding_fixed_ne e x) n.
+Axiom flt_of_float :
+ forall n : positive, forall p : nat, forall e : N, forall x : R,
+ (Zle_bool (Z_of_nat p) (Zpos n)) = true -> FLT (rounding_float_ne p e x) n.
 Definition contains_zero_helper (zi : FF) :=
  Fneg0 (lower zi) &&
  Fpos0 (upper zi).
