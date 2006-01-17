@@ -14,24 +14,40 @@ Coercion float2R := FtoR radix.
 Record FF: Set := makepairF { lower : float ; upper : float }.
 Coercion FF2RR := fun x : FF => makepairR (lower x) (upper x).
 
-Definition BND (x : R) (xi : FF) := bndR x xi.
-Definition ABS (x : R) (xi : FF) := (0 <= lower xi)%R /\ bndR (Rabs x) xi.
+Definition BND (x : R) (xi : FF) :=
+ bndR x xi.
+Definition ABS (x : R) (xi : FF) :=
+ (0 <= lower xi)%R /\ bndR (Rabs x) xi.
+Definition FIX (x : R) (n : Z) :=
+ exists f : float, x = f /\ (n <= Fexp f)%Z.
+Definition FLT (x : R) (n : positive) :=
+ exists f : float, x = f /\ (Zabs (Fnum f) < Zpower_pos radix n)%Z.
 
-Definition Fle_b (x y : float) := Fle_bool radix x y.
+Definition Fle2 (x y : float) := Fle_bool radix x y.
 
-Lemma Fle_b_correct :
+Lemma Fle2_correct :
  forall x y : float,
- Fle_b x y = true -> (x <= y)%R.
+ Fle2 x y = true -> (x <= y)%R.
 intros x y H.
 apply (Fle_bool_correct_t radix radixMoreThanOne).
 exact H.
 Qed.
 
-Definition Flt_b (x y : float) := Flt_bool radix x y.
+Definition Feq2 (x y : float) := Feq_bool radix x y.
 
-Lemma Flt_b_correct :
+Lemma Feq2_correct :
  forall x y : float,
- Flt_b x y = true -> (x < y)%R.
+ Feq2 x y = true -> (float2R x = y).
+intros x y H.
+apply (Feq_bool_correct_t radix radixMoreThanOne).
+exact H.
+Qed.
+
+Definition Flt2 (x y : float) := Flt_bool radix x y.
+
+Lemma Flt2_correct :
+ forall x y : float,
+ Flt2 x y = true -> (x < y)%R.
 intros x y H.
 apply (Flt_bool_correct_t radix radixMoreThanOne).
 exact H.

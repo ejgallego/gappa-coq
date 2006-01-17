@@ -1,5 +1,5 @@
-Require Import IA_comput.
 Require Import F_rnd.
+Require Import Gappa_common.
 
 Section IA_float.
 
@@ -13,19 +13,19 @@ Record rounding_operator : Set := mk_rounding {
 }.
 
 Definition f_round_helper (rnd : float -> float) (xi zi : FF) :=
- Fle_b (lower zi) (rnd (lower xi)) &&
- Fle_b (rnd (upper xi)) (upper zi).
+ Fle2 (lower zi) (rnd (lower xi)) &&
+ Fle2 (rnd (upper xi)) (upper zi).
 
 Theorem f_round :
  forall rnd : rounding_operator,
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  f_round_helper (rounding_float rnd) xi zi = true ->
- IintF zi (rounding_real rnd x).
+ BND (rounding_real rnd x) zi.
 intros rnd x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fle_b_correct _ _ H1). clear H1. intro H1.
-generalize (Fle_b_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 split ; unfold FF2RR ; simpl.
 apply Rle_trans with (1 := H1).
 rewrite <- (rounding_coerc rnd (lower xi)).
@@ -55,46 +55,49 @@ Definition float_round_ne (p: nat) (e: N) :=
 Theorem float_absolute_ne:
  forall p: nat, forall e: N,
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  true = true ->
- IintF zi (rounding_float_ne p e x - x).
+ BND (rounding_float_ne p e x - x) zi.
 Admitted.
 
 Theorem float_absolute_wide_ne:
  forall p: nat, forall e: N,
  forall x : R, forall xi zi : FF,
- IintF xi x ->
+ BND x xi ->
  true = true ->
- IintF zi (rounding_float_ne p e x - x).
+ BND (rounding_float_ne p e x - x) zi.
 Admitted.
 
 Theorem float_absolute_inv_ne:
  forall p: nat, forall e: N,
  forall x : R, forall xi zi : FF,
- IintF xi (rounding_float_ne p e x) ->
+ BND (rounding_float_ne p e x) xi ->
  true = true ->
- IintF zi (rounding_float_ne p e x - x).
+ BND (rounding_float_ne p e x - x) zi.
 Admitted.
 
 Parameter rounding_fixed_zr : Z -> R -> R.
 Parameter rounding_fixed_ne : Z -> R -> R.
-Definition FixP (n : Z) (x : R) :=
+Definition FIX (x : R) (n : Z) :=
  exists f : float, x = f /\ (n <= Fexp f)%Z.
 
 Axiom rounding_fixed_ne_correct_1 :
  forall n : Z, forall x : R,
- FixP n (rounding_fixed_ne n x).
+ FIX (rounding_fixed_ne n x) n.
 Axiom rounding_fixed_ne_correct_2 :
  forall n e : Z, forall x : R,
- FixP n x -> (n <= e)%Z ->
+ FIX x n -> (n <= e)%Z ->
  exists f : float, x = rounding_fixed_ne n f.
 Axiom fix_of_fixed :
  forall n e : Z, forall x : R,
- (Zle_bool n e) = true -> FixP n (rounding_fixed_ne e x).
+ (Zle_bool n e) = true -> FIX (rounding_fixed_ne e x) n.
+Definition contains_zero_helper (zi : FF) :=
+ Fneg0 (lower zi) &&
+ Fpos0 (upper zi).
 Axiom fixed_of_fix :
  forall n e : Z, forall zi : FF, forall x : R,
- FixP n x ->
+ FIX x n ->
  Zle_bool e n && contains_zero_helper zi = true ->
- IintF zi (rounding_fixed_ne e x - x).
+ BND (rounding_fixed_ne e x - x) zi.
 
 End IA_float.
