@@ -78,8 +78,6 @@ Admitted.
 
 Parameter rounding_fixed_zr : Z -> R -> R.
 Parameter rounding_fixed_ne : Z -> R -> R.
-Definition FIX (x : R) (n : Z) :=
- exists f : float, x = f /\ (n <= Fexp f)%Z.
 
 Axiom rounding_fixed_ne_correct_1 :
  forall n : Z, forall x : R,

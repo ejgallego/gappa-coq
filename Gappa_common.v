@@ -19,9 +19,9 @@ Definition BND (x : R) (xi : FF) :=
 Definition ABS (x : R) (xi : FF) :=
  (0 <= lower xi)%R /\ bndR (Rabs x) xi.
 Definition FIX (x : R) (n : Z) :=
- exists f : float, x = f /\ (n <= Fexp f)%Z.
+ exists f : float, float2R f = x /\ (n <= Fexp f)%Z.
 Definition FLT (x : R) (n : positive) :=
- exists f : float, x = f /\ (Zabs (Fnum f) < Zpower_pos radix n)%Z.
+ exists f : float, float2R f = x /\ (Zabs (Fnum f) < Zpower_pos radix n)%Z.
 
 Definition Fle2 (x y : float) := Fle_bool radix x y.
 
