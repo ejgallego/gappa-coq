@@ -100,5 +100,10 @@ Axiom fixed_of_fix :
  FIX x n ->
  Zle_bool e n && contains_zero_helper zi = true ->
  BND (rounding_fixed_ne e x - x) zi.
+Axiom float_of_fix_flt :
+ forall n : Z, forall e : N, forall zi : FF, forall x : R, forall m : positive, forall p : nat,
+ FIX x n -> FLT x m ->
+ Zle_bool (Zopp (Z_of_N e)) n && Zle_bool (Zpos m) (Z_of_nat p) && contains_zero_helper zi = true ->
+ BND (rounding_float_ne p e x - x) zi.
 
 End IA_float.
