@@ -3,6 +3,29 @@ Require Import Gappa_common.
 
 Section Gappa_pred_abs.
 
+Axiom Rabs_def2b :
+ forall x a : R, (Rabs x <= a)%R -> (-a <= x <= a)%R.
+
+Definition bnd_of_abs_helper (xi zi : FF) :=
+ Fle2 (lower zi) (Fopp (upper xi)) &&
+ Fle2 (upper xi) (upper zi).
+
+Theorem bnd_of_abs :
+ forall x : R, forall xi zi : FF,
+ ABS x xi ->
+ bnd_of_abs_helper xi zi = true ->
+ BND x zi.
+intros x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). unfold float2R. rewrite Fopp_correct. fold float2R. clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+assert (H : (-(upper xi) <= x <= (upper xi))%R).
+apply (Rabs_def2b _ _ (proj2 (proj2 Hx))).
+split.
+apply Rle_trans with (1 := H1) (2 := proj1 H).
+apply Rle_trans with (1 := proj2 H) (2 := H2).
+Qed.
+
 Definition abs_of_bnd_helper (xi zi : FF) :=
  Fpos0 (lower zi) &&
  Fle2 (lower zi) (lower xi) &&
