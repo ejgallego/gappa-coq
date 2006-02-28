@@ -193,14 +193,14 @@ Qed.
 
 Definition contradiction := forall P, P.
 
-Definition intersect_helper (xi yi zi : FF) :=
- Fle2 (lower zi) (lower yi) &&
- Fle2 (upper xi) (upper zi).
+Definition intersect_helper (xf yf : float) (zi : FF) :=
+ Fle2 (lower zi) yf &&
+ Fle2 xf (upper zi).
 
 Theorem intersect :
  forall z : R, forall xi yi zi : FF,
  BND z xi -> BND z yi ->
- intersect_helper xi yi zi = true ->
+ intersect_helper (upper xi) (lower yi) zi = true ->
  BND z zi.
 intros z xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -208,6 +208,34 @@ generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 split ; unfold FF2RR ; simpl.
 apply Rle_trans with (1 := H1) (2 := (proj1 Hy)).
+apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
+Qed.
+
+Theorem intersect_hl :
+ forall z : R, forall xf : float, forall yi zi : FF,
+ (z <= xf)%R -> BND z yi ->
+ intersect_helper xf (lower yi) zi = true ->
+ BND z zi.
+intros z xf yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+split ; unfold FF2RR ; simpl.
+apply Rle_trans with (1 := H1) (2 := (proj1 Hy)).
+apply Rle_trans with (1 := Hx) (2 := H2).
+Qed.
+
+Theorem intersect_hr :
+ forall z : R, forall yf : float, forall xi zi : FF,
+ BND z xi -> (yf <= z)%R ->
+ intersect_helper (upper xi) yf zi = true ->
+ BND z zi.
+intros z yf xi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+split ; unfold FF2RR ; simpl.
+apply Rle_trans with (1 := H1) (2 := Hy).
 apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
 
@@ -220,6 +248,30 @@ intros z xi yi Hx Hy Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 generalize (Rle_lt_trans _ _ _ (proj2 Hx) H). clear H. intro H.
 generalize (Rlt_le_trans _ _ _ H (proj1 Hy)). clear H. intro H.
+elim (Rlt_irrefl _ H).
+Qed.
+
+Theorem absurd_intersect_hl :
+ forall z : R, forall xf : float, forall yi : FF,
+ (z <= xf)%R -> BND z yi ->
+ Flt2 xf (lower yi) = true ->
+ contradiction.
+intros z xi yi Hx Hy Hb.
+generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
+generalize (Rle_lt_trans _ _ _ Hx H). clear H. intro H.
+generalize (Rlt_le_trans _ _ _ H (proj1 Hy)). clear H. intro H.
+elim (Rlt_irrefl _ H).
+Qed.
+
+Theorem absurd_intersect_hr :
+ forall z : R, forall xi : FF, forall yf : float,
+ BND z xi -> (yf <= z)%R ->
+ Flt2 (upper xi) yf = true ->
+ contradiction.
+intros z xi yi Hx Hy Hb.
+generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
+generalize (Rle_lt_trans _ _ _ (proj2 Hx) H). clear H. intro H.
+generalize (Rlt_le_trans _ _ _ H Hy). clear H. intro H.
 elim (Rlt_irrefl _ H).
 Qed.
 
