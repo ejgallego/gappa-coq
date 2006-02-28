@@ -288,4 +288,15 @@ rewrite Rabs_mult.
 exact Hz.
 Qed.
 
+Theorem accura_to_approx_abs :
+ forall a b : R, forall zi : FF,
+ BND (b + -(b - a))%R zi ->
+ true = true ->
+ BND a zi.
+intros a b zi Hz _.
+replace a with (b + -(b - a))%R.
+exact Hz.
+ring.
+Qed.
+
 End Gappa_rewriting.
