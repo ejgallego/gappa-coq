@@ -86,9 +86,12 @@ Axiom rounding_fixed_ne_correct_2 :
  forall n e : Z, forall x : R,
  FIX x n -> (n <= e)%Z ->
  exists f : float, x = rounding_fixed_ne n f.
-Axiom fix_of_fixed :
+Axiom fix_of_fixed_ne :
  forall n e : Z, forall x : R,
  (Zle_bool n e) = true -> FIX (rounding_fixed_ne e x) n.
+Axiom fix_of_fixed_zr :
+ forall n e : Z, forall x : R,
+ (Zle_bool n e) = true -> FIX (rounding_fixed_zr e x) n.
 Axiom flt_of_float :
  forall n : positive, forall p : nat, forall e : N, forall x : R,
  (Zle_bool (Z_of_nat p) (Zpos n)) = true -> FLT (rounding_float_ne p e x) n.
@@ -105,5 +108,10 @@ Axiom float_of_fix_flt :
  FIX x n -> FLT x m ->
  Zle_bool (Zopp (Z_of_N e)) n && Zle_bool (Zpos m) (Z_of_nat p) && contains_zero_helper zi = true ->
  BND (rounding_float_ne p e x - x) zi.
+Axiom bnd_of_fix_bnd :
+ forall n : Z, forall xi zi : FF, forall x : R,
+ FIX x n -> BND x xi ->
+ true = true ->
+ BND x zi.
 
 End IA_float.
