@@ -57,15 +57,15 @@ Definition Fplus2 := Fplus radix.
 
 Lemma Fplus2_correct :
  forall x y : float,
- (float2R (Fplus radix x y) = x + y)%R.
+ (float2R (Fplus2 x y) = x + y)%R.
 exact (Fplus_correct radix radixNotZero).
 Qed.
 
-Definition Fminus2 := Fplus radix.
+Definition Fminus2 := Fminus radix.
 
 Lemma Fminus2_correct :
  forall x y : float,
- (float2R (Fminus radix x y) = x - y)%R.
+ (float2R (Fminus2 x y) = x - y)%R.
 exact (Fminus_correct radix radixNotZero).
 Qed.
 
