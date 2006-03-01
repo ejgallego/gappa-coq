@@ -290,7 +290,7 @@ Qed.
 
 Theorem accura_to_approx_abs :
  forall a b : R, forall zi : FF,
- BND (b + -(b - a))%R zi ->
+ BND (b + -(b - a)) zi ->
  true = true ->
  BND a zi.
 intros a b zi Hz _.
@@ -301,13 +301,44 @@ Qed.
 
 Theorem approx_to_accura_abs :
  forall a b : R, forall zi : FF,
- BND (a + (b - a))%R zi ->
+ BND (a + (b - a)) zi ->
  true = true ->
  BND b zi.
 intros a b zi Hz _.
 replace b with (a + (b - a))%R.
 exact Hz.
 ring.
+Qed.
+
+Theorem accura_to_approx_rel :
+ forall a b : R, forall ai wi zi : FF,
+ ABS a ai -> ABS (1 + (b - a) / a) wi ->
+ BND (b / (1 + (b - a) / a)) zi ->
+ abs_not_zero ai && abs_not_zero wi = true ->
+ BND a zi.
+intros a b ai ci zi Ha Hw Hz H.
+generalize (andb_prop _ _ H). clear H. intros (H1, H2).
+generalize (abs_not_zero_correct _ _ Ha H1). clear Ha H1. intro Ha.
+generalize (abs_not_zero_correct _ _ Hw H2). clear Hw H2. intro Hw.
+replace a with (b / (1 + (b - a) / a))%R.
+exact Hz.
+field.
+exact Ha.
+exact Hw.
+Qed.
+
+Theorem approx_to_accura_rel :
+ forall a b : R, forall ai zi : FF,
+ ABS a ai ->
+ BND (a * (1 + (b - a) / a)) zi ->
+ abs_not_zero ai = true ->
+ BND b zi.
+intros a b ai zi Ha Hz H.
+generalize (abs_not_zero_correct _ _ Ha H). clear Ha H. intro Ha.
+replace b with (a * (1 + (b - a) / a))%R.
+exact Hz.
+field.
+exact Ha.
 Qed.
 
 End Gappa_rewriting.
