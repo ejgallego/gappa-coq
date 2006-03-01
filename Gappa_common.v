@@ -53,6 +53,36 @@ apply (Flt_bool_correct_t radix radixMoreThanOne).
 exact H.
 Qed.
 
+Definition Fplus2 := Fplus radix.
+
+Lemma Fplus2_correct :
+ forall x y : float,
+ (float2R (Fplus radix x y) = x + y)%R.
+exact (Fplus_correct radix radixNotZero).
+Qed.
+
+Definition Fminus2 := Fplus radix.
+
+Lemma Fminus2_correct :
+ forall x y : float,
+ (float2R (Fminus radix x y) = x - y)%R.
+exact (Fminus_correct radix radixNotZero).
+Qed.
+
+Definition Fis0 (x : float) :=
+ match (Fnum x) with
+   Z0 => true
+ | _ => false
+ end.
+
+Lemma Fis0_correct :
+ forall x : float,
+ Fis0 x = true -> (float2R x = 0)%R.
+intros x.
+unfold float2R, FtoR, Fis0.
+induction (Fnum x) ; intro H0 ; try discriminate.
+apply Rmult_0_l.
+Qed.
 
 Definition Fpos (x : float) :=
  match (Fnum x) with
