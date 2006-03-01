@@ -299,4 +299,15 @@ exact Hz.
 ring.
 Qed.
 
+Theorem approx_to_accura_abs :
+ forall a b : R, forall zi : FF,
+ BND (a + (b - a))%R zi ->
+ true = true ->
+ BND b zi.
+intros a b zi Hz _.
+replace b with (a + (b - a))%R.
+exact Hz.
+ring.
+Qed.
+
 End Gappa_rewriting.
