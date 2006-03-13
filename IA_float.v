@@ -108,9 +108,9 @@ Axiom float_of_fix_flt :
  FIX x n -> FLT x m ->
  Zle_bool (Zopp (Z_of_N e)) n && Zle_bool (Zpos m) (Z_of_nat p) && contains_zero_helper zi = true ->
  BND (rounding_float_ne p e x - x) zi.
-Axiom bnd_of_fix_bnd :
+Axiom bnd_of_bnd_fix :
  forall n : Z, forall xi zi : FF, forall x : R,
- FIX x n -> BND x xi ->
+ BND x xi -> FIX x n ->
  true = true ->
  BND x zi.
 
