@@ -242,4 +242,70 @@ exact Hy.
 exact Hb.
 Qed.
 
+Definition bnd_of_bnd_abs_p_helper (xi yi zi : FF) :=
+ Flt2 (Fopp (lower yi)) (lower xi) &&
+ Fle2 (lower zi) (lower yi) &&
+ Fle2 (upper xi) (upper zi).
+
+Theorem bnd_of_bnd_abs_p :
+ forall x : R, forall xi yi zi : FF,
+ BND x xi -> ABS x yi ->
+ bnd_of_bnd_abs_p_helper xi yi zi = true ->
+ BND x zi.
+intros x xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Flt2_correct _ _ H1). unfold float2R. rewrite Fopp_correct. fold float2R. clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+case (Rcase_abs x) ; intro H.
+unfold ABS in Hy.
+rewrite (Rabs_left _ H) in Hy.
+elim (Rlt_not_le (lower xi) x). 2: exact (proj1 Hx).
+apply Rle_lt_trans with (2 := H1).
+apply Ropp_le_cancel.
+rewrite Ropp_involutive.
+exact (proj1 (proj2 Hy)).
+unfold ABS in Hy.
+rewrite (Rabs_right _ H) in Hy.
+split.
+apply Rle_trans with (1 := H2) (2 := proj1 (proj2 Hy)).
+apply Rle_trans with (1 := proj2 Hx) (2 := H3).
+Qed.
+
+Definition bnd_of_bnd_abs_n_helper (xi yi zi : FF) :=
+ Flt2 (upper xi) (Fopp (upper yi)) &&
+ Fle2 (lower zi) (lower xi) &&
+ Fle2 (Fopp (lower yi)) (upper zi).
+
+Theorem bnd_of_bnd_abs_n :
+ forall x : R, forall xi yi zi : FF,
+ BND x xi -> ABS x yi ->
+ bnd_of_bnd_abs_n_helper xi yi zi = true ->
+ BND x zi.
+intros x xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Flt2_correct _ _ H1). unfold float2R. rewrite Fopp_correct. fold float2R. clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). unfold float2R. rewrite Fopp_correct. fold float2R. clear H3. intro H3.
+case (Rcase_abs x) ; intro H.
+unfold ABS in Hy.
+rewrite (Rabs_left _ H) in Hy.
+split.
+apply Rle_trans with (1 := H2) (2 := proj1 Hx).
+apply Rle_trans with (2 := H3).
+apply Ropp_le_cancel.
+rewrite Ropp_involutive.
+exact (proj1 (proj2 Hy)).
+unfold ABS in Hy.
+rewrite (Rabs_right _ H) in Hy.
+elim (Rlt_not_le x (upper xi)). 2: exact (proj2 Hx).
+apply Rlt_le_trans with (1 := H1).
+apply Ropp_le_cancel.
+rewrite Ropp_involutive.
+apply Rle_trans with (2 := proj2 (proj2 Hy)).
+apply Rle_trans with R0 ; auto with real.
+Qed.
+
 End Gappa_pred_abs.
