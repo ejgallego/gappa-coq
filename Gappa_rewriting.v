@@ -3,7 +3,7 @@ Require Import Gappa_common.
 
 Section Gappa_rewriting.
 
-Theorem add_decomposition_rounded_left :
+Theorem add_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) + (c + b)) zi ->
  true = true ->
@@ -14,7 +14,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem add_decomposition_rounded_right :
+Theorem add_xars :
  forall a b c : R, forall zi : FF,
  BND ((a + c) + (b - c)) zi ->
  true = true ->
@@ -25,7 +25,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem sub_decomposition_rounded_left :
+Theorem sub_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) + (c - b)) zi ->
  true = true ->
@@ -36,7 +36,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem sub_decomposition_rounded_right :
+Theorem sub_xars :
  forall a b c : R, forall zi : FF,
  BND ((a - c) + -(b - c)) zi ->
  true = true ->
@@ -47,7 +47,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem mul_decomposition_rounded_left :
+Theorem mul_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) * b + c * b) zi ->
  true = true ->
@@ -58,7 +58,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem mul_decomposition_rounded_right :
+Theorem mul_xars :
  forall a b c : R, forall zi : FF,
  BND (a * (b - c) + a * c) zi ->
  true = true ->
@@ -69,7 +69,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem add_decomposition :
+Theorem add_mibs :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) + (b - d)) zi ->
  true = true ->
@@ -80,7 +80,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem add_decomposition_left :
+Theorem add_fils :
  forall a b c : R, forall zi : FF,
  BND (b - c) zi ->
  true = true ->
@@ -91,7 +91,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem add_decomposition_right :
+Theorem add_firs :
  forall a b c : R, forall zi : FF,
  BND (a - c) zi ->
  true = true ->
@@ -102,7 +102,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem sub_decomposition :
+Theorem sub_mibs :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) + -(b - d)) zi ->
  true = true ->
@@ -113,7 +113,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem sub_decomposition_left :
+Theorem sub_fils :
  forall a b c : R, forall zi : FF,
  BND (-(b - c)) zi ->
  true = true ->
@@ -124,7 +124,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem sub_decomposition_right :
+Theorem sub_firs :
  forall a b c : R, forall zi : FF,
  BND (a - c) zi ->
  true = true ->
@@ -135,7 +135,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem mul_decomposition_factor_left :
+Theorem mul_fils :
  forall a b c : R, forall zi : FF,
  BND (a * (b - c)) zi ->
  true = true ->
@@ -146,7 +146,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem mul_decomposition_factor_right :
+Theorem mul_firs :
  forall a b c : R, forall zi : FF,
  BND ((a - c) * b) zi ->
  true = true ->
@@ -157,7 +157,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem mul_decomposition_half_left :
+Theorem mul_mars :
  forall a b c d : R, forall zi : FF,
  BND (a * (b - d) + (a - c) * d) zi ->
  true = true ->
@@ -168,7 +168,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem mul_decomposition_half_right :
+Theorem mul_mals :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) * b + c * (b - d)) zi ->
  true = true ->
@@ -179,7 +179,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem mul_decomposition_full_left :
+Theorem mul_mabs :
  forall a b c d : R, forall zi : FF,
  BND (a * (b - d) + (a - c) * b + -((a - c) * (b - d))) zi ->
  true = true ->
@@ -190,7 +190,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem mul_decomposition_full_right :
+Theorem mul_mibs :
  forall a b c d : R, forall zi : FF,
  BND (c * (b - d) + d * (a - c) + (a - c) * (b - d)) zi ->
  true = true ->
@@ -201,7 +201,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem relative_to_absolute :
+Theorem err_xibq :
  forall a b : R, forall bi zi : FF,
  ABS b bi -> BND (a / b * b) zi ->
  abs_not_zero bi = true ->
@@ -214,7 +214,7 @@ field.
 exact H.
 Qed.
 
-Theorem relative_transitivity :
+Theorem err_xalq :
  forall a b c : R, forall bi ci zi : FF,
  ABS b bi -> ABS c ci ->
  BND ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b)) zi ->
@@ -230,7 +230,7 @@ field.
 auto with real.
 Qed.
 
-Theorem mul_rel_decomposition :
+Theorem mul_mibq :
  forall a b c d : R, forall ci di zi : FF,
  ABS c ci -> ABS d di ->
  BND ((a - c) / c + (b - d) / d + ((a - c) / c) * ((b - d) / d)) zi ->
@@ -246,7 +246,7 @@ field.
 repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
 Qed.
 
-Theorem mul_rel_decomposition_left :
+Theorem mul_filq :
  forall a b c : R, forall ai ci zi : FF,
  ABS a ai -> ABS c ci ->
  BND ((b - c) / c) zi ->
@@ -262,7 +262,7 @@ field.
 repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
 Qed.
 
-Theorem mul_rel_decomposition_right :
+Theorem mul_firq :
  forall a b c : R, forall bi ci zi : FF,
  ABS b bi -> ABS c ci ->
  BND ((a - c) / c) zi ->
@@ -288,7 +288,7 @@ rewrite Rabs_mult.
 exact Hz.
 Qed.
 
-Theorem accura_to_approx_abs :
+Theorem val_xebs :
  forall a b : R, forall zi : FF,
  BND (b + -(b - a)) zi ->
  true = true ->
@@ -299,7 +299,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem approx_to_accura_abs :
+Theorem val_xabs :
  forall a b : R, forall zi : FF,
  BND (a + (b - a)) zi ->
  true = true ->
@@ -310,7 +310,7 @@ exact Hz.
 ring.
 Qed.
 
-Theorem accura_to_approx_rel :
+Theorem val_xebq :
  forall a b : R, forall ai wi zi : FF,
  ABS a ai -> ABS (1 + (b - a) / a) wi ->
  BND (b / (1 + (b - a) / a)) zi ->
@@ -327,7 +327,7 @@ exact Ha.
 exact Hw.
 Qed.
 
-Theorem approx_to_accura_rel :
+Theorem val_xabq :
  forall a b : R, forall ai zi : FF,
  ABS a ai ->
  BND (a * (1 + (b - a) / a)) zi ->
