@@ -50,6 +50,41 @@ apply Rle_trans with (1 := H2) (2 := proj1 Hx).
 apply Rle_trans with (1 := proj2 Hx) (2 := H3).
 Qed.
 
+Definition intersect_aa_helper (xf yf : float) (zi : FF) :=
+ Fpos0 (lower zi) &&
+ Fle2 (lower zi) yf &&
+ Fle2 xf (upper zi).
+
+Theorem intersect_aa :
+ forall z : R, forall xi yi zi : FF,
+ ABS z xi -> ABS z yi ->
+ intersect_aa_helper (upper xi) (lower yi) zi = true ->
+ ABS z zi.
+intros z xi yi zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fpos0_correct _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+split.
+exact H1.
+split ; unfold FF2RR ; simpl.
+apply Rle_trans with (1 := H2) (2 := proj1 (proj2 Hy)).
+apply Rle_trans with (1 := proj2 (proj2 Hx)) (2 := H3).
+Qed.
+
+Theorem absurd_intersect_aa :
+ forall z : R, forall xi yi : FF,
+ ABS z xi -> ABS z yi ->
+ Flt2 (upper xi) (lower yi) = true ->
+ contradiction.
+intros z xi yi Hx Hy Hb.
+generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
+generalize (Rle_lt_trans _ _ _ (proj2 (proj2 Hx)) H). clear H. intro H.
+generalize (Rlt_le_trans _ _ _ H (proj1 (proj2 Hy))). clear H. intro H.
+elim (Rlt_irrefl _ H).
+Qed.
+
 Definition mul_aa_helper (xi yi zi : FF) :=
  Fpos0 (lower zi) &&
  Fle2 (lower zi) (Fmult (lower xi) (lower yi)) &&

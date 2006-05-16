@@ -187,4 +187,6 @@ apply Rgt_not_eq.
 apply Rlt_le_trans with (1 := H) (2 := proj1 (proj2 Hz)).
 Qed.
 
+Definition contradiction := forall P, P.
+
 End Gappa_comp_common.
