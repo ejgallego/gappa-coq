@@ -1002,4 +1002,44 @@ apply Rle_trans with (1 := proj2 Hx) (2 := H1).
 apply Ropp_le_contravar with (1 := proj1 Hx).
 Qed.
 
+Definition sqrt_helper (xi zi : FF) :=
+ Fpos0 (lower xi) &&
+ Fpos0 (upper zi) &&
+ Fle2 (Fmult (lower zi) (lower zi)) (lower xi) &&
+ Fle2 (upper xi) (Fmult (upper zi) (upper zi)).
+
+Theorem sqrtG:
+ forall x : R, forall xi zi : FF,
+ BND x xi ->
+ sqrt_helper xi zi = true ->
+ BND (sqrt x) zi.
+intros x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fpos0_correct _ H1). clear H1. intro H1.
+generalize (Fpos0_correct _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
+generalize (Fle2_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
+unfold BND, bndR.
+simpl.
+split.
+elim (Rcase_abs (lower zi)) ; intro H.
+apply Rlt_le.
+apply Rlt_le_trans with (1 := H).
+apply sqrt_positivity.
+apply Rle_trans with (1 := H1) (2 := proj1 Hx).
+generalize (Rge_le _ _ H). clear H. intro H.
+rewrite <- (sqrt_square (lower zi)). 2: exact H.
+apply sqrt_le_1.
+apply Rmult_le_pos ; exact H.
+apply Rle_trans with (1 := H1) (2 := proj1 Hx).
+apply Rle_trans with (1 := H3) (2 := proj1 Hx).
+rewrite <- (sqrt_square (upper zi)). 2: exact H2.
+apply sqrt_le_1.
+apply Rle_trans with (1 := H1) (2 := proj1 Hx).
+apply Rmult_le_pos ; exact H2.
+apply Rle_trans with (1 := proj2 Hx) (2 := H4).
+Qed.
+
 End Gappa_pred_bnd.
