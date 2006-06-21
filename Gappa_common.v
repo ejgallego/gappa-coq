@@ -69,6 +69,12 @@ Lemma Fminus2_correct :
 exact (Fminus_correct radix radixNotZero).
 Qed.
 
+Lemma Fmult2_correct :
+ forall x y : float,
+ (float2R (Fmult x y) = x * y)%R.
+exact (Fmult_correct radix radixNotZero).
+Qed.
+
 Definition Fis0 (x : float) :=
  match (Fnum x) with
    Z0 => true

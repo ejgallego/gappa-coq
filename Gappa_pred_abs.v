@@ -99,8 +99,8 @@ intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fpos0_correct _ H1). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). rewrite Fmult_correct with (1 := radixNotZero). clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
+generalize (Fle2_correct _ _ H2). rewrite Fmult2_correct. clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
 unfold ABS, bndR in *.
 split.
 exact H1.
@@ -126,8 +126,8 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H2).
 generalize (Fpos_correct _ Hb). intro H1.
 generalize (Fpos0_correct _ H2). clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). rewrite Fmult_correct with (1 := radixNotZero). clear H3. intro H3.
-generalize (Fle2_correct _ _ H4). rewrite Fmult_correct with (1 := radixNotZero). clear H4. intro H4.
+generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
+generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
 split.
 exact H2.
 replace (Rabs (x / y)) with (Rabs x / Rabs y)%R.

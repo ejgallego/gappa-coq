@@ -5,3 +5,5 @@ Require Export Gappa_pred_bnd.
 Require Export Gappa_pred_abs.
 Require Export Gappa_pred_fixflt.
 Require Export Gappa_rewriting.
+
+Ltac finalize := exact (refl_equal true).
