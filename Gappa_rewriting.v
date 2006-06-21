@@ -6,9 +6,8 @@ Section Gappa_rewriting.
 Theorem add_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) + (c + b)) zi ->
- true = true ->
  BND (a + b) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace (a + b)%R with ((a - c) + (c + b))%R.
 exact Hz.
 ring.
@@ -17,9 +16,8 @@ Qed.
 Theorem add_xars :
  forall a b c : R, forall zi : FF,
  BND ((a + c) + (b - c)) zi ->
- true = true ->
  BND (a + b) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace (a + b)%R with ((a + c) + (b - c))%R.
 exact Hz.
 ring.
@@ -28,9 +26,8 @@ Qed.
 Theorem sub_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) + (c - b)) zi ->
- true = true ->
  BND (a - b) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace (a - b)%R with ((a - c) + (c - b))%R.
 exact Hz.
 ring.
@@ -39,9 +36,8 @@ Qed.
 Theorem sub_xars :
  forall a b c : R, forall zi : FF,
  BND ((a - c) + -(b - c)) zi ->
- true = true ->
  BND (a - b) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace (a - b)%R with ((a - c) + -(b - c))%R.
 exact Hz.
 ring.
@@ -50,9 +46,8 @@ Qed.
 Theorem mul_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) * b + c * b) zi ->
- true = true ->
  BND (a * b) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace (a * b)%R with ((a - c) * b + c * b)%R.
 exact Hz.
 ring.
@@ -61,9 +56,8 @@ Qed.
 Theorem mul_xars :
  forall a b c : R, forall zi : FF,
  BND (a * (b - c) + a * c) zi ->
- true = true ->
  BND (a * b) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace (a * b)%R with (a * (b - c) + a * c)%R.
 exact Hz.
 ring.
@@ -72,9 +66,8 @@ Qed.
 Theorem add_mibs :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) + (b - d)) zi ->
- true = true ->
  BND ((a + b) - (c + d)) zi.
-intros a b c d zi Hz _.
+intros a b c d zi Hz.
 replace ((a + b) - (c + d))%R with ((a - c) + (b - d))%R.
 exact Hz.
 ring.
@@ -83,9 +76,8 @@ Qed.
 Theorem add_fils :
  forall a b c : R, forall zi : FF,
  BND (b - c) zi ->
- true = true ->
  BND ((a + b) - (a + c)) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace ((a + b) - (a + c))%R with (b - c)%R.
 exact Hz.
 ring.
@@ -94,9 +86,8 @@ Qed.
 Theorem add_firs :
  forall a b c : R, forall zi : FF,
  BND (a - c) zi ->
- true = true ->
  BND ((a + b) - (c + b)) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace ((a + b) - (c + b))%R with (a - c)%R.
 exact Hz.
 ring.
@@ -105,9 +96,8 @@ Qed.
 Theorem sub_mibs :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) + -(b - d)) zi ->
- true = true ->
  BND ((a - b) - (c - d)) zi.
-intros a b c d zi Hz _.
+intros a b c d zi Hz.
 replace ((a - b) - (c - d))%R with ((a - c) + -(b - d))%R.
 exact Hz.
 ring.
@@ -116,9 +106,8 @@ Qed.
 Theorem sub_fils :
  forall a b c : R, forall zi : FF,
  BND (-(b - c)) zi ->
- true = true ->
  BND ((a - b) - (a - c)) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace ((a - b) - (a - c))%R with (-(b - c))%R.
 exact Hz.
 ring.
@@ -127,9 +116,8 @@ Qed.
 Theorem sub_firs :
  forall a b c : R, forall zi : FF,
  BND (a - c) zi ->
- true = true ->
  BND ((a - b) - (c - b)) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace ((a - b) - (c - b))%R with (a - c)%R.
 exact Hz.
 ring.
@@ -138,9 +126,8 @@ Qed.
 Theorem mul_fils :
  forall a b c : R, forall zi : FF,
  BND (a * (b - c)) zi ->
- true = true ->
  BND (a * b - a * c) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace (a * b - a * c)%R with (a * (b - c))%R.
 exact Hz.
 ring.
@@ -149,9 +136,8 @@ Qed.
 Theorem mul_firs :
  forall a b c : R, forall zi : FF,
  BND ((a - c) * b) zi ->
- true = true ->
  BND (a * b - c * b) zi.
-intros a b c zi Hz _.
+intros a b c zi Hz.
 replace (a * b - c * b)%R with ((a - c) * b)%R.
 exact Hz.
 ring.
@@ -160,9 +146,8 @@ Qed.
 Theorem mul_mars :
  forall a b c d : R, forall zi : FF,
  BND (a * (b - d) + (a - c) * d) zi ->
- true = true ->
  BND (a * b - c * d) zi.
-intros a b c d zi Hz _.
+intros a b c d zi Hz.
 replace (a * b - c * d)%R with (a * (b - d) + (a - c) * d)%R.
 exact Hz.
 ring.
@@ -171,9 +156,8 @@ Qed.
 Theorem mul_mals :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) * b + c * (b - d)) zi ->
- true = true ->
  BND (a * b - c * d) zi.
-intros a b c d zi Hz _.
+intros a b c d zi Hz.
 replace (a * b - c * d)%R with ((a - c) * b + c * (b - d))%R.
 exact Hz.
 ring.
@@ -182,9 +166,8 @@ Qed.
 Theorem mul_mabs :
  forall a b c d : R, forall zi : FF,
  BND (a * (b - d) + (a - c) * b + -((a - c) * (b - d))) zi ->
- true = true ->
  BND (a * b - c * d) zi.
-intros a b c d zi Hz _.
+intros a b c d zi Hz.
 replace (a * b - c * d)%R with (a * (b - d) + (a - c) * b + -((a - c) * (b - d)))%R.
 exact Hz.
 ring.
@@ -193,9 +176,8 @@ Qed.
 Theorem mul_mibs :
  forall a b c d : R, forall zi : FF,
  BND (c * (b - d) + d * (a - c) + (a - c) * (b - d)) zi ->
- true = true ->
  BND (a * b - c * d) zi.
-intros a b c d zi Hz _.
+intros a b c d zi Hz.
 replace (a * b - c * d)%R with (c * (b - d) + d * (a - c) + (a - c) * (b - d))%R.
 exact Hz.
 ring.
@@ -281,9 +263,8 @@ Qed.
 Theorem abs_mul_xx :
  forall a b : R, forall zi : FF,
  BND (Rabs a * Rabs b) zi ->
- true = true ->
  BND (Rabs (a * b)) zi.
-intros a b zi Hz _.
+intros a b zi Hz.
 rewrite Rabs_mult.
 exact Hz.
 Qed.
@@ -291,9 +272,8 @@ Qed.
 Theorem val_xebs :
  forall a b : R, forall zi : FF,
  BND (b + -(b - a)) zi ->
- true = true ->
  BND a zi.
-intros a b zi Hz _.
+intros a b zi Hz.
 replace a with (b + -(b - a))%R.
 exact Hz.
 ring.
@@ -302,9 +282,8 @@ Qed.
 Theorem val_xabs :
  forall a b : R, forall zi : FF,
  BND (a + (b - a)) zi ->
- true = true ->
  BND b zi.
-intros a b zi Hz _.
+intros a b zi Hz.
 replace b with (a + (b - a))%R.
 exact Hz.
 ring.
