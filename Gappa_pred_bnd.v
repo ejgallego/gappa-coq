@@ -1,52 +1,18 @@
-Require Import AllFloat.
 Require Import Gappa_common.
+Require Import ZArith.
 
 Section Gappa_pred_bnd.
 
-Definition Float1 (x : Z) := x.
-Definition Float2 := Float.
+Definition Float1 := IZR.
 Record deci : Set := Float10 { Fnum10 : Z ; Fexp10 : Z }.
-Coercion deci2R := fun x : deci => (Fnum10 x * powerRZ 10 (Fexp10 x))%R.
+Coercion deci2R := fun x : deci => (IZR (Fnum10 x) * powerRZ 10 (Fexp10 x))%R.
 
-
-Lemma Fcompare_Eq :
- forall x y : float,
- Fcompare radix x y = Eq ->
- float2R x = float2R y.
-intros x y H.
-apply Feq_bool_correct_t with (1 := radixMoreThanOne).
-unfold radix in H.
-unfold Feq_bool. rewrite H. trivial.
-Qed.
-
-Lemma Fcompare_Lt :
- forall x y : float,
- Fcompare radix x y = Lt ->
- (x < y)%R.
-intros x y H.
-apply Flt_bool_correct_t with (1 := radixMoreThanOne).
-unfold radix in H.
-unfold Flt_bool. rewrite H. trivial.
-Qed.
-
-Lemma Fcompare_Gt :
- forall x y : float,
- Fcompare radix x y = Gt ->
- (x > y)%R.
-intros x y H.
-unfold float2R.
-apply Flt_Fgt.
-apply Fle_bool_correct_f with (1 := radixMoreThanOne).
-unfold radix in H.
-unfold Fle_bool. rewrite H. trivial.
-Qed.
-
-Definition Dcompare (x : float) (y : deci) :=
+Definition Dcompare (x : float2) (y : deci) :=
  let m := Fnum10 y in let e := Fexp10 y in
  match e with
- | Zpos p => Fcompare radix x (Float (m * Zpower_pos 5 p) e)
- | Zneg p => Fcompare radix (Float (Fnum x * Zpower_pos 5 p) (Fexp x)) (Float m e)
- | Z0 => Fcompare radix x (Float m 0)
+ | Zpos p => Fcomp2 x (Float2 (m * Zpower_pos 5 p) e)
+ | Zneg p => Fcomp2 (Float2 (Fnum x * Zpower_pos 5 p) (Fexp x)) (Float2 m e)
+ | Z0 => Fcomp2 x (Float2 m 0)
  end.
 
 Axiom pow_exp :
@@ -54,7 +20,7 @@ Axiom pow_exp :
  ((pow x n) * (pow y n) = (pow (x * y) n))%R.
 
 Lemma Dcompare_correct :
- forall x : float, forall y : deci,
+ forall x : float2, forall y : deci,
  match (Dcompare x y) with
  | Lt => (x < y)%R
  | Eq => (float2R x = y)%R
@@ -67,19 +33,20 @@ simpl.
 induction ye ; unfold deci2R ;
 simpl.
 rewrite Rmult_1_r.
-replace (IZR ym) with (FtoR radix (Float ym 0)).
-2: unfold FtoR ; auto with real.
-unfold float2R, radix.
-CaseEq (Fcompare 2 x (Float ym 0)) ; intro H.
-apply Fcompare_Eq with (1 := H).
-apply Fcompare_Lt with (1 := H).
-apply Fcompare_Gt with (1 := H).
-unfold float2R, radix.
-assert (H0: (float2R (Float (ym * Zpower_pos 5 p) (Zpos p)) = ym * 10 ^ nat_of_P p)%R).
-unfold float2R, radix, FtoR.
+replace (IZR ym) with (float2R (Float2 ym 0)).
+2: unfold float2R ; auto with real.
+unfold float2R.
+CaseEq (Fcomp2 x (Float2 ym 0)) ; intro H.
+apply Fcomp2_Eq with (1 := H).
+apply Fcomp2_Lt with (1 := H).
+apply Fcomp2_Gt with (1 := H).
+unfold float2R.
+assert (H0: (Float2 (ym * Zpower_pos 5 p) (Zpos p) = (IZR ym * 10 ^ nat_of_P p)%R :>R)).
+unfold float2R.
 simpl.
 rewrite mult_IZR.
 rewrite Zpower_pos_nat.
+(*
 rewrite Zpower_nat_Z_powerRZ.
 unfold powerRZ.
 rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
@@ -88,22 +55,23 @@ rewrite pow_exp.
 cutrewrite (Zpos 5 * 2 = 10)%R.
 trivial.
 compute. ring.
-CaseEq (Fcompare 2 x (Float (ym * Zpower_pos 5 p) (Zpos p))) ;
+CaseEq (Fcomp2 x (Float (ym * Zpower_pos 5 p) (Zpos p))) ;
  intro H ;
- [ generalize (Fcompare_Eq _ _ H) |
-   generalize (Fcompare_Lt _ _ H) |
-   generalize (Fcompare_Gt _ _ H) ] ;
+ [ generalize (Fcomp2_Eq _ _ H) |
+   generalize (Fcomp2_Lt _ _ H) |
+   generalize (Fcomp2_Gt _ _ H) ] ;
  clear H ; rewrite H0 ; trivial.
+*)
 Admitted.
 
-Definition Dle_fd (x : float) (y : deci) :=
+Definition Dle_fd (x : float2) (y : deci) :=
  match (Dcompare x y) with
  | Gt => false
  | _ => true
  end.
 
 Lemma Dle_fd_correct :
- forall x : float, forall y : deci,
+ forall x : float2, forall y : deci,
  Dle_fd x y = true ->
  (x <= y)%R.
 intros x y.
@@ -113,14 +81,14 @@ CaseEq (Dcompare x y) ; intros ; auto with real.
 discriminate.
 Qed.
 
-Definition Dle_df (x : deci) (y : float) :=
+Definition Dle_df (x : deci) (y : float2) :=
  match (Dcompare y x) with
  | Lt => false
  | _ => true
  end.
 
 Lemma Dle_df_correct :
- forall x : deci, forall y : float,
+ forall x : deci, forall y : float2,
  Dle_df x y = true ->
  (x <= y)%R.
 intros x y.
@@ -130,11 +98,11 @@ CaseEq (Dcompare y x) ; intros ; auto with real.
 discriminate.
 Qed.
 
-Definition constant2_helper (x : float) (zi : FF) :=
+Definition constant2_helper (x : float2) (zi : FF) :=
  Fle2 (lower zi) x && Fle2 x (upper zi).
 
 Theorem constant2 :
- forall x : float, forall zi : FF,
+ forall x : float2, forall zi : FF,
  constant2_helper x zi = true ->
  BND x zi.
 intros x zi Hb.
@@ -146,15 +114,15 @@ Qed.
 
 Theorem constant1 :
  forall x : Z, forall zi : FF,
- constant2_helper (Float x 0) zi = true ->
- BND x zi.
+ constant2_helper (Float2 x 0) zi = true ->
+ BND (IZR x) zi.
 intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-replace (IZR x) with (float2R (Float x 0)).
+replace (IZR x) with (float2R (Float2 x 0)).
 split ; assumption.
-unfold float2R, FtoR.
+unfold float2R.
 simpl.
 apply Rmult_1_r.
 Qed.
@@ -191,7 +159,7 @@ apply Rle_trans with (1 := H1) (2 := (proj1 Hx)).
 apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
 
-Definition intersect_helper (xf yf : float) (zi : FF) :=
+Definition intersect_helper (xf yf : float2) (zi : FF) :=
  Fle2 (lower zi) yf &&
  Fle2 xf (upper zi).
 
@@ -210,7 +178,7 @@ apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
 
 Theorem intersect_hb :
- forall z : R, forall xf : float, forall yi zi : FF,
+ forall z : R, forall xf : float2, forall yi zi : FF,
  (z <= xf)%R -> BND z yi ->
  intersect_helper xf (lower yi) zi = true ->
  BND z zi.
@@ -224,7 +192,7 @@ apply Rle_trans with (1 := Hx) (2 := H2).
 Qed.
 
 Theorem intersect_bh :
- forall z : R, forall yf : float, forall xi zi : FF,
+ forall z : R, forall yf : float2, forall xi zi : FF,
  BND z xi -> (yf <= z)%R ->
  intersect_helper (upper xi) yf zi = true ->
  BND z zi.
@@ -250,7 +218,7 @@ elim (Rlt_irrefl _ H).
 Qed.
 
 Theorem absurd_intersect_hb :
- forall z : R, forall xf : float, forall yi : FF,
+ forall z : R, forall xf : float2, forall yi : FF,
  (z <= xf)%R -> BND z yi ->
  Flt2 xf (lower yi) = true ->
  contradiction.
@@ -262,7 +230,7 @@ elim (Rlt_irrefl _ H).
 Qed.
 
 Theorem absurd_intersect_bh :
- forall z : R, forall xi : FF, forall yf : float,
+ forall z : R, forall xi : FF, forall yf : float2,
  BND z xi -> (yf <= z)%R ->
  Flt2 (upper xi) yf = true ->
  contradiction.
@@ -312,8 +280,8 @@ exact (proj2 Hx).
 Qed.
 
 Definition neg_helper (xi zi : FF) :=
- Fle2 (lower zi) (Fopp (upper xi)) &&
- Fle2 (Fopp (lower xi)) (upper zi).
+ Fle2 (lower zi) (Fopp2 (upper xi)) &&
+ Fle2 (Fopp2 (lower xi)) (upper zi).
 
 Theorem neg :
  forall x : R, forall xi zi : FF,
@@ -322,14 +290,12 @@ Theorem neg :
  BND (-x) zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fle2_correct _ _ H1). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H1). rewrite Fopp2_correct. clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). rewrite Fopp2_correct. clear H2. intro H2.
 split ; unfold FF2RR ; simpl.
 apply Rle_trans with (1 := H1).
-unfold float2R. rewrite Fopp_correct.
 apply Ropp_le_contravar with (1 := (proj2 Hx)).
 apply Rle_trans with (2 := H2).
-unfold float2R. rewrite Fopp_correct.
 apply Ropp_le_contravar with (1 := (proj1 Hx)).
 Qed.
 
@@ -423,8 +389,8 @@ Qed.
 Definition mul_pp_helper (xi yi zi : FF) :=
  Fpos (lower xi) &&
  Fpos (lower yi) &&
- Fle2 (lower zi) (Fmult (lower xi) (lower yi)) &&
- Fle2 (Fmult (upper xi) (upper yi)) (upper zi).
+ Fle2 (lower zi) (Fmult2 (lower xi) (lower yi)) &&
+ Fle2 (Fmult2 (upper xi) (upper yi)) (upper zi).
 
 Theorem mul_pp :
  forall x y : R, forall xi yi zi : FF,
@@ -447,8 +413,8 @@ Qed.
 Definition mul_pn_helper (xi yi zi : FF) :=
  Fpos (lower xi) &&
  Fneg (upper yi) &&
- Fle2 (lower zi) (Fmult (upper xi) (lower yi)) &&
- Fle2 (Fmult (lower xi) (upper yi)) (upper zi).
+ Fle2 (lower zi) (Fmult2 (upper xi) (lower yi)) &&
+ Fle2 (Fmult2 (lower xi) (upper yi)) (upper zi).
 
 Theorem mul_pn :
  forall x y : R, forall xi yi zi : FF,
@@ -481,8 +447,8 @@ Qed.
 Definition mul_nn_helper (xi yi zi : FF) :=
  Fneg (upper xi) &&
  Fneg (upper yi) &&
- Fle2 (lower zi) (Fmult (upper xi) (upper yi)) &&
- Fle2 (Fmult (lower xi) (lower yi)) (upper zi).
+ Fle2 (lower zi) (Fmult2 (upper xi) (upper yi)) &&
+ Fle2 (Fmult2 (lower xi) (lower yi)) (upper zi).
 
 Theorem mul_nn :
  forall x y : R, forall xi yi zi : FF,
@@ -505,8 +471,8 @@ Qed.
 Definition mul_po_helper (xi yi zi : FF) :=
  Fpos (lower xi) &&
  Fneg0 (lower yi) && Fpos0 (upper yi) &&
- Fle2 (lower zi) (Fmult (upper xi) (lower yi)) &&
- Fle2 (Fmult (upper xi) (upper yi)) (upper zi).
+ Fle2 (lower zi) (Fmult2 (upper xi) (lower yi)) &&
+ Fle2 (Fmult2 (upper xi) (upper yi)) (upper zi).
 
 Theorem mul_po :
  forall x y : R, forall xi yi zi : FF,
@@ -541,8 +507,8 @@ Qed.
 Definition mul_no_helper (xi yi zi : FF) :=
  Fneg (upper xi) &&
  Fneg0 (lower yi) && Fpos0 (upper yi) &&
- Fle2 (lower zi) (Fmult (lower xi) (upper yi)) &&
- Fle2 (Fmult (lower xi) (lower yi)) (upper zi).
+ Fle2 (lower zi) (Fmult2 (lower xi) (upper yi)) &&
+ Fle2 (Fmult2 (lower xi) (lower yi)) (upper zi).
 
 Theorem mul_no :
  forall x y : R, forall xi yi zi : FF,
@@ -577,10 +543,10 @@ Qed.
 Definition mul_oo_helper (xi yi zi : FF) :=
  Fneg0 (lower xi) && Fpos0 (upper xi) &&
  Fneg0 (lower yi) && Fpos0 (upper yi) &&
- Fle2 (lower zi) (Fmult (lower xi) (upper yi)) &&
- Fle2 (lower zi) (Fmult (upper xi) (lower yi)) &&
- Fle2 (Fmult (lower xi) (lower yi)) (upper zi) &&
- Fle2 (Fmult (upper xi) (upper yi)) (upper zi).
+ Fle2 (lower zi) (Fmult2 (lower xi) (upper yi)) &&
+ Fle2 (lower zi) (Fmult2 (upper xi) (lower yi)) &&
+ Fle2 (Fmult2 (lower xi) (lower yi)) (upper zi) &&
+ Fle2 (Fmult2 (upper xi) (upper yi)) (upper zi).
 
 Theorem mul_oo :
  forall x y : R, forall xi yi zi : FF,
@@ -610,8 +576,8 @@ Qed.
 
 Definition square_p_helper (xi zi : FF) :=
  Fpos (lower xi) &&
- Fle2 (lower zi) (Fmult (lower xi) (lower xi)) &&
- Fle2 (Fmult (upper xi) (upper xi)) (upper zi).
+ Fle2 (lower zi) (Fmult2 (lower xi) (lower xi)) &&
+ Fle2 (Fmult2 (upper xi) (upper xi)) (upper zi).
 
 Theorem square_p :
  forall x : R, forall xi zi : FF,
@@ -631,8 +597,8 @@ Qed.
 
 Definition square_n_helper (xi zi : FF) :=
  Fneg (upper xi) &&
- Fle2 (lower zi) (Fmult (upper xi) (upper xi)) &&
- Fle2 (Fmult (lower xi) (lower xi)) (upper zi).
+ Fle2 (lower zi) (Fmult2 (upper xi) (upper xi)) &&
+ Fle2 (Fmult2 (lower xi) (lower xi)) (upper zi).
 
 Theorem square_n :
  forall x : R, forall xi zi : FF,
@@ -653,8 +619,8 @@ Qed.
 Definition square_o_helper (xi zi : FF) :=
  Fneg0 (lower xi) && Fpos0 (upper xi) &&
  Fneg0 (lower zi) &&
- Fle2 (Fmult (upper xi) (upper xi)) (upper zi) &&
- Fle2 (Fmult (lower xi) (lower xi)) (upper zi).
+ Fle2 (Fmult2 (upper xi) (upper xi)) (upper zi) &&
+ Fle2 (Fmult2 (lower xi) (lower xi)) (upper zi).
 
 Theorem square_o :
  forall x : R, forall xi zi : FF,
@@ -689,8 +655,8 @@ Qed.
 Definition div_pp_helper (xi yi zi : FF) :=
  Fpos (lower yi) &&
  Fpos0 (lower xi) &&
- Fle2 (Fmult (upper yi) (lower zi)) (lower xi) &&
- Fle2 (upper xi) (Fmult (lower yi) (upper zi)).
+ Fle2 (Fmult2 (upper yi) (lower zi)) (lower xi) &&
+ Fle2 (upper xi) (Fmult2 (lower yi) (upper zi)).
 
 Theorem div_pp :
  forall x y : R, forall xi yi zi : FF,
@@ -713,8 +679,8 @@ Qed.
 Definition div_op_helper (xi yi zi : FF) :=
  Fpos (lower yi) &&
  Fneg0 (lower xi) && Fpos0 (upper xi) &&
- Fle2 (Fmult (lower yi) (lower zi)) (lower xi) &&
- Fle2 (upper xi) (Fmult (lower yi) (upper zi)).
+ Fle2 (Fmult2 (lower yi) (lower zi)) (lower xi) &&
+ Fle2 (upper xi) (Fmult2 (lower yi) (upper zi)).
 
 Theorem div_op :
  forall x y : R, forall xi yi zi : FF,
@@ -739,8 +705,8 @@ Qed.
 Definition div_np_helper (xi yi zi : FF) :=
  Fpos (lower yi) &&
  Fneg0 (upper xi) &&
- Fle2 (Fmult (lower yi) (lower zi)) (lower xi) &&
- Fle2 (upper xi) (Fmult (upper yi) (upper zi)).
+ Fle2 (Fmult2 (lower yi) (lower zi)) (lower xi) &&
+ Fle2 (upper xi) (Fmult2 (upper yi) (upper zi)).
 
 Theorem div_np :
  forall x y : R, forall xi yi zi : FF,
@@ -763,8 +729,8 @@ Qed.
 Definition div_pn_helper (xi yi zi : FF) :=
  Fneg (upper yi) &&
  Fpos0 (lower xi) &&
- Fle2 (upper xi) (Fmult (upper yi) (lower zi)) &&
- Fle2 (Fmult (lower yi) (upper zi)) (lower xi).
+ Fle2 (upper xi) (Fmult2 (upper yi) (lower zi)) &&
+ Fle2 (Fmult2 (lower yi) (upper zi)) (lower xi).
 
 Theorem div_pn :
  forall x y : R, forall xi yi zi : FF,
@@ -787,8 +753,8 @@ Qed.
 Definition div_on_helper (xi yi zi : FF) :=
  Fneg (upper yi) &&
  Fneg0 (lower xi) && Fpos0 (upper xi) &&
- Fle2 (upper xi) (Fmult (upper yi) (lower zi)) &&
- Fle2 (Fmult (upper yi) (upper zi)) (lower xi).
+ Fle2 (upper xi) (Fmult2 (upper yi) (lower zi)) &&
+ Fle2 (Fmult2 (upper yi) (upper zi)) (lower xi).
 
 Theorem div_on :
  forall x y : R, forall xi yi zi : FF,
@@ -813,8 +779,8 @@ Qed.
 Definition div_nn_helper (xi yi zi : FF) :=
  Fneg (upper yi) &&
  Fneg0 (upper xi) &&
- Fle2 (upper xi) (Fmult (lower yi) (lower zi)) &&
- Fle2 (Fmult (upper yi) (upper zi)) (lower xi).
+ Fle2 (upper xi) (Fmult2 (lower yi) (lower zi)) &&
+ Fle2 (Fmult2 (upper yi) (upper zi)) (lower xi).
 
 Theorem div_nn :
  forall x y : R, forall xi yi zi : FF,
@@ -835,12 +801,12 @@ apply IdivR_nn with (lower xi) (upper xi) (lower yi) (upper yi)
 Qed.
 
 Definition compose_helper (xi yi zi : FF) :=
- Fle2 (Float (-1) 0) (lower xi) &&
- Fle2 (Float (-1) 0) (lower yi) &&
+ Fle2 (Float2 (-1) 0) (lower xi) &&
+ Fle2 (Float2 (-1) 0) (lower yi) &&
  Fle2 (lower zi) (Fplus2 (Fplus2 (lower xi) (lower yi))
-                         (Fmult (lower xi) (lower yi))) &&
+                         (Fmult2 (lower xi) (lower yi))) &&
  Fle2 (Fplus2 (Fplus2 (upper xi) (upper yi))
-              (Fmult (upper xi) (upper yi))) (upper zi).
+              (Fmult2 (upper xi) (upper yi))) (upper zi).
 
 Theorem compose :
  forall x y : R, forall xi yi zi : FF,
@@ -851,8 +817,8 @@ intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-assert (float2R (Float (-1) 0) = -1)%R.
-unfold float2R, FtoR. auto with real.
+assert (float2R (Float2 (-1) 0) = -1)%R.
+unfold float2R. auto with real.
 generalize (Fle2_correct _ _ H1). clear H1. rewrite H. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. rewrite H. intro H2.
 generalize (Fle2_correct _ _ H3). 
@@ -897,7 +863,7 @@ apply refl_equal.
 Qed.
 
 Definition invert_abs_helper (xi zi : FF) :=
- Fle2 (lower zi) (Fopp (upper xi)) &&
+ Fle2 (lower zi) (Fopp2 (upper xi)) &&
  Fle2 (upper xi) (upper zi).
 
 Theorem invert_abs :
@@ -907,11 +873,10 @@ Theorem invert_abs :
  BND x zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fle2_correct _ _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H1). rewrite Fopp2_correct. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 split ; unfold FF2RR ; simpl.
 apply Rle_trans with (1 := H1).
-unfold float2R. rewrite Fopp_correct.
 apply Ropp_le_cancel.
 rewrite Ropp_involutive.
 apply Rle_trans with (2 := proj2 Hx).
@@ -951,7 +916,7 @@ Qed.
 Definition abs_o_helper (xi zi : FF) :=
  Fneg0 (lower zi) &&
  Fle2 (upper xi) (upper zi) &&
- Fle2 (Fopp (lower xi)) (upper zi).
+ Fle2 (Fopp2 (lower xi)) (upper zi).
 
 Theorem abs_o :
  forall x : R, forall xi zi : FF,
@@ -963,11 +928,10 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fneg0_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. clear H3. intro H3.
 split ; unfold FF2RR ; simpl.
 apply Rle_trans with (1 := H1) (2 := Rabs_pos x).
 unfold Rabs. case Rcase_abs ; intro H.
-unfold float2R in H3. rewrite Fopp_correct in H3.
 apply Rle_trans with (2 := H3).
 apply Ropp_le_contravar with (1 := proj1 Hx).
 apply Rle_trans with (1 := proj2 Hx) (2 := H2).
@@ -975,8 +939,8 @@ Qed.
 
 Definition abs_n_helper (xi zi : FF) :=
  Fneg0 (upper xi) &&
- Fle2 (lower zi) (Fopp (upper xi)) &&
- Fle2 (Fopp (lower xi)) (upper zi).
+ Fle2 (lower zi) (Fopp2 (upper xi)) &&
+ Fle2 (Fopp2 (lower xi)) (upper zi).
 
 Theorem abs_n :
  forall x : R, forall xi zi : FF,
@@ -987,8 +951,8 @@ intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fneg0_correct _ H1). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). unfold float2R. rewrite Fopp_correct. clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). unfold float2R. rewrite Fopp_correct. clear H3. intro H3.
+generalize (Fle2_correct _ _ H2). rewrite Fopp2_correct. clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. clear H3. intro H3.
 split ; unfold FF2RR ; simpl.
 apply Rle_trans with (1 := H2).
 rewrite <- (Rabs_Ropp x).
@@ -1005,8 +969,8 @@ Qed.
 Definition sqrt_helper (xi zi : FF) :=
  Fpos0 (lower xi) &&
  Fpos0 (upper zi) &&
- Fle2 (Fmult (lower zi) (lower zi)) (lower xi) &&
- Fle2 (upper xi) (Fmult (upper zi) (upper zi)).
+ Fle2 (Fmult2 (lower zi) (lower zi)) (lower xi) &&
+ Fle2 (upper xi) (Fmult2 (upper zi) (upper zi)).
 
 Theorem sqrtG:
  forall x : R, forall xi zi : FF,

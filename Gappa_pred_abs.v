@@ -1,4 +1,3 @@
-Require Import AllFloat.
 Require Import Gappa_common.
 
 Section Gappa_pred_abs.
@@ -7,7 +6,7 @@ Axiom Rabs_def2b :
  forall x a : R, (Rabs x <= a)%R -> (-a <= x <= a)%R.
 
 Definition bnd_of_abs_helper (xi zi : FF) :=
- Fle2 (lower zi) (Fopp (upper xi)) &&
+ Fle2 (lower zi) (Fopp2 (upper xi)) &&
  Fle2 (upper xi) (upper zi).
 
 Theorem bnd_of_abs :
@@ -17,7 +16,7 @@ Theorem bnd_of_abs :
  BND x zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fle2_correct _ _ H1). unfold float2R. rewrite Fopp_correct. fold float2R. clear H1. intro H1.
+generalize (Fle2_correct _ _ H1). rewrite Fopp2_correct. fold float2R. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 assert (H : (-(upper xi) <= x <= (upper xi))%R).
 apply (Rabs_def2b _ _ (proj2 (proj2 Hx))).
@@ -50,7 +49,7 @@ apply Rle_trans with (1 := H2) (2 := proj1 Hx).
 apply Rle_trans with (1 := proj2 Hx) (2 := H3).
 Qed.
 
-Definition intersect_aa_helper (xf yf : float) (zi : FF) :=
+Definition intersect_aa_helper (xf yf : float2) (zi : FF) :=
  Fpos0 (lower zi) &&
  Fle2 (lower zi) yf &&
  Fle2 xf (upper zi).
@@ -87,8 +86,8 @@ Qed.
 
 Definition mul_aa_helper (xi yi zi : FF) :=
  Fpos0 (lower zi) &&
- Fle2 (lower zi) (Fmult (lower xi) (lower yi)) &&
- Fle2 (Fmult (upper xi) (upper yi)) (upper zi).
+ Fle2 (lower zi) (Fmult2 (lower xi) (lower yi)) &&
+ Fle2 (Fmult2 (upper xi) (upper yi)) (upper zi).
 
 Theorem mul_aa :
  forall x y : R, forall xi yi zi : FF,
@@ -112,8 +111,8 @@ Qed.
 Definition div_aa_helper (xi yi zi : FF) :=
  Fpos (lower yi) &&
  Fpos0 (lower zi) &&
- Fle2 (Fmult (upper yi) (lower zi)) (lower xi) &&
- Fle2 (upper xi) (Fmult (lower yi) (upper zi)).
+ Fle2 (Fmult2 (upper yi) (lower zi)) (lower xi) &&
+ Fle2 (upper xi) (Fmult2 (lower yi) (upper zi)).
 
 Theorem div_aa :
  forall x y : R, forall xi yi zi : FF,
@@ -278,7 +277,7 @@ exact Hb.
 Qed.
 
 Definition bnd_of_bnd_abs_p_helper (xi yi zi : FF) :=
- Flt2 (Fopp (lower yi)) (lower xi) &&
+ Flt2 (Fopp2 (lower yi)) (lower xi) &&
  Fle2 (lower zi) (lower yi) &&
  Fle2 (upper xi) (upper zi).
 
@@ -290,7 +289,7 @@ Theorem bnd_of_bnd_abs_p :
 intros x xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Flt2_correct _ _ H1). unfold float2R. rewrite Fopp_correct. fold float2R. clear H1. intro H1.
+generalize (Flt2_correct _ _ H1). rewrite Fopp2_correct. fold float2R. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). clear H3. intro H3.
 case (Rcase_abs x) ; intro H.
@@ -311,7 +310,7 @@ Qed.
 Definition bnd_of_bnd_abs_n_helper (xi yi zi : FF) :=
  Flt2 (upper xi) (lower yi) &&
  Fle2 (lower zi) (lower xi) &&
- Fle2 (Fopp (lower yi)) (upper zi).
+ Fle2 (Fopp2 (lower yi)) (upper zi).
 
 Theorem bnd_of_bnd_abs_n :
  forall x : R, forall xi yi zi : FF,
@@ -323,7 +322,7 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Flt2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). unfold float2R. rewrite Fopp_correct. fold float2R. clear H3. intro H3.
+generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. fold float2R. clear H3. intro H3.
 case (Rcase_abs x) ; intro H.
 unfold ABS in Hy.
 rewrite (Rabs_left _ H) in Hy.

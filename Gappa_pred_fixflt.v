@@ -1,4 +1,3 @@
-Require Import AllFloat.
 Require Import Gappa_common.
 
 Section Gappa_pred_fixflt.
@@ -9,7 +8,7 @@ Definition fix_of_singleton_bnd_helper (xi : FF) (n : Z) :=
  Zle_bool n (Fexp (lower xi)).
 
 Lemma Zeq_bool_correct_t :
- forall m n : Z, Zeq_bool n m = true -> (m = n)%Z.
+ forall m n : Z, Zeq_bool m n = true -> (m = n)%Z.
  intros m n.
 Admitted.
 
@@ -29,7 +28,12 @@ apply Rle_antisym.
 exact (proj1 Hx).
 replace (lower xi) with (upper xi).
 exact (proj2 Hx).
-apply floatEq ; assumption.
+apply sym_equal.
+induction (lower xi). induction (upper xi).
+simpl in H1, H2.
+rewrite H1.
+rewrite H2.
+apply refl_equal.
 exists (lower xi).
 exact (conj H H3).
 Qed.
@@ -69,12 +73,11 @@ generalize (Zle_bool_imp_le _ _ H2). clear H2. intro H2.
 unfold FIX in *.
 elim Hx. clear Hx. intros x0 (Rx, Hx).
 elim Hy. clear Hy. intros y0 (Ry, Hy).
-exists (Fplus radix x0 y0).
+exists (Fplus2 x0 y0).
 split.
 rewrite <- Rx.
 rewrite <- Ry.
-unfold float2R.
-apply Fplus_correct with (1 := radixNotZero).
+apply Fplus2_correct.
 simpl.
 case (Zmin_or (Fexp x0) (Fexp y0)) ; intro H ; rewrite H.
 apply Zle_trans with (1 := H1) (2 := Hx).
@@ -92,10 +95,10 @@ apply add_fix with xn yn.
 exact Hx.
 elim Hy. clear Hy.
 intros y0 (R, Hy).
-exists (Fopp y0).
+exists (Fopp2 y0).
 split.
 rewrite <- R.
-apply (Fopp_correct radix).
+apply Fopp2_correct.
 apply Hy.
 exact Hb.
 Qed.
