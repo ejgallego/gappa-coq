@@ -2,8 +2,23 @@ Require Import Gappa_common.
 
 Section Gappa_pred_abs.
 
-Axiom Rabs_def2b :
+Lemma Rabs_def2b :
  forall x a : R, (Rabs x <= a)%R -> (-a <= x <= a)%R.
+intros x a H.
+split.
+case (Rcase_abs x); intros.
+rewrite Rabs_left with (1 := r) in H.
+rewrite <- (Ropp_involutive x).
+apply Ropp_le_contravar with (1 := H).
+apply Rle_trans with R0.
+rewrite <- Ropp_0.
+apply Ropp_le_contravar.
+apply Rle_trans with (2 := H).
+apply Rabs_pos.
+apply Rge_le with (1 := r).
+apply Rle_trans with (2 := H).
+apply RRle_abs.
+Qed.
 
 Definition bnd_of_abs_helper (xi zi : FF) :=
  Fle2 (lower zi) (Fopp2 (upper xi)) &&
