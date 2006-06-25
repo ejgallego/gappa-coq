@@ -1,102 +1,9 @@
 Require Import Gappa_common.
-Require Import ZArith.
+Require Export Gappa_decimal.
 
 Section Gappa_pred_bnd.
 
 Definition Float1 := IZR.
-Record deci : Set := Float10 { Fnum10 : Z ; Fexp10 : Z }.
-Coercion deci2R := fun x : deci => (IZR (Fnum10 x) * powerRZ 10 (Fexp10 x))%R.
-
-Definition Dcompare (x : float2) (y : deci) :=
- let m := Fnum10 y in let e := Fexp10 y in
- match e with
- | Zpos p => Fcomp2 x (Float2 (m * Zpower_pos 5 p) e)
- | Zneg p => Fcomp2 (Float2 (Fnum x * Zpower_pos 5 p) (Fexp x)) (Float2 m e)
- | Z0 => Fcomp2 x (Float2 m 0)
- end.
-
-Axiom pow_exp :
- forall x y : R, forall n : nat,
- ((pow x n) * (pow y n) = (pow (x * y) n))%R.
-
-Lemma Dcompare_correct :
- forall x : float2, forall y : deci,
- match (Dcompare x y) with
- | Lt => (x < y)%R
- | Eq => (float2R x = y)%R
- | Gt => (x > y)%R
- end.
-intros x y.
-unfold Dcompare.
-case y. intros ym ye.
-simpl.
-induction ye ; unfold deci2R ;
-simpl.
-rewrite Rmult_1_r.
-replace (IZR ym) with (float2R (Float2 ym 0)).
-2: unfold float2R ; auto with real.
-unfold float2R.
-CaseEq (Fcomp2 x (Float2 ym 0)) ; intro H.
-apply Fcomp2_Eq with (1 := H).
-apply Fcomp2_Lt with (1 := H).
-apply Fcomp2_Gt with (1 := H).
-unfold float2R.
-assert (H0: (Float2 (ym * Zpower_pos 5 p) (Zpos p) = (IZR ym * 10 ^ nat_of_P p)%R :>R)).
-unfold float2R.
-simpl.
-rewrite mult_IZR.
-rewrite Zpower_pos_nat.
-(*
-rewrite Zpower_nat_Z_powerRZ.
-unfold powerRZ.
-rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
-rewrite Rmult_assoc.
-rewrite pow_exp.
-cutrewrite (Zpos 5 * 2 = 10)%R.
-trivial.
-compute. ring.
-CaseEq (Fcomp2 x (Float (ym * Zpower_pos 5 p) (Zpos p))) ;
- intro H ;
- [ generalize (Fcomp2_Eq _ _ H) |
-   generalize (Fcomp2_Lt _ _ H) |
-   generalize (Fcomp2_Gt _ _ H) ] ;
- clear H ; rewrite H0 ; trivial.
-*)
-Admitted.
-
-Definition Dle_fd (x : float2) (y : deci) :=
- match (Dcompare x y) with
- | Gt => false
- | _ => true
- end.
-
-Lemma Dle_fd_correct :
- forall x : float2, forall y : deci,
- Dle_fd x y = true ->
- (x <= y)%R.
-intros x y.
-unfold Dle_fd.
-generalize (Dcompare_correct x y).
-CaseEq (Dcompare x y) ; intros ; auto with real.
-discriminate.
-Qed.
-
-Definition Dle_df (x : deci) (y : float2) :=
- match (Dcompare y x) with
- | Lt => false
- | _ => true
- end.
-
-Lemma Dle_df_correct :
- forall x : deci, forall y : float2,
- Dle_df x y = true ->
- (x <= y)%R.
-intros x y.
-unfold Dle_df.
-generalize (Dcompare_correct y x).
-CaseEq (Dcompare y x) ; intros ; auto with real.
-discriminate.
-Qed.
 
 Definition constant2_helper (x : float2) (zi : FF) :=
  Fle2 (lower zi) x && Fle2 x (upper zi).
@@ -127,11 +34,11 @@ simpl.
 apply Rmult_1_r.
 Qed.
 
-Definition constant10_helper (x : deci) (zi : FF) :=
+Definition constant10_helper (x : float10) (zi : FF) :=
  Dle_fd (lower zi) x && Dle_df x (upper zi).
 
 Theorem constant10 :
- forall x : deci, forall zi : FF,
+ forall x : float10, forall zi : FF,
  constant10_helper x zi = true ->
  BND x zi.
 intros x zi Hb.
