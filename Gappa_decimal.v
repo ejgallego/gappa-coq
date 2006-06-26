@@ -15,6 +15,8 @@ Definition Dcompare (x : float2) (y : float10) :=
  | Z0 => Fcomp2 x (Float2 m 0)
  end.
 
+Ltac caseEq f := generalize (refl_equal f) ; pattern f at -1 ; case f.
+
 Lemma pow_exp :
  forall x y : R, forall e : nat,
  (x^e * y^e = (x*y)^e)%R.
@@ -55,7 +57,7 @@ rewrite Rmult_1_r.
 replace (IZR ym) with (float2R (Float2 ym 0)).
 2: unfold float2R ; auto with real.
 unfold float2R.
-CaseEq (Fcomp2 x (Float2 ym 0)) ; intro H.
+caseEq (Fcomp2 x (Float2 ym 0)) ; intro H.
 apply Fcomp2_Eq with (1 := H).
 apply Fcomp2_Lt with (1 := H).
 apply Fcomp2_Gt with (1 := H).
@@ -75,7 +77,7 @@ apply Rmult_eq_compat_l.
 replace (INR 5 * 2)%R with 10%R.
 apply refl_equal.
 simpl. ring.
-CaseEq (Fcomp2 x (Float2 (ym * Zpower_pos 5 p) (Zpos p))) ;
+caseEq (Fcomp2 x (Float2 (ym * Zpower_pos 5 p) (Zpos p))) ;
  intro H ;
  [ generalize (Fcomp2_Eq _ _ H) |
    generalize (Fcomp2_Lt _ _ H) |
@@ -101,7 +103,7 @@ apply Zpower_pos_pos.
 assert (He: (IZR (Fnum x) * powerRZ 2 (Fexp x) * IZR (Zpower_pos 5 p)
  = IZR (Fnum x) * IZR (Zpower_pos 5 p) * powerRZ 2 (Fexp x))%R).
 ring.
-CaseEq (Fcomp2 (Float2 (Fnum x * Zpower_pos 5 p) (Fexp x)) (Float2 ym (Zneg p))) ;
+caseEq (Fcomp2 (Float2 (Fnum x * Zpower_pos 5 p) (Fexp x)) (Float2 ym (Zneg p))) ;
  intro H ;
  [ generalize (Fcomp2_Eq _ _ H) |
    generalize (Fcomp2_Lt _ _ H) |
@@ -138,7 +140,7 @@ Lemma Dle_fd_correct :
 intros x y.
 unfold Dle_fd.
 generalize (Dcompare_correct x y).
-CaseEq (Dcompare x y) ; intros ; auto with real.
+caseEq (Dcompare x y) ; intros ; auto with real.
 discriminate.
 Qed.
 
@@ -155,7 +157,7 @@ Lemma Dle_df_correct :
 intros x y.
 unfold Dle_df.
 generalize (Dcompare_correct y x).
-CaseEq (Dcompare y x) ; intros ; auto with real.
+caseEq (Dcompare y x) ; intros ; auto with real.
 discriminate.
 Qed.
 

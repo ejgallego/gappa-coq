@@ -76,6 +76,8 @@ Definition Fshift2 (x y : float2) :=
  (shl (Fnum x) (Fexp x - e),
   shl (Fnum y) (Fexp y - e), e).
 
+Ltac caseEq f := generalize (refl_equal f) ; pattern f at -1 ; case f.
+
 Lemma Fshift2_correct :
  forall x y : float2,
  match Fshift2 x y with
@@ -87,14 +89,16 @@ assert (forall f : float2, forall e : Z, (e <= Fexp f)%Z ->
 intros f e H.
 unfold float2R.
 simpl.
+rename H into H0.
 assert (0 <= Fexp f - e)%Z.
 auto with zarith.
-rewrite shl_correct with (1 := H0).
+clear H0.
+rewrite shl_correct with (1 := H).
 rewrite mult_IZR.
 rewrite Rmult_assoc.
 apply Rmult_eq_compat_l.
 unfold Zpower.
-CaseEq (Fexp f - e)%Z ; intros.
+caseEq (Fexp f - e)%Z ; intros.
 replace (Fexp f) with e.
 ring.
 auto with zarith.
@@ -102,14 +106,14 @@ rewrite Zpower_pos_nat.
 replace 2%Z with (Z_of_nat 2). 2: apply refl_equal.
 rewrite Zpower_nat_powerRZ.
 rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
-rewrite <- H1.
+rewrite <- H0.
 rewrite <- powerRZ_add.
 ring (Fexp f - e + e)%Z.
 apply refl_equal.
 replace 2%R with (INR 2). 2: apply refl_equal.
 auto with real.
-elim H0.
-rewrite H1.
+elim H.
+rewrite H0.
 apply refl_equal.
 intros x y.
 split ; apply H ; [ apply Zle_min_l | apply Zle_min_r ].
