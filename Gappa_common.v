@@ -6,12 +6,11 @@ Require Export Reals.
 Section Gappa_common.
 
 Record FF: Set := makepairF { lower : float2 ; upper : float2 }.
-Coercion FF2RR (x : FF) := makepairR (lower x) (upper x).
 
 Definition BND (x : R) (xi : FF) :=
- bndR x xi.
+ (lower xi <= x <= upper xi)%R.
 Definition ABS (x : R) (xi : FF) :=
- (0 <= lower xi)%R /\ bndR (Rabs x) xi.
+ (0 <= lower xi)%R /\ (lower xi <= Rabs x <= upper xi)%R.
 Definition FIX (x : R) (n : Z) :=
  exists f : float2, float2R f = x /\ (n <= Fexp f)%Z.
 Definition FLT (x : R) (n : positive) :=

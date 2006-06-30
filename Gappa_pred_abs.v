@@ -82,7 +82,7 @@ generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). clear H3. intro H3.
 split.
 exact H1.
-split ; unfold FF2RR ; simpl.
+split.
 apply Rle_trans with (1 := H2) (2 := proj1 (proj2 Hy)).
 apply Rle_trans with (1 := proj2 (proj2 Hx)) (2 := H3).
 Qed.
@@ -115,11 +115,11 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fpos0_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite Fmult2_correct. clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
-unfold ABS, bndR in *.
+unfold ABS in *.
 split.
 exact H1.
 rewrite Rabs_mult.
-apply ImultR_pp with (lower xi) (upper xi) (lower yi) (upper yi)
+apply IRmult_pp with (lower xi) (upper xi) (lower yi) (upper yi)
  ; intuition.
 Qed.
 
@@ -145,8 +145,8 @@ generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
 split.
 exact H2.
 replace (Rabs (x / y)) with (Rabs x / Rabs y)%R.
-unfold ABS, bndR in *.
-apply IdivR_pp with (lower xi) (upper xi) (lower yi) (upper yi)
+unfold ABS in *.
+apply IRdiv_pp with (lower xi) (upper xi) (lower yi) (upper yi)
  ; intuition.
 unfold Rdiv.
 rewrite Rabs_mult.
@@ -204,7 +204,6 @@ generalize (Fle2_correct _ _ H2). rewrite Fplus2_correct. clear H2. intro H2.
 split.
 auto with real.
 split.
-replace (Gappa_real.lower zi) with (float2R (lower zi)). 2: trivial.
 rewrite H1.
 apply Rabs_pos.
 apply Rle_trans with (Rabs x + Rabs y)%R.

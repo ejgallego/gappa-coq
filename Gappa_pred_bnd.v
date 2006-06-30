@@ -61,7 +61,7 @@ intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-split ; unfold FF2RR ; simpl.
+split.
 apply Rle_trans with (1 := H1) (2 := (proj1 Hx)).
 apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
@@ -79,7 +79,7 @@ intros z xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-split ; unfold FF2RR ; simpl.
+split.
 apply Rle_trans with (1 := H1) (2 := (proj1 Hy)).
 apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
@@ -93,7 +93,7 @@ intros z xf yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-split ; unfold FF2RR ; simpl.
+split.
 apply Rle_trans with (1 := H1) (2 := (proj1 Hy)).
 apply Rle_trans with (1 := Hx) (2 := H2).
 Qed.
@@ -107,7 +107,7 @@ intros z yf xi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-split ; unfold FF2RR ; simpl.
+split.
 apply Rle_trans with (1 := H1) (2 := Hy).
 apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
@@ -199,11 +199,7 @@ intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite Fopp2_correct. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite Fopp2_correct. clear H2. intro H2.
-split ; unfold FF2RR ; simpl.
-apply Rle_trans with (1 := H1).
-apply Ropp_le_contravar with (1 := (proj2 Hx)).
-apply Rle_trans with (2 := H2).
-apply Ropp_le_contravar with (1 := (proj1 Hx)).
+apply IRopp with (1 := H1) (2 := H2) (3 := Hx).
 Qed.
 
 Definition add_helper (xi yi zi : FF) :=
@@ -219,10 +215,7 @@ intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite Fplus2_correct. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite Fplus2_correct. clear H2. intro H2.
-generalize (IplusR_fun_correct xi yi _ _ Hx Hy). intro H.
-split ; unfold FF2RR ; simpl.
-apply Rle_trans with (1 := H1) (2 := (proj1 H)).
-apply Rle_trans with (1 := (proj2 H)) (2 := H2).
+apply IRplus with (1 := H1) (2 := H2) (3 := Hx) (4 := Hy).
 Qed.
 
 Definition sub_helper (xi yi zi : FF) :=
@@ -238,10 +231,7 @@ intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite Fminus2_correct. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite Fminus2_correct. clear H2. intro H2.
-generalize (IminusR_fun_correct xi yi _ _ Hx Hy). intro H.
-split ; unfold FF2RR ; simpl.
-apply Rle_trans with (1 := H1) (2 := (proj1 H)).
-apply Rle_trans with (1 := (proj2 H)) (2 := H2).
+apply IRminus with (1 := H1) (2 := H2) (3 := Hx) (4 := Hy).
 Qed.
 
 Definition not_zero (zi : FF) :=
@@ -294,8 +284,8 @@ apply refl_equal.
 Qed.
 
 Definition mul_pp_helper (xi yi zi : FF) :=
- Fpos (lower xi) &&
- Fpos (lower yi) &&
+ Fpos0 (lower xi) &&
+ Fpos0 (lower yi) &&
  Fle2 (lower zi) (Fmult2 (lower xi) (lower yi)) &&
  Fle2 (Fmult2 (upper xi) (upper yi)) (upper zi).
 
@@ -308,18 +298,16 @@ intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fpos_correct _ H1). clear H1. intro H1.
-generalize (Fpos_correct _ H2). clear H2. intro H2.
+generalize (Fpos0_correct _ H1). clear H1. intro H1.
+generalize (Fpos0_correct _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-unfold BND, bndR.
-apply ImultR_pp with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRmult_pp with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
 Qed.
 
 Definition mul_pn_helper (xi yi zi : FF) :=
- Fpos (lower xi) &&
- Fneg (upper yi) &&
+ Fpos0 (lower xi) &&
+ Fneg0 (upper yi) &&
  Fle2 (lower zi) (Fmult2 (upper xi) (lower yi)) &&
  Fle2 (Fmult2 (lower xi) (upper yi)) (upper zi).
 
@@ -332,13 +320,11 @@ intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fpos_correct _ H1). clear H1. intro H1.
-generalize (Fneg_correct _ H2). clear H2. intro H2.
+generalize (Fpos0_correct _ H1). clear H1. intro H1.
+generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-unfold BND, bndR.
-apply ImultR_pn with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRmult_pn with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
 Qed.
 
 Theorem mul_np :
@@ -352,8 +338,8 @@ apply mul_pn with (1 := Hy) (2 := Hx) (3 := Hb).
 Qed.
 
 Definition mul_nn_helper (xi yi zi : FF) :=
- Fneg (upper xi) &&
- Fneg (upper yi) &&
+ Fneg0 (upper xi) &&
+ Fneg0 (upper yi) &&
  Fle2 (lower zi) (Fmult2 (upper xi) (upper yi)) &&
  Fle2 (Fmult2 (lower xi) (lower yi)) (upper zi).
 
@@ -366,17 +352,15 @@ intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fneg_correct _ H1). clear H1. intro H1.
-generalize (Fneg_correct _ H2). clear H2. intro H2.
+generalize (Fneg0_correct _ H1). clear H1. intro H1.
+generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-unfold BND, bndR.
-apply ImultR_nn with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRmult_nn with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
 Qed.
 
 Definition mul_po_helper (xi yi zi : FF) :=
- Fpos (lower xi) &&
+ Fpos0 (lower xi) &&
  Fneg0 (lower yi) && Fpos0 (upper yi) &&
  Fle2 (lower zi) (Fmult2 (upper xi) (lower yi)) &&
  Fle2 (Fmult2 (upper xi) (upper yi)) (upper zi).
@@ -391,14 +375,12 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fpos_correct _ H1). clear H1. intro H1.
+generalize (Fpos0_correct _ H1). clear H1. intro H1.
 generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fpos0_correct _ H3). clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
 generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
-unfold BND, bndR.
-apply ImultR_po with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRmult_po with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := H5) (6 := Hx) (7 := Hy).
 Qed.
 
 Theorem mul_op :
@@ -412,7 +394,7 @@ apply mul_po with (1 := Hy) (2 := Hx) (3 := Hb).
 Qed.
 
 Definition mul_no_helper (xi yi zi : FF) :=
- Fneg (upper xi) &&
+ Fneg0 (upper xi) &&
  Fneg0 (lower yi) && Fpos0 (upper yi) &&
  Fle2 (lower zi) (Fmult2 (lower xi) (upper yi)) &&
  Fle2 (Fmult2 (lower xi) (lower yi)) (upper zi).
@@ -427,14 +409,12 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fneg_correct _ H1). clear H1. intro H1.
+generalize (Fneg0_correct _ H1). clear H1. intro H1.
 generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fpos0_correct _ H3). clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
 generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
-unfold BND, bndR.
-apply ImultR_no with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRmult_no with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := H5) (6 := Hx) (7 := Hy).
 Qed.
 
 Theorem mul_on :
@@ -476,13 +456,11 @@ generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
 generalize (Fle2_correct _ _ H6). rewrite Fmult2_correct. clear H6. intro H6.
 generalize (Fle2_correct _ _ H7). rewrite Fmult2_correct. clear H7. intro H7.
 generalize (Fle2_correct _ _ H8). rewrite Fmult2_correct. clear H8. intro H8.
-unfold BND, bndR.
-apply ImultR_oo with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+exact (IRmult_oo _ _ _ _ _ _ H1 H2 H3 H4 H6 H5 H7 H8 _ _ Hx Hy).
 Qed.
 
 Definition square_p_helper (xi zi : FF) :=
- Fpos (lower xi) &&
+ Fpos0 (lower xi) &&
  Fle2 (lower zi) (Fmult2 (lower xi) (lower xi)) &&
  Fle2 (Fmult2 (upper xi) (upper xi)) (upper zi).
 
@@ -494,16 +472,14 @@ Theorem square_p :
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fpos_correct _ H1). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). rewrite Fmult2_correct. clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
-unfold BND, bndR.
-apply ImultR_pp with (lower xi) (upper xi) (lower xi) (upper xi)
- ; auto with real.
+apply mul_pp with (1 := Hx) (2 := Hx).
+unfold mul_pp_helper.
+rewrite H1. rewrite H2. rewrite H3.
+apply refl_equal.
 Qed.
 
 Definition square_n_helper (xi zi : FF) :=
- Fneg (upper xi) &&
+ Fneg0 (upper xi) &&
  Fle2 (lower zi) (Fmult2 (upper xi) (upper xi)) &&
  Fle2 (Fmult2 (lower xi) (lower xi)) (upper zi).
 
@@ -515,12 +491,10 @@ Theorem square_n :
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fneg_correct _ H1). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). rewrite Fmult2_correct. clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
-unfold BND, bndR.
-apply ImultR_nn with (lower xi) (upper xi) (lower xi) (upper xi)
- ; auto with real.
+apply mul_nn with (1 := Hx) (2 := Hx).
+unfold mul_nn_helper.
+rewrite H1. rewrite H2. rewrite H3.
+apply refl_equal.
 Qed.
 
 Definition square_o_helper (xi zi : FF) :=
@@ -544,19 +518,7 @@ generalize (Fpos0_correct _ H2). clear H2. intro H2.
 generalize (Fneg0_correct _ H3). clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
 generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
-unfold BND, bndR.
-split.
-replace (x * x)%R with (Rsqr x). 2: trivial.
-apply Rle_trans with 0%R ; auto with real.
-case (Rlt_le_dec 0 x); intro H.
-generalize (Rlt_le _ _ H). clear H. intro H.
-generalize (proj2 Hx). intro H0.
-apply Rle_trans with ((upper xi) * (upper xi))%R ; auto with real.
-apply Rle_trans with ((lower xi) * (lower xi))%R.
-2: exact H5.
-apply Rle_trans with (x * lower xi)%R.
-exact (monotony_1n _ _ _ H (proj1 Hx)).
-exact (monotony_2n _ _ _ H1 (proj1 Hx)).
+apply IRsquare_o with (1 := H1) (2 := H2) (3 := H3) (4 := H5) (5 := H4) (6 := Hx).
 Qed.
 
 Definition div_pp_helper (xi yi zi : FF) :=
@@ -578,9 +540,7 @@ generalize (Fpos_correct _ H1). clear H1. intro H1.
 generalize (Fpos0_correct _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-unfold BND, bndR.
-apply IdivR_pp with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRdiv_pp with (1 := H2) (2 := H1) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
 Qed.
 
 Definition div_op_helper (xi yi zi : FF) :=
@@ -604,9 +564,7 @@ generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fpos0_correct _ H3). clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
 generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
-unfold BND, bndR.
-apply IdivR_op with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRdiv_op with (1 := H2) (2 := H3) (3 := H1) (4 := H4) (5 := H5) (6 := Hx) (7 := Hy).
 Qed.
 
 Definition div_np_helper (xi yi zi : FF) :=
@@ -628,9 +586,7 @@ generalize (Fpos_correct _ H1). clear H1. intro H1.
 generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-unfold BND, bndR.
-apply IdivR_np with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRdiv_np with (1 := H2) (2 := H1) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
 Qed.
 
 Definition div_pn_helper (xi yi zi : FF) :=
@@ -652,9 +608,7 @@ generalize (Fneg_correct _ H1). clear H1. intro H1.
 generalize (Fpos0_correct _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-unfold BND, bndR.
-apply IdivR_pn with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRdiv_pn with (1 := H2) (2 := H1) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
 Qed.
 
 Definition div_on_helper (xi yi zi : FF) :=
@@ -678,9 +632,7 @@ generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fpos0_correct _ H3). clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
 generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
-unfold BND, bndR.
-apply IdivR_on with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRdiv_on with (1 := H2) (2 := H3) (3 := H1) (4 := H4) (5 := H5) (6 := Hx) (7 := Hy).
 Qed.
 
 Definition div_nn_helper (xi yi zi : FF) :=
@@ -702,9 +654,7 @@ generalize (Fneg_correct _ H1). clear H1. intro H1.
 generalize (Fneg0_correct _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-unfold BND, bndR.
-apply IdivR_nn with (lower xi) (upper xi) (lower yi) (upper yi)
- ; auto with real.
+apply IRdiv_nn with (1 := H2) (2 := H1) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
 Qed.
 
 Definition compose_helper (xi yi zi : FF) :=
@@ -744,19 +694,18 @@ assert (Hi : forall a b c : R, (a <= b <= c)%R -> (1 + a <= 1 + b <= 1 + c)%R).
 intros a b c H. split.
 apply Rplus_le_compat_l with (1 := proj1 H).
 apply Rplus_le_compat_l with (1 := proj2 H).
-apply ImultR_pp with (1 + lower xi)%R (1 + upper xi)%R (1 + lower yi)%R (1 + upper yi)%R.
+apply IRmult_pp with (1 + lower xi)%R (1 + upper xi)%R (1 + lower yi)%R (1 + upper yi)%R.
 rewrite H0. apply Rplus_le_compat_l with (1 := H1).
 rewrite H0. apply Rplus_le_compat_l with (1 := H2).
 rewrite Hc. apply Rplus_le_compat_l with (1 := H3).
 rewrite Hc. apply Rplus_le_compat_l with (1 := H4).
 apply Hi with (1 := Hx).
 apply Hi with (1 := Hy).
-unfold BND, bndR, FF2RR, Rminus. simpl.
 assert (H0 : forall a : R, (a = (1 + a) + -1)%R).
 intros a. ring.
 split.
-rewrite (H0 (lower zi)). apply Rplus_le_compat_r with (1 := proj1 H).
-rewrite (H0 (upper zi)). apply Rplus_le_compat_r with (1 := proj2 H).
+rewrite (H0 (lower zi)). exact (Rplus_le_compat_r _ _ _ (proj1 H)).
+rewrite (H0 (upper zi)). exact (Rplus_le_compat_r _ _ _ (proj2 H)).
 Qed.
 
 Lemma Rabs_idem :
@@ -782,7 +731,7 @@ intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite Fopp2_correct. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-split ; unfold FF2RR ; simpl.
+split.
 apply Rle_trans with (1 := H1).
 apply Ropp_le_cancel.
 rewrite Ropp_involutive.
@@ -810,7 +759,7 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fpos0_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). clear H3. intro H3.
-split ; unfold FF2RR ; simpl.
+split.
 apply Rle_trans with (1 := H2).
 apply Rle_trans with (1 := proj1 Hx) (2 := Rabs_idem x).
 apply Rle_trans with (2 := H3).
@@ -836,7 +785,7 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fneg0_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. clear H3. intro H3.
-split ; unfold FF2RR ; simpl.
+split.
 apply Rle_trans with (1 := H1) (2 := Rabs_pos x).
 unfold Rabs. case Rcase_abs ; intro H.
 apply Rle_trans with (2 := H3).
@@ -860,7 +809,7 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fneg0_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite Fopp2_correct. clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. clear H3. intro H3.
-split ; unfold FF2RR ; simpl.
+split.
 apply Rle_trans with (1 := H2).
 rewrite <- (Rabs_Ropp x).
 apply Rle_trans with (2 := Rabs_idem (-x)).
@@ -892,25 +841,7 @@ generalize (Fpos0_correct _ H1). clear H1. intro H1.
 generalize (Fpos0_correct _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-unfold BND, bndR.
-simpl.
-split.
-elim (Rcase_abs (lower zi)) ; intro H.
-apply Rlt_le.
-apply Rlt_le_trans with (1 := H).
-apply sqrt_positivity.
-apply Rle_trans with (1 := H1) (2 := proj1 Hx).
-generalize (Rge_le _ _ H). clear H. intro H.
-rewrite <- (sqrt_square (lower zi)). 2: exact H.
-apply sqrt_le_1.
-apply Rmult_le_pos ; exact H.
-apply Rle_trans with (1 := H1) (2 := proj1 Hx).
-apply Rle_trans with (1 := H3) (2 := proj1 Hx).
-rewrite <- (sqrt_square (upper zi)). 2: exact H2.
-apply sqrt_le_1.
-apply Rle_trans with (1 := H1) (2 := proj1 Hx).
-apply Rmult_le_pos ; exact H2.
-apply Rle_trans with (1 := proj2 Hx) (2 := H4).
+apply IRsqrt with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := Hx).
 Qed.
 
 End Gappa_pred_bnd.
