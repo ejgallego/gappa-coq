@@ -2,17 +2,28 @@ Require Import Reals.
 
 Section Gappa_real.
 
+Theorem IRsubset :
+ forall yl yu zl zu : R,
+ (zl <= yl)%R -> (yu <= zu)%R ->
+ forall y : R,
+ (yl <= y <= yu)%R ->
+ (zl <= y <= zu)%R.
+intros yl yu zl zu Hzl Hzu y (Hyl,Hyu).
+split.
+apply Rle_trans with (1 := Hzl) (2 := Hyl).
+apply Rle_trans with (1 := Hyu) (2 := Hzu).
+Qed.
+
 Theorem IRplus :
  forall xl xu yl yu zl zu : R,
  (zl <= xl + yl)%R -> (xu + yu <= zu)%R ->
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x + y <= zu)%R.
-intros xl xu yl yu zl zu Hl Hu x y (Hxl,Hxu) (Hyl,Hyu).
+intros xl xu yl yu zl zu Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hl).
 apply Rplus_le_compat with (1 := Hxl) (2 := Hyl).
-apply Rle_trans with (2 := Hu).
 apply Rplus_le_compat with (1 := Hxu) (2 := Hyu).
 Qed.
 
@@ -23,10 +34,9 @@ Theorem IRopp :
  (yl <= y <= yu)%R ->
  (zl <= -y <= zu)%R.
 intros yl yu zl zu Hzl Hzu y (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 apply Ropp_le_contravar with (1 := Hyu).
-apply Rle_trans with (2 := Hzu).
 apply Ropp_le_contravar with (1 := Hyl).
 Qed.
 
@@ -37,8 +47,8 @@ Theorem IRminus :
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x - y <= zu)%R.
 unfold Rminus.
-intros xl xu yl yu zl zu Hl Hu x y Hx Hy.
-apply IRplus with (1 := Hl) (2 := Hu) (3 := Hx).
+intros xl xu yl yu zl zu Hzl Hzu x y Hx Hy.
+apply IRplus with (1 := Hzl) (2 := Hzu) (3 := Hx).
 apply IRopp with (3 := Hy) ; auto with real.
 Qed.
 
@@ -73,12 +83,11 @@ Theorem IRmult_pp :
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
 intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 apply Rle_trans with (xl * y)%R.
 exact (monotony_1p _ _ _ Hx Hyl).
 exact (monotony_2p _ _ _ (Rle_trans _ _ _ Hy Hyl) Hxl).
-apply Rle_trans with (2 := Hzu).
 apply Rle_trans with (x * yu)%R.
 exact (monotony_1p _ _ _ (Rle_trans _ _ _ Hx Hxl) Hyu).
 exact (monotony_2p _ _ _ (Rle_trans _ _ _ Hy (Rle_trans _ _ _ Hyl Hyu)) Hxu).
@@ -92,12 +101,11 @@ Theorem IRmult_po :
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
 intros xl xu yl yu zl zu Hx Hy1 Hy2 Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 apply Rle_trans with (x * yl)%R.
 exact (monotony_2n _ _ _ Hy1 Hxu).
 exact (monotony_1p _ _ _ (Rle_trans _ _ _ Hx Hxl) Hyl).
-apply Rle_trans with (2 := Hzu).
 apply Rle_trans with (x * yu)%R.
 exact (monotony_1p _ _ _ (Rle_trans _ _ _ Hx Hxl) Hyu).
 exact (monotony_2p _ _ _ Hy2 Hxu).
@@ -111,12 +119,11 @@ Theorem IRmult_pn :
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
 intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 apply Rle_trans with (xu * y)%R.
 exact (monotony_1p _ _ _ (Rle_trans _ _ _ Hx (Rle_trans _ _ _ Hxl Hxu)) Hyl).
 exact (monotony_2n _ _ _ (Rle_trans _ _ _ Hyu Hy) Hxu).
-apply Rle_trans with (2 := Hzu).
 apply Rle_trans with (x * yu)%R.
 exact (monotony_1p _ _ _ (Rle_trans _ _ _ Hx Hxl) Hyu).
 exact (monotony_2n _ _ _ Hy Hxl).
@@ -130,12 +137,11 @@ Theorem IRmult_op :
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
 intros xl xu yl yu zl zu Hx1 Hx2 Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 apply Rle_trans with (xl * y)%R.
 exact (monotony_1n _ _ _ Hx1 Hyu).
 exact (monotony_2p _ _ _ (Rle_trans _ _ _ Hy Hyl) Hxl).
-apply Rle_trans with (2 := Hzu).
 apply Rle_trans with (xu * y)%R.
 exact (monotony_2p _ _ _ (Rle_trans _ _ _ Hy Hyl) Hxu).
 exact (monotony_1p _ _ _ Hx2 Hyu).
@@ -180,12 +186,11 @@ Theorem IRmult_on :
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
 intros xl xu yl yu zl zu Hx1 Hx2 Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 apply Rle_trans with (xu * y)%R.
 exact (monotony_1p _ _ _ Hx2 Hyl).
 exact (monotony_2n _ _ _ (Rle_trans _ _ _ Hyu Hy) Hxu).
-apply Rle_trans with (2 := Hzu).
 apply Rle_trans with (xl * y)%R.
 exact (monotony_2n _ _ _ (Rle_trans _ _ _ Hyu Hy) Hxl).
 exact (monotony_1n _ _ _ Hx1 Hyl).
@@ -199,12 +204,11 @@ Theorem IRmult_np :
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
 intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 apply Rle_trans with (x * yu)%R.
 exact (monotony_2p _ _ _ (Rle_trans _ _ _ Hy (Rle_trans _ _ _ Hyl Hyu)) Hxl).
 exact (monotony_1n _ _ _ (Rle_trans _ _ _ Hxu Hx) Hyu).
-apply Rle_trans with (2 := Hzu).
 apply Rle_trans with (xu * y)%R.
 exact (monotony_2p _ _ _ (Rle_trans _ _ _ Hy Hyl) Hxu).
 exact (monotony_1n _ _ _ Hx Hyl).
@@ -218,12 +222,11 @@ Theorem IRmult_no :
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
 intros xl xu yl yu zl zu Hx Hy1 Hy2 Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 apply Rle_trans with (x * yu)%R.
 exact (monotony_2p _ _ _ Hy2 Hxl).
 exact (monotony_1n _ _ _ (Rle_trans _ _ _ Hxu Hx) Hyu).
-apply Rle_trans with (2 := Hzu).
 apply Rle_trans with (x * yl)%R.
 exact (monotony_1n _ _ _ (Rle_trans _ _ _ Hxu Hx) Hyl).
 exact (monotony_2n _ _ _ Hy1 Hxl).
@@ -237,12 +240,11 @@ Theorem IRmult_nn :
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
 intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 apply Rle_trans with (xu * y)%R.
 exact (monotony_1n _ _ _ Hx Hyu).
 exact (monotony_2n _ _ _ (Rle_trans _ _ _ Hyu Hy) Hxu).
-apply Rle_trans with (2 := Hzu).
 apply Rle_trans with (xl * y)%R.
 exact (monotony_2n _ _ _ (Rle_trans _ _ _ Hyu Hy) Hxl).
 exact (monotony_1n _ _ _ (Rle_trans _ _ _ (Rle_trans _ _ _ Hxl Hxu) Hx) Hyl).
@@ -339,11 +341,10 @@ Lemma IRinv_p :
  (yl <= y <= yu)%R ->
  (zl <= /y <= zu)%R.
 intros yl yu zl zu Hy Hzl Hzu y (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 apply Rle_Rinv_pos with (2 := Hyu).
 exact (Rlt_le_trans _ _ _ Hy Hyl).
-apply Rle_trans with (2 := Hzu).
 exact (Rle_Rinv_pos _ _ Hy Hyl).
 Qed.
 
@@ -355,10 +356,9 @@ Lemma IRinv_n :
  (yl <= y <= yu)%R ->
  (zl <= /y <= zu)%R.
 intros yl yu zl zu Hy Hzl Hzu y (Hyl,Hyu).
+apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
-apply Rle_trans with (1 := Hzl).
 exact (Rle_Rinv_neg _ _ Hy Hyu).
-apply Rle_trans with (2 := Hzu).
 apply Rle_Rinv_neg with (2 := Hyl).
 exact (Rle_lt_trans _ _ _ Hyu Hy).
 Qed.
@@ -612,6 +612,78 @@ apply sqrt_le_1.
 apply Rle_trans with (1 := Hy) (2 := Hyl).
 apply Rmult_le_pos ; exact Hz.
 apply Rle_trans with (1 := Hyu) (2 := Hzu).
+Qed.
+
+Theorem IRcompose :
+ forall xl xu yl yu zl zu : R,
+ (-1 <= xl)%R -> (-1 <= yl)%R ->
+ (zl <= xl + yl + xl * yl)%R -> (xu + yu + xu * yu <= zu)%R ->
+ forall x y : R,
+ (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
+ (zl <= x + y + x * y <= zu)%R.
+intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+replace (x + y + x * y)%R with ((1 + x) * (1 + y) - 1)%R. 2: ring.
+assert (H : (1 + zl <= (1 + x) * (1 + y) <= 1 + zu)%R).
+assert (H0 : (0 = 1 + -1)%R). ring.
+assert (Hc : forall a b : R, ((1 + a) * (1 + b) = 1 + (a + b + a * b))%R).
+intros a b. ring.
+assert (Hi : forall a b c : R, (a <= b)%R -> (b <= c)%R -> (1 + a <= 1 + b <= 1 + c)%R).
+intros a b c H1 H2. split.
+apply Rplus_le_compat_l with (1 := H1).
+apply Rplus_le_compat_l with (1 := H2).
+apply IRmult_pp with (1 + xl)%R (1 + xu)%R (1 + yl)%R (1 + yu)%R.
+rewrite H0. apply Rplus_le_compat_l with (1 := Hx).
+rewrite H0. apply Rplus_le_compat_l with (1 := Hy).
+rewrite Hc. apply Rplus_le_compat_l with (1 := Hzl).
+rewrite Hc. apply Rplus_le_compat_l with (1 := Hzu).
+apply Hi with (1 := Hxl) (2 := Hxu).
+apply Hi with (1 := Hyl) (2 := Hyu).
+assert (H0 : forall a : R, (a = (1 + a) + -1)%R).
+intros a. ring.
+split.
+rewrite (H0 zl). exact (Rplus_le_compat_r _ _ _ (proj1 H)).
+rewrite (H0 zu). exact (Rplus_le_compat_r _ _ _ (proj2 H)).
+Qed.
+
+Theorem IRabs_p :
+ forall yl yu zl zu : R,
+ (0 <= yl)%R ->
+ (zl <= yl)%R -> (yu <= zu)%R ->
+ forall y : R,
+ (yl <= y <= yu)%R ->
+ (zl <= Rabs y <= zu)%R.
+intros yl yu zl zu Hy Hzl Hzu y Hylu.
+rewrite Rabs_pos_eq.
+apply IRsubset with (1 := Hzl) (2 := Hzu) (3 := Hylu).
+apply Rle_trans with (1 := Hy) (2 := proj1 Hylu).
+Qed.
+
+Theorem IRabs_o :
+ forall yl yu zl zu : R,
+ (zl <= 0)%R -> (-yl <= zu)%R -> (yu <= zu)%R ->
+ forall y : R,
+ (yl <= y <= yu)%R ->
+ (zl <= Rabs y <= zu)%R.
+intros yl yu zl zu Hzl Hzu1 Hzu2 y (Hyl,Hyu).
+split.
+apply Rle_trans with (1 := Hzl) (2 := Rabs_pos y).
+unfold Rabs. case Rcase_abs ; intro H.
+apply Rle_trans with (2 := Hzu1).
+apply Ropp_le_contravar with (1 := Hyl).
+apply Rle_trans with (1 := Hyu) (2 := Hzu2).
+Qed.
+
+Theorem IRabs_n :
+ forall yl yu zl zu : R,
+ (yu <= 0)%R ->
+ (zl <= -yu)%R -> (-yl <= zu)%R ->
+ forall y : R,
+ (yl <= y <= yu)%R ->
+ (zl <= Rabs y <= zu)%R.
+intros yl yu zl zu Hy Hzl Hzu y Hylu.
+rewrite Rabs_left1.
+apply IRopp with (1 := Hzl) (2 := Hzu) (3 := Hylu).
+apply Rle_trans with (1 := proj2 Hylu) (2 := Hy).
 Qed.
 
 End Gappa_real.

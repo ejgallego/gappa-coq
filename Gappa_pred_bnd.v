@@ -61,9 +61,7 @@ intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-split.
-apply Rle_trans with (1 := H1) (2 := (proj1 Hx)).
-apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
+apply IRsubset with (1 := H1) (2 := H2) (3 := Hx).
 Qed.
 
 Definition intersect_helper (xf yf : float2) (zi : FF) :=
@@ -678,34 +676,13 @@ assert (float2R (Float2 (-1) 0) = -1)%R.
 unfold float2R. auto with real.
 generalize (Fle2_correct _ _ H1). clear H1. rewrite H. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. rewrite H. intro H2.
-generalize (Fle2_correct _ _ H3). 
+generalize (Fle2_correct _ _ H3).
 repeat rewrite Fplus2_correct.
 rewrite Fmult2_correct. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4).
 repeat rewrite Fplus2_correct.
 rewrite Fmult2_correct. clear H4. intro H4.
-clear H.
-replace (x + y + x * y)%R with ((1 + x) * (1 + y) - 1)%R. 2: ring.
-assert (H : (1 + lower zi <= (1 + x) * (1 + y) <= 1 + upper zi)%R).
-assert (H0 : (0 = 1 + -1)%R). ring.
-assert (Hc : forall a b : R, ((1 + a) * (1 + b) = 1 + (a + b + a * b))%R).
-intros a b. ring.
-assert (Hi : forall a b c : R, (a <= b <= c)%R -> (1 + a <= 1 + b <= 1 + c)%R).
-intros a b c H. split.
-apply Rplus_le_compat_l with (1 := proj1 H).
-apply Rplus_le_compat_l with (1 := proj2 H).
-apply IRmult_pp with (1 + lower xi)%R (1 + upper xi)%R (1 + lower yi)%R (1 + upper yi)%R.
-rewrite H0. apply Rplus_le_compat_l with (1 := H1).
-rewrite H0. apply Rplus_le_compat_l with (1 := H2).
-rewrite Hc. apply Rplus_le_compat_l with (1 := H3).
-rewrite Hc. apply Rplus_le_compat_l with (1 := H4).
-apply Hi with (1 := Hx).
-apply Hi with (1 := Hy).
-assert (H0 : forall a : R, (a = (1 + a) + -1)%R).
-intros a. ring.
-split.
-rewrite (H0 (lower zi)). exact (Rplus_le_compat_r _ _ _ (proj1 H)).
-rewrite (H0 (upper zi)). exact (Rplus_le_compat_r _ _ _ (proj2 H)).
+apply IRcompose with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
 Qed.
 
 Lemma Rabs_idem :
@@ -759,14 +736,7 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fpos0_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). clear H3. intro H3.
-split.
-apply Rle_trans with (1 := H2).
-apply Rle_trans with (1 := proj1 Hx) (2 := Rabs_idem x).
-apply Rle_trans with (2 := H3).
-apply Rle_trans with (2 := proj2 Hx).
-apply Req_le.
-apply Rabs_pos_eq.
-apply Rle_trans with (1 := H1) (2 := proj1 Hx).
+apply IRabs_p with (1 := H1) (2 := H2) (3 := H3) (4 := Hx).
 Qed.
 
 Definition abs_o_helper (xi zi : FF) :=
@@ -785,12 +755,7 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fneg0_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. clear H3. intro H3.
-split.
-apply Rle_trans with (1 := H1) (2 := Rabs_pos x).
-unfold Rabs. case Rcase_abs ; intro H.
-apply Rle_trans with (2 := H3).
-apply Ropp_le_contravar with (1 := proj1 Hx).
-apply Rle_trans with (1 := proj2 Hx) (2 := H2).
+apply IRabs_o with (1 := H1) (2 := H3) (3 := H2) (4 := Hx).
 Qed.
 
 Definition abs_n_helper (xi zi : FF) :=
@@ -809,17 +774,7 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fneg0_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite Fopp2_correct. clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. clear H3. intro H3.
-split.
-apply Rle_trans with (1 := H2).
-rewrite <- (Rabs_Ropp x).
-apply Rle_trans with (2 := Rabs_idem (-x)).
-apply Ropp_le_contravar with (1 := proj2 Hx).
-apply Rle_trans with (2 := H3).
-apply Rle_trans with (Ropp x).
-apply Req_le.
-apply Rabs_left1.
-apply Rle_trans with (1 := proj2 Hx) (2 := H1).
-apply Ropp_le_contravar with (1 := proj1 Hx).
+apply IRabs_n with (1 := H1) (2 := H2) (3 := H3) (4 := Hx).
 Qed.
 
 Definition sqrt_helper (xi zi : FF) :=
