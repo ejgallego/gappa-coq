@@ -1,5 +1,7 @@
 Require Export Rdefinitions.
-Require Export Gappa_common.
+Require Export Rbasic_fun.
+Require Export R_sqrt.
+Require Export Gappa_definitions.
 Require Export Gappa_pred_bnd.
 Require Export Gappa_pred_abs.
 Require Export Gappa_pred_fixflt.

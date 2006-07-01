@@ -1,5 +1,5 @@
 Require Import Gappa_common.
-Require Export Gappa_decimal.
+Require Import Gappa_decimal.
 
 Section Gappa_pred_bnd.
 

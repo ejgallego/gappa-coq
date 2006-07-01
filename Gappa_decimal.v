@@ -1,11 +1,6 @@
-Require Import Gappa_dyadic.
-Require Import ZArith.
-Require Import Reals.
+Require Import Gappa_common.
 
 Section Gappa_decimal.
-
-Record float10 : Set := Float10 { Fnum10 : Z ; Fexp10 : Z }.
-Coercion float10R := fun x : float10 => (IZR (Fnum10 x) * powerRZ 10 (Fexp10 x))%R.
 
 Definition Dcompare (x : float2) (y : float10) :=
  let m := Fnum10 y in let e := Fexp10 y in

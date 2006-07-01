@@ -1,10 +1,8 @@
 Require Import ZArith.
 Require Import Reals.
+Require Import Gappa_definitions.
 
 Section Gappa_dyadic.
-
-Record float2 : Set := Float2 {Fnum : Z; Fexp : Z}.
-Coercion float2R (x : float2) := (IZR (Fnum x) * powerRZ 2 (Fexp x))%R.
 
 Definition Fopp2 (x : float2) :=
  Float2 (- Fnum x) (Fexp x).
