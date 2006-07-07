@@ -1,9 +1,12 @@
-AC_INIT([Coq support library for Gappa], [0.7.0],
+AC_INIT([Coq support library for Gappa], [0.1],
         [Guillaume Melquiond <guillaume.melquiond@ens-lyon.fr>],
-        [gappa-coqlib])
+        [gappalib-coq])
 AM_INIT_AUTOMAKE
 
-AC_SUBST(COQC)
+COQC=coqc
+AC_ARG_WITH([coqc], AS_HELP_STRING([--with-coqc=PATH], [location of the coqc binary]),
+	[COQC="$withval"])
+AC_SUBST([COQC])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
