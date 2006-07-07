@@ -1,0 +1,16 @@
+This support library provides vernacular files so that the certificates Gappa
+generates can be imported by the Coq proof assistant.
+
+Gappa (Génération Automatique de Preuves de Propriétés Arithmétiques --
+automatic proof generation of arithmetic properties) is a tool intended to
+help verifying and formally proving properties on numerical programs dealing
+with floating-point or fixed-point arithmetic.
+
+The online documentation is available at:
+
+	http://lipforge.ens-lyon.fr/www/gappa/doc/
+
+Gappa support library for the Coq proof assistant is free software; you can
+redistribute it and/or modify it under the terms of the CeCILL-C Free Software
+License Agreement (see the COPYING file) or under the terms of the GNU Lesser
+General Public License (see the COPYING.LGPL file).
