@@ -1,2 +1,6 @@
+Version 0.2:
+ - added error propagation through opposite, division and square root
+ - added support for Gappa 0.7.1
+
 Version 0.1:
- - added support for Gappa 0.7
+ - added support for Gappa 0.7.0
