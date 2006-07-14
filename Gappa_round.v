@@ -26,6 +26,19 @@ Definition shr_aux (p : rnd_record) : rnd_record :=
 Definition shr (m : N) (d : positive) :=
  iter_pos d _ shr_aux (rnd_record_mk m false false).
 
+Fixpoint digits (m : positive) : positive :=
+ match m with
+ | xH => xH
+ | xI p => Psucc (digits p)
+ | xO p => Psucc (digits p)
+ end.
+
+Lemma digits_correct :
+ forall m : positive,
+ (powerRZ 2 (Zpos (digits m) - 1)%Z <= IZR (Zpos m) < powerRZ 2 (Zpos (digits m)))%R.
+induction m.
+Admitted.
+
 Definition succ (rshift : N -> Z -> Z) (m : N) (e : Z) :=
  match (rshift m e) with
  | Zpos p =>
@@ -98,10 +111,10 @@ Definition round (rpos rneg : rnd_record -> bool)
  | Z0 => Float2 Z0 Z0
  | Zpos p =>
    let m := Npos p in
-   match rshift m (Fexp f) with
-   | Zneg d =>
+   let e := rshift m (Fexp f) in
+   match (e - Fexp f)%Z with
+   | Zpos d =>
      let r := shr m d in
-     let e := (Fexp f + Zpos d)%Z in
      let (a,b) :=
        if rpos r then succ rshift (rnd_m r) e
        else (rnd_m r, e) in
@@ -113,10 +126,10 @@ Definition round (rpos rneg : rnd_record -> bool)
    end
  | Zneg p =>
    let m := Npos p in
-   match rshift m (Fexp f) with
-   | Zneg d =>
+   let e := rshift m (Fexp f) in
+   match (e - Fexp f)%Z with
+   | Zpos d =>
      let r := shr m d in
-     let e := (Fexp f + Zpos d)%Z in
      let (a,b) :=
        if rneg r then succ rshift (rnd_m r) e
        else (rnd_m r, e) in
@@ -127,8 +140,6 @@ Definition round (rpos rneg : rnd_record -> bool)
    | _ => f
    end
  end.
-
-Ltac caseEq f := generalize (refl_equal f) ; pattern f at -1 ; case f.
 
 Lemma round_Z0 :
  forall rpos rneg : rnd_record -> bool,
@@ -149,13 +160,15 @@ Lemma round_Zneg :
 intros rpos rneg rshift m e.
 unfold round, Fopp2.
 simpl.
-case (rshift (Npos m) e) ; intros ; simpl ; try apply refl_equal.
+case (rshift (Npos m) e - e)%Z ; intros ; simpl ; try apply refl_equal.
 case (rneg (shr (Npos m) p)).
-case (succ rshift (rnd_m (shr (Npos m) p)) (e + Zpos p)).
+case (succ rshift (rnd_m (shr (Npos m) p)) (rshift (Npos m) e)).
 intros n q.
 case n ; intros ; apply refl_equal.
 case (rnd_m (shr (Npos m) p)) ; intros ; apply refl_equal.
 Qed.
+
+Ltac caseEq f := generalize (refl_equal f) ; pattern f at -1 ; case f.
 
 Definition is_even (n : N) :=
  match n with
@@ -164,26 +177,68 @@ Definition is_even (n : N) :=
  | _ => false
  end.
 
+Definition good_rdir (rdir: rnd_record -> bool) :=
+ forall m : N,
+ rdir (rnd_record_mk m false false) = false /\
+ (rdir (rnd_record_mk m false true) = false \/ rdir (rnd_record_mk m true false) = true) /\
+ (rdir (rnd_record_mk m true false) = false \/ rdir (rnd_record_mk m true true) = true).
+
 Definition rndZR (r : rnd_record) : bool :=
  false.
+
+Lemma rndZR_good : good_rdir rndZR.
+unfold good_rdir, rndZR. simpl.
+intuition.
+Qed.
 
 Definition rndAW (r : rnd_record) : bool :=
  rnd_r r || rnd_s r.
 
+Lemma rndAW_good : good_rdir rndAW.
+unfold good_rdir, rndAW. simpl.
+intuition.
+Qed.
+
 Definition rndNE (r : rnd_record) : bool :=
  rnd_r r && (rnd_s r || negb (is_even (rnd_m r))).
+
+Lemma rndNE_good : good_rdir rndNE.
+unfold good_rdir, rndNE. simpl.
+intuition.
+Qed.
 
 Definition rndNO (r : rnd_record) : bool :=
  rnd_r r && (rnd_s r || is_even (rnd_m r)).
 
+Lemma rndNO_good : good_rdir rndNO.
+unfold good_rdir, rndNO. simpl.
+intuition.
+Qed.
+
 Definition rndNZ (r : rnd_record) : bool :=
  rnd_r r && rnd_s r.
+
+Lemma rndNZ_good : good_rdir rndNZ.
+unfold good_rdir, rndNZ. simpl.
+intuition.
+Qed.
 
 Definition rndNA (r : rnd_record) : bool :=
  rnd_r r.
 
+Lemma rndNA_good : good_rdir rndNA.
+unfold good_rdir, rndNA. simpl.
+intuition.
+Qed.
+
 Definition rndOD (r : rnd_record) : bool :=
  (rnd_r r || rnd_s r) && is_even (rnd_m r).
+
+Lemma rndOD_good : good_rdir rndOD.
+unfold good_rdir, rndOD. simpl.
+intros.
+case (is_even m) ; intuition.
+Qed.
 
 Definition roundZR := round rndZR rndZR.
 Definition roundAW := round rndAW rndAW.
@@ -196,5 +251,14 @@ Definition roundNZ := round rndNZ rndNZ.
 Definition roundNA := round rndNA rndNA.
 Definition roundNU := round rndNA rndNZ.
 Definition roundND := round rndNZ rndNA.
+
+Axiom round_extension :
+ forall rpos rneg : rnd_record -> bool,
+ forall rshift : N -> Z -> Z,
+ good_rdir rpos -> good_rdir rneg ->
+ good_rshift rshift ->
+ sigT (fun fext : R -> float2 =>
+ (forall x y : R, (fext x <= fext y)%R) /\
+ (forall f : float2, fext f = round rpos rneg rshift f)).
 
 End Gappa_round.

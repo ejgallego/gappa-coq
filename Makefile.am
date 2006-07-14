@@ -3,6 +3,7 @@ FILES = \
 	Gappa_decimal.v \
 	Gappa_definitions.v \
 	Gappa_dyadic.v \
+	Gappa_fixed.v \
 	Gappa_library.v \
 	Gappa_pred_abs.v \
 	Gappa_pred_bnd.v \
@@ -19,7 +20,8 @@ Gappa_common.vo: Gappa_common.v Gappa_real.vo Gappa_definitions.vo Gappa_dyadic.
 Gappa_decimal.vo: Gappa_decimal.v Gappa_common.vo
 Gappa_definitions.vo: Gappa_definitions.v
 Gappa_dyadic.vo: Gappa_dyadic.v Gappa_definitions.vo
-Gappa_library.vo: Gappa_library.v Gappa_definitions.vo Gappa_pred_bnd.vo Gappa_pred_abs.vo Gappa_pred_fixflt.vo Gappa_rewriting.vo
+Gappa_fixed.vo: Gappa_fixed.v Gappa_round.vo
+Gappa_library.vo: Gappa_library.v Gappa_definitions.vo Gappa_pred_bnd.vo Gappa_pred_abs.vo Gappa_pred_fixflt.vo Gappa_rewriting.vo Gappa_fixed.vo
 Gappa_pred_abs.vo: Gappa_pred_abs.v Gappa_common.vo
 Gappa_pred_bnd.vo: Gappa_pred_bnd.v Gappa_common.vo Gappa_decimal.vo
 Gappa_pred_fixflt.vo: Gappa_pred_fixflt.v Gappa_common.vo
