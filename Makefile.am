@@ -8,7 +8,8 @@ FILES = \
 	Gappa_pred_bnd.v \
 	Gappa_pred_fixflt.v \
 	Gappa_real.v \
-	Gappa_rewriting.v
+	Gappa_rewriting.v \
+	Gappa_round.v
 
 data_DATA = $(FILES:=o)
 EXTRA_DIST = autogen.sh COPYING.LGPL $(FILES)
@@ -24,6 +25,7 @@ Gappa_pred_bnd.vo: Gappa_pred_bnd.v Gappa_common.vo Gappa_decimal.vo
 Gappa_pred_fixflt.vo: Gappa_pred_fixflt.v Gappa_common.vo
 Gappa_real.vo: Gappa_real.v
 Gappa_rewriting.vo: Gappa_rewriting.v Gappa_common.vo
+Gappa_round.vo: Gappa_round.v Gappa_definitions.vo Gappa_dyadic.vo
 
 %.vo: %.v
 	@COQC@ $<
