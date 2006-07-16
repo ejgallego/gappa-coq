@@ -46,6 +46,26 @@ auto with real.
 apply IZR_lt with (1 := H).
 Qed.
 
+Lemma float2_binade_eq_reg_aux :
+ forall m1 m2 : positive, forall e : Z,
+ Float2 (Zpos m1) e = Float2 (Zpos m2) e :>R ->
+ m1 = m2.
+intros m1 m2 e.
+unfold float2R.
+simpl.
+repeat rewrite <- (Rmult_comm (powerRZ 2 e)).
+intros H.
+assert (powerRZ 2 e <> 0)%R.
+apply powerRZ_NOR.
+discrR.
+generalize (Rmult_eq_reg_l _ _ _ H H0). clear H. intro H.
+generalize (INR_eq _ _ H). clear H. intro H.
+rewrite <- (pred_o_P_of_succ_nat_o_nat_of_P_eq_id m1).
+rewrite H.
+rewrite pred_o_P_of_succ_nat_o_nat_of_P_eq_id.
+apply refl_equal.
+Qed.
+
 Definition bracket (r : R) (p : rnd_record) (e : Z) :=
  let m := (Z_of_N (rnd_m p) * 2)%Z in
  let f0 := Float2 m e in
@@ -289,26 +309,6 @@ Axiom float2_equal_xO :
  Float2 (Zpos m1) e1 = Float2 (Zpos m2) e2 :>R ->
  exists p : positive, m1 = xO p.
 
-Lemma float2_exp_inj_aux :
- forall m1 m2 : positive, forall e : Z,
- Float2 (Zpos m1) e = Float2 (Zpos m2) e :>R ->
- m1 = m2.
-intros m1 m2 e.
-unfold float2R.
-simpl.
-repeat rewrite <- (Rmult_comm (powerRZ 2 e)).
-intros H.
-assert (powerRZ 2 e <> 0)%R.
-apply powerRZ_NOR.
-discrR.
-generalize (Rmult_eq_reg_l _ _ _ H H0). clear H. intro H.
-generalize (INR_eq _ _ H). clear H. intro H.
-rewrite <- (pred_o_P_of_succ_nat_o_nat_of_P_eq_id m1).
-rewrite H.
-rewrite pred_o_P_of_succ_nat_o_nat_of_P_eq_id.
-apply refl_equal.
-Qed.
-
 Lemma round_unicity_aux :
  forall rdir : rnd_record -> bool, forall rexp : Z -> Z,
  forall m1 m2 : positive, forall e1 e2 : Z,
@@ -333,7 +333,7 @@ intros m1.
 simpl.
 rewrite Zminus_0_r.
 intros H.
-generalize (float2_exp_inj_aux _ _ _ H). intros H0.
+generalize (float2_binade_eq_reg_aux _ _ _ H). intros H0.
 rewrite H0. clear H H0.
 apply refl_equal.
 intros m1 Heq.
@@ -370,7 +370,7 @@ intros rdir rexp m1 m2 e1 e2 Hdir Heq.
 case (Ztrichotomy e1 e2) ; [ intros H | intros [H|H] ].
 apply round_unicity_aux with (1 := Hdir) (2 := H) (3 := Heq).
 rewrite H in Heq.
-generalize (float2_exp_inj_aux _ _ _ Heq).
+generalize (float2_binade_eq_reg_aux _ _ _ Heq).
 intros H0.
 rewrite H0.
 rewrite H.
@@ -427,34 +427,6 @@ apply refl_equal.
 Qed.
 
 (*
-Lemma round_Z0 :
- forall rpos rneg : rnd_record -> bool,
- forall rexp : Z -> Z,
- forall e : Z,
- (round rpos rneg rexp (Float2 Z0 e) = 0 :>R)%R.
-intros rpos rneg rexp e.
-unfold round, float2R.
-simpl.
-auto with real.
-Qed.
-
-Lemma round_Zneg :
- forall rpos rneg : rnd_record -> bool,
- forall rexp : Z -> Z,
- forall m : positive, forall e : Z,
- round rpos rneg rexp (Float2 (Zneg m) e) = Fopp2 (round rneg rpos rexp (Fopp2 (Float2 (Zneg m) e))).
-intros rpos rneg rexp m e.
-unfold round, Fopp2.
-simpl.
-case (rexp (e + Zpos (digits m)) - e)%Z ; intros ; simpl ; try apply refl_equal.
-case (rneg (shr (Npos m) p)).
-case (Nsucc (rnd_m (shr (Npos m) p))).
-apply refl_equal.
-intros q.
-apply refl_equal.
-case (rnd_m (shr (Npos m) p)) ; intros ; apply refl_equal.
-Qed.
-
 Lemma repartition :
  forall m1 m2 : positive, forall e1 e2 : Z,
  (Float2 (Zpos m1) e1 <= Float2 (Zpos m2) e2 < Float2 (Zpos (Psucc m1)) e1)%R ->
@@ -504,6 +476,31 @@ Definition round (rdirs : round_dir) (rexp : Z -> Z) (f : float2) :=
    | (Npos q, e) => Float2 (Zneg q) e
    end
  end.
+
+Lemma round_zero :
+ forall rdir : round_dir,
+ forall rexp : Z -> Z,
+ forall e : Z,
+ (round rdir rexp (Float2 Z0 e) = 0 :>R)%R.
+intros rdir rexp e.
+unfold round, float2R.
+simpl.
+auto with real.
+Qed.
+
+Lemma round_neg :
+ forall rdir : round_dir,
+ forall rexp : Z -> Z,
+ forall m : positive, forall e : Z,
+ round rdir rexp (Float2 (Zneg m) e) = Fopp2 (round
+   (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir))
+   rexp (Fopp2 (Float2 (Zneg m) e))).
+intros rdir rexp m e.
+unfold round, Fopp2.
+simpl.
+case (round_pos (rneg rdir) rexp m e) ; intros.
+case n ; trivial.
+Qed.
 
 Definition rndZR (r : rnd_record) : bool :=
  false.
