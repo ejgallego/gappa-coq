@@ -1,3 +1,4 @@
+Require Import Classical.
 Require Import ZArith.
 Require Import Reals.
 Require Import Gappa_definitions.
@@ -5,18 +6,10 @@ Require Import Gappa_round.
 
 Section Gappa_fixed.
 
-Definition fixed_shift (dst : Z) (m : N) (e : Z) :=
- dst.
-
-Lemma fixed_shift_good :
- forall dst : Z, good_rshift (fixed_shift dst).
-unfold good_rshift, fixed_shift.
-intros.
-apply refl_equal.
-Qed.
+Definition fixed_shift (e : Z) (_ : Z) := e.
 
 Definition fixed_dn_ext (e : Z) :=
- round_extension rndZR rndAW (fixed_shift e) rndZR_good rndAW_good (fixed_shift_good e).
+ round_extension roundDN (fixed_shift e).
 
 Definition rounding_fixed_dn (e : Z) (x : R) :=
  float2R (projT1 (fixed_dn_ext e) x).
@@ -32,20 +25,15 @@ exists (projT1 (fixed_dn_ext e1) x).
 split.
 apply refl_equal.
 generalize (fixed_dn_ext e1).
-intros (f,(H1,H2)).
+intros (f,H1).
 simpl.
-rewrite (H2 x).
-intros f.
-exists ((projT1 f) x).
-split.
-unfold rounding_fixed_dn, fixed_dn_ext.
-apply refl_equal.
-simpl.
-
-apply refl_equal.
-exists (projT1 (fixed_dn_ext e1) x).
-split.
-apply refl_equal.
-Check (fixed_dn_ext e1).
+generalize (round_neighbor roundDN (fixed_shift e1) f H1 x).
+intros (a,(b,(H2,H3))).
+generalize (proj1 H1 a x). intro H4.
+generalize (proj1 H1 x b). intro H5.
+rewrite <- (proj2 H1 a) in H3.
+rewrite <- (proj2 H1 b) in H3.
+rewrite <- H3 in H5.
+rewrite <- (Rle_antisym (f a) (f x) H4 H5).
 
 End Gappa_fixed.
