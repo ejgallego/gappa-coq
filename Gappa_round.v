@@ -31,8 +31,8 @@ Lemma float2_shift_p1 :
 intros e m.
 unfold float2R. simpl.
 rewrite powerRZ_add. 2: discrR.
-simpl.
 rewrite mult_IZR.
+simpl.
 replace (IZR 2) with 2%R. 2: apply refl_equal.
 ring.
 Qed.
@@ -487,7 +487,7 @@ Axiom float2_repartition :
  (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R ->
  (e2 < e1)%Z /\ (e1 + Zpos (digits m1) = e2 + Zpos (digits m2))%Z.
 
-Lemma shr_constant1 :
+Lemma shr_constant_m :
  forall m1 m2 : positive, forall e1 e2 : Z,
  (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R ->
  rnd_m (shr m2 (pos_of_Z (e1 - e2))) = (Npos m1).
@@ -520,6 +520,118 @@ apply Rlt_not_le.
 apply Rle_lt_trans with (1 := proj1 HH) (2 := proj2 H).
 Qed.
 
+Lemma shr_constant_s :
+ forall d : positive,
+ forall m1 : positive, forall e1 : Z,
+ let m2 := (Z_of_N (rnd_m (shr m1 d)) * 2)%Z in
+ let e2 := (e1 + Zpos d - 1)%Z in
+ (Float2 (Zpos m1) e1 = Float2 m2 e2 :>R -> rnd_s (shr m1 d) = false) /\
+ (Float2 (Zpos m1) e1 = Float2 (m2 + 1) e2 :>R -> rnd_s (shr m1 d) = false) /\
+ (Float2 (Zpos m1) e1 <> Float2 m2 e2 :>R /\
+  Float2 (Zpos m1) e1 <> Float2 (m2 + 1) e2 :>R -> rnd_s (shr m1 d) = true).
+intros d m1 e1 m2 e2.
+generalize (shr_bracket d m1 e1).
+unfold bracket.
+fold m2 e2.
+caseEq (rnd_s (shr m1 d)) ; case (rnd_r (shr m1 d)) ;
+intros Hs Hb ; split ; try split ; intros H ; try apply refl_equal.
+elim Rlt_not_le with (1 := proj1 Hb).
+rewrite H.
+apply float2_binade_le.
+auto with zarith.
+elim Rlt_not_eq with (1 := proj1 Hb).
+apply sym_eq with (1 := H).
+elim Rlt_not_eq with (1 := proj1 Hb).
+apply sym_eq with (1 := H).
+elim Rlt_not_eq with (1 := proj2 Hb).
+exact H.
+elim (proj2 H).
+exact Hb.
+elim (proj1 H).
+exact Hb.
+Qed.
+
+Lemma shr_constant_r :
+ forall d : positive,
+ forall m1 : positive, forall e1 : Z,
+ let m2 := (Z_of_N (rnd_m (shr m1 d)) * 2)%Z in
+ let e2 := (e1 + Zpos d - 1)%Z in
+ ((Float2 m2 e2 <= Float2 (Zpos m1) e1 < Float2 (m2 + 1) e2)%R -> rnd_r (shr m1 d) = false) /\
+ ((Float2 (m2 + 1) e2 <= Float2 (Zpos m1) e1 < Float2 (m2 + 2) e2)%R -> rnd_r (shr m1 d) = true).
+intros d m1 e1 m2 e2.
+generalize (shr_bracket d m1 e1).
+unfold bracket.
+fold m2 e2.
+caseEq (rnd_r (shr m1 d)) ; case (rnd_s (shr m1 d)) ;
+intros Hr Hb ; split ; intros H ; try apply refl_equal.
+elim Rlt_not_le with (1 := proj2 H).
+apply Rlt_le with (1 := proj1 Hb).
+elim Rlt_not_eq with (1 := proj2 H).
+exact Hb.
+elim Rle_not_lt with (1 := proj1 H).
+exact (proj2 Hb).
+elim Rle_not_lt with (1 := proj1 H).
+rewrite Hb.
+apply float2_binade_lt.
+auto with zarith.
+Qed.
+
+Lemma shr_constant_rs :
+ forall m1 m2 : positive, forall e1 e2 : Z,
+ (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R ->
+ let r := shr m2 (pos_of_Z (e1 - e2)) in
+ ((Float2 (Zpos m2) e2 < Float2 (Zpos m1 * 2 + 1) (e1 - 1))%R -> rnd_r r = false /\ rnd_s r = true) /\
+ (Float2 (Zpos m2) e2 = Float2 (Zpos m1 * 2 + 1) (e1 - 1) :>R -> rnd_r r = true /\ rnd_s r = false) /\
+ ((Float2 (Zpos m1 * 2 + 1) (e1 - 1) < Float2 (Zpos m2) e2)%R -> rnd_r r = true /\ rnd_s r = true).
+intros m1 m2 e1 e2 Hb.
+generalize (shr_constant_m m1 m2 e1 e2 Hb).
+intros Hm r.
+generalize (shr_constant_r (pos_of_Z (e1 - e2)) m2 e2).
+generalize (shr_constant_s (pos_of_Z (e1 - e2)) m2 e2).
+rewrite Hm.
+generalize (float2_repartition _ _ _ _ Hb).
+intros (He,_).
+rewrite <- (Zpos_pos_of_Z _ _ He).
+cutrewrite (e2 + (e1 - e2) - 1 = e1 - 1)%Z. 2: ring.
+fold r.
+intros (Hs1,(Hs2,Hs3)) (Hr1,Hr2).
+split ; [ idtac | split ] ; intros H ; split.
+apply Hr1.
+split.
+rewrite <- float2_shift_m1.
+apply Rlt_le with (1 := proj1 Hb).
+exact H.
+apply Hs3.
+split.
+apply Rgt_not_eq.
+rewrite <- float2_shift_m1.
+exact (proj1 Hb).
+apply Rlt_not_eq.
+exact H.
+apply Hr2.
+split.
+rewrite H.
+apply Req_le.
+apply refl_equal.
+cutrewrite (Z_of_N (Npos m1) * 2 + 2 = (Z_of_N (Npos m1) + 1) * 2)%Z. 2: ring.
+rewrite <- float2_shift_m1.
+exact (proj2 Hb).
+apply Hs2 with (1 := H).
+apply Hr2.
+split.
+apply Rlt_le with (1 := H).
+cutrewrite (Z_of_N (Npos m1) * 2 + 2 = (Z_of_N (Npos m1) + 1) * 2)%Z. 2: ring.
+rewrite <- float2_shift_m1.
+exact (proj2 Hb).
+apply Hs3.
+split.
+apply Rgt_not_eq.
+rewrite <- float2_shift_m1.
+exact (proj1 Hb).
+apply Rgt_not_eq.
+exact H.
+Qed.
+
 Lemma rnd_record_eq :
  forall m : N, forall r s : bool,
  forall d : rnd_record,
@@ -538,21 +650,21 @@ Lemma round_constant :
  forall m1 : positive, forall e1 : Z,
  (rexp (e1 + Zpos (digits m1)) = e1)%Z ->
  forall m2 : positive, forall e2 : Z,
- ((Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (2 * Zpos m1 + 1) (e1 - 1))%R
+ ((Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 * 2 + 1) (e1 - 1))%R
    -> round_pos rdir rexp m2 e2 = round_pos rdir rexp (xI (xO m1)) (e1 - 2)) /\
- ((Float2 (2 * Zpos m1 + 1) (e1 - 1) < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R
+ ((Float2 (Zpos m1 * 2 + 1) (e1 - 1) < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R
    -> round_pos rdir rexp m2 e2 = round_pos rdir rexp (xI (xI m1)) (e1 - 2)).
 intros rdir rexp m1 e1 Hf1 m2 e2.
 split ; intros Hf2.
-assert (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R.
+assert (Hb: (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R).
 split.
 apply (proj1 Hf2).
 apply Rlt_trans with (1 := proj2 Hf2).
 rewrite (float2_shift_m1 e1).
 apply float2_binade_lt.
 auto with zarith.
-generalize (float2_repartition m1 m2 e1 e2 H).
-clear H. intros (H1,H2).
+generalize (float2_repartition m1 m2 e1 e2 Hb).
+intros (H1,H2).
 assert (rexp (e1 - 2 + Zpos (digits (xI (xO m1)))) = e1)%Z.
 simpl.
 repeat rewrite Zpos_succ_morphism.
@@ -576,15 +688,55 @@ replace (e1 - (e1 - 2))%Z with 2%Z. 2: ring.
 unfold pos_of_Z at 2.
 unfold shr at 2. simpl.
 unfold shr_aux. simpl.
+generalize (shr_constant_m m1 m2 e1 e2 Hb).
+intro Hm.
+generalize (shr_constant_rs m1 m2 e1 e2 Hb).
+intros (Hrs1,(Hrs2,Hrs3)).
 apply rnd_record_eq.
-apply shr_constant1.
+exact Hm.
+exact (proj1 (Hrs1 (proj2 Hf2))).
+exact (proj2 (Hrs1 (proj2 Hf2))).
+assert (Hb: (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R).
 split.
-apply (proj1 Hf2).
-apply Rlt_trans with (1 := proj2 Hf2).
+apply Rlt_trans with (2 := proj1 Hf2).
 rewrite (float2_shift_m1 e1).
 apply float2_binade_lt.
 auto with zarith.
-Admitted.
+apply (proj2 Hf2).
+generalize (float2_repartition m1 m2 e1 e2 Hb).
+intros (H1,H2).
+assert (rexp (e1 - 2 + Zpos (digits (xI (xI m1)))) = e1)%Z.
+simpl.
+repeat rewrite Zpos_succ_morphism.
+replace (e1 - 2 + Zsucc (Zsucc (Zpos (digits m1))))%Z with (e1 + Zpos (digits m1))%Z.
+exact Hf1.
+unfold Zsucc.
+ring.
+apply round_constant1.
+rewrite <- H2.
+rewrite Hf1.
+exact H1.
+rewrite H.
+omega.
+rewrite H.
+rewrite <- H2.
+exact Hf1.
+rewrite H.
+rewrite <- H2.
+rewrite Hf1.
+replace (e1 - (e1 - 2))%Z with 2%Z. 2: ring.
+unfold pos_of_Z at 2.
+unfold shr at 2. simpl.
+unfold shr_aux. simpl.
+generalize (shr_constant_m m1 m2 e1 e2 Hb).
+intro Hm.
+generalize (shr_constant_rs m1 m2 e1 e2 Hb).
+intros (Hrs1,(Hrs2,Hrs3)).
+apply rnd_record_eq.
+exact Hm.
+exact (proj1 (Hrs3 (proj1 Hf2))).
+exact (proj2 (Hrs3 (proj1 Hf2))).
+Qed.
 
 Definition is_even (n : N) :=
  match n with
