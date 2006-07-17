@@ -1,4 +1,5 @@
 Require Import Classical.
+Require Import Decidable.
 Require Import ZArith.
 Require Import Reals.
 Require Import Gappa_definitions.
@@ -24,16 +25,24 @@ Definition shr_aux (p : rnd_record) : rnd_record :=
   end
  end.
 
-Lemma float2_shift1 :
- forall m : Z, forall e : Z,
+Lemma float2_shift_p1 :
+ forall e : Z, forall m : Z,
  Float2 m (e + 1) = Float2 (m * 2) e :>R.
-intros m e.
+intros e m.
 unfold float2R. simpl.
 rewrite powerRZ_add. 2: discrR.
 simpl.
 rewrite mult_IZR.
 replace (IZR 2) with 2%R. 2: apply refl_equal.
 ring.
+Qed.
+
+Lemma float2_shift_m1 :
+ forall e : Z, forall m : Z,
+ Float2 m e = Float2 (m * 2) (e - 1) :>R.
+intros e m.
+pattern e at 1 ; replace e with (e - 1 + 1)%Z. 2: ring.
+apply float2_shift_p1.
 Qed.
 
 Lemma float2_binade_lt :
@@ -44,6 +53,16 @@ unfold float2R. simpl.
 apply Rmult_lt_compat_r.
 auto with real.
 apply IZR_lt with (1 := H).
+Qed.
+
+Lemma float2_binade_le :
+ forall m1 m2 : Z, forall e : Z,
+ (m1 <= m2)%Z -> (Float2 m1 e <= Float2 m2 e)%R.
+intros m1 m2 e H.
+unfold float2R. simpl.
+apply Rmult_le_compat_r.
+auto with real.
+apply IZR_le with (1 := H).
 Qed.
 
 Lemma float2_binade_eq_reg_aux :
@@ -68,9 +87,9 @@ Qed.
 
 Definition bracket (r : R) (p : rnd_record) (e : Z) :=
  let m := (Z_of_N (rnd_m p) * 2)%Z in
- let f0 := Float2 m e in
- let f1 := Float2 (m + 1)%Z e in
- let f2 := Float2 (m + 2)%Z e in
+ let f0 := Float2 m (e - 1) in
+ let f1 := Float2 (m + 1) (e - 1) in
+ let f2 := Float2 (m + 2) (e - 1) in
  if (rnd_r p) then
   if (rnd_s p) then (f1 < r < f2)%R else (r = f1)%R
  else
@@ -88,8 +107,10 @@ unfold shr_aux.
 destruct (rnd_m p) ; try destruct p0 ; trivial.
 rewrite H0. clear H0.
 assert (HH: if rnd_r p || rnd_s p then
-              (Float2 (Z_of_N (rnd_m p) * 2) e < r < Float2 ((Z_of_N (rnd_m p) + 1) * 2) e)%R
-            else r = Float2 (Z_of_N (rnd_m p) * 2) e).
+              (Float2 (Z_of_N (rnd_m p)) (e + 1 - 1) < r < Float2 ((Z_of_N (rnd_m p) + 1)) (e + 1 - 1))%R
+            else r = Float2 (Z_of_N (rnd_m p)) (e + 1 - 1)).
+cutrewrite (e + 1 - 1 = e - 1 + 1)%Z. 2: ring.
+repeat rewrite (float2_shift_p1).
 cutrewrite ((Z_of_N (rnd_m p) + 1) * 2 = Z_of_N (rnd_m p) * 2 + 2)%Z.
 2: ring.
 unfold bracket in H.
@@ -120,8 +141,7 @@ destruct p0.
 intros _. simpl. rewrite Pmult_comm. apply refl_equal.
 intros H1. discriminate H1.
 intros _. apply refl_equal.
-rewrite H1. clear H0 H1.
-repeat rewrite (float2_shift1).
+rewrite H1.
 exact HH.
 assert (Z_of_N (rnd_m (shr_aux p)) * 2 = Z_of_N (rnd_m p))%Z.
 generalize H0. unfold shr_aux.
@@ -131,22 +151,27 @@ destruct p0.
 intros H1. discriminate H1.
 intros _. simpl. rewrite Pmult_comm. apply refl_equal.
 intros H1. discriminate H1.
-rewrite H1. clear H0 H1.
-repeat rewrite (float2_shift1).
+rewrite H1.
 exact HH.
 Qed.
 
-Definition shr (m : N) (d : positive) :=
- iter_pos d _ shr_aux (rnd_record_mk m false false).
+Definition shr (m : positive) (d : positive) :=
+ iter_pos d _ shr_aux (rnd_record_mk (Npos m) false false).
 
 Lemma shr_bracket :
- forall r : R, forall d : positive,
- forall m : N, forall e : Z,
- bracket r (rnd_record_mk m false false) e ->
- bracket r (shr m d) (e + Zpos d).
-intros r d m e H.
+ forall d : positive,
+ forall m : positive, forall e : Z,
+ bracket (Float2 (Zpos m) e) (shr m d) (e + Zpos d).
+intros d m e.
+assert (bracket (Float2 (Zpos m) e) (rnd_record_mk (Npos m) false false) e).
+unfold bracket.
+simpl.
+rewrite float2_shift_m1.
+replace (Zpos m * 2)%Z with (Zpos (m * 2)).
+apply refl_equal.
+apply refl_equal.
 unfold shr.
-rewrite Zpos_eq_Z_of_nat_o_nat_of_P.
+rewrite (Zpos_eq_Z_of_nat_o_nat_of_P d).
 rewrite iter_nat_of_P.
 induction (nat_of_P d).
 simpl.
@@ -156,6 +181,47 @@ rewrite inj_S.
 simpl.
 unfold Zsucc. rewrite Zplus_assoc.
 apply shr_aux_bracket with (1 := IHn).
+Qed.
+
+Lemma shr_bracket_weak :
+ forall d : positive,
+ forall m1 : positive, forall e1 : Z,
+ let m2 := Z_of_N (rnd_m (shr m1 d)) in
+ let e2 := (e1 + Zpos d)%Z in
+ (Float2 m2 e2 <= Float2 (Zpos m1) e1 < Float2 (m2 + 1) e2)%R.
+intros d m1 e1 m2 e2.
+repeat rewrite (float2_shift_m1 e2).
+generalize (shr_bracket d m1 e1).
+unfold bracket.
+case (rnd_r (shr m1 d)) ; case (rnd_s (shr m1 d)) ;
+fold m2 ; fold e2 ; intro H.
+split.
+apply Rlt_le.
+apply Rlt_trans with (2 := proj1 H).
+apply float2_binade_lt.
+auto with zarith.
+apply Rlt_le_trans with (1 := proj2 H).
+auto with zarith.
+replace (m2 * 2 + 2)%Z with ((m2 + 1) * 2)%Z. 2: ring.
+auto with real.
+rewrite H.
+split.
+apply Rlt_le.
+apply float2_binade_lt.
+auto with zarith.
+apply float2_binade_lt.
+auto with zarith.
+split.
+apply Rlt_le.
+apply (proj1 H).
+apply Rlt_trans with (1 := proj2 H).
+apply float2_binade_lt.
+auto with zarith.
+rewrite H.
+split.
+auto with real.
+apply float2_binade_lt.
+auto with zarith.
 Qed.
 
 Fixpoint digits (m : positive) : positive :=
@@ -197,7 +263,7 @@ Definition round_pos (rdir : rnd_record -> bool)
  let e' := rexp (e + Zpos (digits m))%Z in
  match (e' - e)%Z with
  | Zpos d =>
-   let r := shr (Npos m) d in
+   let r := shr m d in
    ((if rdir r then Nsucc (rnd_m r) else rnd_m r), e')
  | _ => (Npos m, e)
  end.
@@ -249,10 +315,7 @@ rewrite H1 in H0.
 discriminate H0.
 assert (Float2 (Z_of_N (Npos m)) e = Float2 (Z_of_N (Npos (xO m))) (e - 1) :>R).
 unfold Z_of_N.
-cutrewrite (Float2 (Zpos m) e = Float2 (Zpos m) (e - 1 + 1)%Z).
-2: ring (e - 1 + 1)%Z ; apply refl_equal.
-cutrewrite (Zpos (xO m) = Zpos m * 2)%Z.
-apply float2_shift1.
+rewrite float2_shift_m1.
 rewrite Zmult_comm.
 apply refl_equal.
 caseEq (Zneg p + 1)%Z ; intros.
@@ -285,7 +348,7 @@ simpl.
 rewrite <- iter_nat_of_P.
 unfold shr_aux at 2 4 6.
 simpl.
-fold (shr (Npos m) p0).
+fold (shr m p0).
 apply refl_equal.
 rewrite H1 in H0.
 fold (Zsucc (Zpos p0)) in H0.
@@ -344,19 +407,21 @@ unfold Zlt.
 apply refl_equal.
 generalize (float2_equal_xO m1 m2 _ e2 He Heq).
 intros (p, H). rewrite H in Heq. rewrite H. clear H m1.
-cutrewrite (e2 - Z_of_nat (S n) = e2 - Z_of_nat (S n) + 1 - 1)%Z. 2: ring.
-rewrite <- round_constant_xO.
-2: exact Hdir.
-cutrewrite (Zpos (xO p) = Zpos p * 2)%Z in Heq.
-2: rewrite Zmult_comm ; apply refl_equal.
-rewrite <- float2_shift1 in Heq.
-cut (e2 - Z_of_nat (S n) + 1 = e2 - Z_of_nat n)%Z.
-intros H. rewrite H. rewrite H in Heq. clear H.
-apply (IHn p).
-exact Heq.
+assert (e2 - Z_of_nat (S n) = e2 - Z_of_nat n - 1)%Z.
 rewrite inj_S.
 unfold Zsucc.
 ring.
+rewrite H in Heq.
+rewrite H.
+clear H.
+rewrite <- round_constant_xO.
+2: exact Hdir.
+apply (IHn p).
+rewrite <- Heq.
+replace (Zpos (xO p)) with (Zpos p * 2)%Z.
+apply float2_shift_m1.
+rewrite Zmult_comm.
+apply refl_equal.
 Qed.
 
 Lemma round_unicity :
@@ -382,20 +447,19 @@ rewrite Heq.
 apply refl_equal.
 Qed.
 
-Definition diff_Zpos (n : Z) :=
+Definition pos_of_Z (n : Z) :=
  match n with
  | Zpos p => p
  | _ => xH
  end.
 
-Lemma ex_Zpos :
+Lemma Zpos_pos_of_Z :
  forall a b : Z, (a < b)%Z ->
- exists p : positive, (b - a = Zpos p)%Z.
+ (b - a = Zpos (pos_of_Z (b - a)))%Z.
 intros a b H.
 assert (0 < b - a)%Z.
 omega.
 destruct (b - a)%Z ; compute in H0 ; try discriminate H0.
-exists p.
 apply refl_equal.
 Qed.
 
@@ -406,47 +470,121 @@ Lemma round_constant1 :
  let e2' := rexp (e2 + Zpos (digits m2))%Z in
  (e1 < e1')%Z -> (e2 < e2')%Z ->
  e1' = e2' ->
- shr (Npos m1) (diff_Zpos (e1' - e1)) = shr (Npos m2) (diff_Zpos (e2' - e2)) ->
+ shr m1 (pos_of_Z (e1' - e1)) = shr m2 (pos_of_Z (e2' - e2)) ->
  round_pos rdir rexp m1 e1 = round_pos rdir rexp m2 e2.
 intros rdir rexp m1 m2 e1 e2 e1' e2' He1 He2 He Hs.
 unfold round_pos.
 fold e1' e2'.
-generalize (ex_Zpos _ _ He1). clear He1. intros (d1, He1). rewrite He1.
-generalize (ex_Zpos _ _ He2). clear He2. intros (d2, He2). rewrite He2.
-cutrewrite (diff_Zpos (e1' - e1) = d1) in Hs.
-cutrewrite (diff_Zpos (e2' - e2) = d2) in Hs.
+rewrite (Zpos_pos_of_Z _ _ He1).
+rewrite (Zpos_pos_of_Z _ _ He2).
 rewrite Hs.
 rewrite He.
 apply refl_equal.
-unfold diff_Zpos.
-rewrite He2.
+Qed.
+
+Axiom float2_repartition :
+ forall m1 m2 : positive, forall e1 e2 : Z,
+ (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R ->
+ (e2 < e1)%Z /\ (e1 + Zpos (digits m1) = e2 + Zpos (digits m2))%Z.
+
+Lemma shr_constant1 :
+ forall m1 m2 : positive, forall e1 e2 : Z,
+ (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R ->
+ rnd_m (shr m2 (pos_of_Z (e1 - e2))) = (Npos m1).
+intros m1 m2 e1 e2 H.
+generalize (float2_repartition _ _ _ _ H).
+intros (H1,H2).
+cut (Z_of_N (rnd_m (shr m2 (pos_of_Z (e1 - e2)))) = Zpos m1).
+intro H0.
+unfold Z_of_N in H0.
+destruct (rnd_m (shr m2 (pos_of_Z (e1 - e2)))).
+discriminate H0.
+injection H0. clear H0. intro H0. rewrite H0.
 apply refl_equal.
-unfold diff_Zpos.
-rewrite He1.
+apply dec_not_not.
+apply dec_eq.
+intro H0.
+generalize (not_Zeq _ _ H0).
+clear H0.
+generalize (shr_bracket_weak (pos_of_Z (e1 - e2)) m2 e2).
+rewrite <- (Zpos_pos_of_Z _ _ H1).
+ring (e2 + (e1 - e2))%Z.
+simpl.
+generalize (Z_of_N (rnd_m (shr m2 (pos_of_Z (e1 - e2))))).
+intros m HH [H0|H0].
+generalize (float2_binade_le _ _ e1 (Zlt_le_succ _ _ H0)).
+apply Rlt_not_le.
+apply Rlt_trans with (1 := proj1 H) (2 := proj2 HH).
+generalize (float2_binade_le _ _ e1 (Zlt_le_succ _ _ H0)).
+apply Rlt_not_le.
+apply Rle_lt_trans with (1 := proj1 HH) (2 := proj2 H).
+Qed.
+
+Lemma rnd_record_eq :
+ forall m : N, forall r s : bool,
+ forall d : rnd_record,
+ rnd_m d = m -> rnd_r d = r -> rnd_s d = s ->
+ d = rnd_record_mk m r s.
+induction d.
+simpl.
+intros Hm Hr Hs.
+rewrite Hm. rewrite Hr. rewrite Hs.
 apply refl_equal.
 Qed.
 
-(*
-Lemma repartition :
- forall m1 m2 : positive, forall e1 e2 : Z,
- (Float2 (Zpos m1) e1 <= Float2 (Zpos m2) e2 < Float2 (Zpos (Psucc m1)) e1)%R ->
- (e1 + Zpos (digits m1) = e2 + Zpos (digits m2))%Z.
-intros m1 m2 e1 e2 (H1,H2).
-
 Lemma round_constant :
- forall rpos rneg : rnd_record -> bool,
+ forall rdir : rnd_record -> bool,
  forall rexp : Z -> Z,
- forall m : positive, forall e : Z,
- (rexp (e + Zpos (digits m)) = e)%Z ->
- forall f : float2,
- ((Float2 (Zpos m) e < f < Float2 (Zpos (xI m)) (e - 1))%R
-   -> round rpos rneg rexp f = round rpos rneg rexp (Float2 (Zpos (xI (xO m))) (e - 2))) /\
- ((Float2 (Zpos (xI m)) (e - 1) < f < Float2 (Zpos (Psucc m)) e)%R
-   -> round rpos rneg rexp f = round rpos rneg rexp (Float2 (Zpos (xI (xI m))) (e - 2))).
-intros rpos rneg rexp m e H f.
-split ; intro H0.
-unfold round. simpl.
-*)
+ forall m1 : positive, forall e1 : Z,
+ (rexp (e1 + Zpos (digits m1)) = e1)%Z ->
+ forall m2 : positive, forall e2 : Z,
+ ((Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (2 * Zpos m1 + 1) (e1 - 1))%R
+   -> round_pos rdir rexp m2 e2 = round_pos rdir rexp (xI (xO m1)) (e1 - 2)) /\
+ ((Float2 (2 * Zpos m1 + 1) (e1 - 1) < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R
+   -> round_pos rdir rexp m2 e2 = round_pos rdir rexp (xI (xI m1)) (e1 - 2)).
+intros rdir rexp m1 e1 Hf1 m2 e2.
+split ; intros Hf2.
+assert (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R.
+split.
+apply (proj1 Hf2).
+apply Rlt_trans with (1 := proj2 Hf2).
+rewrite (float2_shift_m1 e1).
+apply float2_binade_lt.
+auto with zarith.
+generalize (float2_repartition m1 m2 e1 e2 H).
+clear H. intros (H1,H2).
+assert (rexp (e1 - 2 + Zpos (digits (xI (xO m1)))) = e1)%Z.
+simpl.
+repeat rewrite Zpos_succ_morphism.
+replace (e1 - 2 + Zsucc (Zsucc (Zpos (digits m1))))%Z with (e1 + Zpos (digits m1))%Z.
+exact Hf1.
+unfold Zsucc.
+ring.
+apply round_constant1.
+rewrite <- H2.
+rewrite Hf1.
+exact H1.
+rewrite H.
+omega.
+rewrite H.
+rewrite <- H2.
+exact Hf1.
+rewrite H.
+rewrite <- H2.
+rewrite Hf1.
+replace (e1 - (e1 - 2))%Z with 2%Z. 2: ring.
+unfold pos_of_Z at 2.
+unfold shr at 2. simpl.
+unfold shr_aux. simpl.
+apply rnd_record_eq.
+apply shr_constant1.
+split.
+apply (proj1 Hf2).
+apply Rlt_trans with (1 := proj2 Hf2).
+rewrite (float2_shift_m1 e1).
+apply float2_binade_lt.
+auto with zarith.
+Admitted.
 
 Definition is_even (n : N) :=
  match n with
