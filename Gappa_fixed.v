@@ -8,32 +8,58 @@ Section Gappa_fixed.
 
 Definition fixed_shift (e : Z) (_ : Z) := e.
 
-Definition fixed_dn_ext (e : Z) :=
- round_extension roundDN (fixed_shift e).
+Definition fixed_ext (rdir : round_dir) (e : Z) :=
+ round_extension rdir (fixed_shift e).
 
-Definition rounding_fixed_dn (e : Z) (x : R) :=
- float2R (projT1 (fixed_dn_ext e) x).
+Definition rounding_fixed (rdir : round_dir) (e : Z) :=
+ projT1 (fixed_ext rdir e).
 
-Theorem fix_of_fixed_dn :
+Axiom log2:
+ forall x : R, (0 < x)%R ->
+ exists k : Z, (powerRZ 2 (k - 1) <= x < powerRZ 2 k)%R.
+
+Theorem fix_of_fixed :
+ forall rdir : round_dir,
  forall x : R, forall e1 e2 : Z,
  Zle_bool e2 e1 = true ->
- FIX (rounding_fixed_dn e1 x) e2.
-intros x e1 e2 H.
+ FIX (rounding_fixed rdir e1 x) e2.
+intros rdir x e1 e2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX.
-exists (projT1 (fixed_dn_ext e1) x).
-split.
-apply refl_equal.
-generalize (fixed_dn_ext e1).
-intros (f,H1).
+unfold rounding_fixed.
+generalize (fixed_ext rdir e1).
+intros (fext,(H1,(H2,H3))).
 simpl.
-generalize (round_neighbor roundDN (fixed_shift e1) f H1 x).
-intros (a,(b,(H2,H3))).
-generalize (proj1 H1 a x). intro H4.
-generalize (proj1 H1 x b). intro H5.
-rewrite <- (proj2 H1 a) in H3.
-rewrite <- (proj2 H1 b) in H3.
-rewrite <- H3 in H5.
-rewrite <- (Rle_antisym (f a) (f x) H4 H5).
+case (Req_dec (fext x) R0) ; intro H0.
+exists (Float2 Z0 e1).
+split. 2: exact H.
+rewrite H0.
+unfold float2R.
+apply Rmult_0_l.
+case (Req_dec x R0).
+intro H4.
+elim H0.
+replace x with (float2R (Float2 Z0 e1)).
+rewrite (H2 (Float2 Z0 e1)).
+unfold round.
+simpl.
+unfold float2R.
+apply Rmult_0_l.
+rewrite H4.
+unfold float2R.
+apply Rmult_0_l.
+intros H4.
+assert (0 < Rabs x)%R.
+apply Rabs_pos_lt with (1 := H4).
+generalize (log2 (Rabs x) H5).
+intros (k,H6).
+generalize (H3 x k H6).
+intros (f,(H7,H8)).
+exists f.
+split.
+apply sym_eq with (1 := H7).
+rewrite H8.
+exact H.
+Qed.
 
 End Gappa_fixed.

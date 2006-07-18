@@ -983,27 +983,11 @@ Definition roundND := round_dir_mk rndNZ rndNA rndNZ_good rndNA_good.
 
 Axiom round_extension :
  forall rdir : round_dir, forall rexp : Z -> Z,
- sigT (fun fext : R -> float2 =>
+ sigT (fun fext : R -> R =>
  (forall x y : R, (fext x <= fext y)%R) /\
- (forall f : float2, fext f = round rdir rexp f)).
-
-Lemma round_neighbor :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall fext : R -> float2,
- (forall x y : R, (fext x <= fext y)%R) /\
- (forall f : float2, fext f = round rdir rexp f) ->
- forall r : R,
- exists x : float2, exists y : float2,
- (x <= r <= y)%R /\
- round rdir rexp x = round rdir rexp y.
-intros rdir rexp fext (Hext1,Hext2) r.
-generalize (classic (exists z : float2, r = z)).
-intros [(z,H)|H].
-exists z.
-exists z.
-split.
-auto with real.
-apply refl_equal.
-Admitted.
+ (forall f : float2, fext f = round rdir rexp f) /\
+ (forall x : R, forall k : Z,
+  (powerRZ 2 (k - 1) <= Rabs x < powerRZ 2 k)%R ->
+  exists f : float2, fext x = f /\ Fexp f = rexp k)).
 
 End Gappa_round.
