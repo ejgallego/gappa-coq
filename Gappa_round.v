@@ -264,18 +264,18 @@ auto with real.
 exact H2.
 Qed.
 
-Definition round_pos (rdir : rnd_record -> bool)
+Definition round_pos (rdir : rnd_record -> Z -> bool)
   (rexp : Z -> Z) (m : positive) (e : Z) :=
  let e' := rexp (e + Zpos (digits m))%Z in
  match (e' - e)%Z with
  | Zpos d =>
    let r := shr m d in
-   ((if rdir r then Nsucc (rnd_m r) else rnd_m r), e')
+   ((if rdir r e' then Nsucc (rnd_m r) else rnd_m r), e')
  | _ => (Npos m, e)
  end.
 
 Lemma round_rexp_exact :
- forall rdir : rnd_record -> bool, forall rexp : Z -> Z,
+ forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  forall m : positive, forall e : Z,
  (rexp (e + Zpos (digits m)) <= e)%Z ->
  round_pos rdir rexp m e = (Npos m, e).
@@ -291,14 +291,14 @@ rewrite H0.
 apply refl_equal.
 Qed.
 
-Definition good_rdir (rdir: rnd_record -> bool) :=
- forall m : N,
- rdir (rnd_record_mk m false false) = false /\
- (rdir (rnd_record_mk m false true) = false \/ rdir (rnd_record_mk m true false) = true) /\
- (rdir (rnd_record_mk m true false) = false \/ rdir (rnd_record_mk m true true) = true).
+Definition good_rdir (rdir: rnd_record -> Z -> bool) :=
+ forall m : N, forall e : Z,
+ rdir (rnd_record_mk m false false) e = false /\
+ (rdir (rnd_record_mk m false true) e = false \/ rdir (rnd_record_mk m true false) e = true) /\
+ (rdir (rnd_record_mk m true false) e = false \/ rdir (rnd_record_mk m true true) e = true).
 
 Lemma round_constant_xO :
- forall rdir : rnd_record -> bool, forall rexp : Z -> Z,
+ forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  forall m : positive, forall e : Z,
  good_rdir rdir ->
  match round_pos rdir rexp m e with (m1',e1') => Float2 (Z_of_N m1') e1' end =
@@ -341,7 +341,7 @@ intros. auto.
 rewrite H2.
 unfold shr, shr_aux.
 simpl.
-rewrite (proj1 (Hdir (Npos m))).
+rewrite (proj1 (Hdir (Npos m) (rexp (e + Zpos (digits m))%Z))).
 simpl.
 cutrewrite (rexp (e + Zpos (digits m)) = e)%Z.
 apply refl_equal.
@@ -379,7 +379,7 @@ Axiom float2_equal_xO :
  exists p : positive, m1 = xO p.
 
 Lemma round_unicity_aux :
- forall rdir : rnd_record -> bool, forall rexp : Z -> Z,
+ forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  forall m1 m2 : positive, forall e1 e2 : Z,
  good_rdir rdir -> (e1 < e2)%Z ->
  Float2 (Zpos m1) e1 = Float2 (Zpos m2) e2 :>R ->
@@ -431,7 +431,7 @@ apply refl_equal.
 Qed.
 
 Lemma round_unicity :
- forall rdir : rnd_record -> bool, forall rexp : Z -> Z,
+ forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  forall m1 m2 : positive, forall e1 e2 : Z,
  good_rdir rdir ->
  Float2 (Zpos m1) e1 = Float2 (Zpos m2) e2 :>R ->
@@ -702,17 +702,17 @@ apply refl_equal.
 Qed.
 
 Lemma round_constant :
- forall rdir : rnd_record -> bool,
+ forall rdir : rnd_record -> Z -> bool,
  forall rexp : Z -> Z,
  forall m1 : positive, forall e1 : Z,
  (rexp (e1 + Zpos (digits m1)) = e1)%Z ->
  forall m2 : positive, forall e2 : Z,
  ((Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 * 2 + 1) (e1 - 1))%R
-   -> round_pos rdir rexp m2 e2 = (if rdir (rnd_record_mk (Npos m1) false true) then Nsucc (Npos m1) else Npos m1, e1)) /\
+   -> round_pos rdir rexp m2 e2 = (if rdir (rnd_record_mk (Npos m1) false true) e1 then Nsucc (Npos m1) else Npos m1, e1)) /\
  (Float2 (Zpos m2) e2 = Float2 (Zpos m1 * 2 + 1) (e1 - 1) :>R
-   -> round_pos rdir rexp m2 e2 = (if rdir (rnd_record_mk (Npos m1) true false) then Nsucc (Npos m1) else Npos m1, e1)) /\
+   -> round_pos rdir rexp m2 e2 = (if rdir (rnd_record_mk (Npos m1) true false) e1 then Nsucc (Npos m1) else Npos m1, e1)) /\
  ((Float2 (Zpos m1 * 2 + 1) (e1 - 1) < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R
-   -> round_pos rdir rexp m2 e2 = (if rdir (rnd_record_mk (Npos m1) true true) then Nsucc (Npos m1) else Npos m1, e1)).
+   -> round_pos rdir rexp m2 e2 = (if rdir (rnd_record_mk (Npos m1) true true) e1 then Nsucc (Npos m1) else Npos m1, e1)).
 intros rdir rexp m1 e1 Hf1 m2 e2.
 split ; [idtac | split ] ; intros Hf2.
 assert (Hb: (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R).
@@ -818,7 +818,7 @@ apply refl_equal.
 Qed.
 
 Lemma round_monotone_local :
- forall rdir : rnd_record -> bool,
+ forall rdir : rnd_record -> Z -> bool,
  forall rexp : Z -> Z,
  good_rdir rdir ->
  good_rexp rexp ->
@@ -880,16 +880,16 @@ rewrite (round_unicity rdir rexp m2 m1 e2 e1 Hgd H2).
 rewrite (round_rexp_exact rdir rexp m1 e1).
 rewrite (proj1 (proj2 Hc3) H3).
 apply float2_binade_le.
-case (rdir (rnd_record_mk (Npos m1) true false)) ; simpl ;
+case (rdir (rnd_record_mk (Npos m1) true false) e1) ; simpl ;
 try rewrite Zpos_succ_morphism ; auto with zarith.
 apply Zeq_le with (1 := He1).
 rewrite (proj1 Hc2 H2).
 rewrite (proj1 (proj2 Hc3) H3).
 apply float2_binade_le.
-caseEq (rdir (rnd_record_mk (Npos m1) false true)) ;
-caseEq (rdir (rnd_record_mk (Npos m1) true false)) ;
+caseEq (rdir (rnd_record_mk (Npos m1) false true) e1) ;
+caseEq (rdir (rnd_record_mk (Npos m1) true false) e1) ;
 intros H4 H5 ; simpl ; try rewrite Zpos_succ_morphism ;
-auto with zarith ; generalize (Hgd (Npos m1)).
+auto with zarith ; generalize (Hgd (Npos m1) e1).
 intros (_,([H6|H6],_)).
 rewrite H6 in H5.
 discriminate H5.
@@ -911,10 +911,10 @@ simpl ; try rewrite Zpos_succ_morphism ; auto with zarith.
 apply Zeq_le with (1 := He1).
 rewrite (proj1 Hc2 H2).
 apply float2_binade_le.
-caseEq (rdir (rnd_record_mk (Npos m1) false true)) ;
-caseEq (rdir (rnd_record_mk (Npos m1) true true)) ;
+caseEq (rdir (rnd_record_mk (Npos m1) false true) e1) ;
+caseEq (rdir (rnd_record_mk (Npos m1) true true) e1) ;
 intros H4 H5 ; simpl ; try rewrite Zpos_succ_morphism ;
-auto with zarith ; generalize (Hgd (Npos m1)).
+auto with zarith ; generalize (Hgd (Npos m1) e1).
 intros (_,([H6|H6],[H7|H7])).
 rewrite H6 in H5.
 discriminate H5.
@@ -926,10 +926,10 @@ rewrite H4 in H7.
 discriminate H7.
 rewrite (proj1 (proj2 Hc2) H2).
 apply float2_binade_le.
-caseEq (rdir (rnd_record_mk (Npos m1) true false)) ;
-caseEq (rdir (rnd_record_mk (Npos m1) true true)) ;
+caseEq (rdir (rnd_record_mk (Npos m1) true false) e1) ;
+caseEq (rdir (rnd_record_mk (Npos m1) true true) e1) ;
 intros H4 H5 ; simpl ; try rewrite Zpos_succ_morphism ;
-auto with zarith ; generalize (Hgd (Npos m1)).
+auto with zarith ; generalize (Hgd (Npos m1) e1).
 intros (_,(_,[H6|H6])).
 rewrite H6 in H5.
 discriminate H5.
@@ -985,7 +985,6 @@ exact Hb2b.
 Qed.
 
 
-
 Definition is_even (n : N) :=
  match n with
  | N0 => true
@@ -994,8 +993,8 @@ Definition is_even (n : N) :=
  end.
 
 Record round_dir : Set := round_dir_mk {
- rpos : rnd_record -> bool ;
- rneg : rnd_record -> bool ;
+ rpos : rnd_record -> Z -> bool ;
+ rneg : rnd_record -> Z -> bool ;
  rpos_good : good_rdir rpos ;
  rneg_good : good_rdir rneg
 }.
@@ -1040,7 +1039,7 @@ case (round_pos (rneg rdir) rexp m e) ; intros.
 case n ; trivial.
 Qed.
 
-Definition rndZR (r : rnd_record) : bool :=
+Definition rndZR (r : rnd_record) (_ : Z) : bool :=
  false.
 
 Lemma rndZR_good : good_rdir rndZR.
@@ -1048,7 +1047,7 @@ unfold good_rdir, rndZR. simpl.
 intuition.
 Qed.
 
-Definition rndAW (r : rnd_record) : bool :=
+Definition rndAW (r : rnd_record) (_ : Z) : bool :=
  rnd_r r || rnd_s r.
 
 Lemma rndAW_good : good_rdir rndAW.
@@ -1056,7 +1055,7 @@ unfold good_rdir, rndAW. simpl.
 intuition.
 Qed.
 
-Definition rndNE (r : rnd_record) : bool :=
+Definition rndNE (r : rnd_record) (_ : Z) : bool :=
  rnd_r r && (rnd_s r || negb (is_even (rnd_m r))).
 
 Lemma rndNE_good : good_rdir rndNE.
@@ -1064,7 +1063,7 @@ unfold good_rdir, rndNE. simpl.
 intuition.
 Qed.
 
-Definition rndNO (r : rnd_record) : bool :=
+Definition rndNO (r : rnd_record) (_ : Z) : bool :=
  rnd_r r && (rnd_s r || is_even (rnd_m r)).
 
 Lemma rndNO_good : good_rdir rndNO.
@@ -1072,7 +1071,7 @@ unfold good_rdir, rndNO. simpl.
 intuition.
 Qed.
 
-Definition rndNZ (r : rnd_record) : bool :=
+Definition rndNZ (r : rnd_record) (_ : Z) : bool :=
  rnd_r r && rnd_s r.
 
 Lemma rndNZ_good : good_rdir rndNZ.
@@ -1080,7 +1079,7 @@ unfold good_rdir, rndNZ. simpl.
 intuition.
 Qed.
 
-Definition rndNA (r : rnd_record) : bool :=
+Definition rndNA (r : rnd_record) (_ : Z) : bool :=
  rnd_r r.
 
 Lemma rndNA_good : good_rdir rndNA.
@@ -1088,7 +1087,7 @@ unfold good_rdir, rndNA. simpl.
 intuition.
 Qed.
 
-Definition rndOD (r : rnd_record) : bool :=
+Definition rndOD (r : rnd_record) (_ : Z) : bool :=
  (rnd_r r || rnd_s r) && is_even (rnd_m r).
 
 Lemma rndOD_good : good_rdir rndOD.
