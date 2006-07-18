@@ -3,6 +3,7 @@ Require Import ZArith.
 Require Import Reals.
 Require Import Gappa_definitions.
 Require Import Gappa_round.
+Require Import Gappa_pred_bnd.
 
 Section Gappa_fixed.
 
@@ -59,6 +60,44 @@ exists f.
 split.
 apply sym_eq with (1 := H7).
 rewrite H8.
+exact H.
+Qed.
+
+Theorem fixed_of_fix :
+ forall rdir : round_dir,
+ forall x : R, forall e1 e2 : Z, forall xi : FF,
+ FIX x e1 ->
+ Zle_bool e2 e1 && contains_zero_helper xi = true ->
+ BND (rounding_fixed rdir e2 x - x) xi.
+intros rdir x e1 e2 xi (f,(Hx1,Hx2)) Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
+cutrewrite (rounding_fixed rdir e2 x = x).
+unfold Rminus.
+rewrite (Rplus_opp_r x).
+apply contains_zero with (1 := H2).
+rewrite <- Hx1.
+unfold rounding_fixed.
+generalize (fixed_ext rdir e2).
+intros (fext,(H3,(H4,H5))).
+simpl.
+rewrite (H4 f).
+generalize (Zle_trans _ _ _ H1 Hx2).
+clear Hx1 x H2 xi H3 H4 H5 fext Hx2 H1 e1.
+induction f.
+induction Fnum ; intro.
+unfold round, float2R.
+simpl.
+ring.
+unfold round.
+simpl.
+rewrite round_rexp_exact.
+apply refl_equal.
+exact H.
+unfold round.
+simpl.
+rewrite round_rexp_exact.
+apply refl_equal.
 exact H.
 Qed.
 
