@@ -984,6 +984,90 @@ rewrite Hb3b.
 exact Hb2b.
 Qed.
 
+Lemma rexp_underflow :
+ forall rexp : Z -> Z,
+ good_rexp rexp ->
+ forall k : Z,
+ rexp k = k ->
+ forall l : Z, (l <= k)%Z ->
+ rexp l = k.
+intros rexp Hg k Hk l Hl.
+generalize (proj2 (Hg k)).
+rewrite Hk.
+intro H.
+exact (proj2 (H (Zle_refl k)) l Hl).
+Qed.
+
+Lemma shl_rev :
+ forall m : positive, forall d : Z,
+ shl (Zpos m) d =
+ Zpos (match d with Zpos f => shift_pos f m | _ => m end).
+intros m e.
+unfold shl.
+case e ; trivial.
+Qed.
+
+Lemma round_monotone_underflow :
+ forall rdir : rnd_record -> Z -> bool,
+ forall rexp : Z -> Z,
+ good_rdir rdir ->
+ good_rexp rexp ->
+ forall k : Z,
+ rexp k = k ->
+ forall m1 m2 : positive, forall e1 e2 : Z,
+ (Float2 (Zpos m1) e1 < Float2 1 k)%R ->
+ (Float2 (Zpos m2) e2 < Float2 1 k)%R ->
+ (Float2 (Zpos m1) e1 <= Float2 (Zpos m2) e2)%R ->
+ (match round_pos rdir rexp m1 e1 with (m1',e1') => Float2 (Z_of_N m1') e1' end <=
+  match round_pos rdir rexp m2 e2 with (m2',e2') => Float2 (Z_of_N m2') e2' end)%R.
+intros rdir rexp Hgd Hge k Hk m1 m2 e1 e2 Hf1 Hf2 Hf.
+generalize (Fshift2_correct (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)).
+simpl.
+set (e := (Zmin e1 e2)).
+rewrite shl_rev.
+rewrite shl_rev.
+set (m3 := match (e1 - e)%Z with Zpos f => (shift_pos f m1) | _ => m1 end).
+set (m4 := match (e2 - e)%Z with Zpos f => (shift_pos f m2) | _ => m2 end).
+intros (Hr1,Hr2).
+rewrite <- Hr1 in Hf1. rewrite <- Hr2 in Hf2.
+rewrite <- (round_unicity rdir rexp m3 m1 e e1 Hgd Hr1).
+rewrite <- (round_unicity rdir rexp m4 m2 e e2 Hgd Hr2).
+cut (forall m : positive,
+     (Float2 (Zpos m) e < Float2 1 k)%R ->
+     (e + Zpos (digits m) <= k)%Z).
+intro Hke.
+generalize (Hke m3 Hf1). intro Hk1.
+generalize (Hke m4 Hf2). intro Hk2.
+unfold round_pos.
+rewrite (rexp_underflow rexp Hge k Hk _ Hk1).
+rewrite (rexp_underflow rexp Hge k Hk _ Hk2).
+assert (e < k)%Z.
+generalize (Zgt_pos_0 (digits m3)).
+omega.
+rewrite (Zpos_pos_of_Z _ _ H).
+clear H Hke Hk1 Hk2.
+apply float2_binade_le.
+rewrite <- Hr1 in Hf. rewrite <- Hr2 in Hf.
+assert (Zpos m3 <= Zpos m4)%Z.
+unfold float2R in Hf.
+simpl in Hf.
+repeat rewrite <- (Rmult_comm (powerRZ 2 e)) in Hf.
+assert (0 < powerRZ 2 e)%R.
+apply powerRZ_lt.
+auto with real.
+generalize (Rmult_le_reg_l _ _ _ H Hf).
+clear H. intro H.
+generalize (INR_le _ _ H).
+clear H. intros H H0.
+generalize (nat_of_P_gt_Gt_compare_morphism _ _ H0).
+intuition.
+generalize H.
+generalize m3.
+generalize m4.
+generalize (pos_of_Z (k - e)).
+clear Hr1 Hr2 Hf1 Hf2 Hf Hge Hk rexp H m3 m4 m1 m2 e e1 e2.
+intros d m2 m1.
+Admitted.
 
 Definition is_even (n : N) :=
  match n with
