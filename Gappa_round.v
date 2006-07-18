@@ -231,6 +231,12 @@ Fixpoint digits (m : positive) : positive :=
  | xO p => Psucc (digits p)
  end.
 
+Definition digitsN (n : N) :=
+ match n with
+ | N0 => Z0
+ | Npos m => Zpos (digits m)
+ end.
+
 Lemma digits_correct :
  forall m : positive,
  (powerRZ 2 (Zpos (digits m) - 1)%Z <= IZR (Zpos m) < powerRZ 2 (Zpos (digits m)))%R.
@@ -444,6 +450,81 @@ apply sym_eq.
 apply round_unicity_aux with (1 := Hdir).
 auto with zarith.
 rewrite Heq.
+apply refl_equal.
+Qed.
+
+Definition good_rexp (rexp : Z -> Z) :=
+ forall k : Z,
+ ((rexp k < k)%Z -> (rexp (k + 1) <= k)%Z) /\
+ ((k <= rexp k)%Z -> (rexp (rexp k + 1) <= rexp k)%Z /\
+                     forall l : Z, (l <= rexp k)%Z -> rexp l = rexp k).
+
+Lemma rexp_succ :
+ forall rexp : Z -> Z,
+ good_rexp rexp ->
+ forall m1 : positive, forall e1 : Z,
+ (rexp (e1 + Zpos (digits m1)) <= e1)%Z ->
+ exists m2 : positive, exists e2 : Z,
+ Float2 (Zpos m2) e2 = Float2 (Zpos m1 + 1) e1 :>R /\
+ (rexp (e2 + Zpos (digits m2)) <= e2)%Z.
+intros rexp He m1 e1 He1.
+cut (digits (Psucc m1) = digits m1 \/
+     Psucc m1 = iter_pos (digits m1) positive xO xH).
+intros [H|H].
+exists (Psucc m1). exists e1.
+rewrite Zpos_succ_morphism.
+rewrite H.
+split.
+apply refl_equal.
+exact He1.
+exists xH.
+exists (e1 + Zpos (digits m1))%Z.
+replace (Zpos m1 + 1)%Z with (Zpos (Psucc m1)).
+rewrite H.
+simpl.
+split.
+clear He He1 H.
+rewrite (Zpos_eq_Z_of_nat_o_nat_of_P (digits m1)).
+rewrite iter_nat_of_P.
+induction (nat_of_P (digits m1)).
+rewrite Zplus_0_r.
+apply refl_equal.
+rewrite inj_S.
+simpl.
+unfold float2R in *.
+simpl in *.
+rewrite nat_of_P_xO.
+rewrite mult_INR.
+rewrite Rmult_assoc.
+rewrite <- IHn.
+unfold Zsucc.
+rewrite Zplus_assoc.
+rewrite powerRZ_add. 2: discrR.
+simpl.
+ring.
+assert (rexp (e1 + Zpos (digits m1)) < e1 + Zpos (digits m1))%Z.
+apply Zle_lt_trans with (1 := He1).
+generalize (Zgt_pos_0 (digits m1)).
+omega.
+exact (proj1 (He (e1 + Zpos (digits m1))%Z) H0).
+rewrite Zpos_succ_morphism.
+apply refl_equal.
+clear He rexp He1 e1.
+induction m1.
+elim IHm1 ; intro H ; clear IHm1 ; [ left | right ].
+simpl.
+rewrite H.
+apply refl_equal.
+rewrite iter_nat_of_P.
+simpl.
+rewrite nat_of_P_succ_morphism.
+simpl.
+rewrite <- iter_nat_of_P.
+rewrite H.
+apply refl_equal.
+left.
+apply refl_equal.
+right.
 apply refl_equal.
 Qed.
 
@@ -740,6 +821,7 @@ Lemma round_monotone_local :
  forall rdir : rnd_record -> bool,
  forall rexp : Z -> Z,
  good_rdir rdir ->
+ good_rexp rexp ->
  forall m1 : positive, forall e1 : Z,
  (rexp (e1 + Zpos (digits m1)) = e1)%Z ->
  forall m2 m3 : positive, forall e2 e3 : Z,
@@ -749,7 +831,7 @@ Lemma round_monotone_local :
  (match round_pos rdir rexp m2 e2 with (m2',e2') => Float2 (Z_of_N m2') e2' end <=
   match round_pos rdir rexp m3 e3 with (m3',e3') => Float2 (Z_of_N m3') e3' end)%R.
 unfold good_rdir.
-intros rdir rexp Hg m1 e1 He1 m2 m3 e2 e3 (Hb2a,[Hb2b|Hb2b]) (Hb3a,[Hb3b|Hb3b]) Hf.
+intros rdir rexp Hgd Hge m1 e1 He1 m2 m3 e2 e3 (Hb2a,[Hb2b|Hb2b]) (Hb3a,[Hb3b|Hb3b]) Hf.
 generalize (round_constant rdir rexp m1 e1 He1 m3 e3).
 generalize (round_constant rdir rexp m1 e1 He1 m2 e2).
 intros Hc2 Hc3.
@@ -758,8 +840,8 @@ generalize (bracket_case m1 m3 e1 e3 (conj Hb3a Hb3b)).
 intros [H3|[H3|[H3|H3]]].
 (* *)
 intros [H2|H2].
-rewrite (round_unicity rdir rexp m2 m1 e2 e1 Hg H2).
-rewrite (round_unicity rdir rexp m3 m1 e3 e1 Hg H3).
+rewrite (round_unicity rdir rexp m2 m1 e2 e1 Hgd H2).
+rewrite (round_unicity rdir rexp m3 m1 e3 e1 Hgd H3).
 auto with real.
 elim Rle_not_lt with (1 := Hf).
 rewrite H3.
@@ -775,7 +857,7 @@ apply float2_binade_lt.
 auto with zarith.
 (* *)
 intros [H2|[H2|H2]].
-rewrite (round_unicity rdir rexp m2 m1 e2 e1 Hg H2).
+rewrite (round_unicity rdir rexp m2 m1 e2 e1 Hgd H2).
 rewrite (round_rexp_exact rdir rexp m1 e1).
 2: apply Zeq_le with (1 := He1).
 rewrite (proj1 Hc3 H3).
@@ -794,7 +876,7 @@ auto with real.
 apply Rlt_le with (1 := proj1 H2).
 (* *)
 intros [H2|[H2|[H2|H2]]].
-rewrite (round_unicity rdir rexp m2 m1 e2 e1 Hg H2).
+rewrite (round_unicity rdir rexp m2 m1 e2 e1 Hgd H2).
 rewrite (round_rexp_exact rdir rexp m1 e1).
 rewrite (proj1 (proj2 Hc3) H3).
 apply float2_binade_le.
@@ -807,7 +889,7 @@ apply float2_binade_le.
 caseEq (rdir (rnd_record_mk (Npos m1) false true)) ;
 caseEq (rdir (rnd_record_mk (Npos m1) true false)) ;
 intros H4 H5 ; simpl ; try rewrite Zpos_succ_morphism ;
-auto with zarith ; generalize (Hg (Npos m1)).
+auto with zarith ; generalize (Hgd (Npos m1)).
 intros (_,([H6|H6],_)).
 rewrite H6 in H5.
 discriminate H5.
@@ -821,7 +903,7 @@ rewrite H3.
 exact (proj1 H2).
 rewrite (proj2 (proj2 Hc3) H3).
 intros [H2|[H2|[H2|H2]]].
-rewrite (round_unicity rdir rexp m2 m1 e2 e1 Hg H2).
+rewrite (round_unicity rdir rexp m2 m1 e2 e1 Hgd H2).
 rewrite (round_rexp_exact rdir rexp m1 e1).
 apply float2_binade_le.
 case (rdir (rnd_record_mk (Npos m1) true true)) ;
@@ -832,7 +914,7 @@ apply float2_binade_le.
 caseEq (rdir (rnd_record_mk (Npos m1) false true)) ;
 caseEq (rdir (rnd_record_mk (Npos m1) true true)) ;
 intros H4 H5 ; simpl ; try rewrite Zpos_succ_morphism ;
-auto with zarith ; generalize (Hg (Npos m1)).
+auto with zarith ; generalize (Hgd (Npos m1)).
 intros (_,([H6|H6],[H7|H7])).
 rewrite H6 in H5.
 discriminate H5.
@@ -847,7 +929,7 @@ apply float2_binade_le.
 caseEq (rdir (rnd_record_mk (Npos m1) true false)) ;
 caseEq (rdir (rnd_record_mk (Npos m1) true true)) ;
 intros H4 H5 ; simpl ; try rewrite Zpos_succ_morphism ;
-auto with zarith ; generalize (Hg (Npos m1)).
+auto with zarith ; generalize (Hgd (Npos m1)).
 intros (_,(_,[H6|H6])).
 rewrite H6 in H5.
 discriminate H5.
@@ -856,7 +938,53 @@ discriminate H4.
 rewrite (proj2 (proj2 Hc2) H2).
 auto with real.
 (* *)
-Admitted.
+generalize (rexp_succ rexp Hge m1 e1 (Zeq_le _ _ He1)).
+rewrite <- Hb3b.
+intros (m4,(e4,(Hb4,He4))).
+rewrite <- (round_unicity rdir rexp m4 m3 e4 e3 Hgd Hb4).
+rewrite (round_rexp_exact rdir rexp m4 e4 He4).
+simpl.
+rewrite Hb4.
+rewrite Hb3b.
+generalize (round_constant rdir rexp m1 e1 He1 m2 e2).
+intros Hc2.
+generalize (bracket_case m1 m2 e1 e2 (conj Hb2a Hb2b)).
+assert (H4: (Float2 (Zpos m1) e1 <= Float2 (Zpos m1 + 1) e1)%R).
+apply float2_binade_le.
+auto with zarith.
+assert (H5: (Float2 (Zpos (Psucc m1)) e1 <= Float2 (Zpos m1 + 1) e1)%R).
+apply float2_binade_le.
+rewrite Zpos_succ_morphism.
+apply Zle_refl.
+intros [H2|[H2|[H2|H2]]].
+rewrite (round_unicity rdir rexp m2 m1 e2 e1 Hgd H2).
+rewrite (round_rexp_exact rdir rexp m1 e1).
+exact H4.
+apply Zeq_le with (1 := He1).
+rewrite (proj1 Hc2 H2).
+case (rdir (rnd_record_mk (Npos m1) false true)).
+exact H5.
+exact H4.
+rewrite (proj1 (proj2 Hc2) H2).
+case (rdir (rnd_record_mk (Npos m1) true false)).
+exact H5.
+exact H4.
+rewrite (proj2 (proj2 Hc2) H2).
+case (rdir (rnd_record_mk (Npos m1) true true)).
+exact H5.
+exact H4.
+(* *)
+elim Rle_not_lt with (1 := Hf).
+rewrite Hb2b.
+exact Hb3b.
+(* *)
+apply Req_le.
+apply round_unicity with (1 := Hgd).
+rewrite Hb3b.
+exact Hb2b.
+Qed.
+
+
 
 Definition is_even (n : N) :=
  match n with
