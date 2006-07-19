@@ -1055,7 +1055,12 @@ generalize m3.
 generalize m4.
 generalize (pos_of_Z (k - e)).
 clear Hr1 Hr2 Hf1 Hf2 Hf Hge Hk rexp H m3 m4 m1 m2 e e1 e2.
-intros d m2 m1.
+intros d m2 m1 H.
+assert (forall s : rnd_record,
+  Z_of_N (if rdir s k then Nsucc (rnd_m s) else rnd_m s) =
+  if rdir s k then Z_of_N (Nsucc (rnd_m s)) else Z_of_N (rnd_m s)).
+intro s. case (rdir s k) ; apply refl_equal.
+repeat rewrite H0. clear H0.
 Admitted.
 
 Lemma rexp_case_aux:
@@ -1191,6 +1196,25 @@ auto with real.
 rewrite He1'.
 rewrite Zminus_diag.
 apply Rle_refl.
+Qed.
+
+Lemma rexp_exclusive :
+ forall rexp : Z -> Z,
+ forall m1 m2 : positive, forall e1 e2 : Z,
+ rexp (e1 + (Zpos (digits m1)))%Z = e1 ->
+ rexp (e2 + (Zpos (digits m2)))%Z = e2 ->
+ (Float2 (Zpos m1) e1 <= Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R ->
+ Float2 (Zpos m2) e2 = Float2 (Zpos m1) e1 :>R.
+intros rexp m1 m2 e1 e2 He1 He2 ([Hf1|Hf1],Hf2).
+2: apply sym_eq with (1 := Hf1).
+generalize (float2_repartition _ _ _ _ (conj Hf1 Hf2)).
+intros (He3,He4).
+rewrite <- He4 in He2.
+rewrite He1 in He2.
+rewrite He2.
+cutrewrite (Zpos m2 = Zpos m1)%Z.
+apply refl_equal.
+omega.
 Qed.
 
 Definition round (rdirs : round_dir) (rexp : Z -> Z) (f : float2) :=
