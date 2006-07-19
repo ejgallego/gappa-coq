@@ -1058,6 +1058,50 @@ clear Hr1 Hr2 Hf1 Hf2 Hf Hge Hk rexp H m3 m4 m1 m2 e e1 e2.
 intros d m2 m1.
 Admitted.
 
+Axiom plouf : forall P : Prop, P.
+
+Lemma rexp_vase :
+ forall rexp : Z -> Z, good_rexp rexp ->
+ forall m1 : positive, forall e1 : Z,
+ (rexp (e1 + Zpos (digits m1)) <= e1)%Z \/
+ exists e2 : Z,
+ (rexp e2 = e2 /\ (Float2 (Zpos m1) e1 < Float2 1 e2)%R) \/
+ exists m2 : positive,
+ rexp (e2 + Zpos (digits m2))%Z = e2 /\
+ (Float2 (Zpos m2) e2 <= Float2 (Zpos m1) e1 <= Float2 (Zpos m2 + 1) e2)%R.
+intros rexp Hg m1 e1.
+case (Z_lt_le_dec e1 (rexp (e1 + Zpos (digits m1))%Z)) ; intro He1 ; [ right | left ].
+2: exact He1.
+exists (rexp (e1 + Zpos (digits m1))%Z).
+set (e2 := rexp (e1 + Zpos (digits m1))%Z).
+unfold good_rexp in Hg.
+case (Z_lt_le_dec e2 (e1 + Zpos (digits m1))%Z) ; intro He1' ; [ right | left ].
+apply plouf.
+split.
+generalize (proj2 (Hg _) He1').
+intros (H1,H2).
+apply H2.
+apply Zeq_le.
+apply refl_equal.
+apply Rlt_le_trans with (1 := proj2 (digits_float_correct m1 e1)).
+unfold float2R.
+simpl.
+apply Rmult_le_compat_l.
+auto with real.
+cutrewrite (e2 = (e1 + Zpos (digits m1)) + (e2 - (e1 + Zpos (digits m1))))%Z.
+2: ring.
+rewrite (powerRZ_add 2%R (e1 + Zpos (digits m1))). 2: discrR.
+pattern (powerRZ 2 (e1 + Zpos (digits m1))) at 1 ; rewrite <- Rmult_1_r.
+apply Rmult_le_compat_l.
+auto with real.
+case (Zle_lt_or_eq _ _ He1') ; clear He1' ; intro He1' ; unfold powerRZ.
+rewrite (Zpos_pos_of_Z _ _ He1').
+auto with real.
+rewrite He1'.
+rewrite Zminus_diag.
+apply Rle_refl.
+Qed.
+
 Definition round (rdirs : round_dir) (rexp : Z -> Z) (f : float2) :=
  match (Fnum f) with
  | Z0 => Float2 Z0 Z0
