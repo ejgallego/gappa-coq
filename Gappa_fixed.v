@@ -2,6 +2,7 @@ Require Import Classical.
 Require Import ZArith.
 Require Import Reals.
 Require Import Gappa_definitions.
+Require Import Gappa_dyadic.
 Require Import Gappa_pred_bnd.
 Require Import Gappa_round_def.
 Require Import Gappa_round.
@@ -100,6 +101,33 @@ simpl.
 rewrite round_rexp_exact.
 apply refl_equal.
 exact H.
+Qed.
+
+Definition round_helper (rnd : float2 -> float2) (xi zi : FF) :=
+ Fle2 (lower zi) (rnd (lower xi)) &&
+ Fle2 (rnd (upper xi)) (upper zi).
+
+Theorem fixed_round :
+ forall rdir : round_dir, forall e : Z,
+ forall x : R, forall xi zi : FF,
+ BND x xi ->
+ round_helper (round rdir (fixed_shift e)) xi zi = true ->
+ BND (rounding_fixed rdir e x) zi.
+intros rdir e x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+unfold rounding_fixed.
+generalize (fixed_ext rdir e).
+intros (fext,(H3,(H4,H5))).
+simpl.
+split.
+apply Rle_trans with (1 := H1).
+rewrite <- H4.
+apply H3.
+apply Rle_trans with (2 := H2).
+rewrite <- H4.
+apply H3.
 Qed.
 
 End Gappa_fixed.
