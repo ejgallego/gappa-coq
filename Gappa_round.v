@@ -1058,9 +1058,75 @@ clear Hr1 Hr2 Hf1 Hf2 Hf Hge Hk rexp H m3 m4 m1 m2 e e1 e2.
 intros d m2 m1.
 Admitted.
 
-Axiom plouf : forall P : Prop, P.
+Lemma rexp_case_aux:
+ forall m1 : positive, forall e : Z,
+ forall d : nat, (d < nat_of_P (digits m1)) ->
+ let m2 := iter_nat d positive (fun x =>
+   match x with xI p => p | xO p => p | xH => xH end) m1 in
+ (Float2 (Zpos m2) (e + Z_of_nat d) <= Float2 (Zpos m1) e < Float2 (Zpos m2 + 1) (e + Z_of_nat d))%R /\
+ nat_of_P (digits m2) + d = nat_of_P (digits m1).
+induction d.
+rewrite Zplus_0_r.
+intros Hd m2.
+simpl in m2.
+unfold m2.
+split.
+split.
+apply Rle_refl.
+apply float2_binade_lt.
+auto with zarith.
+apply plus_0_r.
+intros Hd m2.
+assert (d < nat_of_P (digits m1)).
+omega.
+generalize (IHd H). clear IHd.
+rename m2 into m3.
+set (m2 := iter_nat d positive (fun x : positive =>
+  match x with xI p => p | xO p => p | xH => xH end) m1).
+intros (H1,H2).
+rewrite inj_S.
+unfold Zsucc.
+rewrite Zplus_assoc.
+repeat rewrite float2_shift_p1.
+assert (1 < nat_of_P (digits m2)). omega.
+repeat rewrite <- (Zmult_comm 2).
+unfold m3. simpl. fold m2.
+split.
+split.
+apply Rle_trans with (2 := proj1 H1).
+apply float2_binade_le.
+caseEq m2 ; intros.
+replace (Zpos (xO p)) with (2 * Zpos p)%Z. 2: apply refl_equal.
+replace (Zpos (xI p)) with (2 * Zpos p + 1)%Z. 2: apply refl_equal.
+auto with zarith.
+apply Zle_refl.
+rewrite H3 in H0.
+unfold digits, nat_of_P in H0.
+simpl in H0.
+elim (lt_irrefl _ H0).
+apply Rlt_le_trans with (1 := proj2 H1).
+apply float2_binade_le.
+caseEq m2 ; intros.
+replace (Zpos (xO (p + 1))) with (2 * (Zpos p + 1))%Z. 2: apply refl_equal.
+replace (Zpos (xI p) + 1)%Z with (2 * Zpos p + 1 + 1)%Z. 2: apply refl_equal.
+auto with zarith.
+replace (Zpos (xO p) + 1)%Z with (2 * Zpos p + 1)%Z. 2: apply refl_equal.
+replace (Zpos (xO (p + 1))) with (2 * (Zpos p + 1))%Z. 2: apply refl_equal.
+auto with zarith.
+intros H4. discriminate.
+rewrite <- plus_Snm_nSm.
+rewrite <- H2.
+repeat rewrite <- (plus_comm d).
+apply (f_equal (plus d)).
+caseEq m2 ; intros ; simpl ;
+try (rewrite nat_of_P_succ_morphism ; apply refl_equal).
+rewrite H3 in H0.
+unfold digits, nat_of_P in H0.
+simpl in H0.
+elim (lt_irrefl _ H0).
+Qed.
 
-Lemma rexp_vase :
+Lemma rexp_case :
  forall rexp : Z -> Z, good_rexp rexp ->
  forall m1 : positive, forall e1 : Z,
  (rexp (e1 + Zpos (digits m1)) <= e1)%Z \/
@@ -1068,15 +1134,40 @@ Lemma rexp_vase :
  (rexp e2 = e2 /\ (Float2 (Zpos m1) e1 < Float2 1 e2)%R) \/
  exists m2 : positive,
  rexp (e2 + Zpos (digits m2))%Z = e2 /\
- (Float2 (Zpos m2) e2 <= Float2 (Zpos m1) e1 <= Float2 (Zpos m2 + 1) e2)%R.
+ (Float2 (Zpos m2) e2 <= Float2 (Zpos m1) e1 < Float2 (Zpos m2 + 1) e2)%R.
 intros rexp Hg m1 e1.
-case (Z_lt_le_dec e1 (rexp (e1 + Zpos (digits m1))%Z)) ; intro He1 ; [ right | left ].
+set (e2 := rexp (e1 + Zpos (digits m1))%Z).
+case (Z_lt_le_dec e1 e2) ; intro He1 ; [ right | left ].
 2: exact He1.
 exists (rexp (e1 + Zpos (digits m1))%Z).
-set (e2 := rexp (e1 + Zpos (digits m1))%Z).
 unfold good_rexp in Hg.
 case (Z_lt_le_dec e2 (e1 + Zpos (digits m1))%Z) ; intro He1' ; [ right | left ].
-apply plouf.
+pose (m2 := iter_nat (nat_of_P (pos_of_Z (e2 - e1)%Z)) positive (fun x =>
+  match x with xI p => p | xO p => p | xH => xH end) m1).
+exists m2.
+cut (e2 - e1 < Zpos (digits m1))%Z. 2: omega.
+rewrite (Zpos_pos_of_Z _ _ He1).
+intro H.
+generalize (nat_of_P_lt_Lt_compare_morphism _ _ H).
+clear H. intro H.
+generalize (rexp_case_aux m1 e1 (nat_of_P (pos_of_Z (e2 - e1))) H).
+fold m2.
+rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+rewrite <- Zpos_pos_of_Z. 2: exact He1.
+cutrewrite (e1 + (e2 - e1) = e2)%Z. 2: ring.
+clear H. intro H.
+split. 2: exact (proj1 H).
+cutrewrite (Zpos (digits m2) = Zpos (digits m1) - (e2 - e1))%Z.
+unfold e2.
+apply (f_equal rexp).
+ring.
+rewrite (Zpos_eq_Z_of_nat_o_nat_of_P (digits m1)).
+rewrite <- (proj2 H).
+rewrite inj_plus.
+repeat rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+rewrite <- (Zpos_pos_of_Z _ _ He1).
+ring.
+fold e2.
 split.
 generalize (proj2 (Hg _) He1').
 intros (H1,H2).
