@@ -2,8 +2,9 @@ Require Import Classical.
 Require Import ZArith.
 Require Import Reals.
 Require Import Gappa_definitions.
-Require Import Gappa_round.
 Require Import Gappa_pred_bnd.
+Require Import Gappa_round_def.
+Require Import Gappa_round.
 
 Section Gappa_fixed.
 
