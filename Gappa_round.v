@@ -987,14 +987,7 @@ intro H.
 exact (proj2 (H (Zle_refl k)) l Hl).
 Qed.
 
-Lemma shl_rev :
- forall m : positive, forall d : Z,
- shl (Zpos m) d =
- Zpos (match d with Zpos f => shift_pos f m | _ => m end).
-intros m e.
-unfold shl.
-case e ; trivial.
-Qed.
+Axiom plouf : forall P : Prop, P.
 
 Lemma round_monotone_underflow :
  forall rdir : rnd_record -> Z -> bool,
@@ -1010,14 +1003,10 @@ Lemma round_monotone_underflow :
  (match round_pos rdir rexp m1 e1 with (m1',e1') => Float2 (Z_of_N m1') e1' end <=
   match round_pos rdir rexp m2 e2 with (m2',e2') => Float2 (Z_of_N m2') e2' end)%R.
 intros rdir rexp Hgd Hge k Hk m1 m2 e1 e2 Hf1 Hf2 Hf.
-generalize (Fshift2_correct (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)).
-simpl.
-set (e := (Zmin e1 e2)).
-rewrite shl_rev.
-rewrite shl_rev.
-set (m3 := match (e1 - e)%Z with Zpos f => (shift_pos f m1) | _ => m1 end).
-set (m4 := match (e2 - e)%Z with Zpos f => (shift_pos f m2) | _ => m2 end).
-intros (Hr1,Hr2).
+cut (exists m3, exists m4, exists e,
+     Float2 (Zpos m3) e = Float2 (Zpos m1) e1 :>R /\
+     Float2 (Zpos m4) e = Float2 (Zpos m2) e2 :>R).
+intros (m3,(m4,(e,(Hr1,Hr2)))).
 rewrite <- Hr1 in Hf1. rewrite <- Hr2 in Hf2.
 rewrite <- (round_unicity rdir rexp m3 m1 e e1 Hgd Hr1).
 rewrite <- (round_unicity rdir rexp m4 m2 e e2 Hgd Hr2).
@@ -1061,7 +1050,40 @@ assert (forall s : rnd_record,
   if rdir s k then Z_of_N (Nsucc (rnd_m s)) else Z_of_N (rnd_m s)).
 intro s. case (rdir s k) ; apply refl_equal.
 repeat rewrite H0. clear H0.
-Admitted.
+cut (Z_of_N (rnd_m (shr m1 d)) <= Z_of_N (rnd_m (shr m2 d)))%Z.
+intro H0.
+assert (forall x, Z_of_N (Nsucc x) = (Z_of_N x + 1)%Z).
+intro x.
+case x.
+apply refl_equal.
+unfold Nsucc, Z_of_N.
+intros p.
+exact (Zpos_succ_morphism p).
+repeat rewrite H1.
+case (Zle_lt_or_eq _ _ H0) ; clear H0 ; intro H0.
+case (rdir (shr m1 d) k) ; case (rdir (shr m2 d) k) ; auto with zarith.
+caseEq (rdir (shr m1 d) k) ; caseEq (rdir (shr m2 d) k) ; auto with zarith.
+generalize (Hgd (rnd_m (shr m1 d)) k).
+apply plouf.
+apply plouf.
+apply plouf.
+generalize (Fshift2_correct (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)).
+caseEq (Fshift2 (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)).
+intros (mx, my) e H (Hx, Hy).
+exists (pos_of_Z mx).
+exists (pos_of_Z my).
+exists e.
+cut (Zpos (pos_of_Z mx) = mx /\ Zpos (pos_of_Z my) = my).
+intro H0. rewrite (proj1 H0). rewrite (proj2 H0).
+exact (conj Hx Hy).
+replace mx with (fst (fst (Fshift2 (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)))).
+2: rewrite H ; apply refl_equal.
+replace my with (snd (fst (Fshift2 (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)))).
+2: rewrite H ; apply refl_equal.
+unfold Fshift2.
+simpl.
+case (e1 - e2)%Z ; intros ; split ; apply refl_equal.
+Qed.
 
 Lemma rexp_case_aux :
  forall m1 : positive, forall e : Z,

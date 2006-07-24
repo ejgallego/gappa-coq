@@ -78,10 +78,11 @@ split.
 rewrite <- Rx.
 rewrite <- Ry.
 apply Fplus2_correct.
-simpl.
-case (Zmin_or (Fexp x0) (Fexp y0)) ; intro H ; rewrite H.
-apply Zle_trans with (1 := H1) (2 := Hx).
-apply Zle_trans with (1 := H2) (2 := Hy).
+unfold Fplus2, Fshift2.
+case (Fexp x0 - Fexp y0)%Z ; intros.
+exact (Zle_trans _ _ _ H1 Hx).
+exact (Zle_trans _ _ _ H2 Hy).
+exact (Zle_trans _ _ _ H1 Hx).
 Qed.
 
 Theorem sub_fix :

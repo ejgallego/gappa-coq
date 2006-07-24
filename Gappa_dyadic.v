@@ -127,8 +127,7 @@ intros x y.
 unfold Fplus2.
 generalize (Fshift2_correct x y).
 case (Fshift2 x y).
-intros p e. case p. clear p.
-intros mx my.
+intros (mx,my) e.
 unfold float2R.
 simpl.
 intros (Hx, Hy).
@@ -151,8 +150,7 @@ intros x y.
 unfold Fminus2.
 generalize (Fshift2_correct x y).
 case (Fshift2 x y).
-intros p e. case p. clear p.
-intros mx my.
+intros (mx,my) e.
 unfold float2R.
 simpl.
 intros (Hx, Hy).
@@ -178,11 +176,9 @@ intros x y.
 generalize (Fshift2_correct x y).
 unfold Fcomp2.
 case (Fshift2 x y).
-intros p e. case p. clear p.
-intros mx my (Hx, Hy) Hb.
+intros (mx, my) e (Hx, Hy) Hb.
 rewrite <- Hx.
 rewrite <- Hy.
-clear Hx Hy.
 unfold float2R. simpl.
 ring. apply Rmult_eq_compat_l.
 apply IZR_eq.
@@ -198,11 +194,9 @@ intros x y.
 generalize (Fshift2_correct x y).
 unfold Fcomp2.
 case (Fshift2 x y).
-intros p e. case p. clear p.
-intros mx my (Hx, Hy) Hb.
+intros (mx, my) e (Hx, Hy) Hb.
 rewrite <- Hx.
 rewrite <- Hy.
-clear Hx Hy.
 unfold float2R. simpl.
 apply Rmult_lt_compat_r.
 auto with real.
@@ -218,11 +212,9 @@ intros x y.
 generalize (Fshift2_correct x y).
 unfold Fcomp2.
 case (Fshift2 x y).
-intros p e. case p. clear p.
-intros mx my (Hx, Hy) Hb.
+intros (mx, my) e (Hx, Hy) Hb.
 rewrite <- Hx.
 rewrite <- Hy.
-clear Hx Hy.
 unfold float2R. simpl.
 unfold Rgt. apply Rmult_lt_compat_r.
 auto with real.
@@ -278,11 +270,9 @@ intros x y.
 generalize (Fshift2_correct x y).
 unfold Fle2, Fcomp2.
 case (Fshift2 x y).
-intros p e. case p. clear p.
-intros mx my (Hx, Hy) Hb.
+intros (mx, my) e (Hx, Hy) Hb.
 rewrite <- Hx.
 rewrite <- Hy.
-clear Hx Hy.
 unfold float2R. simpl.
 apply Rmult_le_compat_r.
 auto with real.
