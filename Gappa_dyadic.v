@@ -36,85 +36,83 @@ replace 2%R with (INR 2). 2: apply refl_equal.
 auto with real.
 Qed.
 
-Definition shl (m : Z) (e : Z) :=
- match e with
- | Zpos f =>
-   match m with
-   | Z0 => Z0
-   | Zpos p => Zpos (shift_pos f p)
-   | Zneg p => Zneg (shift_pos f p)
-   end
- | _ => m
+Definition shl (m : Z) (d : positive) :=
+ match m with
+ | Z0 => Z0
+ | Zpos p => Zpos (shift_pos d p)
+ | Zneg p => Zneg (shift_pos d p)
  end.
 
-Lemma shl_correct :
- forall m : Z, forall e : Z,
- (0 <= e)%Z -> (shl m e = m * Zpower 2 e)%Z.
-intros m e H.
-rewrite Zmult_comm.
-induction e.
-induction m ; apply refl_equal.
-simpl.
-induction m.
-rewrite <- Zmult_comm.
-apply refl_equal.
-apply shift_pos_correct.
-apply Zopp_inj.
-simpl.
+Lemma float2_shl_correct :
+ forall f : float2, forall d : positive,
+ Float2 (shl (Fnum f) d) (Fexp f - Zpos d) = f :>R.
+assert (forall p d : positive, forall e : Z,
+        Float2 (shl (Zpos p) d) (e - Zpos d) = Float2 (Zpos p) e :>R).
+intros p d e.
+unfold float2R, shl.
 rewrite shift_pos_correct.
-replace (Zneg p0) with (- Zpos p0)%Z.
-ring.
+simpl.
+rewrite Zpower_pos_nat.
+replace 2%Z with (Z_of_nat 2). 2: apply refl_equal.
+rewrite mult_IZR.
+rewrite Zpower_nat_powerRZ.
+rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+rewrite Rmult_comm.
+rewrite <- Rmult_assoc.
+rewrite <- powerRZ_add. 2: auto with real.
+ring (e - Zpos d + Zpos d)%Z.
+rewrite Rmult_comm.
+auto with real.
+intros f d.
+replace f with (Float2 (Fnum f) (Fexp f)).
+2: induction f ; apply refl_equal.
+simpl.
+case (Fnum f) ; intros. 2: apply H.
+unfold float2R, shl.
+simpl.
+repeat rewrite Rmult_0_l.
 apply refl_equal.
-elim H.
-apply refl_equal.
+unfold shl.
+cutrewrite (Float2 (Zneg (shift_pos d p)) (Fexp f - Zpos d) =
+            - Float2 (shl (Zpos p) d) (Fexp f - Zpos d) :>R)%R.
+rewrite H.
+unfold float2R.
+simpl.
+auto with real.
+unfold float2R.
+unfold shl.
+simpl.
+auto with real.
 Qed.
 
 Definition Fshift2 (x y : float2) :=
- let e := Zmin (Fexp x) (Fexp y) in
- (shl (Fnum x) (Fexp x - e),
-  shl (Fnum y) (Fexp y - e), e).
+ match (Fexp x - Fexp y)%Z with
+ | Zpos p => (shl (Fnum x) p, Fnum y, Fexp y)
+ | Zneg p => (Fnum x, shl (Fnum y) p, Fexp x)
+ | Z0 => (Fnum x, Fnum y, Fexp x)
+ end.
 
 Ltac caseEq f := generalize (refl_equal f) ; pattern f at -1 ; case f.
 
 Lemma Fshift2_correct :
  forall x y : float2,
  match Fshift2 x y with
- | (mx, my, e) =>
-   Float2 mx e = x :>R /\ Float2 my e = y :>R
+ | (mx, my, e) => Float2 mx e = x :>R /\ Float2 my e = y :>R
  end.
-assert (forall f : float2, forall e : Z, (e <= Fexp f)%Z ->
-        Float2 (shl (Fnum f) (Fexp f - e)) e = f :>R).
-intros f e H.
-unfold float2R.
-simpl.
-rename H into H0.
-assert (0 <= Fexp f - e)%Z.
-auto with zarith.
-clear H0.
-rewrite shl_correct with (1 := H).
-rewrite mult_IZR.
-rewrite Rmult_assoc.
-apply Rmult_eq_compat_l.
-unfold Zpower.
-caseEq (Fexp f - e)%Z ; intros.
-replace (Fexp f) with e.
-ring.
-auto with zarith.
-rewrite Zpower_pos_nat.
-replace 2%Z with (Z_of_nat 2). 2: apply refl_equal.
-rewrite Zpower_nat_powerRZ.
-rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
-rewrite <- H0.
-rewrite <- powerRZ_add.
-ring (Fexp f - e + e)%Z.
-apply refl_equal.
-replace 2%R with (INR 2). 2: apply refl_equal.
-auto with real.
-elim H.
-rewrite H0.
-apply refl_equal.
 intros x y.
-split ; apply H ; [ apply Zle_min_l | apply Zle_min_r ].
+unfold Fshift2.
+caseEq (Fexp x - Fexp y)%Z ; intros ; split ; try apply refl_equal.
+replace (Fexp x) with (Fexp y).
+apply refl_equal.
+auto with zarith.
+replace (Fexp y) with (Fexp x - Zpos p)%Z.
+apply float2_shl_correct.
+auto with zarith.
+replace (Fexp x) with (Fexp y - Zpos p)%Z.
+apply float2_shl_correct.
+replace (Zpos p) with (-Zneg p)%Z.
+auto with zarith.
+apply refl_equal.
 Qed.
 
 Definition Fplus2 (x y : float2) :=
@@ -128,6 +126,9 @@ Lemma Fplus2_correct :
 intros x y.
 unfold Fplus2.
 generalize (Fshift2_correct x y).
+case (Fshift2 x y).
+intros p e. case p. clear p.
+intros mx my.
 unfold float2R.
 simpl.
 intros (Hx, Hy).
@@ -149,6 +150,9 @@ Lemma Fminus2_correct :
 intros x y.
 unfold Fminus2.
 generalize (Fshift2_correct x y).
+case (Fshift2 x y).
+intros p e. case p. clear p.
+intros mx my.
 unfold float2R.
 simpl.
 intros (Hx, Hy).
@@ -172,7 +176,10 @@ Lemma Fcomp2_Eq :
  x = y :>R.
 intros x y.
 generalize (Fshift2_correct x y).
-intros (Hx, Hy) Hb.
+unfold Fcomp2.
+case (Fshift2 x y).
+intros p e. case p. clear p.
+intros mx my (Hx, Hy) Hb.
 rewrite <- Hx.
 rewrite <- Hy.
 clear Hx Hy.
@@ -189,7 +196,10 @@ Lemma Fcomp2_Lt :
  (x < y)%R.
 intros x y.
 generalize (Fshift2_correct x y).
-intros (Hx, Hy) Hb.
+unfold Fcomp2.
+case (Fshift2 x y).
+intros p e. case p. clear p.
+intros mx my (Hx, Hy) Hb.
 rewrite <- Hx.
 rewrite <- Hy.
 clear Hx Hy.
@@ -206,7 +216,10 @@ Lemma Fcomp2_Gt :
  (x > y)%R.
 intros x y.
 generalize (Fshift2_correct x y).
-intros (Hx, Hy) Hb.
+unfold Fcomp2.
+case (Fshift2 x y).
+intros p e. case p. clear p.
+intros mx my (Hx, Hy) Hb.
 rewrite <- Hx.
 rewrite <- Hy.
 clear Hx Hy.
@@ -263,7 +276,10 @@ Lemma Fle2_correct :
  Fle2 x y = true -> (x <= y)%R.
 intros x y.
 generalize (Fshift2_correct x y).
-intros (Hx, Hy) Hb.
+unfold Fle2, Fcomp2.
+case (Fshift2 x y).
+intros p e. case p. clear p.
+intros mx my (Hx, Hy) Hb.
 rewrite <- Hx.
 rewrite <- Hy.
 clear Hx Hy.
