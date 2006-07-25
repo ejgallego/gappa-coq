@@ -237,7 +237,7 @@ Lemma digits_correct :
  (powerRZ 2 (Zpos (digits m) - 1)%Z <= IZR (Zpos m) < powerRZ 2 (Zpos (digits m)))%R.
 Admitted.
 
-Lemma digits_float_correct :
+Lemma float2_digits_correct :
  forall m : positive, forall e: Z,
  (Float2 1 (e + Zpos (digits m) - 1)%Z <= Float2 (Zpos m) e < Float2 1 (e + Zpos (digits m))%Z)%R.
 intros m e.
@@ -1065,8 +1065,51 @@ case (rdir (shr m1 d) k) ; case (rdir (shr m2 d) k) ; auto with zarith.
 caseEq (rdir (shr m1 d) k) ; caseEq (rdir (shr m2 d) k) ; auto with zarith.
 generalize (Hgd (rnd_m (shr m1 d)) k).
 apply plouf.
-apply plouf.
-apply plouf.
+unfold shr.
+repeat rewrite iter_nat_of_P.
+induction (nat_of_P d).
+exact H.
+simpl.
+set (m1' := iter_nat n rnd_record shr_aux (rnd_record_mk (Npos m1) false false)).
+set (m2' := iter_nat n rnd_record shr_aux (rnd_record_mk (Npos m2) false false)).
+move IHn after m2'.
+fold m1' in IHn.
+fold m2' in IHn.
+assert (Ha: forall p, Zpos (xO p) = (2 * Zpos p)%Z).
+intros. apply refl_equal.
+assert (Hb: forall p, Zpos (xI p) = (2 * Zpos p + 1)%Z).
+intros. apply refl_equal.
+unfold shr_aux.
+caseEq (rnd_m m1') ; caseEq (rnd_m m2') ; intros ;
+try caseEq p ; try caseEq p0 ; simpl ; intros ;
+try rewrite H0 in IHn ; try rewrite H1 in IHn ;
+try rewrite H2 in IHn ; try rewrite H3 in IHn ;
+simpl in IHn ; try rewrite Ha in IHn ; try rewrite Hb in IHn ;
+auto with zarith.
+intros m H.
+apply Znot_gt_le.
+intros H0.
+generalize (proj1 (float2_digits_correct m e)).
+apply Rlt_not_le.
+apply Rlt_le_trans with (1 := H).
+unfold float2R. simpl.
+repeat rewrite Rmult_1_l.
+replace (e + Zpos (digits m) - 1)%Z with (e + Zpos (digits m) - 1 - k + k)%Z.
+2: ring.
+rewrite powerRZ_add. 2: discrR.
+pattern (powerRZ 2 k) at 1 ; rewrite <- Rmult_1_l.
+apply Rmult_le_compat_r.
+auto with real.
+unfold powerRZ.
+caseEq (e + Zpos (digits m) - 1 - k)%Z ; intros.
+apply Rle_refl.
+apply pow_R1_Rle.
+auto with real.
+elim Zle_not_gt with (2 := H0).
+assert (e + Zpos (digits m) - 1 - k < 0)%Z.
+rewrite H1.
+apply Zlt_neg_0.
+auto with zarith.
 generalize (Fshift2_correct (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)).
 caseEq (Fshift2 (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)).
 intros (mx, my) e H (Hx, Hy).
@@ -1294,7 +1337,7 @@ rewrite H1.
 apply refl_equal.
 intros n.
 apply H.
-apply Rlt_le_trans with (1 := proj2 (digits_float_correct m1 e1)).
+apply Rlt_le_trans with (1 := proj2 (float2_digits_correct m1 e1)).
 unfold float2R.
 simpl.
 apply Rmult_le_compat_l.
