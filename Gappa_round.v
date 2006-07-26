@@ -542,10 +542,12 @@ destruct (b - a)%Z ; compute in H0 ; try discriminate H0.
 apply refl_equal.
 Qed.
 
-Lemma Rle_powerRZ_2 :
+Lemma float2_Rle_pow2 :
  forall k l : Z, (k <= l)%Z ->
- (powerRZ 2 k <= powerRZ 2 l)%R.
+ (Float2 1 k <= Float2 1 l)%R.
 intros k l H.
+unfold float2R. simpl.
+repeat rewrite Rmult_1_l.
 cutrewrite (l = l - k + k)%Z. 2: ring.
 rewrite powerRZ_add. 2: discrR.
 pattern (powerRZ 2 k) at 1 ; rewrite <- Rmult_1_l.
@@ -561,10 +563,13 @@ generalize (Zlt_neg_0 p).
 omega.
 Qed.
 
-Lemma powerRZ_2_lt :
- forall k l : Z, (powerRZ 2k < powerRZ 2 l)%R ->
+Lemma float2_pow2_lt :
+ forall k l : Z, (Float2 1 k < Float2 1 l)%R ->
  (k < l)%Z.
-intros k l H.
+intros k l.
+unfold float2R. simpl.
+repeat rewrite Rmult_1_l.
+intros H.
 cutrewrite (l = k + (l - k))%Z in H. 2: ring.
 rewrite powerRZ_add in H. 2: discrR.
 pattern (powerRZ 2 k) at 1 in H ; rewrite <- Rmult_1_r in H.
@@ -584,6 +589,29 @@ auto with real.
 apply Rgt_not_eq.
 unfold Rgt.
 auto with real.
+Qed.
+
+Lemma float2_Rlt_pow2 :
+ forall k l : Z, (k < l)%Z ->
+ (Float2 1 k < Float2 1 l)%R.
+intros k l H.
+unfold float2R. simpl.
+repeat rewrite Rmult_1_l.
+cutrewrite (l = l - k + k)%Z. 2: ring.
+rewrite powerRZ_add. 2: discrR.
+pattern (powerRZ 2 k) at 1 ; rewrite <- Rmult_1_l.
+apply Rmult_lt_compat_r.
+auto with real.
+unfold powerRZ.
+caseEq (l - k)%Z ; intros.
+elim Zlt_not_le with (1 := H).
+omega.
+apply Rlt_pow_R1.
+auto with real.
+apply lt_O_nat_of_P.
+elim Zlt_not_le with (1 := H).
+generalize (Zlt_neg_0 p).
+omega.
 Qed.
 
 Lemma float2_repartition :
@@ -639,12 +667,9 @@ cut (Float2 (Zpos m1 + 1) e1 <= Float2 1 (e1 + Zpos (digits m1)))%R.
 intro H4.
 generalize (Rle_lt_trans _ _ _ H0 (Rlt_le_trans _ _ _ (proj2 H) H4)).
 clear H H0 H1 H2 H3 H4.
-unfold float2R.
-simpl.
-repeat rewrite Rmult_1_l.
 intros H1 H2.
-generalize (powerRZ_2_lt _ _ H1).
-generalize (powerRZ_2_lt _ _ H2).
+generalize (float2_pow2_lt _ _ H1).
+generalize (float2_pow2_lt _ _ H2).
 omega.
 clear H H0 H1 H2 H3 m2 e2.
 rewrite <- (float2_shl_correct (Float2 1 (e1 + Zpos (digits m1))) (digits m1)).
@@ -669,6 +694,20 @@ cutrewrite (Zpos (xO (iter_nat (nat_of_P (digits m1)) positive xO xH)) =
 cutrewrite (Zpos (m1 + 1) = Zpos m1 + 1)%Z in IHm1. 2: apply refl_equal.
 omega.
 apply Zle_refl.
+Qed.
+
+Lemma float2_repartition_underflow :
+ forall m2 : positive, forall e1 e2 : Z,
+ (Float2 (Zpos m2) e2 < Float2 1 e1)%R ->
+ (e2 + Zpos (digits m2) <= e1)%Z.
+intros m2 e1 e2 Hf.
+generalize (proj1 (float2_digits_correct m2 e2)).
+intros H1.
+apply Znot_gt_le.
+intro H.
+apply (Rlt_not_le _ _ (Rle_lt_trans _ _ _ H1 Hf)).
+apply float2_Rle_pow2.
+omega.
 Qed.
 
 Lemma shr_constant_m :
@@ -824,8 +863,7 @@ apply refl_equal.
 Qed.
 
 Lemma round_constant :
- forall rdir : rnd_record -> Z -> bool,
- forall rexp : Z -> Z,
+ forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  forall m1 : positive, forall e1 : Z,
  (rexp (e1 + Zpos (digits m1)) = e1)%Z ->
  forall m2 : positive, forall e2 : Z,
@@ -836,7 +874,7 @@ Lemma round_constant :
  ((Float2 (Zpos m1 * 2 + 1) (e1 - 1) < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R
    -> round_pos rdir rexp m2 e2 = (if rdir (rnd_record_mk (Npos m1) true true) e1 then Nsucc (Npos m1) else Npos m1, e1)).
 intros rdir rexp m1 e1 Hf1 m2 e2.
-split ; [idtac | split ] ; intros Hf2.
+split ; [ idtac | split ] ; intros Hf2.
 assert (Hb: (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R).
 split.
 apply (proj1 Hf2).
@@ -899,6 +937,115 @@ rewrite (proj1 (Hrs (proj1 Hf2))).
 rewrite (proj2 (Hrs (proj1 Hf2))).
 apply refl_equal.
 Qed.
+
+Lemma rexp_underflow :
+ forall rexp : Z -> Z,
+ good_rexp rexp ->
+ forall k : Z,
+ rexp k = k ->
+ forall l : Z, (l <= k)%Z ->
+ rexp l = k.
+intros rexp Hg k Hk l Hl.
+generalize (proj2 (Hg k)).
+rewrite Hk.
+intro H.
+exact (proj2 (H (Zle_refl k)) l Hl).
+Qed.
+
+Lemma round_constant_underflow :
+ forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
+ good_rexp rexp ->
+ forall e1 : Z, rexp e1 = e1 ->
+ forall m2 : positive, forall e2 : Z,
+ ((Float2 (Zpos m2) e2 < Float2 1 (e1 - 1))%R
+   -> round_pos rdir rexp m2 e2 = (if rdir (rnd_record_mk N0 false true) e1 then (Npos xH) else N0, e1)) /\
+ (Float2 (Zpos m2) e2 = Float2 1 (e1 - 1) :>R
+   -> round_pos rdir rexp m2 e2 = (if rdir (rnd_record_mk N0 true false) e1 then (Npos xH) else N0, e1)) /\
+ ((Float2 1 (e1 - 1) < Float2 (Zpos m2) e2 < Float2 1 e1)%R
+   -> round_pos rdir rexp m2 e2 = (if rdir (rnd_record_mk N0 true true) e1 then (Npos xH) else N0, e1)).
+intros rdir rexp Hge e1 Hf1 m2 e2.
+generalize (rexp_underflow _ Hge _ Hf1 (e2 + Zpos (digits m2))).
+split ; [ idtac | split ] ; intros Hf2.
+assert (Hb: (Float2 (Zpos m2) e2 < Float2 1 e1)%R).
+apply Rlt_trans with (1 := Hf2).
+apply float2_Rlt_pow2.
+omega.
+generalize (float2_repartition_underflow _ _ _ Hb).
+intro H0. generalize (H H0).
+assert (e2 < rexp (e2 + Zpos (digits m2)))%Z.
+generalize (Zgt_pos_0 (digits m2)).
+omega.
+clear H H0. intro H0.
+unfold round_pos.
+rewrite (Zpos_pos_of_Z _ _ H1).
+rewrite H0.
+cutrewrite (shr m2 (pos_of_Z (e1 - e2)) = rnd_record_mk 0 false true).
+apply refl_equal.
+unfold shr.
+rewrite iter_nat_of_P.
+generalize (float2_repartition_underflow _ _ _ Hf2).
+intros H.
+rewrite H0 in H1.
+clear H0 Hb Hf2 Hf1 Hge rexp rdir.
+assert (Zpos (digits m2) <= Z_of_nat (nat_of_P (pos_of_Z (e1 - e2))) - 1)%Z.
+rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+rewrite <- (Zpos_pos_of_Z _ _ H1).
+omega.
+clear H1 H.
+generalize m2 H0. clear H0 m2.
+cut (forall m2 : positive, forall b1 b2 : bool,
+  (Zpos (digits m2) <= Z_of_nat (nat_of_P (pos_of_Z (e1 - e2))) - 1)%Z ->
+  iter_nat (nat_of_P (pos_of_Z (e1 - e2))) rnd_record shr_aux
+    (rnd_record_mk (Npos m2) b1 b2) = rnd_record_mk 0 false true).
+intros. apply H. exact H0.
+induction (nat_of_P (pos_of_Z (e1 - e2))) ; clear e1 e2 ; intros.
+elim Zle_not_lt with (1 := H).
+generalize (Zgt_pos_0 (digits m2)).
+simpl.
+omega.
+rewrite S_to_plus_one.
+rewrite plus_comm.
+rewrite iter_nat_plus.
+simpl.
+unfold shr_aux at 2.
+simpl.
+generalize H.
+rewrite inj_S.
+case m2 ; intros.
+apply IHn.
+simpl in H0.
+rewrite Zpos_succ_morphism in H0.
+unfold Zsucc in H0.
+omega.
+apply IHn.
+simpl in H0.
+rewrite Zpos_succ_morphism in H0.
+unfold Zsucc in H0.
+omega.
+simpl in H0.
+generalize H0.
+case n ; intros.
+compute in H1. elim H1.
+apply refl_equal.
+simpl.
+clear H1.
+induction n0.
+apply refl_equal.
+simpl.
+rewrite IHn0.
+apply refl_equal.
+assert (Hb: (Float2 (Zpos m2) e2 < Float2 1 e1)%R).
+rewrite Hf2.
+apply float2_Rlt_pow2.
+omega.
+generalize (float2_repartition_underflow _ _ _ Hb).
+intro H0. generalize (H H0). intro H1.
+unfold round_pos.
+caseEq (rexp (e2 + Zpos (digits m2)) - e2)%Z ; intros.
+elim Zle_not_lt with (1 := H0).
+generalize (Zgt_pos_0 (digits m2)).
+omega.
+rewrite <- (float2_shl_correct (Float2 1 (e1 - 1)) (Zpos_pos_of_) in Hf2.
 
 Lemma bracket_case :
  forall m1 m2 : positive, forall e1 e2 : Z,
@@ -1106,20 +1253,6 @@ rewrite Hb3b.
 exact Hb2b.
 Qed.
 
-Lemma rexp_underflow :
- forall rexp : Z -> Z,
- good_rexp rexp ->
- forall k : Z,
- rexp k = k ->
- forall l : Z, (l <= k)%Z ->
- rexp l = k.
-intros rexp Hg k Hk l Hl.
-generalize (proj2 (Hg k)).
-rewrite Hk.
-intro H.
-exact (proj2 (H (Zle_refl k)) l Hl).
-Qed.
-
 Axiom plouf : forall P : Prop, P.
 
 Lemma round_monotone_underflow :
@@ -1197,6 +1330,7 @@ case (Zle_lt_or_eq _ _ H0) ; clear H0 ; intro H0.
 case (rdir (shr m1 d) k) ; case (rdir (shr m2 d) k) ; auto with zarith.
 caseEq (rdir (shr m1 d) k) ; caseEq (rdir (shr m2 d) k) ; auto with zarith.
 generalize (Hgd (rnd_m (shr m1 d)) k).
+intros (Ha,(Hb,Hc)) H2 H3.
 apply plouf.
 unfold shr.
 repeat rewrite iter_nat_of_P.
