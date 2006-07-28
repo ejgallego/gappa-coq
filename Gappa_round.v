@@ -1045,7 +1045,114 @@ caseEq (rexp (e2 + Zpos (digits m2)) - e2)%Z ; intros.
 elim Zle_not_lt with (1 := H0).
 generalize (Zgt_pos_0 (digits m2)).
 omega.
-rewrite <- (float2_shl_correct (Float2 1 (e1 - 1)) (Zpos_pos_of_) in Hf2.
+rewrite H1.
+cutrewrite (shr m2 p = rnd_record_mk 0 true false).
+apply refl_equal.
+rewrite H1 in H2.
+assert (e2 <= e1 - 1)%Z. generalize (Zgt_pos_0 p). omega.
+generalize (Zle_lt_or_eq _ _ H3).
+clear H3. intros [H3|H3].
+rewrite <- (float2_shl_correct (Float2 1 (e1 - 1)) (pos_of_Z (e1 - 1 - e2))) in Hf2.
+simpl in Hf2.
+cutrewrite (e1 - 1 - Zpos (pos_of_Z (e1 - 1 - e2)) = e2)%Z in Hf2.
+2: rewrite <- (Zpos_pos_of_Z _ _ H3) ; ring.
+rewrite (float2_binade_eq_reg_aux _ _ _ Hf2).
+unfold shr.
+rewrite iter_nat_of_P.
+rewrite shift_pos_nat.
+cutrewrite (nat_of_P p = S (nat_of_P (pos_of_Z (e1 - 1 - e2)))).
+rewrite S_to_plus_one.
+rewrite plus_comm.
+rewrite iter_nat_plus.
+simpl.
+unfold shr_aux at 2, shift_nat.
+simpl.
+induction (nat_of_P (pos_of_Z (e1 - 1 - e2))).
+apply refl_equal.
+pattern (S n) at 1 ; rewrite S_to_plus_one.
+rewrite plus_comm.
+rewrite iter_nat_plus.
+simpl.
+unfold shr_aux at 2. simpl.
+exact IHn.
+rewrite <- nat_of_P_succ_morphism.
+cut (Zpos p = Zpos (Psucc (pos_of_Z (e1 - 1 - e2)))).
+intros.
+injection H4.
+intros.
+rewrite H5.
+apply refl_equal.
+rewrite <- H2.
+rewrite Zpos_succ_morphism.
+rewrite <- (Zpos_pos_of_Z _ _ H3).
+unfold Zsucc. ring.
+assert (Zpos (digits m2) = 1%Z).
+generalize (Zgt_pos_0 (digits m2)).
+omega.
+cutrewrite (m2 = xH).
+cutrewrite (p = xH).
+apply refl_equal.
+cutrewrite (e1 - e2 = 1)%Z in H2.
+apply sym_eq.
+injection H2.
+trivial.
+rewrite H3.
+ring.
+injection H4.
+clear H4 H3 H2 p H1 H0 Hb Hf2 H e2 Hf1 e1 Hge rexp rdir.
+induction m2 ; simpl.
+case (digits m2) ; intros ; discriminate.
+case (digits m2) ; intros ; discriminate.
+trivial.
+elim Zle_not_lt with (1 := H0).
+generalize (Zlt_neg_0 p).
+generalize (Zgt_pos_0 (digits m2)).
+omega.
+rewrite (float2_shift_m1 e1) in Hf2.
+cutrewrite (1 * 2 = 1 + 1)%Z in Hf2. 2: ring.
+generalize (float2_repartition _ _ _ _ Hf2).
+intros (H0,H1).
+simpl in H1.
+cutrewrite (e1 - 1 + 1 = e1)%Z in H1. 2: ring.
+unfold round_pos.
+rewrite <- H1 in H.
+rewrite <- H1.
+rewrite (H (Zle_refl e1)).
+assert (e2 < e1)%Z. omega.
+rewrite (Zpos_pos_of_Z _ _ H2).
+cutrewrite (shr m2 (pos_of_Z (e1 - e2)) = rnd_record_mk 0 true true).
+apply refl_equal.
+cutrewrite (pos_of_Z (e1 - e2) = 1 + pos_of_Z (e1 - 1 - e2))%positive.
+unfold shr.
+rewrite iter_pos_plus.
+fold (shr m2 (pos_of_Z (e1 - 1 - e2))).
+simpl.
+unfold shr_aux.
+rewrite (shr_constant_m _ _ _ _ Hf2).
+generalize (shr_constant_rs _ _ _ _ Hf2).
+simpl.
+intros (H3,(H4,H5)).
+case (Rtotal_order (Float2 (Zpos m2) e2) (Float2 3 (e1 - 1 - 1))) ;
+[ intros H6 | intros [H6|H6] ].
+rewrite (proj1 (H3 H6)).
+rewrite (proj2 (H3 H6)).
+apply refl_equal.
+rewrite (proj1 (H4 H6)).
+rewrite (proj2 (H4 H6)).
+apply refl_equal.
+unfold Rgt in H6.
+rewrite (proj1 (H5 H6)).
+rewrite (proj2 (H5 H6)).
+apply refl_equal.
+cut (Zpos (pos_of_Z (e1 - e2)) = Zpos (1 + pos_of_Z (e1 - 1 - e2))).
+intros. injection H3. trivial.
+rewrite <- (Zpos_pos_of_Z _ _ H2).
+rewrite <- Pplus_one_succ_l.
+rewrite Zpos_succ_morphism.
+rewrite <- (Zpos_pos_of_Z _ _ H0).
+unfold Zsucc.
+ring.
+Qed.
 
 Lemma bracket_case :
  forall m1 m2 : positive, forall e1 e2 : Z,
@@ -1276,6 +1383,8 @@ intros (m3,(m4,(e,(Hr1,Hr2)))).
 rewrite <- Hr1 in Hf1. rewrite <- Hr2 in Hf2.
 rewrite <- (round_unicity rdir rexp m3 m1 e e1 Hgd Hr1).
 rewrite <- (round_unicity rdir rexp m4 m2 e e2 Hgd Hr2).
+apply plouf.
+(*
 cut (forall m : positive,
      (Float2 (Zpos m) e < Float2 1 k)%R ->
      (e + Zpos (digits m) <= k)%Z).
@@ -1359,10 +1468,9 @@ intros H0.
 generalize (proj1 (float2_digits_correct m e)).
 apply Rlt_not_le.
 apply Rlt_le_trans with (1 := H).
-unfold float2R. simpl.
-repeat rewrite Rmult_1_l.
-apply Rle_powerRZ_2.
+apply float2_Rle_pow2.
 omega.
+*)
 generalize (Fshift2_correct (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)).
 caseEq (Fshift2 (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)).
 intros (mx, my) e H (Hx, Hy).
@@ -1591,9 +1699,7 @@ apply refl_equal.
 intros n.
 apply H.
 apply Rlt_le_trans with (1 := proj2 (float2_digits_correct m1 e1)).
-unfold float2R. simpl.
-repeat rewrite Rmult_1_l.
-apply Rle_powerRZ_2 with (1 := He1').
+apply float2_Rle_pow2 with (1 := He1').
 Qed.
 
 Lemma rexp_exclusive :
