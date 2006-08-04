@@ -299,8 +299,50 @@ cutrewrite (e - 1 + (Zpos (digits m) + 1) = e + Zpos (digits m))%Z.
 2: ring.
 rewrite He.
 split ; apply refl_equal.
-
-rewrite (proj1 (proj2 (round_constant rdir rexp m e He)) (refl_equal _)).
+assert (0 < Float2 (Zpos m * 2 + 1) (e - 1))%R.
+unfold float2R. simpl.
+apply Rmult_lt_0_compat ; auto with real.
+generalize (float2_density _ _ (conj H Hx2)).
+intros (e1,(m1,(H1a,H1b))).
+clear H.
+generalize (float2_density _ _ (conj Hx (proj2 Hx1))).
+intros (e2,(m2,(H2a,H2b))).
+exists m1. exists m2. exists e1. exists e2.
+split.
+split.
+exact (Rlt_le _ _ H1b).
+exact (Rlt_le _ _ H2a).
+generalize (round_constant rdir rexp m e He).
+intro H.
+rewrite (proj2 (proj2 (H m1 e1)) (conj H1a (Rlt_trans _ _ _ H1b (proj2 Hx1)))).
+rewrite (proj2 (proj2 (H m2 e2)) (conj (Rlt_trans _ _ _ Hx2 H2a) H2b)).
+clear H.
+split.
+apply refl_equal.
+rewrite <- He.
+simpl. split.
+assert (Float2 (Zpos m) e < Float2 (Zpos m1) e1 < Float2 (Zpos m + 1) e)%R.
+split.
+apply Rlt_trans with (2 := H1a).
+rewrite (float2_shift_m1 e).
+apply float2_binade_lt.
+omega.
+exact (Rlt_trans _ _ _ H1b (proj2 Hx1)).
+rewrite (proj2 (float2_repartition _ _ _ _ H)).
+apply refl_equal.
+rewrite (proj2 (float2_repartition _ _ _ _ (conj (Rlt_trans _ _ _ (proj1 Hx1) H2a) H2b))).
+apply refl_equal.
+exists m. exists m. exists e. exists e.
+split.
+rewrite Hx2.
+split ; apply Rle_refl.
+split.
+apply refl_equal.
+unfold round_pos.
+rewrite He.
+rewrite Zminus_diag.
+split ; apply refl_equal.
+Qed.
 
 Lemma round_zero :
  forall rdir : round_dir,
