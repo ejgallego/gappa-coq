@@ -629,20 +629,15 @@ Theorem fixed_of_fix :
 intros rdir x e1 e2 xi (f,(Hx1,Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
-cutrewrite (rounding_fixed rdir e2 x = x).
+cutrewrite (rounding_fixed rdir e2 x = x :>R).
 unfold Rminus.
 rewrite (Rplus_opp_r x).
 apply contains_zero with (1 := H2).
 rewrite <- Hx1.
 unfold rounding_fixed.
-generalize (fixed_ext rdir e2).
-intros (fext,(H3,(H4,H5))).
-simpl.
-rewrite (H4 f).
-generalize (Zle_trans _ _ _ H1 Hx2).
-clear Hx1 x H2 xi H3 H4 H5 fext Hx2 H1 e1.
+rewrite round_extension_float2.
 induction f.
-induction Fnum ; intro.
+induction Fnum.
 unfold round, float2R.
 simpl.
 ring.
@@ -650,12 +645,12 @@ unfold round.
 simpl.
 rewrite round_rexp_exact.
 apply refl_equal.
-exact H.
+exact (Zle_trans _ _ _ H1 Hx2).
 unfold round.
 simpl.
 rewrite round_rexp_exact.
 apply refl_equal.
-exact H.
+exact (Zle_trans _ _ _ H1 Hx2).
 Qed.
 
 Definition round_helper (rnd : float2 -> float2) (xi zi : FF) :=
