@@ -281,6 +281,26 @@ apply float2_binade_lt.
 omega.
 rewrite (proj2 (float2_repartition _ _ _ _ (conj (Rlt_trans _ _ _ (proj1 Hx1) H2a) H))).
 apply refl_equal.
+exists (xI m). exists (xI m). exists (e - 1)%Z. exists (e - 1)%Z.
+split.
+rewrite Hx2.
+rewrite Zmult_comm.
+split ; apply Rle_refl.
+split.
+apply refl_equal.
+generalize (proj1 (proj2 (round_constant rdir rexp m e He (xI m) (e - 1)))).
+cutrewrite (Zpos (xI m) = Zpos m * 2 + 1)%Z.
+2: rewrite Zmult_comm ; apply refl_equal.
+intro H. rewrite (H (refl_equal _)).
+simpl.
+rewrite Zpos_succ_morphism.
+unfold Zsucc.
+cutrewrite (e - 1 + (Zpos (digits m) + 1) = e + Zpos (digits m))%Z.
+2: ring.
+rewrite He.
+split ; apply refl_equal.
+
+rewrite (proj1 (proj2 (round_constant rdir rexp m e He)) (refl_equal _)).
 
 Lemma round_zero :
  forall rdir : round_dir,
