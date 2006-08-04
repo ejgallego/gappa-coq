@@ -11,31 +11,21 @@ Section Gappa_fixed.
 
 Axiom log2:
  forall x : R, (0 < x)%R ->
- exists k : Z, (powerRZ 2 (k - 1) <= x < powerRZ 2 k)%R.
+ { k : Z | (powerRZ 2 (k - 1) <= x < powerRZ 2 k)%R }.
 
 Axiom plouf : forall P : Prop, P.
 
 Lemma rexp_case_real :
  forall rexp : Z -> Z, good_rexp rexp ->
  forall x : R, (0 < x)%R ->
- (exists k : Z, rexp k = k /\ (x < Float2 1 k)%R) \/
- (exists e : Z, exists m : positive,
+ { k : Z | rexp k = k /\ (x < Float2 1 k)%R } +
+ { e : Z & { m : positive |
   rexp (e + Zpos (digits m))%Z = e /\
-  (Float2 (Zpos m) e <= x < Float2 (Zpos m + 1) e)%R).
+  (Float2 (Zpos m) e <= x < Float2 (Zpos m + 1) e)%R }}.
 intros rexp Hg x Hx.
 generalize (log2 x Hx).
 intros (l, H).
-case (Zle_or_lt l (rexp l))%Z ; intro.
-left.
-exists (rexp l).
-split.
-apply (proj2 (proj2 (Hg l) H0)).
-apply Zle_refl.
-apply Rlt_le_trans with (1 := proj2 H).
-cutrewrite (powerRZ 2 l = Float2 1 l).
-apply float2_Rle_pow2 with (1 := H0).
-unfold float2R.
-auto with real.
+case (Z_lt_le_dec (rexp l) l)%Z ; intro H0.
 right.
 exists (rexp l).
 exists (pos_of_Z (up (x * powerRZ 2 (- rexp l)) - 1)).
@@ -92,14 +82,24 @@ generalize (float2_Rle_pow2 _ _ H1).
 unfold float2R. simpl.
 repeat rewrite Rmult_1_l.
 intro H2. exact H2.
+left.
+exists (rexp l).
+split.
+apply (proj2 (proj2 (Hg l) H0)).
+apply Zle_refl.
+apply Rlt_le_trans with (1 := proj2 H).
+cutrewrite (powerRZ 2 l = Float2 1 l).
+apply float2_Rle_pow2 with (1 := H0).
+unfold float2R.
+auto with real.
 Admitted.
 
 Ltac caseEq f := generalize (refl_equal f) ; pattern f at -1 ; case f.
 
 Lemma float2_density :
  forall x y : R, (0 < x < y)%R ->
- exists e : Z, exists m : positive,
- (x < Float2 (Zpos m) e < y)%R.
+ { e : Z & { m : positive |
+ (x < Float2 (Zpos m) e < y)%R }}.
 intros x y H.
 generalize (log2 (y - x) (Rlt_Rminus _ _ (proj2 H))).
 intros (k, H0).
@@ -155,19 +155,19 @@ Lemma round_density :
  forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  good_rexp rexp ->
  forall x : R, (0 < x)%R ->
- exists m1 : positive, exists m2 : positive,
- exists e1 : Z, exists e2 : Z,
+ { m1 : positive & { m2 : positive &
+ { e1 : Z & { e2 : Z |
  let f1 := (Float2 (Zpos m1) e1) in
  let f2 := (Float2 (Zpos m2) e2) in
  (f1 <= x <= f2)%R /\
  round_pos rdir rexp m1 e1 = round_pos rdir rexp m2 e2 /\
  let e1' := snd (round_pos rdir rexp m1 e1) in rexp (e1 + Zpos (digits m1))%Z = e1' /\
- let e2' := snd (round_pos rdir rexp m2 e2) in rexp (e2 + Zpos (digits m2))%Z = e2'.
+ let e2' := snd (round_pos rdir rexp m2 e2) in rexp (e2 + Zpos (digits m2))%Z = e2' }}}}.
 intros rdir rexp Hg x Hx.
 generalize (rexp_case_real _ Hg _ Hx).
 intros [(k,(Hk,Hx1))|(e,(m,(He,Hx1)))].
-generalize (Rtotal_order x (Float2 1 (k - 1))).
-intros [Hx2|[Hx2|Hx2]].
+generalize (total_order_T x (Float2 1 (k - 1))).
+intros [[Hx2|Hx2]|Hx2].
 generalize (float2_density _ _ (conj Hx Hx2)).
 intros (e2,(m2,(H2a,H2b))).
 assert (0 < x * /2 < x)%R.
@@ -246,10 +246,10 @@ apply float2_repartition_underflow.
 exact (Rlt_trans _ _ _ (proj2 H1) Hx1).
 apply float2_repartition_underflow.
 exact (proj2 H2).
-case (proj1 Hx1) ; intro Hx2.
+case (Rle_lt_or_eq_dec _ _ (proj1 Hx1)) ; intro Hx2.
 generalize (conj Hx2 (proj2 Hx1)). clear Hx1 Hx2. intro Hx1.
-generalize (Rtotal_order x (Float2 (Zpos m * 2 + 1) (e - 1))).
-intros [Hx2|[Hx2|Hx2]].
+generalize (total_order_T x (Float2 (Zpos m * 2 + 1) (e - 1))).
+intros [[Hx2|Hx2]|Hx2].
 assert (0 < Float2 (Zpos m) e)%R.
 unfold float2R. simpl.
 apply Rmult_lt_0_compat ; auto with real.
@@ -367,6 +367,37 @@ unfold round, Fopp2.
 simpl.
 case (round_pos (rneg rdir) rexp m e) ; intros.
 case n ; trivial.
+Qed.
+
+Lemma round_ext :
+ forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
+ good_rdir rdir -> good_rexp rexp ->
+ forall x : R, (0 < x)%R ->
+ N * Z.
+intros rdir rexp Hgd Hge x Hx.
+generalize (round_density rdir rexp Hge x Hx).
+intros (m1,(m2,(e1,(e2,H)))).
+exact (round_pos rdir rexp m1 e1).
+Defined.
+
+Lemma round_ext_monotone :
+ forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
+ forall Hgd : good_rdir rdir, forall Hge : good_rexp rexp,
+ let fext := round_ext rdir rexp Hgd Hge in
+ forall x y : R, forall Hb : (0 < x <= y)%R,
+ (match fext x (proj1 Hb) with (m1',e1') => Float2 (Z_of_N m1') e1' end <=
+  match fext y (Rlt_le_trans _ _ _ (proj1 Hb) (proj2 Hb)) with (m2',e2') => Float2 (Z_of_N m2') e2' end)%R.
+simpl.
+intros rdir rexp Hgd Hge x y Hb.
+unfold round_ext.
+generalize (round_density rdir rexp Hge y (Rlt_le_trans 0 x y (proj1 Hb) (proj2 Hb))).
+generalize (round_density rdir rexp Hge x (proj1 Hb)).
+intros (mx1,(mx2,(ex1,(ex2,(Hx1,(Hx2,_)))))).
+intros (my1,(my2,(ey1,(ey2,(Hy1,(Hy2,_)))))).
+rewrite Hy2.
+apply (round_monotone _ _ Hgd Hge).
+apply Rle_trans with (1 := proj1 Hx1).
+exact (Rle_trans _ _ _ (proj2 Hb) (proj2 Hy1)).
 Qed.
 
 Axiom round_extension :
