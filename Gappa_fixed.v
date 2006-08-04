@@ -400,6 +400,127 @@ apply Rle_trans with (1 := proj1 Hx1).
 exact (Rle_trans _ _ _ (proj2 Hb) (proj2 Hy1)).
 Qed.
 
+Lemma round_extension :
+ forall rdir : round_dir, forall rexp : Z -> Z,
+ good_rexp rexp ->
+ forall x : R, float2.
+intros rdir rexp Hge x.
+generalize (total_order_T x 0).
+intros [[Hx|Hx]|Hx].
+assert (0 < -x)%R. auto with real.
+exact (match (round_ext (rneg rdir) rexp (rneg_good rdir) (Hge) (-x) H) with
+  | (N0, _) => Float2 0 0
+  | (Npos p, e) => Float2 (Zneg p) e
+  end).
+exact (Float2 0 0).
+exact (match (round_ext (rpos rdir) rexp (rpos_good rdir) (Hge) x Hx) with
+  | (N0, _) => Float2 0 0
+  | (Npos p, e) => Float2 (Zpos p) e
+  end).
+Defined.
+
+Lemma round_extension_float2 :
+ forall rdir : round_dir, forall rexp : Z -> Z,
+ forall Hge : good_rexp rexp,
+ forall f : float2,
+ round_extension rdir rexp Hge f = round rdir rexp f :>R.
+intros rdir rexp Hge f.
+unfold round_extension.
+cutrewrite (f = Float2 (Fnum f) (Fexp f)).
+2: induction f ; apply refl_equal.
+case (Fnum f) ; intros.
+generalize (total_order_T (Float2 0 (Fexp f)) 0).
+unfold round. simpl.
+intros [[Hf|Hf]|Hf].
+elim Rlt_not_le with (1 := Hf).
+unfold float2R. rewrite Rmult_0_l.
+apply Rle_refl.
+apply refl_equal.
+elim Rlt_not_le with (1 := Hf).
+unfold float2R. rewrite Rmult_0_l.
+apply Rle_refl.
+generalize (total_order_T (Float2 (Zpos p) (Fexp f)) 0).
+unfold round. simpl.
+intros [[Hf|Hf]|Hf].
+elim Rlt_not_le with (1 := Hf).
+unfold float2R. simpl.
+apply Rmult_le_pos ; auto with real.
+elim Rgt_not_eq with (2 := Hf).
+unfold float2R. simpl.
+unfold Rgt.
+apply Rmult_lt_0_compat ; auto with real.
+unfold round_ext.
+generalize (round_density (rpos rdir) rexp Hge (Float2 (Zpos p) (Fexp f)) Hf).
+intros (m1,(m2,(e1,(e2,(H1,(H2,_)))))).
+assert (H': forall m : positive, forall e : Z,
+  float2R match round_pos (rpos rdir) rexp m e with (n, e) =>
+  match n with
+  | N0 => Float2 0 0
+  | Npos p0 => Float2 (Zpos p0) e
+  end end =
+  match round_pos (rpos rdir) rexp m e with (n, e) => float2R (Float2 (Z_of_N n) e) end).
+intros m e.
+induction (round_pos (rpos rdir) rexp m e).
+case a ; intros.
+unfold float2R.
+repeat rewrite Rmult_0_l.
+apply refl_equal.
+apply refl_equal.
+apply Rle_antisym.
+repeat rewrite H'.
+apply (round_monotone _ _ (rpos_good rdir) Hge).
+exact (proj1 H1).
+repeat rewrite H'.
+rewrite H2.
+apply (round_monotone _ _ (rpos_good rdir) Hge).
+exact (proj2 H1).
+generalize (total_order_T (Float2 (Zneg p) (Fexp f)) 0).
+unfold round. simpl.
+intros [[Hf|Hf]|Hf].
+unfold round_ext.
+generalize (round_density (rneg rdir) rexp Hge (- Float2 (Zneg p) (Fexp f)) (Ropp_0_gt_lt_contravar (Float2 (Zneg p) (Fexp f)) Hf)).
+intros (m1,(m2,(e1,(e2,(H1,(H2,_)))))).
+assert (H': forall m : positive, forall e : Z,
+  float2R match round_pos (rneg rdir) rexp m e with (n, e) =>
+  match n with
+  | N0 => Float2 0 0
+  | Npos p0 => Float2 (Zneg p0) e
+  end end =
+  Ropp match round_pos (rneg rdir) rexp m e with (n, e) => float2R (Float2 (Z_of_N n) e) end).
+intros m e.
+induction (round_pos (rneg rdir) rexp m e).
+case a ; intros.
+unfold float2R.
+repeat rewrite Rmult_0_l.
+exact (sym_eq Ropp_0).
+rewrite <- Fopp2_correct.
+apply refl_equal.
+rewrite <- Fopp2_correct in H1.
+apply Rle_antisym.
+repeat rewrite H'.
+apply Ropp_le_contravar.
+rewrite H2.
+apply (round_monotone _ _ (rneg_good rdir) Hge).
+exact (proj2 H1).
+repeat rewrite H'.
+apply Ropp_le_contravar.
+apply (round_monotone _ _ (rneg_good rdir) Hge).
+exact (proj1 H1).
+elim Rlt_not_eq with (2 := Hf).
+unfold float2R. simpl.
+rewrite Ropp_mult_distr_l_reverse.
+apply Ropp_lt_gt_0_contravar.
+unfold Rgt.
+apply Rmult_lt_0_compat ; auto with real.
+elim Rlt_not_le with (1 := Hf).
+unfold float2R. simpl.
+rewrite Ropp_mult_distr_l_reverse.
+rewrite <- Ropp_0.
+apply Ropp_le_contravar.
+apply Rmult_le_pos ; auto with real.
+Qed.
+
+(*
 Axiom round_extension :
  forall rdir : round_dir, forall rexp : Z -> Z,
  good_rexp rexp ->
@@ -414,6 +535,7 @@ Axiom round_extension :
   (f1 <= x <= f2)%R /\ 
   (fext x = round rdir rexp f1 /\ let e1 := Fexp (round rdir rexp f1) in rexp e1 = e1) /\
   (fext x = round rdir rexp f2 /\ let e2 := Fexp (round rdir rexp f2) in rexp e2 = e2))).
+*)
 
 Definition fixed_shift (e : Z) (_ : Z) := e.
 
@@ -428,47 +550,74 @@ intros l _. clear l.
 apply refl_equal.
 Qed.
 
-Definition fixed_ext (rdir : round_dir) (e : Z) :=
- round_extension rdir (fixed_shift e) (good_shift e).
-
 Definition rounding_fixed (rdir : round_dir) (e : Z) :=
- projT1 (fixed_ext rdir e).
+ round_extension rdir (fixed_shift e) (good_shift e).
 
 Theorem fix_of_fixed :
  forall rdir : round_dir,
- forall x : R, forall e1 e2 : Z,
- Zle_bool e2 e1 = true ->
- FIX (rounding_fixed rdir e1 x) e2.
-intros rdir x e1 e2 H.
+ forall x : R, forall k1 k2 : Z,
+ Zle_bool k2 k1 = true ->
+ FIX (rounding_fixed rdir k1 x) k2.
+intros rdir x k1 k2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX.
 unfold rounding_fixed.
-generalize (fixed_ext rdir e1).
-intros (fext,(H1,(H2,H3))).
-simpl.
-generalize (Rtotal_order x 0). intros [H0|[H0|H0]].
-generalize (Ropp_gt_lt_0_contravar _ H0).
-clear H0. intro H0.
-rewrite <- (Ropp_involutive x).
-
-exists (Float2 0 e1).
-split. 2: exact H.
-rewrite H0.
-cutrewrite (R0 = Float2 0 0).
-rewrite H2.
-unfold round, float2R. simpl.
-rewrite (Rmult_0_l 1).
-apply Rmult_0_l.
-unfold float2R. simpl.
-apply sym_eq.
-apply Rmult_0_l.
-generalize (H3 x H0).
-intros (f1,(f2,(_,((H8,H9),_)))).
-exists (round rdir (fixed_shift e1) f1).
+unfold round_extension.
+generalize (total_order_T x 0).
+intros [[Hx|Hx]|Hx].
+unfold round_ext.
+generalize (round_density (rneg rdir) (fixed_shift k1) (good_shift k1) (- x) (Ropp_0_gt_lt_contravar x Hx)).
+intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,H4))))))).
+exists (match round_pos (rneg rdir) (fixed_shift k1) m1 e1 with (n,e) =>
+  match n with
+  | N0 => Float2 0 k1
+  | Npos p => Float2 (Zneg p) e
+  end end).
+caseEq (round_pos (rneg rdir) (fixed_shift k1) m1 e1).
+intros n z.
+case n.
+intros _.
 split.
-apply sym_eq with (1 := H8).
-rewrite <- H9.
+unfold float2R. repeat rewrite Rmult_0_l.
+apply refl_equal.
 exact H.
+intros p H0.
+split. apply refl_equal.
+cutrewrite (z = fixed_shift k1 (e1 + Zpos (digits m1))).
+exact H.
+rewrite H3.
+generalize H0.
+case (round_pos (rneg rdir) (fixed_shift k1) m1 e1).
+intros. rewrite H5. apply refl_equal.
+exists (Float2 0 k1).
+split.
+unfold float2R. repeat rewrite Rmult_0_l.
+apply refl_equal.
+exact H.
+unfold round_ext.
+generalize (round_density (rpos rdir) (fixed_shift k1) (good_shift k1) x Hx).
+intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,H4))))))).
+exists (match round_pos (rpos rdir) (fixed_shift k1) m1 e1 with (n,e) =>
+  match n with
+  | N0 => Float2 0 k1
+  | Npos p => Float2 (Zpos p) e
+  end end).
+caseEq (round_pos (rpos rdir) (fixed_shift k1) m1 e1).
+intros n z.
+case n.
+intros _.
+split.
+unfold float2R. repeat rewrite Rmult_0_l.
+apply refl_equal.
+exact H.
+intros p H0.
+split. apply refl_equal.
+cutrewrite (z = fixed_shift k1 (e1 + Zpos (digits m1))).
+exact H.
+rewrite H3.
+generalize H0.
+case (round_pos (rpos rdir) (fixed_shift k1) m1 e1).
+intros. rewrite H5. apply refl_equal.
 Qed.
 
 Theorem fixed_of_fix :
