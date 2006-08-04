@@ -151,7 +151,7 @@ generalize (Zlt_neg_0 p).
 omega.
 Qed.
 
-Lemma float2_round_density :
+Lemma round_density :
  forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  good_rexp rexp ->
  forall x : R, (0 < x)%R ->
@@ -161,8 +161,8 @@ Lemma float2_round_density :
  let f2 := (Float2 (Zpos m2) e2) in
  (f1 <= x <= f2)%R /\
  round_pos rdir rexp m1 e1 = round_pos rdir rexp m2 e2 /\
- let e1 := snd (round_pos rdir rexp m1 e1) in rexp e1 = e1 /\
- let e2 := snd (round_pos rdir rexp m2 e2) in rexp e2 = e2.
+ let e1' := snd (round_pos rdir rexp m1 e1) in rexp (e1 + Zpos (digits m1))%Z = e1' /\
+ let e2' := snd (round_pos rdir rexp m2 e2) in rexp (e2 + Zpos (digits m2))%Z = e2'.
 intros rdir rexp Hg x Hx.
 generalize (rexp_case_real _ Hg _ Hx).
 intros [(k,(Hk,Hx1))|(e,(m,(He,Hx1)))].
@@ -188,15 +188,20 @@ exact (Rlt_le _ _ H2a).
 generalize (round_constant_underflow rdir _ Hg _ Hk).
 intros H.
 assert (Float2 (Zpos m1) e1 < Float2 1 (k - 1))%R.
-apply Rlt_trans with (1 := Rlt_trans _ _ _ H1b H2a).
-exact H2b.
+exact (Rlt_trans _ _ _ H1b Hx2).
 rewrite (proj1 (H m1 e1) H0).
 rewrite (proj1 (H m2 e2) H2b).
 clear H H0.
 simpl.
 split.
 apply refl_equal.
-exact (conj Hk Hk).
+split ; apply rexp_underflow with (1 := Hg) (2 := Hk).
+apply float2_repartition_underflow.
+exact (Rlt_trans _ _ _ H1b Hx1).
+apply float2_repartition_underflow.
+apply Rlt_trans with (1 := H2b).
+apply float2_Rlt_pow2.
+omega.
 exists xH. exists xH. exists (k - 1)%Z. exists (k - 1)%Z.
 split.
 rewrite Hx2.
@@ -204,6 +209,8 @@ split ; apply Rle_refl.
 split.
 apply refl_equal.
 rewrite (proj1 (proj2 (round_constant_underflow rdir _ Hg _ Hk 1 (k - 1))) (refl_equal _)).
+simpl.
+ring (k - 1 + 1)%Z.
 exact (conj Hk Hk).
 generalize (float2_density _ _ (conj Hx Hx1)).
 intros (e2,(m2,H2)).
@@ -234,9 +241,46 @@ clear H H0.
 split.
 apply refl_equal.
 simpl.
-exact (conj Hk Hk).
-unfold Rgt in Hx2.
-
+split ; apply rexp_underflow with (1 := Hg) (2 := Hk).
+apply float2_repartition_underflow.
+exact (Rlt_trans _ _ _ (proj2 H1) Hx1).
+apply float2_repartition_underflow.
+exact (proj2 H2).
+case (proj1 Hx1) ; intro Hx2.
+generalize (conj Hx2 (proj2 Hx1)). clear Hx1 Hx2. intro Hx1.
+generalize (Rtotal_order x (Float2 (Zpos m * 2 + 1) (e - 1))).
+intros [Hx2|[Hx2|Hx2]].
+assert (0 < Float2 (Zpos m) e)%R.
+unfold float2R. simpl.
+apply Rmult_lt_0_compat ; auto with real.
+generalize (float2_density _ _ (conj H (proj1 Hx1))).
+intros (e1,(m1,(H1a,H1b))).
+clear H.
+generalize (float2_density _ _ (conj Hx Hx2)).
+intros (e2,(m2,(H2a,H2b))).
+exists m1. exists m2. exists e1. exists e2.
+split.
+split.
+exact (Rlt_le _ _ H1b).
+exact (Rlt_le _ _ H2a).
+generalize (round_constant rdir rexp m e He).
+intro H.
+rewrite (proj1 (H m1 e1) (conj H1a (Rlt_trans _ _ _ H1b Hx2))).
+rewrite (proj1 (H m2 e2) (conj (Rlt_trans _ _ _ (proj1 Hx1) H2a) H2b)).
+clear H.
+split.
+apply refl_equal.
+rewrite <- He.
+simpl. split.
+rewrite (proj2 (float2_repartition _ _ _ _ (conj H1a (Rlt_trans _ _ _ H1b (proj2 Hx1))))).
+apply refl_equal.
+assert (Float2 (Zpos m2) e2 < Float2 (Zpos m + 1) e)%R.
+apply Rlt_trans with (1 := H2b).
+rewrite (float2_shift_m1 e).
+apply float2_binade_lt.
+omega.
+rewrite (proj2 (float2_repartition _ _ _ _ (conj (Rlt_trans _ _ _ (proj1 Hx1) H2a) H))).
+apply refl_equal.
 
 Lemma round_zero :
  forall rdir : round_dir,
