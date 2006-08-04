@@ -1828,8 +1828,9 @@ Qed.
 Lemma round_zr_bound :
  forall rexp : Z -> Z, good_rexp rexp ->
  forall m1 : positive, forall e1 : Z,
- let (m2,e2) := round_pos rndZR rexp m1 e1 in
- (Float2 (Z_of_N m2) e2 <= Float2 (Zpos m1) e1 < Float2 (Z_of_N m2 + 1) e2)%R.
+ let r := round_pos rndZR rexp m1 e1 in
+ (Float2 (Z_of_N (fst r)) (snd r) <= Float2 (Zpos m1) e1
+  < Float2 (Z_of_N (fst r) + 1) (snd r))%R.
 intros rexp Hg m1 e1.
 assert (HH: (Float2 (Z_of_N (Npos m1)) e1 <= Float2 (Zpos m1) e1
   < Float2 (Z_of_N (Npos m1) + 1) e1)%R).
@@ -1862,8 +1863,9 @@ Qed.
 Lemma round_aw_bound :
  forall rexp : Z -> Z, good_rexp rexp ->
  forall m1 : positive, forall e1 : Z,
- let (m2,e2) := round_pos rndAW rexp m1 e1 in
- (Float2 (Z_of_N m2 - 1) e2 < Float2 (Zpos m1) e1 <= Float2 (Z_of_N m2) e2)%R.
+ let r := round_pos rndAW rexp m1 e1 in
+ (Float2 (Z_of_N (fst r) - 1) (snd r) < Float2 (Zpos m1) e1
+  <= Float2 (Z_of_N (fst r)) (snd r))%R.
 intros rexp Hg m1 e1.
 assert (HH: (Float2 (Z_of_N (Npos m1) - 1) e1 < Float2 (Zpos m1) e1
   <= Float2 (Z_of_N (Npos m1)) e1)%R).
@@ -1902,42 +1904,5 @@ Definition round (rdirs : round_dir) (rexp : Z -> Z) (f : float2) :=
    | (Npos q, e) => Float2 (Zneg q) e
    end
  end.
-
-Lemma round_zero :
- forall rdir : round_dir,
- forall rexp : Z -> Z,
- forall e : Z,
- (round rdir rexp (Float2 Z0 e) = 0 :>R)%R.
-intros rdir rexp e.
-unfold round, float2R.
-simpl.
-auto with real.
-Qed.
-
-Lemma round_neg :
- forall rdir : round_dir,
- forall rexp : Z -> Z,
- forall m : positive, forall e : Z,
- round rdir rexp (Float2 (Zneg m) e) = Fopp2 (round
-   (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir))
-   rexp (Fopp2 (Float2 (Zneg m) e))).
-intros rdir rexp m e.
-unfold round, Fopp2.
-simpl.
-case (round_pos (rneg rdir) rexp m e) ; intros.
-case n ; trivial.
-Qed.
-
-Axiom round_extension :
- forall rdir : round_dir, forall rexp : Z -> Z,
- good_rexp rexp ->
- sigT (fun fext : R -> R =>
- (forall x y : R, (fext x <= fext y)%R) /\
- (forall f : float2, fext f = round rdir rexp f) /\
- (forall x : R, forall k : Z,
-  (powerRZ 2 (k - 1) <= Rabs x < powerRZ 2 k)%R ->
-  exists f : float2, fext x = f /\ Fexp f = rexp k) /\
- (forall x : R, exists f1 : float2, exists f2 : float2,
-  (f1 <= x <= f2)%R /\ fext x = fext f1 /\ fext x = fext f2)).
 
 End Gappa_round.
