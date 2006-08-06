@@ -711,16 +711,14 @@ unfold rounding_fixed.
 rewrite round_extension_float2.
 induction f.
 induction Fnum.
-unfold round, float2R.
-simpl.
-ring.
-unfold round.
-simpl.
+unfold round, float2R. simpl.
+repeat rewrite Rmult_0_l.
+apply refl_equal.
+unfold round. simpl.
 rewrite round_rexp_exact.
 apply refl_equal.
 exact (Zle_trans _ _ _ H1 Hx2).
-unfold round.
-simpl.
+unfold round. simpl.
 rewrite round_rexp_exact.
 apply refl_equal.
 exact (Zle_trans _ _ _ H1 Hx2).
@@ -743,11 +741,11 @@ generalize (Fle2_correct _ _ H2). rewrite <- (round_extension_float2 rdir _ (goo
 unfold rounding_fixed.
 split.
 apply Rle_trans with (1 := H1).
-rewrite <- H4.
-apply H3.
+apply round_extension_monotone.
+exact (proj1 Hx).
 apply Rle_trans with (2 := H2).
-rewrite <- H4.
-apply H3.
+apply round_extension_monotone.
+exact (proj2 Hx).
 Qed.
 
 Definition fixed_error_dn_helper (e : Z) (zi : FF) :=
