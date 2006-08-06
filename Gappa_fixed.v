@@ -650,64 +650,47 @@ Theorem fix_of_fixed :
  FIX (rounding_fixed rdir k1 x) k2.
 intros rdir x k1 k2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
-unfold FIX.
-unfold rounding_fixed.
-unfold round_extension.
-generalize (total_order_T x 0).
+unfold FIX, rounding_fixed.
+generalize (total_order_T 0 x).
 intros [[Hx|Hx]|Hx].
-unfold round_ext.
-generalize (round_density (rneg rdir) (fixed_shift k1) (good_shift k1) (- x) (Ropp_0_gt_lt_contravar x Hx)).
-intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,H4))))))).
-exists (match round_pos (rneg rdir) (fixed_shift k1) m1 e1 with (n,e) =>
-  match n with
-  | N0 => Float2 0 k1
-  | Npos p => Float2 (Zneg p) e
-  end end).
-caseEq (round_pos (rneg rdir) (fixed_shift k1) m1 e1).
-intros n z.
-case n.
-intros _.
+generalize (round_extension_prop_pos rdir (fixed_shift k1) (good_shift k1) _ Hx).
+intros (m1,(m2,(e1,(e2,(H1,(H2,(_,(H3,_)))))))).
+rewrite H2.
+unfold round. simpl.
+exists (match round_pos (rpos rdir) (fixed_shift k1) m1 e1 with (n,e) =>
+  match n with N0 => Float2 0 k1 | Npos p => Float2 (Zpos p) e end end).
 split.
+case (round_pos (rpos rdir) (fixed_shift k1) m1 e1) ; intros.
+case n ; intros.
 unfold float2R. repeat rewrite Rmult_0_l.
 apply refl_equal.
-exact H.
-intros p H0.
-split. apply refl_equal.
-cutrewrite (z = fixed_shift k1 (e1 + Zpos (digits m1))).
-exact H.
-rewrite H3.
-generalize H0.
-case (round_pos (rneg rdir) (fixed_shift k1) m1 e1).
-intros. rewrite H5. apply refl_equal.
+apply refl_equal.
+induction (round_pos (rpos rdir) (fixed_shift k1) m1 e1).
+unfold fixed_shift in H3. simpl in H3.
+rewrite <- H3.
+case a ; intros ; exact H.
 exists (Float2 0 k1).
 split.
-unfold float2R. repeat rewrite Rmult_0_l.
-apply refl_equal.
+rewrite <- Hx.
+rewrite round_extension_zero.
+unfold float2R. apply Rmult_0_l.
 exact H.
-unfold round_ext.
-generalize (round_density (rpos rdir) (fixed_shift k1) (good_shift k1) x Hx).
-intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,H4))))))).
-exists (match round_pos (rpos rdir) (fixed_shift k1) m1 e1 with (n,e) =>
-  match n with
-  | N0 => Float2 0 k1
-  | Npos p => Float2 (Zpos p) e
-  end end).
-caseEq (round_pos (rpos rdir) (fixed_shift k1) m1 e1).
-intros n z.
-case n.
-intros _.
+generalize (round_extension_prop_neg rdir (fixed_shift k1) (good_shift k1) _ Hx).
+intros (m1,(m2,(e1,(e2,(H1,(H2,(_,(H3,_)))))))).
+rewrite H2.
+unfold round. simpl.
+exists (match round_pos (rneg rdir) (fixed_shift k1) m1 e1 with (n,e) =>
+  match n with N0 => Float2 0 k1 | Npos p => Float2 (Zneg p) e end end).
 split.
+case (round_pos (rneg rdir) (fixed_shift k1) m1 e1) ; intros.
+case n ; intros.
 unfold float2R. repeat rewrite Rmult_0_l.
 apply refl_equal.
-exact H.
-intros p H0.
-split. apply refl_equal.
-cutrewrite (z = fixed_shift k1 (e1 + Zpos (digits m1))).
-exact H.
-rewrite H3.
-generalize H0.
-case (round_pos (rpos rdir) (fixed_shift k1) m1 e1).
-intros. rewrite H5. apply refl_equal.
+apply refl_equal.
+induction (round_pos (rneg rdir) (fixed_shift k1) m1 e1).
+unfold fixed_shift in H3. simpl in H3.
+rewrite <- H3.
+case a ; intros ; exact H.
 Qed.
 
 Theorem fixed_of_fix :
