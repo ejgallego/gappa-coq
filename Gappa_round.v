@@ -1794,8 +1794,8 @@ Lemma round_monotone :
  good_rexp rexp ->
  forall m1 m2 : positive, forall e1 e2 : Z,
  (Float2 (Zpos m1) e1 <= Float2 (Zpos m2) e2)%R ->
- (float2R match round_pos rdir rexp m1 e1 with (m1',e1') => Float2 (Z_of_N m1') e1' end <=
-  float2R match round_pos rdir rexp m2 e2 with (m2',e2') => Float2 (Z_of_N m2') e2' end)%R.
+ (float2R match round_pos rdir rexp m1 e1 with (N0,_) => Float2 0 0 | (Npos m1',e1') => Float2 (Zpos m1') e1' end <=
+  float2R match round_pos rdir rexp m2 e2 with (N0,_) => Float2 0 0 | (Npos m2',e2') => Float2 (Zpos m2') e2' end)%R.
 intros rdir rexp Hgd Hge m1 m2 e1 e2 Hf.
 generalize (rexp_case rexp Hge m2 e2).
 generalize (rexp_case rexp Hge m1 e1).

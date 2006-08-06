@@ -369,142 +369,204 @@ case (round_pos (rneg rdir) rexp m e) ; intros.
 case n ; trivial.
 Qed.
 
-Lemma round_ext :
- forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
- good_rdir rdir -> good_rexp rexp ->
- forall x : R, float2.
-intros rdir rexp Hgd Hge x.
-generalize (total_order_T 0 x).
-intros [[Hx|_]|_].
-generalize (round_density rdir rexp Hge x Hx).
-intros (m1,(m2,(e1,(e2,H)))).
-exact (match round_pos rdir rexp m1 e1 with (m,e) => Float2 (Z_of_N m) e end).
-exact (Float2 0 0).
-exact (Float2 0 0).
-Defined.
-
-Lemma round_ext_positive :
- forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
- forall Hgd : good_rdir rdir, forall Hge : good_rexp rexp,
- forall x : R,
- (0 <= round_ext rdir rexp Hgd Hge x)%R.
-intros rdir rexp Hgd Hge x.
-unfold round_ext, float2R.
-generalize (total_order_T 0 x).
-intros [[Hx|_]|_] ; simpl ; try (rewrite Rmult_0_l ; apply Rle_refl).
-generalize (round_density rdir rexp Hge x Hx).
-intros (m1,(m2,(e1,(e2,_)))).
-unfold round_pos.
-case (rexp (e1 + Zpos (digits m1)) - e1)%Z ; intros ; simpl.
-apply Rmult_le_pos ; auto with real.
-case (if rdir (shr m1 p) (rexp (e1 + Zpos (digits m1))%Z)
-      then Nsucc (rnd_m (shr m1 p)) else rnd_m (shr m1 p)) ; intros.
-rewrite Rmult_0_l.
-apply Rle_refl.
-apply Rmult_le_pos ; simpl ; auto with real.
-apply Rmult_le_pos ; auto with real.
-Qed.
-
-Lemma round_ext_monotone :
- forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
- forall Hgd : good_rdir rdir, forall Hge : good_rexp rexp,
- let fext := round_ext rdir rexp Hgd Hge in
- forall x y : R, forall Hb : (0 < x <= y)%R,
- (fext x (proj1 Hb) <= fext y (Rlt_le_trans _ _ _ (proj1 Hb) (proj2 Hb)))%R.
-simpl.
-intros rdir rexp Hgd Hge x y Hb.
-unfold round_ext.
-generalize (round_density rdir rexp Hge y (Rlt_le_trans 0 x y (proj1 Hb) (proj2 Hb))).
-generalize (round_density rdir rexp Hge x (proj1 Hb)).
-intros (mx1,(mx2,(ex1,(ex2,(Hx1,(Hx2,_)))))).
-intros (my1,(my2,(ey1,(ey2,(Hy1,(Hy2,_)))))).
-rewrite Hy2.
-apply (round_monotone _ _ Hgd Hge).
-apply Rle_trans with (1 := proj1 Hx1).
-exact (Rle_trans _ _ _ (proj2 Hb) (proj2 Hy1)).
-Qed.
-
 Lemma round_extension :
  forall rdir : round_dir, forall rexp : Z -> Z,
  good_rexp rexp ->
  forall x : R, float2.
 intros rdir rexp Hge x.
-generalize (total_order_T x 0).
+generalize (total_order_T 0 x).
 intros [[Hx|Hx]|Hx].
-assert (0 < -x)%R. auto with real.
-exact (Fopp2 (round_ext (rneg rdir) rexp (rneg_good rdir) (Hge) (-x) H)).
+generalize (round_density (rpos rdir) rexp Hge x Hx).
+intros (m1,(m2,(e1,(e2,H)))).
+exact (match round_pos (rpos rdir) rexp m1 e1 with (N0,_) => Float2 0 0 | (Npos m,e) => Float2 (Zpos m) e end).
 exact (Float2 0 0).
-exact (round_ext (rpos rdir) rexp (rpos_good rdir) (Hge) x Hx).
+assert (Hx': (0 < -x)%R). auto with real.
+generalize (round_density (rneg rdir) rexp Hge (-x) Hx').
+intros (m1,(m2,(e1,(e2,H)))).
+exact (match round_pos (rneg rdir) rexp m1 e1 with (N0,_) => Float2 0 0 | (Npos m,e) => Float2 (Zneg m) e end).
 Defined.
 
-Lemma round_extension_pos :
+Lemma round_extension_prop_zero :
  forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- forall x : R, forall Hx : (0 < x)%R,
- round_extension rdir rexp Hge x = round_ext (rpos rdir) rexp (rpos_good rdir) Hge x Hx :>R.
-intros rdir rexp Hge x Hx.
-unfold round_extension.
-generalize (total_order_T x 0).
-intros [[H|H]|H].
-elim (Rlt_irrefl _ (Rlt_trans _ _ _ H Hx)).
-assert (0 < x)%R. exact Hx.
-rewrite H in H0.
-elim (Rlt_irrefl _ H0).
-unfold round_ext.
-generalize (round_density (rpos rdir) rexp Hge x H).
-intros (m1,(m2,(e1,(e2,(H1,(H2,_)))))).
-generalize (round_density (rpos rdir) rexp Hge x Hx).
-intros (m3,(m4,(e3,(e4,(H3,(H4,_)))))).
-apply Rle_antisym.
-rewrite H4.
-apply round_monotone with (1 := rpos_good rdir) (2 := Hge).
-exact (Rle_trans _ _ _ (proj1 H1) (proj2 H3)).
-rewrite H2.
-apply round_monotone with (1 := rpos_good rdir) (2 := Hge).
-exact (Rle_trans _ _ _ (proj1 H3) (proj2 H1)).
-Qed.
-
-Lemma round_extension_neg :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- forall x : R, forall Hx : (0 > x)%R,
- round_extension rdir rexp Hge x = Ropp (round_ext (rneg rdir) rexp (rneg_good rdir) Hge (-x) (Ropp_0_gt_lt_contravar x Hx)) :>R.
-intros rdir rexp Hge x Hx.
-unfold round_extension.
-generalize (total_order_T x 0).
-intros [[H|H]|H].
-unfold round_ext.
-generalize (round_density (rneg rdir) rexp Hge (-x) (Ropp_0_gt_lt_contravar x H)).
-intros (m1,(m2,(e1,(e2,(H1,(H2,_)))))).
-generalize (round_density (rneg rdir) rexp Hge (-x) (Ropp_0_gt_lt_contravar x Hx)).
-intros (m3,(m4,(e3,(e4,(H3,(H4,_)))))).
-rewrite Fopp2_correct.
-apply Ropp_eq_compat.
-apply Rle_antisym.
-rewrite H4.
-apply round_monotone with (1 := rneg_good rdir) (2 := Hge).
-exact (Rle_trans _ _ _ (proj1 H1) (proj2 H3)).
-rewrite H2.
-apply round_monotone with (1 := rneg_good rdir) (2 := Hge).
-exact (Rle_trans _ _ _ (proj1 H3) (proj2 H1)).
-assert (0 > x)%R. exact Hx.
-rewrite H in H0.
-elim (Rlt_irrefl _ H0).
-elim (Rlt_irrefl _ (Rlt_trans _ _ _ H Hx)).
-Qed.
-
-Lemma round_extension_zero :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- round_extension rdir rexp Hge R0 = R0 :>R.
+ forall Hge :good_rexp rexp,
+ round_extension rdir rexp Hge 0 = Float2 0 0.
 intros rdir rexp Hge.
 unfold round_extension.
 generalize (total_order_T 0 0).
 intros [[H|H]|H].
 elim (Rlt_irrefl _ H).
-unfold float2R. simpl.
-apply Rmult_0_l.
+apply refl_equal.
 elim (Rlt_irrefl _ H).
+Qed.
+
+Lemma round_extension_prop_pos :
+ forall rdir : round_dir, forall rexp : Z -> Z,
+ forall Hge :good_rexp rexp,
+ forall x : R, (0 < x)%R ->
+ { m1 : positive & { m2 : positive &
+ { e1 : Z & { e2 : Z |
+ let f1 := (Float2 (Zpos m1) e1) in
+ let f2 := (Float2 (Zpos m2) e2) in
+ (f1 <= x <= f2)%R /\
+ round_extension rdir rexp Hge x = round rdir rexp f1 /\
+ round_extension rdir rexp Hge x = round rdir rexp f2 /\
+ let e1' := snd (round_pos (rpos rdir) rexp m1 e1) in rexp (e1 + Zpos (digits m1))%Z = e1' /\
+ let e2' := snd (round_pos (rpos rdir) rexp m2 e2) in rexp (e2 + Zpos (digits m2))%Z = e2' }}}}.
+intros rdir rexp Hge x Hx.
+unfold round_extension.
+generalize (total_order_T 0 x).
+intros [[H|H]|H].
+generalize (round_density (rpos rdir) rexp Hge x H).
+intros (m1,(m2,(e1,(e2,(H1,(H2,H3)))))).
+exists m1. exists m2. exists e1. exists e2.
+split. exact H1.
+split. apply refl_equal.
+split. rewrite H2. apply refl_equal.
+exact H3.
+rewrite H in Hx.
+elim (Rlt_irrefl _ Hx).
+elim (Rlt_irrefl _ (Rlt_trans _ _ _ Hx H)).
+Qed.
+
+Lemma round_extension_prop_neg :
+ forall rdir : round_dir, forall rexp : Z -> Z,
+ forall Hge :good_rexp rexp,
+ forall x : R, (0 > x)%R ->
+ { m1 : positive & { m2 : positive &
+ { e1 : Z & { e2 : Z |
+ let f1 := (Float2 (Zpos m1) e1) in
+ let f2 := (Float2 (Zpos m2) e2) in
+ (f1 <= -x <= f2)%R /\
+ let rdir' := round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir) in
+ round_extension rdir rexp Hge x = Fopp2 (round rdir' rexp f1) /\
+ round_extension rdir rexp Hge x = Fopp2 (round rdir' rexp f2) /\
+ let e1' := snd (round_pos (rneg rdir) rexp m1 e1) in rexp (e1 + Zpos (digits m1))%Z = e1' /\
+ let e2' := snd (round_pos (rneg rdir) rexp m2 e2) in rexp (e2 + Zpos (digits m2))%Z = e2' }}}}.
+intros rdir rexp Hge x Hx.
+unfold round_extension.
+generalize (total_order_T 0 x).
+intros [[H|H]|H].
+elim (Rlt_irrefl _ (Rlt_trans _ _ _ Hx H)).
+rewrite H in Hx.
+elim (Rlt_irrefl _ Hx).
+generalize (round_density (rneg rdir) rexp Hge (-x) (Ropp_0_gt_lt_contravar x H)).
+intros (m1,(m2,(e1,(e2,(H1,(H2,H3)))))).
+exists m1. exists m2. exists e1. exists e2.
+split. exact H1.
+split.
+unfold round. simpl.
+case (round_pos (rneg rdir) rexp m1 e1) ; intros.
+case n ; intros ; apply refl_equal.
+split.
+unfold round. simpl.
+rewrite H2.
+case (round_pos (rneg rdir) rexp m2 e2) ; intros.
+case n ; intros ; apply refl_equal.
+exact H3.
+Qed.
+
+Lemma round_extension_float2 :
+ forall rdir : round_dir, forall rexp : Z -> Z,
+ forall Hge : good_rexp rexp,
+ forall f : float2,
+ round_extension rdir rexp Hge f = round rdir rexp f :>R.
+intros rdir rexp Hge f.
+cutrewrite (f = Float2 (Fnum f) (Fexp f)).
+2: induction f ; apply refl_equal.
+case (Fnum f) ; intros.
+unfold float2R at 2.
+rewrite Rmult_0_l.
+rewrite round_extension_prop_zero.
+apply refl_equal.
+assert (0 < Float2 (Zpos p) (Fexp f))%R.
+apply plouf.
+generalize (round_extension_prop_pos rdir rexp Hge _ H).
+intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,_))))))).
+apply Rle_antisym.
+rewrite H2.
+unfold round. simpl.
+apply (round_monotone _ _ (rpos_good rdir) Hge).
+exact (proj1 H1).
+rewrite H3.
+unfold round. simpl.
+apply (round_monotone _ _ (rpos_good rdir) Hge).
+exact (proj2 H1).
+assert (0 > Float2 (Zneg p) (Fexp f))%R.
+apply plouf.
+generalize (round_extension_prop_neg rdir rexp Hge _ H).
+intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,_))))))).
+cutrewrite (round rdir rexp (Float2 (Zneg p) (Fexp f)) = -round
+  (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir)) rexp (Float2 (Zpos p) (Fexp f)) :>R)%R.
+rewrite <- Fopp2_correct in H1.
+unfold Fopp2 in H1. simpl in H1.
+apply Rle_antisym.
+rewrite H3.
+rewrite Fopp2_correct.
+apply Ropp_le_contravar.
+unfold round. simpl.
+apply (round_monotone _ _ (rneg_good rdir) Hge).
+exact (proj2 H1).
+rewrite H2.
+rewrite Fopp2_correct.
+apply Ropp_le_contravar.
+unfold round. simpl.
+apply (round_monotone _ _ (rneg_good rdir) Hge).
+exact (proj1 H1).
+rewrite <- Fopp2_correct.
+unfold round. simpl.
+case (round_pos (rneg rdir) rexp p (Fexp f)) ; intros.
+case n ; intros ; apply refl_equal.
+Qed.
+
+Lemma round_extension_zero :
+ forall rdir : round_dir, forall rexp : Z -> Z,
+ forall Hge : good_rexp rexp,
+ round_extension rdir rexp Hge 0 = R0 :>R.
+intros rdir rexp Hge.
+rewrite round_extension_prop_zero.
+unfold float2R.
+exact (Rmult_0_l _).
+Qed.
+
+Lemma round_extension_positive :
+ forall rdir : round_dir, forall rexp : Z -> Z,
+ forall Hge : good_rexp rexp,
+ forall x : R, (0 < x)%R ->
+ (0 <= round_extension rdir rexp Hge x)%R.
+intros rdir rexp Hge x Hx.
+generalize (round_extension_prop_pos rdir rexp Hge _ Hx).
+intros (mx1,(mx2,(ex1,(ex2,(_,(Hx2,_)))))).
+rewrite Hx2.
+unfold round. simpl.
+case (round_pos (rpos rdir) rexp mx1 ex1) ; intros.
+unfold float2R.
+case n ; intros.
+rewrite Rmult_0_l.
+apply Rle_refl.
+simpl.
+apply Rmult_le_pos ; auto with real.
+Qed.
+
+Lemma round_extension_negative :
+ forall rdir : round_dir, forall rexp : Z -> Z,
+ forall Hge : good_rexp rexp,
+ forall x : R, (0 > x)%R ->
+ (round_extension rdir rexp Hge x <= 0)%R.
+intros rdir rexp Hge x Hx.
+generalize (round_extension_prop_neg rdir rexp Hge _ Hx).
+intros (mx1,(mx2,(ex1,(ex2,(_,(Hx2,_)))))).
+rewrite Hx2.
+unfold round. simpl.
+case (round_pos (rneg rdir) rexp mx1 ex1) ; intros.
+unfold float2R, Fopp2.
+case n ; intros.
+rewrite Rmult_0_l.
+apply Rle_refl.
+simpl.
+rewrite Ropp_mult_distr_l_reverse.
+apply Rge_le.
+apply Ropp_0_le_ge_contravar.
+apply Rmult_le_pos ; auto with real.
 Qed.
 
 Lemma round_extension_monotone :
@@ -513,131 +575,57 @@ Lemma round_extension_monotone :
  forall x y : R, (x <= y)%R ->
  (round_extension rdir rexp Hge x <= round_extension rdir rexp Hge y)%R.
 intros rdir rexp Hge x y H.
-generalize (total_order_T 0 y).
 generalize (total_order_T 0 x).
-intros [[Hx|Hx]|Hx] [[Hy|Hy]|Hy].
-rewrite (round_extension_pos rdir _ Hge _ Hx).
-rewrite (round_extension_pos rdir _ Hge _ Hy).
-apply round_ext_monotone.
-Admitted.
-
-Lemma round_extension_float2 :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- forall f : float2,
- round_extension rdir rexp Hge f = round rdir rexp f :>R.
-intros rdir rexp Hge f.
-unfold round_extension.
-cutrewrite (f = Float2 (Fnum f) (Fexp f)).
-2: induction f ; apply refl_equal.
-case (Fnum f) ; intros.
-generalize (total_order_T (Float2 0 (Fexp f)) 0).
+intros [[Hx|Hx]|Hx].
+generalize (total_order_T 0 y).
+intros [[Hy|Hy]|Hy].
+generalize (round_extension_prop_pos rdir rexp Hge _ Hx).
+intros (mx1,(mx2,(ex1,(ex2,(Hx1,(Hx2,(Hx3,_))))))).
+generalize (round_extension_prop_pos rdir rexp Hge _ Hy).
+intros (my1,(my2,(ey1,(ey2,(Hy1,(Hy2,(Hy3,_))))))).
+rewrite Hx2. rewrite Hy3.
 unfold round. simpl.
-intros [[Hf|Hf]|Hf].
-elim Rlt_not_le with (1 := Hf).
-unfold float2R. rewrite Rmult_0_l.
-apply Rle_refl.
-apply refl_equal.
-elim Rlt_not_le with (1 := Hf).
-unfold float2R. rewrite Rmult_0_l.
-apply Rle_refl.
-generalize (total_order_T (Float2 (Zpos p) (Fexp f)) 0).
-unfold round. simpl.
-intros [[Hf|Hf]|Hf].
-elim Rlt_not_le with (1 := Hf).
-unfold float2R. simpl.
-apply Rmult_le_pos ; auto with real.
-elim Rgt_not_eq with (2 := Hf).
-unfold float2R. simpl.
-unfold Rgt.
-apply Rmult_lt_0_compat ; auto with real.
-unfold round_ext.
-generalize (round_density (rpos rdir) rexp Hge (Float2 (Zpos p) (Fexp f)) Hf).
-intros (m1,(m2,(e1,(e2,(H1,(H2,_)))))).
-assert (H': forall m : positive, forall e : Z,
-  float2R match round_pos (rpos rdir) rexp m e with (n, e) =>
-  match n with
-  | N0 => Float2 0 0
-  | Npos p0 => Float2 (Zpos p0) e
-  end end =
-  match round_pos (rpos rdir) rexp m e with (n, e) => float2R (Float2 (Z_of_N n) e) end).
-intros m e.
-induction (round_pos (rpos rdir) rexp m e).
-case a ; intros.
-unfold float2R.
-repeat rewrite Rmult_0_l.
-apply refl_equal.
-apply refl_equal.
-apply Rle_antisym.
-repeat rewrite H'.
 apply (round_monotone _ _ (rpos_good rdir) Hge).
-exact (proj1 H1).
-repeat rewrite H'.
-rewrite H2.
-apply (round_monotone _ _ (rpos_good rdir) Hge).
-exact (proj2 H1).
-generalize (total_order_T (Float2 (Zneg p) (Fexp f)) 0).
+apply Rle_trans with (1 := proj1 Hx1).
+exact (Rle_trans _ _ _ H (proj2 Hy1)).
+rewrite <- Hy in H.
+elim (Rlt_irrefl _ (Rlt_le_trans _ _ _ Hx H)).
+elim (Rlt_not_le _ _ (Rlt_trans _ _ _ Hy Hx) H).
+rewrite <- Hx.
+rewrite round_extension_zero.
+rewrite <- Hx in H.
+unfold Rle in H.
+decompose [or] H.
+apply round_extension_positive.
+exact H0.
+rewrite <- H0.
+rewrite round_extension_zero.
+apply Rle_refl.
+generalize (total_order_T 0 y).
+intros [[Hy|Hy]|Hy].
+apply Rle_trans with R0.
+apply round_extension_negative.
+exact Hx.
+apply round_extension_positive.
+exact Hy.
+rewrite <- Hy.
+rewrite round_extension_zero.
+apply round_extension_negative.
+exact Hx.
+generalize (round_extension_prop_neg rdir rexp Hge _ Hx).
+intros (mx1,(mx2,(ex1,(ex2,(Hx1,(Hx2,(Hx3,_))))))).
+generalize (round_extension_prop_neg rdir rexp Hge _ Hy).
+intros (my1,(my2,(ey1,(ey2,(Hy1,(Hy2,(Hy3,_))))))).
+rewrite Hx3. rewrite Hy2.
 unfold round. simpl.
-intros [[Hf|Hf]|Hf].
-unfold round_ext.
-generalize (round_density (rneg rdir) rexp Hge (- Float2 (Zneg p) (Fexp f)) (Ropp_0_gt_lt_contravar (Float2 (Zneg p) (Fexp f)) Hf)).
-intros (m1,(m2,(e1,(e2,(H1,(H2,_)))))).
-assert (H': forall m : positive, forall e : Z,
-  float2R match round_pos (rneg rdir) rexp m e with (n, e) =>
-  match n with
-  | N0 => Float2 0 0
-  | Npos p0 => Float2 (Zneg p0) e
-  end end =
-  Ropp match round_pos (rneg rdir) rexp m e with (n, e) => float2R (Float2 (Z_of_N n) e) end).
-intros m e.
-induction (round_pos (rneg rdir) rexp m e).
-case a ; intros.
-unfold float2R.
-repeat rewrite Rmult_0_l.
-exact (sym_eq Ropp_0).
-rewrite <- Fopp2_correct.
-apply refl_equal.
-rewrite <- Fopp2_correct in H1.
-apply Rle_antisym.
-repeat rewrite H'.
-apply Ropp_le_contravar.
-rewrite H2.
-apply (round_monotone _ _ (rneg_good rdir) Hge).
-exact (proj2 H1).
-repeat rewrite H'.
+repeat rewrite Fopp2_correct.
 apply Ropp_le_contravar.
 apply (round_monotone _ _ (rneg_good rdir) Hge).
-exact (proj1 H1).
-elim Rlt_not_eq with (2 := Hf).
-unfold float2R. simpl.
-rewrite Ropp_mult_distr_l_reverse.
-apply Ropp_lt_gt_0_contravar.
-unfold Rgt.
-apply Rmult_lt_0_compat ; auto with real.
-elim Rlt_not_le with (1 := Hf).
-unfold float2R. simpl.
-rewrite Ropp_mult_distr_l_reverse.
-rewrite <- Ropp_0.
+apply Rle_trans with (1 := proj1 Hy1).
+apply Rle_trans with (2 := proj2 Hx1).
 apply Ropp_le_contravar.
-apply Rmult_le_pos ; auto with real.
+exact H.
 Qed.
-
-(*
-Axiom round_extension :
- forall rdir : round_dir, forall rexp : Z -> Z,
- good_rexp rexp ->
- sigT (fun fext : R -> R =>
- (forall x y : R, (fext x <= fext y)%R) /\
- (forall f : float2, fext f = round rdir rexp f) /\
- (forall x : R, (0 < x)%R ->
-  exists m1 : positive, exists m2 : positive,
-  exists e1 : Z, exists e2 : Z,
-  let f1 := (Float2 (Zpos m1) e1) in
-  let f2 := (Float2 (Zpos m2) e2) in
-  (f1 <= x <= f2)%R /\ 
-  (fext x = round rdir rexp f1 /\ let e1 := Fexp (round rdir rexp f1) in rexp e1 = e1) /\
-  (fext x = round rdir rexp f2 /\ let e2 := Fexp (round rdir rexp f2) in rexp e2 = e2))).
-*)
 
 Definition fixed_shift (e : Z) (_ : Z) := e.
 
