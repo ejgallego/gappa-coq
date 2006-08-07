@@ -360,12 +360,6 @@ rewrite H0 in H.
 discriminate H.
 Qed.
 
-Axiom float2_equal_xO :
- forall m1 m2 : positive, forall e1 e2 : Z,
- (e1 < e2)%Z ->
- Float2 (Zpos m1) e1 = Float2 (Zpos m2) e2 :>R ->
- exists p : positive, m1 = xO p.
-
 Lemma round_unicity_aux :
  forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  forall m1 m2 : positive, forall e1 e2 : Z,
@@ -394,12 +388,7 @@ generalize (float2_binade_eq_reg_aux _ _ _ H). intros H0.
 rewrite H0. clear H H0.
 apply refl_equal.
 intros m1 Heq.
-assert (He: (e2 - Z_of_nat (S n) < e2)%Z).
-apply Zlt_minus_simpl_swap.
-simpl.
-unfold Zlt.
-apply refl_equal.
-generalize (float2_equal_xO m1 m2 _ e2 He Heq).
+cut (exists p, m1 = xO p).
 intros (p, H). rewrite H in Heq. rewrite H. clear H m1.
 assert (e2 - Z_of_nat (S n) = e2 - Z_of_nat n - 1)%Z.
 rewrite inj_S.
@@ -415,6 +404,17 @@ rewrite <- Heq.
 replace (Zpos (xO p)) with (Zpos p * 2)%Z.
 apply float2_shift_m1.
 rewrite Zmult_comm.
+apply refl_equal.
+clear IHn Hdir rexp rdir.
+rewrite <- nat_of_P_o_P_of_succ_nat_eq_succ in Heq.
+rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P in Heq.
+rewrite <- (float2_shl_correct (Float2 (Zpos m2) e2) (P_of_succ_nat n)) in Heq.
+simpl in Heq.
+rewrite (float2_binade_eq_reg_aux _ _ _ Heq).
+clear Heq.
+rewrite shift_pos_nat.
+rewrite nat_of_P_o_P_of_succ_nat_eq_succ.
+exists (shift_nat n m2).
 apply refl_equal.
 Qed.
 
@@ -1803,6 +1803,10 @@ intros [H1a|[(H1a,(H1b,(H1c,H1d)))|(m3,(H1a,(H1b,H1c)))]]
 rewrite (round_rexp_exact rdir _ _ _ H1a).
 rewrite (round_rexp_exact rdir _ _ _ H2a).
 exact Hf.
+elim Rlt_not_le with (2 := Hf).
+apply Rlt_le_trans with (1 := H2d).
+apply Rle_trans with (2 := proj1 (float2_digits_correct m1 e1)).
+apply float2_Rle_pow2.
 Admitted.
 
 Lemma rexp_exclusive :
@@ -2372,7 +2376,8 @@ rewrite Rmult_0_l.
 rewrite round_extension_prop_zero.
 apply refl_equal.
 assert (0 < Float2 (Zpos p) (Fexp f))%R.
-apply plouf.
+unfold float2R. simpl.
+apply Rmult_lt_0_compat ; auto with real.
 generalize (round_extension_prop_pos rdir rexp Hge _ H).
 intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,_))))))).
 apply Rle_antisym.
@@ -2385,7 +2390,10 @@ unfold round. simpl.
 apply (round_monotone _ _ (rpos_good rdir) Hge).
 exact (proj2 H1).
 assert (0 > Float2 (Zneg p) (Fexp f))%R.
-apply plouf.
+unfold float2R. simpl.
+rewrite Ropp_mult_distr_l_reverse.
+apply Ropp_0_lt_gt_contravar.
+apply Rmult_lt_0_compat ; auto with real.
 generalize (round_extension_prop_neg rdir rexp Hge _ H).
 intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,_))))))).
 cutrewrite (round rdir rexp (Float2 (Zneg p) (Fexp f)) = -round
