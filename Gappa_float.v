@@ -58,7 +58,7 @@ intros (m1,(m2,(e1,(e2,(H1,(H2,(_,(H3,_)))))))).
 rewrite H2.
 unfold round. simpl.
 exists (match round_pos (rpos rdir) (float_shift p k1) m1 e1 with (n,e) =>
-  match n with N0 => Float2 0 k1 | Npos p => Float2 (Zpos p) e end end).
+  match n with N0 => Float2 0 (-k1) | Npos p => Float2 (Zpos p) e end end).
 split.
 case (round_pos (rpos rdir) (float_shift p k1) m1 e1) ; intros.
 case n ; intros.
@@ -68,8 +68,11 @@ apply refl_equal.
 induction (round_pos (rpos rdir) (float_shift p k1) m1 e1).
 unfold float_shift in H3. simpl in H3.
 rewrite <- H3.
-case a ; intros ; exact H.
-exists (Float2 0 k1).
+case a ; intros.
+exact H.
+apply Zle_trans with (1 := H).
+exact (Zmax2 _ _).
+exists (Float2 0 (-k1)).
 split.
 rewrite <- Hx.
 rewrite round_extension_zero.
@@ -80,7 +83,7 @@ intros (m1,(m2,(e1,(e2,(H1,(H2,(_,(H3,_)))))))).
 rewrite H2.
 unfold round. simpl.
 exists (match round_pos (rneg rdir) (float_shift p k1) m1 e1 with (n,e) =>
-  match n with N0 => Float2 0 k1 | Npos p => Float2 (Zneg p) e end end).
+  match n with N0 => Float2 0 (-k1) | Npos p => Float2 (Zneg p) e end end).
 split.
 case (round_pos (rneg rdir) (float_shift p k1) m1 e1) ; intros.
 case n ; intros.
@@ -88,8 +91,11 @@ unfold float2R. repeat rewrite Rmult_0_l.
 apply refl_equal.
 apply refl_equal.
 induction (round_pos (rneg rdir) (float_shift p k1) m1 e1).
-unfold fixed_shift in H3. simpl in H3.
+unfold float_shift in H3. simpl in H3.
 rewrite <- H3.
-case a ; intros ; exact H.
+case a ; intros.
+exact H.
+apply Zle_trans with (1 := H).
+exact (Zmax2 _ _).
 Qed.
 
