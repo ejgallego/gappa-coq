@@ -6,7 +6,7 @@ Require Import Gappa_pred_bnd.
 Require Import Gappa_round_def.
 Require Import Gappa_round.
 
-Section Gappa_fixed.
+Section Gappa_float.
 
 Definition float_shift (p : positive) (d b : Z) :=
  Zmax (b - Zpos p) (-d).
@@ -99,3 +99,28 @@ apply Zle_trans with (1 := H).
 exact (Zmax2 _ _).
 Qed.
 
+Definition round_helper (rnd : float2 -> float2) (xi zi : FF) :=
+ Fle2 (lower zi) (rnd (lower xi)) &&
+ Fle2 (rnd (upper xi)) (upper zi).
+
+Theorem float_round :
+ forall rdir : round_dir, forall p : positive, forall d : Z,
+ forall x : R, forall xi zi : FF,
+ BND x xi ->
+ round_helper (round rdir (float_shift p d)) xi zi = true ->
+ BND (rounding_float rdir p d x) zi.
+intros rdir p d x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). rewrite <- (round_extension_float2 rdir _ (good_shift p d)). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). rewrite <- (round_extension_float2 rdir _ (good_shift p d)). clear H2. intro H2.
+unfold rounding_float.
+split.
+apply Rle_trans with (1 := H1).
+apply round_extension_monotone.
+exact (proj1 Hx).
+apply Rle_trans with (2 := H2).
+apply round_extension_monotone.
+exact (proj2 Hx).
+Qed.
+
+End Gappa_float.
