@@ -234,7 +234,62 @@ Definition digitsN (n : N) :=
 Lemma digits_correct :
  forall m : positive,
  (powerRZ 2 (Zpos (digits m) - 1)%Z <= IZR (Zpos m) < powerRZ 2 (Zpos (digits m)))%R.
-Admitted.
+intros m.
+induction m.
+simpl (digits (xI m)).
+rewrite Zpos_succ_morphism.
+unfold Zsucc, Zminus.
+rewrite <- Zplus_assoc. rewrite (Zplus_comm 1). rewrite Zplus_assoc.
+rewrite Zpos_xI.
+split ; (rewrite powerRZ_add ; [
+  rewrite Rmult_comm ;
+  simpl (powerRZ 2 1) ;
+  rewrite Rmult_1_r | discrR ]).
+apply Rle_trans with (IZR 2 * IZR (Zpos m))%R.
+apply Rmult_le_compat_l.
+simpl. auto with real.
+exact (proj1 IHm).
+rewrite <- mult_IZR.
+apply IZR_le.
+exact (Zle_succ _).
+apply Rlt_le_trans with (IZR 2 * (IZR (Zpos m) + IZR 1))%R.
+rewrite <- plus_IZR.
+rewrite <- mult_IZR.
+apply IZR_lt.
+omega.
+apply Rmult_le_compat_l.
+auto with real.
+rewrite <- plus_IZR.
+rewrite (Zpos_eq_Z_of_nat_o_nat_of_P (digits m)).
+cutrewrite (2 = INR 2)%R. 2: apply refl_equal.
+rewrite <- Zpower_nat_powerRZ.
+apply IZR_le.
+apply (Zlt_le_succ (Zpos m)).
+apply lt_IZR.
+rewrite Zpower_nat_powerRZ.
+rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+exact (proj2 IHm).
+simpl (digits (xO m)).
+rewrite Zpos_succ_morphism.
+unfold Zsucc, Zminus.
+rewrite <- Zplus_assoc. rewrite (Zplus_comm 1). rewrite Zplus_assoc.
+rewrite Zpos_xO.
+split ; (rewrite powerRZ_add ; [
+  rewrite Rmult_comm ;
+  simpl (powerRZ 2 1) ;
+  rewrite Rmult_1_r | discrR ]).
+rewrite mult_IZR.
+apply Rmult_le_compat_l.
+simpl. auto with real.
+exact (proj1 IHm).
+rewrite mult_IZR.
+apply Rmult_lt_compat_l.
+auto with real.
+exact (proj2 IHm).
+simpl.
+rewrite Rmult_1_r.
+auto with real.
+Qed.
 
 Lemma float2_digits_correct :
  forall m : positive, forall e: Z,
