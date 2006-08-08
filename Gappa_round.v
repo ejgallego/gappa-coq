@@ -2228,8 +2228,6 @@ Axiom log2:
  forall x : R, (0 < x)%R ->
  { k : Z | (powerRZ 2 (k - 1) <= x < powerRZ 2 k)%R }.
 
-Axiom plouf : forall P : Prop, P.
-
 Lemma rexp_case_real_aux :
  forall x : R, (0 < x)%R ->
  forall l k : Z, (k < l)%Z ->
@@ -2246,10 +2244,11 @@ exact (proj1 Hx).
 apply Rmult_lt_compat_r.
 auto with real.
 exact (proj2 Hx).
-clear Hx.
-cut (powerRZ 2 (l - 1 - k) <= IZR (Zpos (pos_of_Z (up (x * powerRZ 2 (- k)) - 1))) < powerRZ 2 (l - k))%R.
-clear H.
-generalize (pos_of_Z (up (x * powerRZ 2 (- k)) - 1)).
+generalize (x * powerRZ 2 (-k))%R H.
+clear Hx H.
+intros r Hx.
+cut (powerRZ 2 (l - 1 - k) <= IZR (Zpos (pos_of_Z (up r - 1))) < powerRZ 2 (l - k))%R.
+generalize (pos_of_Z (up r - 1)).
 intros p H.
 assert (Zpos (digits p) = l - k)%Z.
 2: rewrite H0 ; ring.
@@ -2269,27 +2268,46 @@ omega.
 unfold float2R in H1. repeat rewrite Rmult_1_l in H1.
 exact H1.
 rewrite <- Zpos_pos_of_Z.
-split.
-apply plouf. (* TODO *)
-apply Rle_lt_trans with (2 := proj2 H).
-unfold Zminus.
+unfold Zminus at 3 4.
 rewrite plus_IZR.
+split.
+cut (exists n : nat, (l - 1 - k = Z_of_nat n)%Z).
+intros (n,H1).
+generalize (proj1 Hx).
+cutrewrite (powerRZ 2 (l - 1 - k) = IZR (Zpower_nat 2 n))%R.
+intro H.
+rewrite <- plus_IZR.
+apply IZR_le.
+cut (Zpower_nat 2 n < up r)%Z.
+omega.
+apply lt_IZR.
+apply Rle_lt_trans with (1 := H).
+exact (proj1 (archimed _)).
+replace 2%Z with (Z_of_nat 2). 2: apply refl_equal.
+rewrite Zpower_nat_powerRZ.
+rewrite H1.
+apply refl_equal.
+cut (0 <= l - 1 - k)%Z. 2: omega.
+case (l - 1 - k)%Z ; intros.
+exists 0. apply refl_equal.
+exists (nat_of_P p). apply Zpos_eq_Z_of_nat_o_nat_of_P.
+elim H.
+apply refl_equal.
+apply Rle_lt_trans with (2 := proj2 Hx).
+apply Rplus_le_reg_l with (1 - r)%R.
 simpl.
-apply Rplus_le_reg_l with (1 - x * powerRZ 2 (- k))%R.
-cutrewrite (1 - x * powerRZ 2 (- k) + (IZR (up (x * powerRZ 2 (- k))) + -1) =
-  IZR (up (x * powerRZ 2 (- k))) - x * powerRZ 2 (- k))%R.
-2: ring.
-ring (1 - x * powerRZ 2 (- k) + x * powerRZ 2 (- k))%R.
+cutrewrite (1 - r + (IZR (up r) + -1) = IZR (up r) - r)%R. 2: ring.
+ring (1 - r + r)%R.
 exact (proj2 (archimed _)).
 apply lt_IZR.
-apply Rle_lt_trans with (2 := proj1 (archimed (x * powerRZ 2 (- k)))).
-apply Rle_trans with (2 := proj1 H).
+apply Rle_lt_trans with (2 := proj1 (archimed r)).
+apply Rle_trans with (2 := proj1 Hx).
 assert (Float2 1 0 <= Float2 1 (l - 1 - k))%R.
 apply float2_Rle_pow2.
 omega.
-unfold float2R in H0. repeat rewrite Rmult_1_l in H0.
-exact H0.
-Admitted.
+unfold float2R in H. repeat rewrite Rmult_1_l in H.
+exact H.
+Qed.
 
 Lemma rexp_case_real :
  forall rexp : Z -> Z, good_rexp rexp ->
