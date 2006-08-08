@@ -1857,16 +1857,31 @@ Lemma rexp_exclusive :
  rexp (e1 + (Zpos (digits m1)))%Z = e1 ->
  rexp (e2 + (Zpos (digits m2)))%Z = e2 ->
  (Float2 (Zpos m1) e1 <= Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R ->
- Float2 (Zpos m2) e2 = Float2 (Zpos m1) e1 :>R.
+ Float2 (Zpos m2) e2 = Float2 (Zpos m1) e1.
 intros rexp m1 m2 e1 e2 He1 He2 ([Hf1|Hf1],Hf2).
-2: apply sym_eq with (1 := Hf1).
 generalize (float2_repartition _ _ _ _ (conj Hf1 Hf2)).
 intros (He3,He4).
-rewrite <- He4 in He2.
+elim Zlt_not_eq with (1 := He3).
+rewrite <- He2.
+rewrite <- He4.
+exact He1.
+clear Hf2.
+cutrewrite (e2 + Zpos (digits m2) = e1 + Zpos (digits m1))%Z in He2.
 rewrite He1 in He2.
+rewrite He2 in Hf1.
 rewrite He2.
-cutrewrite (Zpos m2 = Zpos m1)%Z.
+rewrite (float2_binade_eq_reg_aux _ _ _ Hf1).
 apply refl_equal.
+apply Zle_antisym ; apply Znot_gt_le ; intro.
+apply Rlt_not_eq with (2 := Hf1).
+apply Rlt_le_trans with (1 := proj2 (float2_digits_correct m1 e1)).
+apply Rle_trans with (2 := proj1 (float2_digits_correct m2 e2)).
+apply float2_Rle_pow2.
+omega.
+apply Rlt_not_eq with (2 := sym_eq Hf1).
+apply Rlt_le_trans with (1 := proj2 (float2_digits_correct m2 e2)).
+apply Rle_trans with (2 := proj1 (float2_digits_correct m1 e1)).
+apply float2_Rle_pow2.
 omega.
 Qed.
 
@@ -2021,12 +2036,7 @@ apply Rlt_le_trans with (1 := H2d).
 apply Rle_trans with (2 := proj1 (float2_digits_correct m1 e1)).
 apply float2_Rle_pow2.
 clear Hf H2c H2d.
-cut (~(e1 + Zpos (digits m1) <= rexp (e2 + Zpos (digits m2))))%Z.
-omega.
 generalize (proj2 (proj2 (Hge _) (Zeq_le _ _ (sym_eq H2b))) (e1 + Zpos (digits m1))%Z).
-rewrite H2b.
-intros H0 H1.
-rewrite (H0 H1) in H1a.
 generalize (Zgt_pos_0 (digits m1)).
 omega.
 (* *)
@@ -2034,35 +2044,25 @@ rewrite (round_rexp_exact rdir _ _ _ H1a).
 apply Rle_trans with (2 := proj1 (round_bound_local _ _ Hgd _ _ H2b _ _ H2c)).
 generalize (round_canonic _ _ _ H1a).
 intros (m3,(e3,(H1b,H1c))).
-case (Rle_or_lt (Float2 (Zpos m4 + 1) (rexp (e2 + Zpos (digits m2))%Z)) (Float2 (Zpos m1) e1)) ; intros H.
+simpl. rewrite H1b.
+case (Rle_or_lt (Float2 (Zpos m4 + 1) (rexp (e2 + Zpos (digits m2))%Z)) (Float2 (Zpos m3) e3)) ; intros H.
 elim Rle_not_lt with (1 := H).
+rewrite <- H1b.
 apply Rle_lt_trans with (1 := Hf).
 exact (proj2 H2c).
 apply Rnot_lt_le.
 intro H0.
 apply Rlt_not_eq with (1 := H0).
 apply sym_eq.
-simpl.
-rewrite H1b.
-apply (rexp_exclusive rexp).
-exact H2b.
-exact H1c.
-rewrite <- H1b.
-split. 2: exact H.
-apply Rlt_le.
-exact H0.
+rewrite (rexp_exclusive rexp _ _ _ _ H2b H1c (conj (Rlt_le _ _ H0) H)).
+apply refl_equal.
 (* *)
 apply Rle_trans with (1 := round_bound_underflow rdir _ Hge _ H1b _ _ H1d).
 rewrite (round_rexp_exact rdir _ _ _ H2a).
 apply Rle_trans with (2 := proj1 (float2_digits_correct m2 e2)).
 apply float2_Rle_pow2.
 clear Hf H1c H1d.
-cut (~(e2 + Zpos (digits m2) <= rexp (e1+ Zpos (digits m1))))%Z.
-omega.
 generalize (proj2 (proj2 (Hge _) (Zeq_le _ _ (sym_eq H1b))) (e2 + Zpos (digits m2))%Z).
-rewrite H1b.
-intros H0 H1.
-rewrite (H0 H1) in H2a.
 generalize (Zgt_pos_0 (digits m2)).
 omega.
 (* *)
@@ -2074,7 +2074,71 @@ generalize (Zgt_pos_0 (digits m1)) (Zgt_pos_0 (digits m2)).
 clear Hf H1c H1d H2c H2d.
 omega.
 (* *)
-Admitted.
+apply Rle_trans with (1 := round_bound_underflow rdir _ Hge _ H1b _ _ H1d).
+apply Rle_trans with (2 := proj1 (round_bound_local _ _ Hgd _ _ H2b _ _ H2c)).
+apply Rle_trans with (2 := proj1 (float2_digits_correct m4 (rexp (e2 + Zpos (digits m2))%Z))).
+apply float2_Rle_pow2.
+clear Hf H1c H1d H2c.
+generalize (proj2 (proj2 (Hge _) (Zeq_le _ _ (sym_eq H1b))) (rexp (e2 + Zpos (digits m2)) + Zpos (digits m4))%Z).
+generalize (Zgt_pos_0 (digits m4)).
+omega.
+(* *)
+elim Hf ; clear Hf ; intro Hf.
+rewrite (round_rexp_exact rdir _ _ _ H2a).
+apply Rle_trans with (1 := proj2 (round_bound_local _ _ Hgd _ _ H1b _ _ H1c)).
+generalize (round_canonic _ _ _ H2a).
+intros (m4,(e4,(H2b,H2c))).
+apply Rnot_lt_le.
+generalize (Rle_lt_trans _ _ _ (proj1 H1c) Hf).
+simpl.
+rewrite H2b.
+intros H0 H1.
+apply Rlt_not_eq with (1 := H0).
+apply sym_eq.
+rewrite (rexp_exclusive rexp _ _ _ _ H1b H2c (conj (Rlt_le _ _ H0) H1)).
+apply refl_equal.
+apply Req_le.
+apply round_unicity with (1 := Hgd) (2 := Hf).
+(* *)
+elim Rlt_not_le with (2 := Hf).
+apply Rlt_le_trans with (1 := H2d).
+apply Rle_trans with (2 := proj1 H1c).
+apply Rle_trans with (2 := proj1 (float2_digits_correct m3 (rexp (e1 + Zpos (digits m1))%Z))).
+apply float2_Rle_pow2.
+clear Hf H1a H1c H2c H2d.
+generalize (proj2 (proj2 (Hge _) (Zeq_le _ _ (sym_eq H2b))) (rexp (e1 + Zpos (digits m1)) + Zpos (digits m3))%Z).
+generalize (Zgt_pos_0 (digits m1)) (Zgt_pos_0 (digits m3)).
+omega.
+(* *)
+case (Rle_or_lt (Float2 (Zpos m3 + 1) (rexp (e1 + Zpos (digits m1))%Z)) (Float2 (Zpos m4) (rexp (e2 + Zpos (digits m2))%Z))) ; intros H.
+apply Rle_trans with (1 := proj2 (round_bound_local _ _ Hgd _ _ H1b _ _ H1c)).
+apply Rle_trans with (2 := proj1 (round_bound_local _ _ Hgd _ _ H2b _ _ H2c)).
+exact H.
+case (Rle_or_lt (Float2 (Zpos m3) (rexp (e1 + Zpos (digits m1))%Z)) (Float2 (Zpos m4) (rexp (e2 + Zpos (digits m2))%Z))) ; intros H0.
+generalize (rexp_exclusive rexp _ _ _ _ H1b H2b (conj H0 H)).
+intro H1.
+injection H1.
+intros H2 H3.
+rewrite H2 in H2c.
+rewrite H3 in H2c.
+clear H1 H2 H3.
+exact (round_monotone_local _ _ Hgd Hge _ _ H1b _ _ _ _
+  (conj (proj1 H1c) (Rlt_le _ _ (proj2 H1c))) (conj (proj1 H2c) (Rlt_le _ _ (proj2 H2c))) Hf).
+case (Rle_or_lt (Float2 (Zpos m4 + 1) (rexp (e2 + Zpos (digits m2))%Z)) (Float2 (Zpos m3) (rexp (e1 + Zpos (digits m1))%Z))) ; intros H1.
+elim Rlt_not_le with (2 := Hf).
+apply Rlt_le_trans with (2 := proj1 H1c).
+apply Rlt_le_trans with (1 := proj2 H2c).
+exact H1.
+generalize (rexp_exclusive rexp _ _ _ _ H2b H1b (conj (Rlt_le _ _ H0) H1)).
+intro H2.
+injection H2.
+intros H3 H4.
+rewrite H3 in H1c.
+rewrite H4 in H1c.
+clear H2 H3 H4.
+exact (round_monotone_local _ _ Hgd Hge _ _ H2b _ _ _ _
+  (conj (proj1 H1c) (Rlt_le _ _ (proj2 H1c))) (conj (proj1 H2c) (Rlt_le _ _ (proj2 H2c))) Hf).
+Qed.
 
 Lemma round_zr_bound :
  forall rexp : Z -> Z, good_rexp rexp ->
