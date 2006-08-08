@@ -1885,8 +1885,6 @@ apply float2_Rle_pow2.
 omega.
 Qed.
 
-Axiom plouf : forall P : Prop, P.
-
 Lemma round_canonic :
  forall rexp : Z -> Z,
  forall m1 : positive, forall e1 : Z,
@@ -2230,6 +2228,69 @@ Axiom log2:
  forall x : R, (0 < x)%R ->
  { k : Z | (powerRZ 2 (k - 1) <= x < powerRZ 2 k)%R }.
 
+Axiom plouf : forall P : Prop, P.
+
+Lemma rexp_case_real_aux :
+ forall x : R, (0 < x)%R ->
+ forall l k : Z, (k < l)%Z ->
+ (powerRZ 2 (l - 1) <= x < powerRZ 2 l)%R ->
+ (k + Zpos (digits (pos_of_Z (up (x * powerRZ 2 (-k)) - 1))) = l)%Z.
+intros x Hp l k Hf Hx.
+assert (powerRZ 2 (l - 1 - k) <= x * powerRZ 2 (-k) < powerRZ 2 (l - k))%R.
+unfold Zminus at 1 3.
+repeat (rewrite powerRZ_add ; [idtac | discrR]).
+split.
+apply Rmult_le_compat_r.
+auto with real.
+exact (proj1 Hx).
+apply Rmult_lt_compat_r.
+auto with real.
+exact (proj2 Hx).
+clear Hx.
+cut (powerRZ 2 (l - 1 - k) <= IZR (Zpos (pos_of_Z (up (x * powerRZ 2 (- k)) - 1))) < powerRZ 2 (l - k))%R.
+clear H.
+generalize (pos_of_Z (up (x * powerRZ 2 (- k)) - 1)).
+intros p H.
+assert (Zpos (digits p) = l - k)%Z.
+2: rewrite H0 ; ring.
+apply Zle_antisym ; apply Znot_gt_le ; intro H0.
+apply Rlt_not_le with (1 := proj2 H).
+apply Rle_trans with (2 := proj1 (digits_correct p)).
+assert (Float2 1 (l - k) <= Float2 1 (Zpos (digits p) - 1))%R.
+apply float2_Rle_pow2.
+omega.
+unfold float2R in H1. repeat rewrite Rmult_1_l in H1.
+exact H1.
+apply Rle_not_lt with (1 := proj1 H).
+apply Rlt_le_trans with (1 := proj2 (digits_correct p)).
+assert (Float2 1 (Zpos (digits p)) <= Float2 1 (l - 1 - k))%R.
+apply float2_Rle_pow2.
+omega.
+unfold float2R in H1. repeat rewrite Rmult_1_l in H1.
+exact H1.
+rewrite <- Zpos_pos_of_Z.
+split.
+apply plouf. (* TODO *)
+apply Rle_lt_trans with (2 := proj2 H).
+unfold Zminus.
+rewrite plus_IZR.
+simpl.
+apply Rplus_le_reg_l with (1 - x * powerRZ 2 (- k))%R.
+cutrewrite (1 - x * powerRZ 2 (- k) + (IZR (up (x * powerRZ 2 (- k))) + -1) =
+  IZR (up (x * powerRZ 2 (- k))) - x * powerRZ 2 (- k))%R.
+2: ring.
+ring (1 - x * powerRZ 2 (- k) + x * powerRZ 2 (- k))%R.
+exact (proj2 (archimed _)).
+apply lt_IZR.
+apply Rle_lt_trans with (2 := proj1 (archimed (x * powerRZ 2 (- k)))).
+apply Rle_trans with (2 := proj1 H).
+assert (Float2 1 0 <= Float2 1 (l - 1 - k))%R.
+apply float2_Rle_pow2.
+omega.
+unfold float2R in H0. repeat rewrite Rmult_1_l in H0.
+exact H0.
+Admitted.
+
 Lemma rexp_case_real :
  forall rexp : Z -> Z, good_rexp rexp ->
  forall x : R, (0 < x)%R ->
@@ -2246,7 +2307,7 @@ exists (rexp l).
 exists (pos_of_Z (up (x * powerRZ 2 (- rexp l)) - 1)).
 split.
 apply (f_equal rexp).
-apply plouf. (* TODO *)
+exact (rexp_case_real_aux _ Hx _ _ H0 H).
 rewrite <- Zpos_pos_of_Z.
 unfold float2R. simpl.
 split.
