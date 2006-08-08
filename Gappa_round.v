@@ -1862,6 +1862,15 @@ elim Rlt_not_le with (2 := Hf).
 apply Rlt_le_trans with (1 := H2d).
 apply Rle_trans with (2 := proj1 (float2_digits_correct m1 e1)).
 apply float2_Rle_pow2.
+clear Hf H2c H2d.
+cut (~(e1 + Zpos (digits m1) <= rexp (e2 + Zpos (digits m2))))%Z.
+omega.
+generalize (proj2 (proj2 (Hge _) (Zeq_le _ _ (sym_eq H2b))) (e1 + Zpos (digits m1))%Z).
+rewrite H2b.
+intros H0 H1.
+rewrite (H0 H1) in H1a.
+generalize (Zgt_pos_0 (digits m1)).
+omega.
 Admitted.
 
 Lemma rexp_exclusive :
