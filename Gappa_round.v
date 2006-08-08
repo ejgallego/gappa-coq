@@ -1739,7 +1739,7 @@ Lemma rexp_case :
  forall m1 : positive, forall e1 : Z,
  (rexp (e1 + Zpos (digits m1)) <= e1)%Z \/
  let e2 := rexp (e1 + Zpos (digits m1))%Z in
- ((e1 < e2)%Z /\ rexp e2 = e2 /\
+ ((e1 + Zpos (digits m1) <= e2)%Z /\ rexp e2 = e2 /\
   rnd_m (shr m1 (pos_of_Z (e2 - e1))) = N0 /\
   (Float2 (Zpos m1) e1 < Float2 1 e2)%R) \/
  exists m2 : positive,
@@ -1794,7 +1794,7 @@ intros n H0.
 apply nat_of_P_inj.
 rewrite nat_of_P_o_P_of_succ_nat_eq_succ.
 apply sym_eq with (1 := H0).
-split. exact He1.
+split. exact He1'.
 split.
 generalize (proj2 (Hg _) He1').
 intros (H1,H2).
@@ -1969,6 +1969,35 @@ apply float2_binade_le.
 exact (Zle_succ _).
 Qed.
 
+Lemma round_bound_underflow :
+ forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
+ good_rexp rexp ->
+ forall k : Z, rexp k = k ->
+ forall m : positive, forall e : Z,
+ (Float2 (Zpos m) e < Float2 1 k)%R ->
+ (tofloat (round_pos rdir rexp m e) <= Float2 1 k)%R.
+intros rdir rexp Hg k Hk m e Hb.
+assert (H0: forall b1 b2 : bool, (tofloat
+  (if rdir (rnd_record_mk 0 b1 b2) k then 1%N
+  else 0%N, k) <= Float2 1 k)%R).
+intros b1 b2.
+case (rdir (rnd_record_mk 0 b1 b2) k).
+apply Rle_refl.
+simpl.
+apply float2_binade_le.
+auto with zarith.
+generalize (round_constant_underflow rdir rexp Hg k Hk m e).
+intros (Hc1,(Hc2,Hc3)).
+generalize (bracket_case_underflow m e k Hb).
+intros [H|[H|H]].
+rewrite (Hc1 H).
+apply H0.
+rewrite (Hc2 H).
+apply H0.
+rewrite (Hc3 H).
+apply H0.
+Qed.
+
 Lemma round_monotone :
  forall rdir : rnd_record -> Z -> bool,
  forall rexp : Z -> Z,
@@ -2023,6 +2052,28 @@ split. 2: exact H.
 apply Rlt_le.
 exact H0.
 (* *)
+apply Rle_trans with (1 := round_bound_underflow rdir _ Hge _ H1b _ _ H1d).
+rewrite (round_rexp_exact rdir _ _ _ H2a).
+apply Rle_trans with (2 := proj1 (float2_digits_correct m2 e2)).
+apply float2_Rle_pow2.
+clear Hf H1c H1d.
+cut (~(e2 + Zpos (digits m2) <= rexp (e1+ Zpos (digits m1))))%Z.
+omega.
+generalize (proj2 (proj2 (Hge _) (Zeq_le _ _ (sym_eq H1b))) (e2 + Zpos (digits m2))%Z).
+rewrite H1b.
+intros H0 H1.
+rewrite (H0 H1) in H2a.
+generalize (Zgt_pos_0 (digits m2)).
+omega.
+(* *)
+cutrewrite (rexp (e2 + Zpos (digits m2)) = rexp (e1 + Zpos (digits m1)))%Z in H2d.
+exact (round_monotone_underflow _ _ Hgd Hge _ H1b _ _ _ _ (Rlt_le _ _ H1d) (Rlt_le _ _ H2d) Hf).
+generalize (proj2 (proj2 (Hge _) (Zeq_le _ _ (sym_eq H2b))) (e1 + Zpos (digits m1))%Z).
+generalize (proj2 (proj2 (Hge _) (Zeq_le _ _ (sym_eq H1b))) (e2 + Zpos (digits m2))%Z).
+generalize (Zgt_pos_0 (digits m1)) (Zgt_pos_0 (digits m2)).
+clear Hf H1c H1d H2c H2d.
+omega.
+(* *)
 Admitted.
 
 Lemma round_zr_bound :
@@ -2042,7 +2093,10 @@ intros [H|[(H,(H0,(H1,H2)))|(m3,(H,(H1,H2)))]].
 rewrite round_rexp_exact. 2: exact H.
 exact HH.
 unfold round_pos.
-rewrite (Zpos_pos_of_Z _ _ H).
+assert (e1 < rexp (e1 + Zpos (digits m1)))%Z.
+generalize (Zgt_pos_0 (digits m1)).
+omega.
+rewrite (Zpos_pos_of_Z _ _ H3).
 simpl.
 rewrite H1.
 split. 2: apply H2.
@@ -2077,7 +2131,10 @@ intros [H|[(H,(H0,(H1,H2)))|(m3,(H,(H1,H2)))]].
 rewrite round_rexp_exact. 2: exact H.
 exact HH.
 unfold round_pos.
-rewrite (Zpos_pos_of_Z _ _ H).
+assert (e1 < rexp (e1 + Zpos (digits m1)))%Z.
+generalize (Zgt_pos_0 (digits m1)).
+omega.
+rewrite (Zpos_pos_of_Z _ _ H3).
 simpl.
 rewrite H1.
 unfold rndAW.
