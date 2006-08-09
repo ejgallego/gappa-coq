@@ -344,6 +344,25 @@ Definition tofloat p := match p with
  | (m,e) => Float2 (Z_of_N m) e
  end.
 
+Lemma tofloat_pair :
+ forall p : N * Z,
+ tofloat p = Float2 (Z_of_N (fst p)) (snd p).
+intros (n,e).
+apply refl_equal.
+Qed.
+
+Lemma tofloat_0 :
+ forall p,
+ float2R (match p with (N0,_) => Float2 0 0 | (Npos p, e) => Float2 (Zpos p) e end) = tofloat p.
+intros (n,e).
+case n.
+unfold tofloat, float2R.
+repeat rewrite Rmult_0_l.
+apply refl_equal.
+intros.
+apply refl_equal.
+Qed.
+
 Lemma round_constant_xO :
  forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  forall m : positive, forall e : Z,
@@ -1737,20 +1756,19 @@ Qed.
 Lemma rexp_case :
  forall rexp : Z -> Z, good_rexp rexp ->
  forall m1 : positive, forall e1 : Z,
- (rexp (e1 + Zpos (digits m1)) <= e1)%Z \/
  let e2 := rexp (e1 + Zpos (digits m1))%Z in
+ (e2 <= e1)%Z \/
  ((e1 + Zpos (digits m1) <= e2)%Z /\ rexp e2 = e2 /\
   rnd_m (shr m1 (pos_of_Z (e2 - e1))) = N0 /\
   (Float2 (Zpos m1) e1 < Float2 1 e2)%R) \/
- exists m2 : positive,
- Npos m2 = rnd_m (shr m1 (pos_of_Z (e2 - e1))) /\
- rexp (e2 + Zpos (digits m2))%Z = e2 /\
- (Float2 (Zpos m2) e2 <= Float2 (Zpos m1) e1 < Float2 (Zpos m2 + 1) e2)%R.
-intros rexp Hg m1 e1.
-set (e2 := rexp (e1 + Zpos (digits m1))%Z).
+ ((e1 < e2 < e1 + Zpos (digits m1))%Z /\
+  exists m2 : positive,
+  Npos m2 = rnd_m (shr m1 (pos_of_Z (e2 - e1))) /\
+  rexp (e2 + Zpos (digits m2))%Z = e2 /\
+  (Float2 (Zpos m2) e2 <= Float2 (Zpos m1) e1 < Float2 (Zpos m2 + 1) e2)%R).
+intros rexp Hg m1 e1 e2.
 case (Z_lt_le_dec e1 e2) ; intro He1 ; [ right | left ].
 2: exact He1.
-intros e3. unfold e3. clear e3.
 case (Z_lt_le_dec e2 (e1 + Zpos (digits m1))%Z) ; intro He1' ; [ right | left ].
 cut (e2 - e1 < Zpos (digits m1))%Z. 2: omega.
 rewrite (Zpos_pos_of_Z _ _ He1).
@@ -1763,6 +1781,8 @@ rewrite <- Zpos_pos_of_Z. 2: exact He1.
 cutrewrite (e1 + (e2 - e1) = e2)%Z. 2: ring.
 cutrewrite (P_of_succ_nat (pred (nat_of_P (pos_of_Z (e2 - e1)))) = pos_of_Z (e2 - e1)).
 clear H. intros (m2,H).
+split.
+exact (conj He1 He1').
 exists m2.
 split.
 rewrite (proj1 H).
@@ -2022,8 +2042,8 @@ Lemma round_monotone :
 intros rdir rexp Hgd Hge m1 m2 e1 e2 Hf.
 generalize (rexp_case rexp Hge m2 e2).
 generalize (rexp_case rexp Hge m1 e1).
-intros [H1a|[(H1a,(H1b,(H1c,H1d)))|(m3,(H1a,(H1b,H1c)))]]
-       [H2a|[(H2a,(H2b,(H2c,H2d)))|(m4,(H2a,(H2b,H2c)))]].
+intros [H1a|[(H1a,(H1b,(H1c,H1d)))|(_,(m3,(H1a,(H1b,H1c))))]]
+       [H2a|[(H2a,(H2b,(H2c,H2d)))|(_,(m4,(H2a,(H2b,H2c))))]].
 (* *)
 rewrite (round_rexp_exact rdir _ _ _ H1a).
 rewrite (round_rexp_exact rdir _ _ _ H2a).
@@ -2137,77 +2157,6 @@ clear H2 H3 H4.
 exact (round_monotone_local _ _ Hgd Hge _ _ H2b _ _ _ _
   (conj (proj1 H1c) (Rlt_le _ _ (proj2 H1c))) (conj (proj1 H2c) (Rlt_le _ _ (proj2 H2c))) Hf).
 Qed.
-
-Lemma round_zr_bound :
- forall rexp : Z -> Z, good_rexp rexp ->
- forall m1 : positive, forall e1 : Z,
- let r := round_pos rndZR rexp m1 e1 in
- (Float2 (Z_of_N (fst r)) (snd r) <= Float2 (Zpos m1) e1
-  < Float2 (Z_of_N (fst r) + 1) (snd r))%R.
-intros rexp Hg m1 e1.
-assert (HH: (Float2 (Z_of_N (Npos m1)) e1 <= Float2 (Zpos m1) e1
-  < Float2 (Z_of_N (Npos m1) + 1) e1)%R).
-split. apply Rle_refl.
-apply float2_binade_lt.
-exact (Zlt_succ (Zpos m1)).
-generalize (rexp_case rexp Hg m1 e1).
-intros [H|[(H,(H0,(H1,H2)))|(m3,(H,(H1,H2)))]].
-rewrite round_rexp_exact. 2: exact H.
-exact HH.
-unfold round_pos.
-assert (e1 < rexp (e1 + Zpos (digits m1)))%Z.
-generalize (Zgt_pos_0 (digits m1)).
-omega.
-rewrite (Zpos_pos_of_Z _ _ H3).
-simpl.
-rewrite H1.
-split. 2: apply H2.
-unfold float2R.
-simpl.
-rewrite (Rmult_0_l).
-apply Rmult_le_pos ; auto with real.
-unfold round_pos, rndZR.
-caseEq (rexp (e1 + Zpos (digits m1)) - e1)%Z ; intros.
-exact HH.
-rewrite H0 in H.
-unfold pos_of_Z in H.
-rewrite <- H.
-exact H2.
-exact HH.
-Qed.
-
-Lemma round_aw_bound :
- forall rexp : Z -> Z, good_rexp rexp ->
- forall m1 : positive, forall e1 : Z,
- let r := round_pos rndAW rexp m1 e1 in
- (Float2 (Z_of_N (fst r) - 1) (snd r) < Float2 (Zpos m1) e1
-  <= Float2 (Z_of_N (fst r)) (snd r))%R.
-intros rexp Hg m1 e1.
-assert (HH: (Float2 (Z_of_N (Npos m1) - 1) e1 < Float2 (Zpos m1) e1
-  <= Float2 (Z_of_N (Npos m1)) e1)%R).
-split. 2: apply Rle_refl.
-apply float2_binade_lt.
-exact (Zlt_pred (Zpos m1)).
-generalize (rexp_case rexp Hg m1 e1).
-intros [H|[(H,(H0,(H1,H2)))|(m3,(H,(H1,H2)))]].
-rewrite round_rexp_exact. 2: exact H.
-exact HH.
-unfold round_pos.
-assert (e1 < rexp (e1 + Zpos (digits m1)))%Z.
-generalize (Zgt_pos_0 (digits m1)).
-omega.
-rewrite (Zpos_pos_of_Z _ _ H3).
-simpl.
-rewrite H1.
-unfold rndAW.
-cutrewrite (rnd_r (shr m1 (pos_of_Z (rexp (e1 + Zpos (digits m1))%Z - e1)))
-          || rnd_s (shr m1 (pos_of_Z (rexp (e1 + Zpos (digits m1))%Z - e1))) = true).
-split. 2: apply (Rlt_le _ _ H2).
-unfold float2R.
-simpl.
-rewrite (Rmult_0_l).
-apply Rmult_lt_0_compat ; auto with real.
-Admitted.
 
 Definition round (rdirs : round_dir) (rexp : Z -> Z) (f : float2) :=
  match (Fnum f) with
@@ -2702,8 +2651,8 @@ Lemma round_extension_prop_pos :
  (f1 <= x <= f2)%R /\
  round_extension rdir rexp Hge x = round rdir rexp f1 /\
  round_extension rdir rexp Hge x = round rdir rexp f2 /\
- let e1' := snd (round_pos (rpos rdir) rexp m1 e1) in rexp (e1 + Zpos (digits m1))%Z = e1' /\
- let e2' := snd (round_pos (rpos rdir) rexp m2 e2) in rexp (e2 + Zpos (digits m2))%Z = e2' }}}}.
+ rexp (e1 + Zpos (digits m1))%Z = snd (round_pos (rpos rdir) rexp m1 e1) /\
+ rexp (e2 + Zpos (digits m2))%Z = snd (round_pos (rpos rdir) rexp m2 e2) }}}}.
 intros rdir rexp Hge x Hx.
 unfold round_extension.
 generalize (total_order_T 0 x).
@@ -2732,8 +2681,8 @@ Lemma round_extension_prop_neg :
  let rdir' := round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir) in
  round_extension rdir rexp Hge x = Fopp2 (round rdir' rexp f1) /\
  round_extension rdir rexp Hge x = Fopp2 (round rdir' rexp f2) /\
- let e1' := snd (round_pos (rneg rdir) rexp m1 e1) in rexp (e1 + Zpos (digits m1))%Z = e1' /\
- let e2' := snd (round_pos (rneg rdir) rexp m2 e2) in rexp (e2 + Zpos (digits m2))%Z = e2' }}}}.
+ rexp (e1 + Zpos (digits m1))%Z = snd (round_pos (rneg rdir) rexp m1 e1) /\
+ rexp (e2 + Zpos (digits m2))%Z = snd (round_pos (rneg rdir) rexp m2 e2) }}}}.
 intros rdir rexp Hge x Hx.
 unfold round_extension.
 generalize (total_order_T 0 x).
@@ -2755,19 +2704,6 @@ rewrite H2.
 case (round_pos (rneg rdir) rexp m2 e2) ; intros.
 case n ; intros ; apply refl_equal.
 exact H3.
-Qed.
-
-Lemma tofloat_0 :
- forall p,
- float2R (match p with (N0,_) => Float2 0 0 | (Npos p, e) => Float2 (Zpos p) e end) =
- tofloat p.
-intros (n,e).
-case n.
-unfold tofloat, float2R.
-repeat rewrite Rmult_0_l.
-apply refl_equal.
-intros.
-apply refl_equal.
 Qed.
 
 Lemma round_extension_float2 :

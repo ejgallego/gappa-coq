@@ -133,18 +133,6 @@ Definition fixed_error_dn_helper (e : Z) (zi : FF) :=
  Fle2 (lower zi) (Float2 (-1) e) &&
  Fpos0 (upper zi).
 
-Lemma float2_pair_switch :
- forall r : N * Z,
- float2R match r with (n, e) => match n with N0 => Float2 0 0 | Npos m => Float2 (Zpos m) e end end =
- Float2 (Z_of_N (fst r)) (snd r).
-intros (n, e).
-case n ; intros.
-unfold float2R. simpl.
-repeat rewrite Rmult_0_l.
-apply refl_equal.
-apply refl_equal.
-Qed.
-
 Theorem fixed_error_dn :
  forall e : Z, forall x : R, forall zi : FF,
  fixed_error_dn_helper e zi = true ->
@@ -163,80 +151,234 @@ exact (Rle_trans _ _ _ H1 H3).
 exact (Rle_trans _ _ _ H4 H2).
 generalize (total_order_T 0 x).
 intros [[Hx|Hx]|Hx].
+(* *)
 generalize (round_extension_prop_pos roundDN (fixed_shift e) (good_shift e) _ Hx).
 intros (m1,(m2,(e1,(e2,(H3,(H4,(H5,(H6,H7)))))))).
 split.
 rewrite H5.
-apply Rplus_le_reg_l with (x + Float2 1 e)%R.
-rewrite Rplus_assoc.
-rewrite Rplus_opp_r. rewrite Rplus_0_r.
-rewrite Rplus_assoc.
-rewrite Rplus_comm.
+unfold round. simpl.
+rewrite tofloat_0.
+assert (tofloat (round_pos rndZR (fixed_shift e) m2 e2) - (Float2 (Zpos m2) e2)
+  <= tofloat (round_pos rndZR (fixed_shift e) m2 e2) - x)%R.
 unfold Rminus.
-repeat rewrite Rplus_assoc.
-rewrite Rplus_opp_l. rewrite Rplus_0_r.
-rewrite Rplus_comm.
-apply Rle_trans with (1 := proj2 H3).
-unfold round. simpl.
-rewrite float2_pair_switch.
-cutrewrite (Float2 (Z_of_N (fst (round_pos rndZR (fixed_shift e) m2 e2))) (snd (round_pos rndZR (fixed_shift e) m2 e2)) + Float2 1 e =
-  Float2 (Z_of_N (fst (round_pos rndZR (fixed_shift e) m2 e2)) + 1) (snd (round_pos rndZR (fixed_shift e) m2 e2)))%R.
-apply Rlt_le.
-exact (proj2 (round_zr_bound _ (good_shift e) _ _)).
-simpl in H7. rewrite <- H7.
-unfold fixed_shift at 2 4.
-rewrite <- Fplus2_correct.
-unfold Fplus2, Fshift2. simpl.
-rewrite Zminus_diag.
-apply refl_equal.
-rewrite H4.
-apply Rle_minus.
-apply Rle_trans with (2 := proj1 H3).
-unfold round. simpl.
-rewrite float2_pair_switch.
-exact (proj1 (round_zr_bound _ (good_shift e) _ _)).
-rewrite <- Hx.
-rewrite round_extension_zero.
-rewrite Rminus_0_r.
-split. 2: apply Rle_refl.
+apply Rplus_le_compat_l.
+apply Ropp_le_contravar.
+exact (proj2 H3).
+apply Rle_trans with (2 := H).
+simpl in H7.
+clear H H3 H4 H5 H6 Hx H1 H2 x zi m1 e1.
+generalize (rexp_case (fixed_shift e) (good_shift e) m2 e2).
+intros [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
+rewrite (round_rexp_exact rndZR _ _ _ H1).
+rewrite Rminus_diag_eq. 2: apply refl_equal.
 apply Rge_le.
 apply Ropp_0_le_ge_contravar.
 unfold float2R. simpl.
 rewrite Rmult_1_l.
 auto with real.
+apply Rlt_le.
+assert (tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 1 (fixed_shift e (e2 + Zpos (digits m2)))
+  < tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 (Zpos m2) e2)%R.
+unfold Rminus.
+apply Rplus_lt_compat_l.
+apply Ropp_gt_lt_contravar.
+exact H4.
+apply Rle_lt_trans with (2 := H).
+assert (e2 < fixed_shift e (e2 + Zpos (digits m2)))%Z.
+generalize (Zgt_pos_0 (digits m2)).
+omega.
+rewrite tofloat_pair.
+rewrite <- H7.
+unfold round_pos. simpl.
+rewrite (Zpos_pos_of_Z _ _ H0).
+rewrite H3.
+simpl.
+unfold fixed_shift.
+apply Req_le.
+unfold float2R.
+ring.
+apply Rlt_le.
+assert (tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 (Zpos m + 1) (fixed_shift e (e2 + Zpos (digits m2)))
+  < tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 (Zpos m2) e2)%R.
+unfold Rminus.
+apply Rplus_lt_compat_l.
+apply Ropp_gt_lt_contravar.
+exact H4.
+apply Rle_lt_trans with (2 := H).
+rewrite tofloat_pair.
+rewrite <- H7.
+unfold round_pos.
+rewrite (Zpos_pos_of_Z _ _ (proj1 H5)).
+rewrite <- H1.
+unfold rndZR, fst, Z_of_N, fixed_shift.
+apply Req_le.
+rewrite <- Fminus2_correct.
+unfold Fminus2, Fshift2.
+rewrite Zminus_diag.
+unfold Fnum.
+ring (Zpos m - (Zpos m + 1))%Z.
+unfold float2R. simpl.
+auto with real.
+(* *)
+rewrite H4.
+unfold round. simpl.
+rewrite tofloat_0.
+apply Rplus_le_reg_l with x.
+ring (x + (tofloat (round_pos rndZR (fixed_shift e) m1 e1) - x))%R.
+rewrite Rplus_0_r.
+apply Rle_trans with (2 := proj1 H3).
+simpl in H6.
+clear H3 H4 H5 H7 Hx H1 H2 x zi m2 e2.
+generalize (rexp_case (fixed_shift e) (good_shift e) m1 e1).
+intros [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
+rewrite (round_rexp_exact rndZR _ _ _ H1).
+apply Rle_refl.
+assert (e1 < fixed_shift e (e1 + Zpos (digits m1)))%Z.
+generalize (Zgt_pos_0 (digits m1)).
+omega.
+rewrite tofloat_pair.
+rewrite <- H6.
+unfold round_pos. simpl.
+rewrite (Zpos_pos_of_Z _ _ H).
+rewrite H3.
+unfold float2R.
+simpl.
+rewrite Rmult_0_l.
+apply Rmult_le_pos ; auto with real.
+rewrite tofloat_pair.
+rewrite <- H6.
+unfold round_pos. simpl.
+rewrite (Zpos_pos_of_Z _ _ (proj1 H5)).
+rewrite <- H1.
+exact H3.
+(* *)
+rewrite <- Hx.
+rewrite round_extension_prop_zero.
+unfold float2R.
+rewrite Rmult_1_l.
+rewrite Rmult_0_l.
+rewrite Rminus_0_r.
+split. 2: apply Rle_refl.
+apply Rge_le.
+auto with real.
+(* *)
+unfold Rminus.
 generalize (round_extension_prop_neg roundDN (fixed_shift e) (good_shift e) _ Hx).
 cutrewrite (round_dir_mk (rneg roundDN) (rpos roundDN) (rneg_good roundDN) (rpos_good roundDN) = roundUP).
 2: apply refl_equal.
 intros (m1,(m2,(e1,(e2,(H3,(H4,(H5,(H6,H7)))))))).
-unfold Rminus.
 split.
 rewrite H4. rewrite Fopp2_correct.
-apply Rplus_le_reg_l with (round roundUP (fixed_shift e) (Float2 (Zpos m1) e1)).
+unfold round. simpl.
+rewrite tofloat_0.
+apply Rplus_le_reg_l with (tofloat (round_pos rndAW (fixed_shift e) m1 e1)).
 rewrite <- Rplus_assoc.
 rewrite Rplus_opp_r. rewrite Rplus_0_l.
 apply Rle_trans with (2 := proj1 H3).
-unfold round. simpl.
-rewrite float2_pair_switch.
-cutrewrite (Float2 (Z_of_N (fst (round_pos rndAW (fixed_shift e) m1 e1))) (snd (round_pos rndAW (fixed_shift e) m1 e1)) + - Float2 1 e =
-  Float2 (Z_of_N (fst (round_pos rndAW (fixed_shift e) m1 e1)) - 1) (snd (round_pos rndAW (fixed_shift e) m1 e1)))%R.
-apply Rlt_le.
-exact (proj1 (round_aw_bound _ (good_shift e) _ _)).
-simpl in H6. rewrite <- H6.
-unfold fixed_shift at 2 4.
+simpl in H6.
+clear H3 H4 H5 H7 Hx H1 H2 x zi m2 e2.
+generalize (rexp_case (fixed_shift e) (good_shift e) m1 e1).
+intros [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
+rewrite (round_rexp_exact rndAW _ _ _ H1).
+rewrite <- (Rplus_0_r (Float2 (Zpos m1) e1)).
+apply Rplus_le_compat_l.
+unfold float2R.
+rewrite Rmult_1_l.
+apply Rge_le.
+auto with real.
+rewrite tofloat_pair.
+rewrite <- H6.
+assert (e1 < fixed_shift e (e1 + Zpos (digits m1)))%Z.
+generalize (Zgt_pos_0 (digits m1)).
+omega.
+unfold round_pos. simpl.
+rewrite (Zpos_pos_of_Z _ _ H).
+rewrite H3.
+unfold fixed_shift.
+apply Rle_trans with R0.
+case (rndAW (shr m1 (pos_of_Z (e - e1))) e).
+simpl.
+rewrite Rplus_opp_r.
+apply Rle_refl.
+unfold float2R. simpl.
+rewrite Rmult_0_l.
+rewrite Rmult_1_l.
+rewrite Rplus_0_l.
+apply Rge_le.
+auto with real.
+unfold float2R. simpl.
+apply Rmult_le_pos ; auto with real.
+rewrite tofloat_pair.
+rewrite <- H6.
+unfold round_pos. simpl.
+rewrite (Zpos_pos_of_Z _ _ (proj1 H5)).
+rewrite <- H1.
+apply Rle_trans with (2 := H3).
+unfold fixed_shift.
+case (rndAW (shr m1 (pos_of_Z (e - e1))) e).
+simpl.
+rewrite Zpos_succ_morphism.
 rewrite <- Fopp2_correct.
 rewrite <- Fplus2_correct.
-unfold Fplus2, Fshift2, Fopp2.
+unfold Fplus2, Fshift2.
 rewrite Zminus_diag.
-apply refl_equal.
+unfold Fopp2, Fnum, Zsucc.
+ring (Zpos m + 1 + -(1))%Z.
+apply Rle_refl.
+rewrite <- (Rplus_0_r (Float2 (Zpos m) e)).
+apply Rplus_le_compat_l.
+unfold float2R.
+rewrite Rmult_1_l.
+apply Rge_le.
+auto with real.
+(* *)
 rewrite H5. rewrite Fopp2_correct.
-apply Rplus_le_reg_l with (round roundUP (fixed_shift e) (Float2 (Zpos m2) e2)).
-rewrite <- Rplus_assoc.
-rewrite Rplus_opp_r.
-rewrite Rplus_0_l. rewrite Rplus_0_r.
-apply Rle_trans with (1 := proj2 H3).
 unfold round. simpl.
-rewrite float2_pair_switch.
-exact (proj2 (round_aw_bound _ (good_shift e) _ _)).
+rewrite tofloat_0.
+apply Rplus_le_reg_l with (tofloat (round_pos rndAW (fixed_shift e) m2 e2)).
+rewrite <- Rplus_assoc.
+rewrite Rplus_opp_r. rewrite Rplus_0_l.
+rewrite Rplus_0_r.
+apply Rle_trans with (1 := proj2 H3).
+simpl in H7.
+clear H3 H4 H5 H6 Hx H1 H2 x zi m1 e1.
+generalize (rexp_case (fixed_shift e) (good_shift e) m2 e2).
+intros [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,H3))))]].
+rewrite (round_rexp_exact rndAW _ _ _ H1).
+apply Rle_refl.
+generalize (round_constant_underflow rndAW _ (good_shift e) _ (refl_equal e) m2 e2).
+simpl.
+intros (Ha,(Hb,Hc)).
+unfold fixed_shift in H4.
+apply Rlt_le.
+generalize (bracket_case_underflow _ _ _ H4).
+intros [H0|[H0|H0]].
+rewrite (Ha H0).
+exact H4.
+rewrite (Hb H0).
+exact H4.
+rewrite (Hc H0).
+exact H4.
+generalize (round_constant rndAW _ _ _ H2 m2 e2).
+simpl.
+intros (Ha,(Hb,Hc)).
+generalize (bracket_case _ _ _ _ H3).
+intros [H0|[H0|[H0|H0]]].
+rewrite (round_unicity _ (fixed_shift e) _ _ _ _ rndAW_good H0).
+unfold round_pos.
+rewrite H2.
+rewrite Zminus_diag.
+rewrite H0.
+apply Rle_refl.
+rewrite (Ha H0). simpl.
+rewrite Zpos_succ_morphism.
+exact (Rlt_le _ _ (proj2 H3)).
+rewrite (Hb H0). simpl.
+rewrite Zpos_succ_morphism.
+exact (Rlt_le _ _ (proj2 H3)).
+rewrite (Hc H0). simpl.
+rewrite Zpos_succ_morphism.
+exact (Rlt_le _ _ (proj2 H3)).
 Qed.
 
 End Gappa_fixed.
