@@ -9,6 +9,7 @@ Require Export Gappa_rewriting.
 Require Export Gappa_round_def.
 Require Export Gappa_fixed.
 Require Export Gappa_float.
+Require Export Gappa_proxy.
 
 Ltac finalize := exact (refl_equal true).
 Ltac next_interval t h :=

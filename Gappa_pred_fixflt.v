@@ -7,11 +7,6 @@ Definition fix_of_singleton_bnd_helper (xi : FF) (n : Z) :=
  Zeq_bool (Fexp (lower xi)) (Fexp (upper xi)) &&
  Zle_bool n (Fexp (lower xi)).
 
-Lemma Zeq_bool_correct_t :
- forall m n : Z, Zeq_bool m n = true -> (m = n)%Z.
- intros m n.
-Admitted.
-
 Theorem fix_of_singleton_bnd :
  forall x : R, forall xi : FF, forall n : Z,
  BND x xi ->
@@ -37,25 +32,6 @@ apply refl_equal.
 exists (lower xi).
 exact (conj H H3).
 Qed.
-
-Definition fix_of_flt_bnd_helper (xi : FF) (m : Z) (n : positive) :=
- true. (* TODO *)
-
-Theorem fix_of_flt_bnd :
- forall x : R, forall xi : FF, forall m : Z, forall n : positive,
- FLT x n -> ABS x xi ->
- fix_of_flt_bnd_helper xi m n = true ->
- FIX x m.
-intros x xi m n Hxf Hxa Hb.
-Admitted.
-
-Theorem flt_of_fix_bnd :
- forall x : R, forall xi : FF, forall m : Z, forall n : positive,
- FIX x m -> ABS x xi ->
- fix_of_flt_bnd_helper xi m n = true ->
- FLT x n.
-intros x xi m n Hxf Hxa Hb.
-Admitted.
 
 Definition add_fix_helper (xn yn zn : Z) :=
  Zle_bool zn xn &&

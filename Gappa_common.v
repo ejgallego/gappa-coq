@@ -22,4 +22,9 @@ apply Rgt_not_eq.
 apply Rlt_le_trans with (1 := H) (2 := proj1 (proj2 Hz)).
 Qed.
 
+Lemma Zeq_bool_correct_t :
+ forall m n : Z, Zeq_bool m n = true -> (m = n)%Z.
+ intros m n.
+Admitted.
+
 End Gappa_common.
