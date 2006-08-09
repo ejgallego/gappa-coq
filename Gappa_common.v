@@ -25,6 +25,12 @@ Qed.
 Lemma Zeq_bool_correct_t :
  forall m n : Z, Zeq_bool m n = true -> (m = n)%Z.
  intros m n.
-Admitted.
+replace Zeq_bool with Zeq.
+2: apply refl_equal.
+intro H.
+apply Zeq_prop.
+rewrite H.
+exact I.
+Qed.
 
 End Gappa_common.
