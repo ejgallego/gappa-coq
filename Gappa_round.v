@@ -2878,4 +2878,32 @@ apply Ropp_le_contravar.
 exact H.
 Qed.
 
+Definition rexp_representable (rexp : Z -> Z) (m e : Z) :=
+ match m with
+ | Z0 => True
+ | Zpos p => (rexp (e + Zpos (digits p)) <= e)%Z
+ | Zneg p => (rexp (e + Zpos (digits p)) <= e)%Z
+ end.
+
+Lemma round_extension_representable :
+ forall rdir : round_dir, forall rexp : Z -> Z,
+ forall Hge : good_rexp rexp,
+ forall f : float2,
+ rexp_representable rexp (Fnum f) (Fexp f) ->
+ round_extension rdir rexp Hge f = f :>R.
+intros rdir rexp Hge f Hr.
+rewrite round_extension_float2.
+cutrewrite (f = Float2 (Fnum f) (Fexp f)).
+unfold round.
+induction (Fnum f) ; intros ; simpl.
+unfold float2R.
+repeat rewrite Rmult_0_l.
+apply refl_equal.
+rewrite (round_rexp_exact (rpos rdir) _ _ _ Hr).
+apply refl_equal.
+rewrite (round_rexp_exact (rneg rdir) _ _ _ Hr).
+apply refl_equal.
+induction f ; apply refl_equal.
+Qed.
+
 End Gappa_round.
