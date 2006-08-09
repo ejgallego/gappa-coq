@@ -4,10 +4,12 @@ FILES = \
 	Gappa_definitions.v \
 	Gappa_dyadic.v \
 	Gappa_fixed.v \
+	Gappa_float.v \
 	Gappa_library.v \
 	Gappa_pred_abs.v \
 	Gappa_pred_bnd.v \
 	Gappa_pred_fixflt.v \
+	Gappa_proxy.v \
 	Gappa_real.v \
 	Gappa_rewriting.v \
 	Gappa_round.v \
