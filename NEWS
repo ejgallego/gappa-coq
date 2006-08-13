@@ -1,5 +1,5 @@
 Version 0.2:
- - added error propagation through opposite, division and square root
+ - added error propagation through opposite, division, and square root
  - added support for Gappa 0.7.1
  - added rounding formalism for fixed and float
  - specialized formalism for fixed<dn>

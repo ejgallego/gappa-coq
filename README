@@ -11,6 +11,5 @@ The online documentation is available at:
 	http://lipforge.ens-lyon.fr/www/gappa/doc/
 
 Gappa support library for the Coq proof assistant is free software; you can
-redistribute it and/or modify it under the terms of the CeCILL-C Free Software
-License Agreement (see the COPYING file) or under the terms of the GNU Lesser
-General Public License (see the COPYING.LGPL file).
+redistribute it and/or modify it under the terms of GNU Lesser General Public
+License (see the COPYING file).

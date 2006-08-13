@@ -16,7 +16,7 @@ FILES = \
 	Gappa_round.v
 
 data_DATA = $(FILES:=o)
-EXTRA_DIST = autogen.sh COPYING.LGPL $(FILES)
+EXTRA_DIST = autogen.sh $(FILES)
 CLEANFILES = $(FILES:=o)
 
 Gappa_common.vo: Gappa_common.v Gappa_real.vo Gappa_definitions.vo Gappa_dyadic.vo
