@@ -20,6 +20,7 @@ Ideally, you should just have to type:
 
   $ ./configure && make
 
-The option "--with-coqc=PATH" can be set to the location of the "coqc" Coq
-compiler. The option "--datadir=DIR" can be set to the directory where the
-compiled library files should be installed by "make install".
+The environment variable "COQC" can be set to the Coq compiler command; the
+configure script defaults to "coqc". The option "--datadir=DIR" can be set to
+the directory where the compiled library files should be installed by "make
+install".

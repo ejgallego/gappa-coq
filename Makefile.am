@@ -12,8 +12,8 @@ FILES = \
 	Gappa_proxy.v \
 	Gappa_real.v \
 	Gappa_rewriting.v \
-	Gappa_round.v \
-	Gappa_round_def.v
+	Gappa_round_def.v \
+	Gappa_round.v
 
 data_DATA = $(FILES:=o)
 EXTRA_DIST = autogen.sh COPYING.LGPL $(FILES)
@@ -32,8 +32,9 @@ Gappa_pred_fixflt.vo: Gappa_pred_fixflt.v Gappa_common.vo
 Gappa_proxy.vo: Gappa_proxy.v Gappa_common.vo
 Gappa_real.vo: Gappa_real.v
 Gappa_rewriting.vo: Gappa_rewriting.v Gappa_common.vo
-Gappa_round.vo: Gappa_round.v Gappa_definitions.vo Gappa_dyadic.vo Gappa_round_def.vo
 Gappa_round_def.vo: Gappa_round_def.v
+Gappa_round.vo: Gappa_round.v Gappa_definitions.vo Gappa_dyadic.vo Gappa_round_def.vo
+
 
 %.vo: %.v
-	@COQC@ $<
+	$(COQC) $<
