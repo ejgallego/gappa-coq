@@ -2906,4 +2906,173 @@ apply refl_equal.
 induction f ; apply refl_equal.
 Qed.
 
+Lemma digits_succ :
+ forall m : positive,
+ digits (Psucc m) = digits m \/
+ (digits (Psucc m) = Psucc (digits m) /\ Psucc m = iter_pos (digits m) _ xO xH).
+intros m.
+rewrite iter_nat_of_P.
+induction m.
+simpl.
+destruct IHm.
+left.
+rewrite H.
+exact (refl_equal _).
+right.
+split.
+rewrite (proj1 H).
+exact (refl_equal _).
+rewrite (proj2 H).
+rewrite nat_of_P_succ_morphism.
+exact (refl_equal _).
+left.
+exact (refl_equal _).
+right.
+split ; exact (refl_equal _).
+Qed.
+
+Lemma representable_round_pos :
+ forall rdir : rnd_record -> Z -> bool, good_rdir rdir ->
+ forall rexp : Z -> Z, good_rexp rexp ->
+ forall m : positive, forall e : Z,
+ match round_pos rdir rexp m e with
+ | (Npos p, q) =>
+   exists r : positive, exists s : Z,
+   Float2 (Zpos p) q = Float2 (Zpos r) s :>R /\
+   (rexp(s + Zpos (digits r)) <= s)%Z
+ | _ => True
+ end.
+intros rdir Hgd rexp Hge m e.
+destruct (rexp_case _ Hge m e) as [Ha|[(Ha,(Hb,(Hc,Hd)))|((Hd,He),(n,(Ha,(Hb,Hc))))]].
+rewrite (round_rexp_exact rdir _ _ _ Ha).
+exists m. exists e.
+split.
+exact (refl_equal _).
+exact Ha.
+assert (forall b : bool,
+  match (if b then 1%N else 0%N) with
+  | 0%N => True
+  | Npos p => exists r : positive, exists s : Z,
+    Float2 (Zpos p) (rexp (e + Zpos (digits m))%Z) = Float2 (Zpos r) s :>R
+    /\ (rexp (s + Zpos (digits r)) <= s)%Z end).
+intros b.
+case b.
+exists xH. exists (rexp (e + Zpos (digits m))%Z).
+split.
+exact (refl_equal _).
+unfold good_rexp in Hge.
+generalize (proj1 (proj2 (Hge _) (Zeq_le _ _ (sym_eq Hb)))).
+rewrite Hb.
+intro H. exact H.
+exact I.
+destruct (round_constant_underflow rdir _ Hge _ Hb m e) as (H1,(H2,H3)).
+destruct (bracket_case_underflow m e _ Hd) as [H0|[H0|H0]].
+rewrite (H1 H0).
+apply H.
+rewrite (H2 H0).
+apply H.
+rewrite (H3 H0).
+apply H.
+assert (forall b : bool,
+  match (if b then Nsucc (Npos n) else Npos n) with
+  | 0%N => True
+  | Npos p => exists r : positive, exists s : Z,
+    Float2 (Zpos p) (rexp (e + Zpos (digits m))%Z) = Float2 (Zpos r) s :>R
+    /\ (rexp (s + Zpos (digits r)) <= s)%Z end).
+intros b.
+unfold Nsucc.
+case b.
+destruct (digits_succ n) as [H1|(_,H1)].
+exists (Psucc n). exists (rexp (e + Zpos (digits m))%Z).
+rewrite H1.
+split.
+exact (refl_equal _).
+omega.
+exists xH. exists (rexp (e + Zpos (digits m)) + Zpos (digits n))%Z.
+split.
+generalize (float2_shl_correct (Float2 (Zpos xH) (rexp (e + Zpos (digits m)) + Zpos (digits n))%Z) (digits n)).
+simpl.
+ring (rexp (e + Zpos (digits m))%Z + Zpos (digits n) - Zpos (digits n))%Z.
+unfold shift_pos.
+rewrite <- H1.
+intro H. exact H.
+assert (rexp (rexp (e + Zpos (digits m)) + Zpos (digits n)) <
+  rexp (e + Zpos (digits m)) + Zpos (digits n))%Z.
+generalize (Zgt_pos_0 (digits n)).
+omega.
+exact (proj1 (Hge _) H).
+exists n. exists (rexp (e + Zpos (digits m))%Z).
+split.
+exact (refl_equal _).
+omega.
+destruct (round_constant rdir rexp _ _ Hb m e) as (H1,(H2,H3)).
+destruct (bracket_case _ _ _ _ Hc) as [H0|[H0|[H0|H0]]].
+clear H1 H2 H3.
+unfold round_pos.
+rewrite (Zpos_pos_of_Z _ _ Hd).
+rewrite <- Ha.
+apply H.
+rewrite (H1 H0).
+apply H.
+rewrite (H2 H0).
+apply H.
+rewrite (H3 H0).
+apply H.
+Qed.
+
+Lemma representable_round_extension :
+ forall rdir : round_dir, forall rexp : Z -> Z,
+ forall Hge : good_rexp rexp,
+ forall x : R,
+ exists m : Z, exists e : Z,
+ round_extension rdir rexp Hge x = Float2 m e :>R /\
+ rexp_representable rexp m e.
+intros rdir rexp Hge x.
+destruct (total_order_T 0 x) as [[Hx|Hx]|Hx].
+generalize (round_extension_prop_pos rdir _ Hge _ Hx).
+intros (m1,(_,(e1,(_,(_,(H2,_)))))).
+rewrite H2.
+clear H2.
+unfold round.
+simpl.
+generalize (representable_round_pos _ (rpos_good rdir) _ Hge m1 e1).
+case (round_pos (rpos rdir) rexp m1 e1) ; intros n ; case n.
+intros.
+exists Z0. exists Z0.
+split.
+exact (refl_equal _).
+exact I.
+intros p z (r,(s,(H1,H2))).
+exists (Zpos r). exists s.
+exact (conj H1 H2).
+exists Z0. exists Z0.
+rewrite <- Hx.
+rewrite round_extension_zero.
+split.
+unfold float2R. rewrite Rmult_0_l.
+exact (refl_equal _).
+exact I.
+generalize (round_extension_prop_neg rdir _ Hge _ Hx).
+intros (m1,(_,(e1,(_,(_,(H2,_)))))).
+rewrite H2.
+clear H2.
+unfold round.
+simpl.
+generalize (representable_round_pos _ (rneg_good rdir) _ Hge m1 e1).
+case (round_pos (rneg rdir) rexp m1 e1) ; intros n ; case n.
+intros.
+exists Z0. exists Z0.
+split.
+exact (refl_equal _).
+exact I.
+intros p z (r,(s,(H1,H2))).
+exists (Zneg r). exists s.
+split. 2: exact H2.
+rewrite Fopp2_correct.
+rewrite H1.
+unfold float2R.
+simpl.
+auto with real.
+Qed.
+
 End Gappa_round.

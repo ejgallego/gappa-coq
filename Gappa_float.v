@@ -123,4 +123,33 @@ apply round_extension_monotone.
 exact (proj2 Hx).
 Qed.
 
+Definition enforce_helper (p : positive) (d : Z) (xi zi : FF) :=
+ Fle2 (lower zi) (round roundUP (float_shift p d) (lower xi)) &&
+ Fle2 (round roundDN (float_shift p d) (upper xi)) (upper zi).
+
+Theorem float_enforce :
+ forall rdir : round_dir, forall p : positive, forall d : Z,
+ forall x : R, forall xi zi : FF,
+ BND (rounding_float rdir p d x) xi ->
+ enforce_helper p d xi zi = true ->
+ BND (rounding_float rdir p d x) zi.
+intros rdir p d x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). rewrite <- (round_extension_float2 roundUP _ (good_shift p d)). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). rewrite <- (round_extension_float2 roundDN _ (good_shift p d)). clear H2. intro H2.
+destruct (representable_round_extension rdir _ (good_shift p d) x) as (m,(e,(H3,H4))).
+unfold rounding_float in *.
+rewrite H3.
+rewrite H3 in Hx.
+split.
+apply Rle_trans with (1 := H1).
+rewrite <- (round_extension_representable roundUP _ (good_shift p d) (Float2 m e) H4).
+apply round_extension_monotone.
+exact (proj1 Hx).
+apply Rle_trans with (2 := H2).
+rewrite <- (round_extension_representable roundDN _ (good_shift p d) (Float2 m e) H4).
+apply round_extension_monotone.
+exact (proj2 Hx).
+Qed.
+
 End Gappa_float.
