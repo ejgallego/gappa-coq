@@ -33,6 +33,37 @@ exists (lower xi).
 exact (conj H H3).
 Qed.
 
+Definition flt_of_singleton_bnd_helper (xi : FF) (n : positive) :=
+ Zeq_bool (Fnum (lower xi)) (Fnum (upper xi)) &&
+ Zeq_bool (Fexp (lower xi)) (Fexp (upper xi)) &&
+ Zlt_bool (Zabs (Fnum (lower xi))) (two_power_pos n).
+
+Theorem flt_of_singleton_bnd :
+ forall x : R, forall xi : FF, forall n : positive,
+ BND x xi ->
+ flt_of_singleton_bnd_helper xi n = true ->
+ FLT x n.
+intros x xi n Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Zeq_bool_correct_t _ _ H1). clear H1. intro H1.
+generalize (Zeq_bool_correct_t _ _ H2). clear H2. intro H2.
+generalize (Zlt_cases (Zabs (Fnum (lower xi))) (two_power_pos n)). rewrite H3. rewrite two_power_pos_correct. clear H3. intro H3.
+assert (float2R (lower xi) = x).
+apply Rle_antisym.
+exact (proj1 Hx).
+replace (lower xi) with (upper xi).
+exact (proj2 Hx).
+apply sym_equal.
+induction (lower xi). induction (upper xi).
+simpl in H1, H2.
+rewrite H1.
+rewrite H2.
+apply refl_equal.
+exists (lower xi).
+exact (conj H H3).
+Qed.
+
 Definition add_fix_helper (xn yn zn : Z) :=
  Zle_bool zn xn &&
  Zle_bool zn yn.
