@@ -99,6 +99,106 @@ apply Zle_trans with (1 := H).
 exact (Zmax2 _ _).
 Qed.
 
+Axiom plouf : forall P : Prop, P.
+
+Theorem float_of_fix_flt :
+ forall rdir : round_dir,
+ forall x : R, forall xi : FF,
+ forall d1 d2 : Z, forall p1 p2 : positive,
+ FIX x d1 -> FLT x p1 ->
+ Zle_bool (-d2) d1 && Zle_bool (Zpos p1) (Zpos p2) && contains_zero_helper xi = true ->
+ BND (rounding_float rdir p2 d2 x - x) xi.
+intros rdir x xi d1 d2 p1 p2 (f1,(Hx1,Hx2)) (f2,(Hx3,Hx4)) Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
+generalize (Zle_bool_imp_le _ _ H2). clear H2. intro H2.
+cutrewrite (rounding_float rdir p2 d2 x = x :>R).
+unfold Rminus.
+rewrite (Rplus_opp_r x).
+apply contains_zero with (1 := H3).
+cut (exists f : float2, x = f /\ (d1 <= Fexp f)%Z /\ (Zabs (Fnum f) < Zpower_pos 2 p1)%Z).
+intros (f,(Hx5,(Hx6,Hx7))).
+rewrite Hx5.
+unfold rounding_float.
+rewrite round_extension_float2.
+induction f.
+induction Fnum.
+unfold round, float2R. simpl.
+repeat rewrite Rmult_0_l.
+apply refl_equal.
+unfold round. simpl.
+rewrite round_rexp_exact.
+apply refl_equal.
+unfold float_shift, Zmax.
+simpl in Hx6, Hx7.
+cut (Zpos (digits p) <= Zpos p2)%Z. intro H.
+case (Fexp + Zpos (digits p) - Zpos p2 ?= - d2)%Z.
+omega.
+exact (Zle_trans _ _ _ H1 Hx6).
+omega.
+apply Zle_trans with (2 := H2).
+apply plouf.
+unfold round. simpl.
+rewrite round_rexp_exact.
+apply refl_equal.
+unfold float_shift, Zmax.
+simpl in Hx6, Hx7.
+cut (Zpos (digits p) <= Zpos p2)%Z. intro H.
+case (Fexp + Zpos (digits p) - Zpos p2 ?= - d2)%Z.
+omega.
+exact (Zle_trans _ _ _ H1 Hx6).
+omega.
+apply Zle_trans with (2 := H2).
+apply plouf.
+destruct (Zle_or_lt d1 (Fexp f2)).
+exists f2.
+exact (conj (sym_eq Hx3) (conj  H Hx4)).
+exists f1.
+split.
+exact (sym_eq Hx1).
+split.
+exact Hx2.
+apply Zle_lt_trans with (2 := Hx4).
+cutrewrite (Fnum f2 = shl (Fnum f1) (pos_of_Z (Fexp f1 - Fexp f2))).
+unfold shl.
+case (Fnum f1) ; intros.
+apply Zle_refl.
+rewrite shift_pos_nat.
+induction (nat_of_P (pos_of_Z (Fexp f1 - Fexp f2))).
+apply Zle_refl.
+apply Zle_trans with (1 := IHn).
+unfold shift_nat.
+simpl.
+rewrite Zpos_xO.
+generalize (Zgt_pos_0 (iter_nat n positive xO p)).
+omega.
+rewrite shift_pos_nat.
+induction (nat_of_P (pos_of_Z (Fexp f1 - Fexp f2))).
+apply Zle_refl.
+apply Zle_trans with (1 := IHn).
+unfold shift_nat.
+simpl.
+rewrite Zpos_xO.
+generalize (Zgt_pos_0 (iter_nat n positive xO p)).
+omega.
+generalize (float2_shl_correct f1 (pos_of_Z (Fexp f1 - Fexp f2))).
+rewrite <- Zpos_pos_of_Z.
+2: omega.
+ring (Fexp f1 - (Fexp f1 - Fexp f2))%Z.
+rewrite Hx1.
+rewrite <- Hx3.
+clear H H2 H1 H3 Hx4 Hx3 Hx2 Hx1 p2 p1 d2 d1 xi x rdir.
+cut (forall m1 m2 : Z, forall e : Z, Float2 m1 e = Float2 m2 e :>R -> m1 = m2)%Z.
+intro H.
+induction f2.
+simpl.
+intro H0.
+apply sym_eq.
+apply H with (1 := H0).
+apply plouf.
+Qed.
+
 Definition round_helper (rnd : float2 -> float2) (xi zi : FF) :=
  Fle2 (lower zi) (rnd (lower xi)) &&
  Fle2 (rnd (upper xi)) (upper zi).
