@@ -189,14 +189,11 @@ ring (Fexp f1 - (Fexp f1 - Fexp f2))%Z.
 rewrite Hx1.
 rewrite <- Hx3.
 clear H H2 H1 H3 Hx4 Hx3 Hx2 Hx1 p2 p1 d2 d1 xi x rdir.
-cut (forall m1 m2 : Z, forall e : Z, Float2 m1 e = Float2 m2 e :>R -> m1 = m2)%Z.
-intro H.
 induction f2.
 simpl.
-intro H0.
+intro H.
 apply sym_eq.
-apply H with (1 := H0).
-apply plouf.
+exact (float2_binade_eq_reg _ _ _ H).
 Qed.
 
 Definition round_helper (rnd : float2 -> float2) (xi zi : FF) :=

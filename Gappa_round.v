@@ -79,6 +79,82 @@ rewrite pred_o_P_of_succ_nat_o_nat_of_P_eq_id.
 apply refl_equal.
 Qed.
 
+Lemma float2_binade_eq_reg :
+ forall m1 m2 : Z, forall e : Z,
+ Float2 m1 e = Float2 m2 e :>R ->
+ m1 = m2.
+assert (HH: (forall e : Z, powerRZ 2 e <> 0)%R).
+intros.
+apply powerRZ_NOR.
+discrR.
+induction m1.
+intros m2 e.
+unfold float2R.
+rewrite Rmult_0_l.
+simpl.
+intro H.
+destruct (Req_dec (IZR m2) 0).
+apply sym_eq.
+exact (eq_IZR_R0 _ H0).
+elim prod_neq_R0 with (1 := H0) (2 := HH e) (3 := sym_eq H).
+induction m2.
+intros e.
+unfold float2R.
+rewrite Rmult_0_l.
+simpl.
+intro H.
+elim prod_neq_R0 with (2 := HH e) (3 := H).
+apply Rgt_not_eq.
+exact (INR_pos _).
+intros e H.
+apply (f_equal Zpos).
+exact (float2_binade_eq_reg_aux _ _ _ H).
+intros e.
+unfold float2R.
+simpl.
+repeat rewrite <- (Rmult_comm (powerRZ 2 e)).
+intro H.
+elim (Rgt_not_eq (INR (nat_of_P p)) (Ropp (INR (nat_of_P p0)))).
+2: exact (Rmult_eq_reg_l _ _ _ H (HH e)).
+apply Rgt_trans with R0.
+exact (INR_pos _).
+apply Ropp_0_lt_gt_contravar.
+exact (INR_pos _).
+induction m2.
+intros e.
+unfold float2R.
+rewrite Rmult_0_l.
+simpl.
+intro H.
+elim prod_neq_R0 with (2 := HH e) (3 := H).
+apply Rlt_not_eq.
+apply Ropp_0_lt_gt_contravar.
+exact (INR_pos _).
+intros e.
+unfold float2R.
+simpl.
+repeat rewrite <- (Rmult_comm (powerRZ 2 e)).
+intro H.
+elim (Rlt_not_eq (Ropp (INR (nat_of_P p))) (INR (nat_of_P p0))).
+2: exact (Rmult_eq_reg_l _ _ _ H (HH e)).
+apply Rlt_trans with R0.
+apply Ropp_0_lt_gt_contravar.
+exact (INR_pos _).
+exact (INR_pos _).
+intros e.
+cutrewrite (Float2 (Zneg p) e = - Float2 (Zpos p) e :>R)%R.
+cutrewrite (Float2 (Zneg p0) e = - Float2 (Zpos p0) e :>R)%R.
+intro H.
+generalize (Ropp_eq_compat _ _ H).
+repeat rewrite Ropp_involutive.
+clear H. intro H.
+cutrewrite (p = p0).
+exact (refl_equal _).
+exact (float2_binade_eq_reg_aux _ _ _ H).
+exact (Ropp_mult_distr_l_reverse _ _).
+exact (Ropp_mult_distr_l_reverse _ _).
+Qed.
+
 Definition bracket (r : R) (p : rnd_record) (e : Z) :=
  let m := (Z_of_N (rnd_m p) * 2)%Z in
  let f0 := Float2 m (e - 1) in
@@ -3030,7 +3106,7 @@ Lemma representable_round_extension :
 intros rdir rexp Hge x.
 destruct (total_order_T 0 x) as [[Hx|Hx]|Hx].
 generalize (round_extension_prop_pos rdir _ Hge _ Hx).
-intros (m1,(_,(e1,(_,(_,(H2,_)))))).
+intros (m1,(m2,(e1,(e2,(_,(H2,_)))))).
 rewrite H2.
 clear H2.
 unfold round.
@@ -3053,7 +3129,7 @@ unfold float2R. rewrite Rmult_0_l.
 exact (refl_equal _).
 exact I.
 generalize (round_extension_prop_neg rdir _ Hge _ Hx).
-intros (m1,(_,(e1,(_,(_,(H2,_)))))).
+intros (m1,(m2,(e1,(e2,(_,(H2,_)))))).
 rewrite H2.
 clear H2.
 unfold round.
