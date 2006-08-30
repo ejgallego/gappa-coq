@@ -32,46 +32,27 @@ Theorem fix_of_fixed :
 intros rdir x k1 k2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX, rounding_fixed.
-generalize (total_order_T 0 x).
-intros [[Hx|Hx]|Hx].
-generalize (round_extension_prop_pos rdir (fixed_shift k1) (good_shift k1) _ Hx).
-intros (m1,(m2,(e1,(e2,(H1,(H2,(_,(H3,_)))))))).
-rewrite H2.
-unfold round. simpl.
-exists (match round_pos (rpos rdir) (fixed_shift k1) m1 e1 with (n,e) =>
-  match n with N0 => Float2 0 k1 | Npos p => Float2 (Zpos p) e end end).
+destruct (representable_round_extension rdir _ (good_shift k1) x) as (m,(e,(H1,H2))).
+induction m.
+exists (Float2 0 k2).
 split.
-case (round_pos (rpos rdir) (fixed_shift k1) m1 e1) ; intros.
-case n ; intros.
-unfold float2R. repeat rewrite Rmult_0_l.
-apply refl_equal.
-apply refl_equal.
-induction (round_pos (rpos rdir) (fixed_shift k1) m1 e1).
-unfold fixed_shift in H3. simpl in H3.
-rewrite <- H3.
-case a ; intros ; exact H.
-exists (Float2 0 k1).
+rewrite H1.
+unfold float2R.
+repeat rewrite Rmult_0_l.
+exact (refl_equal _).
+exact (Zle_refl _).
+exists (Float2 (Zpos p) e).
 split.
-rewrite <- Hx.
-rewrite round_extension_zero.
-unfold float2R. apply Rmult_0_l.
-exact H.
-generalize (round_extension_prop_neg rdir (fixed_shift k1) (good_shift k1) _ Hx).
-intros (m1,(m2,(e1,(e2,(H1,(H2,(_,(H3,_)))))))).
-rewrite H2.
-unfold round. simpl.
-exists (match round_pos (rneg rdir) (fixed_shift k1) m1 e1 with (n,e) =>
-  match n with N0 => Float2 0 k1 | Npos p => Float2 (Zneg p) e end end).
+exact (sym_eq H1).
+apply Zle_trans with (1 := H).
+unfold rexp_representable, fixed_shift in H2.
+exact H2.
+exists (Float2 (Zneg p) e).
 split.
-case (round_pos (rneg rdir) (fixed_shift k1) m1 e1) ; intros.
-case n ; intros.
-unfold float2R. repeat rewrite Rmult_0_l.
-apply refl_equal.
-apply refl_equal.
-induction (round_pos (rneg rdir) (fixed_shift k1) m1 e1).
-unfold fixed_shift in H3. simpl in H3.
-rewrite <- H3.
-case a ; intros ; exact H.
+exact (sym_eq H1).
+apply Zle_trans with (1 := H).
+unfold rexp_representable, fixed_shift in H2.
+exact H2.
 Qed.
 
 Theorem fixed_of_fix :

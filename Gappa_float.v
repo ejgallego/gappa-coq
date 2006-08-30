@@ -51,52 +51,77 @@ Theorem fix_of_float :
 intros rdir x p k1 k2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX, rounding_float.
-generalize (total_order_T 0 x).
-intros [[Hx|Hx]|Hx].
-generalize (round_extension_prop_pos rdir (float_shift p k1) (good_shift p k1) _ Hx).
-intros (m1,(m2,(e1,(e2,(H1,(H2,(_,(H3,_)))))))).
-rewrite H2.
-unfold round. simpl.
-exists (match round_pos (rpos rdir) (float_shift p k1) m1 e1 with (n,e) =>
-  match n with N0 => Float2 0 (-k1) | Npos p => Float2 (Zpos p) e end end).
+destruct (representable_round_extension rdir _ (good_shift p k1) x) as (m,(e,(H1,H2))).
+induction m.
+exists (Float2 0 k2).
 split.
-case (round_pos (rpos rdir) (float_shift p k1) m1 e1) ; intros.
-case n ; intros.
-unfold float2R. repeat rewrite Rmult_0_l.
-apply refl_equal.
-apply refl_equal.
-induction (round_pos (rpos rdir) (float_shift p k1) m1 e1).
-unfold float_shift in H3. simpl in H3.
-rewrite <- H3.
-case a ; intros.
-exact H.
+rewrite H1.
+unfold float2R.
+repeat rewrite Rmult_0_l.
+exact (refl_equal _).
+exact (Zle_refl _).
+exists (Float2 (Zpos p0) e).
+split.
+exact (sym_eq H1).
 apply Zle_trans with (1 := H).
-exact (Zmax2 _ _).
-exists (Float2 0 (-k1)).
+unfold rexp_representable, float_shift in H2.
+apply Zle_trans with (2 := H2).
+exact (Zle_max_r _ _).
+exists (Float2 (Zneg p0) e).
 split.
-rewrite <- Hx.
-rewrite round_extension_zero.
-unfold float2R. apply Rmult_0_l.
-exact H.
-generalize (round_extension_prop_neg rdir (float_shift p k1) (good_shift p k1) _ Hx).
-intros (m1,(m2,(e1,(e2,(H1,(H2,(_,(H3,_)))))))).
-rewrite H2.
-unfold round. simpl.
-exists (match round_pos (rneg rdir) (float_shift p k1) m1 e1 with (n,e) =>
-  match n with N0 => Float2 0 (-k1) | Npos p => Float2 (Zneg p) e end end).
-split.
-case (round_pos (rneg rdir) (float_shift p k1) m1 e1) ; intros.
-case n ; intros.
-unfold float2R. repeat rewrite Rmult_0_l.
-apply refl_equal.
-apply refl_equal.
-induction (round_pos (rneg rdir) (float_shift p k1) m1 e1).
-unfold float_shift in H3. simpl in H3.
-rewrite <- H3.
-case a ; intros.
-exact H.
+exact (sym_eq H1).
 apply Zle_trans with (1 := H).
-exact (Zmax2 _ _).
+unfold rexp_representable, float_shift in H2.
+apply Zle_trans with (2 := H2).
+exact (Zle_max_r _ _).
+Qed.
+
+Theorem flt_of_float :
+ forall rdir : round_dir,
+ forall x : R, forall p1 p2 : positive, forall k : Z,
+ Zle_bool (Zpos p1) (Zpos p2) = true ->
+ FLT (rounding_float rdir p1 k x) p2.
+intros rdir x p1 p2 k H.
+generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
+unfold FLT, rounding_float.
+destruct (representable_round_extension rdir _ (good_shift p1 k) x) as (m,(e,(H1,H2))).
+exists (Float2 m e).
+split.
+exact (sym_eq H1).
+unfold rexp_representable, float_shift in H2.
+clear H1.
+induction m.
+apply Gappa_decimal.Zpower_pos_pos.
+simpl.
+apply lt_IZR.
+rewrite Zpower_pos_nat.
+replace 2%Z with (Z_of_nat 2). 2: apply refl_equal.
+rewrite Zpower_nat_powerRZ.
+rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+apply Rlt_le_trans with (1 := proj2 (digits_correct p)).
+assert (Float2 1 (Zpos (digits p)) <= Float2 1 (Zpos p2))%R.
+apply Rle_trans with (2 := float2_Rle_pow2 _ _ H).
+apply float2_Rle_pow2.
+generalize (Zle_max_l (e + Zpos (digits p) - Zpos p1) (- k)).
+omega.
+unfold float2R in H0.
+repeat rewrite Rmult_1_l in H0.
+exact H0.
+simpl.
+apply lt_IZR.
+rewrite Zpower_pos_nat.
+replace 2%Z with (Z_of_nat 2). 2: apply refl_equal.
+rewrite Zpower_nat_powerRZ.
+rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+apply Rlt_le_trans with (1 := proj2 (digits_correct p)).
+assert (Float2 1 (Zpos (digits p)) <= Float2 1 (Zpos p2))%R.
+apply Rle_trans with (2 := float2_Rle_pow2 _ _ H).
+apply float2_Rle_pow2.
+generalize (Zle_max_l (e + Zpos (digits p) - Zpos p1) (- k)).
+omega.
+unfold float2R in H0.
+repeat rewrite Rmult_1_l in H0.
+exact H0.
 Qed.
 
 Theorem float_of_fix_flt :
