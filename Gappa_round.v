@@ -59,100 +59,17 @@ auto with real.
 apply IZR_le with (1 := H).
 Qed.
 
-Lemma float2_binade_eq_reg_aux :
- forall m1 m2 : positive, forall e : Z,
- Float2 (Zpos m1) e = Float2 (Zpos m2) e :>R ->
- m1 = m2.
-intros m1 m2 e.
-unfold float2R.
-simpl.
-repeat rewrite <- (Rmult_comm (powerRZ 2 e)).
-intros H.
-assert (powerRZ 2 e <> 0)%R.
-apply powerRZ_NOR.
-discrR.
-generalize (Rmult_eq_reg_l _ _ _ H H0). clear H. intro H.
-generalize (INR_eq _ _ H). clear H. intro H.
-rewrite <- (pred_o_P_of_succ_nat_o_nat_of_P_eq_id m1).
-rewrite H.
-rewrite pred_o_P_of_succ_nat_o_nat_of_P_eq_id.
-apply refl_equal.
-Qed.
-
 Lemma float2_binade_eq_reg :
  forall m1 m2 : Z, forall e : Z,
  Float2 m1 e = Float2 m2 e :>R ->
  m1 = m2.
-assert (HH: (forall e : Z, powerRZ 2 e <> 0)%R).
 intros.
-apply powerRZ_NOR.
-discrR.
-induction m1.
-intros m2 e.
-unfold float2R.
-rewrite Rmult_0_l.
-simpl.
-intro H.
-destruct (Req_dec (IZR m2) 0).
-apply sym_eq.
-exact (eq_IZR_R0 _ H0).
-elim prod_neq_R0 with (1 := H0) (2 := HH e) (3 := sym_eq H).
-induction m2.
-intros e.
-unfold float2R.
-rewrite Rmult_0_l.
-simpl.
-intro H.
-elim prod_neq_R0 with (2 := HH e) (3 := H).
-apply Rgt_not_eq.
-exact (INR_pos _).
-intros e H.
-apply (f_equal Zpos).
-exact (float2_binade_eq_reg_aux _ _ _ H).
-intros e.
-unfold float2R.
-simpl.
-repeat rewrite <- (Rmult_comm (powerRZ 2 e)).
-intro H.
-elim (Rgt_not_eq (INR (nat_of_P p)) (Ropp (INR (nat_of_P p0)))).
-2: exact (Rmult_eq_reg_l _ _ _ H (HH e)).
-apply Rgt_trans with R0.
-exact (INR_pos _).
-apply Ropp_0_lt_gt_contravar.
-exact (INR_pos _).
-induction m2.
-intros e.
-unfold float2R.
-rewrite Rmult_0_l.
-simpl.
-intro H.
-elim prod_neq_R0 with (2 := HH e) (3 := H).
-apply Rlt_not_eq.
-apply Ropp_0_lt_gt_contravar.
-exact (INR_pos _).
-intros e.
-unfold float2R.
-simpl.
-repeat rewrite <- (Rmult_comm (powerRZ 2 e)).
-intro H.
-elim (Rlt_not_eq (Ropp (INR (nat_of_P p))) (INR (nat_of_P p0))).
-2: exact (Rmult_eq_reg_l _ _ _ H (HH e)).
-apply Rlt_trans with R0.
-apply Ropp_0_lt_gt_contravar.
-exact (INR_pos _).
-exact (INR_pos _).
-intros e.
-cutrewrite (Float2 (Zneg p) e = - Float2 (Zpos p) e :>R)%R.
-cutrewrite (Float2 (Zneg p0) e = - Float2 (Zpos p0) e :>R)%R.
-intro H.
-generalize (Ropp_eq_compat _ _ H).
-repeat rewrite Ropp_involutive.
-clear H. intro H.
-cutrewrite (p = p0).
-exact (refl_equal _).
-exact (float2_binade_eq_reg_aux _ _ _ H).
-exact (Ropp_mult_distr_l_reverse _ _).
-exact (Ropp_mult_distr_l_reverse _ _).
+destruct (Ztrichotomy m1 m2) as [H0|[H0|H0]].
+2: exact H0.
+elim Rlt_not_eq with (2 := H).
+exact (float2_binade_lt _ _ _ H0).
+elim Rgt_not_eq with (2 := H).
+exact (float2_binade_lt _ _ _ (Zgt_lt _ _ H0)).
 Qed.
 
 Definition bracket (r : R) (p : rnd_record) (e : Z) :=
@@ -536,9 +453,9 @@ intros m1.
 simpl.
 rewrite Zminus_0_r.
 intros H.
-generalize (float2_binade_eq_reg_aux _ _ _ H). intros H0.
-rewrite H0. clear H H0.
-apply refl_equal.
+generalize (float2_binade_eq_reg _ _ _ H).
+intro H0. injection H0. intro H1. rewrite H1.
+exact (refl_equal _).
 intros m1 Heq.
 cut (exists p, m1 = xO p).
 intros (p, H). rewrite H in Heq. rewrite H. clear H m1.
@@ -562,12 +479,12 @@ rewrite <- nat_of_P_o_P_of_succ_nat_eq_succ in Heq.
 rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P in Heq.
 rewrite <- (float2_shl_correct (Float2 (Zpos m2) e2) (P_of_succ_nat n)) in Heq.
 simpl in Heq.
-rewrite (float2_binade_eq_reg_aux _ _ _ Heq).
-clear Heq.
+generalize (float2_binade_eq_reg _ _ _ Heq).
+intro H0. injection H0. intro H1. rewrite H1.
 rewrite shift_pos_nat.
 rewrite nat_of_P_o_P_of_succ_nat_eq_succ.
 exists (shift_nat n m2).
-apply refl_equal.
+exact (refl_equal _).
 Qed.
 
 Lemma round_unicity :
@@ -580,16 +497,15 @@ intros rdir rexp m1 m2 e1 e2 Hdir Heq.
 case (Ztrichotomy e1 e2) ; [ intros H | intros [H|H] ].
 apply round_unicity_aux with (1 := Hdir) (2 := H) (3 := Heq).
 rewrite H in Heq.
-generalize (float2_binade_eq_reg_aux _ _ _ Heq).
-intros H0.
-rewrite H0.
+generalize (float2_binade_eq_reg _ _ _ Heq).
+intro H0. injection H0. intro H1. rewrite H1.
 rewrite H.
-apply refl_equal.
+exact (refl_equal _).
 apply sym_eq.
 apply round_unicity_aux with (1 := Hdir).
 auto with zarith.
 rewrite Heq.
-apply refl_equal.
+exact (refl_equal _).
 Qed.
 
 Definition good_rexp (rexp : Z -> Z) :=
@@ -1262,7 +1178,8 @@ rewrite <- (float2_shl_correct (Float2 1 (e1 - 1)) (pos_of_Z (e1 - 1 - e2))) in 
 simpl in Hf2.
 cutrewrite (e1 - 1 - Zpos (pos_of_Z (e1 - 1 - e2)) = e2)%Z in Hf2.
 2: rewrite <- (Zpos_pos_of_Z _ _ H3) ; ring.
-rewrite (float2_binade_eq_reg_aux _ _ _ Hf2).
+generalize (float2_binade_eq_reg _ _ _ Hf2).
+intro H4. injection H4. intro H5. rewrite H5. clear H4 H5.
 unfold shr.
 rewrite iter_nat_of_P.
 rewrite shift_pos_nat.
@@ -1274,7 +1191,7 @@ simpl.
 unfold shr_aux at 2, shift_nat.
 simpl.
 induction (nat_of_P (pos_of_Z (e1 - 1 - e2))).
-apply refl_equal.
+exact (refl_equal _).
 pattern (S n) at 1 ; rewrite S_to_plus_one.
 rewrite plus_comm.
 rewrite iter_nat_plus.
@@ -1287,7 +1204,7 @@ intros.
 injection H4.
 intros.
 rewrite H5.
-apply refl_equal.
+exact (refl_equal _).
 rewrite <- H2.
 rewrite Zpos_succ_morphism.
 rewrite <- (Zpos_pos_of_Z _ _ H3).
@@ -1327,7 +1244,7 @@ rewrite (H (Zle_refl e1)).
 assert (e2 < e1)%Z. omega.
 rewrite (Zpos_pos_of_Z _ _ H2).
 cutrewrite (shr m2 (pos_of_Z (e1 - e2)) = rnd_record_mk 0 true true).
-apply refl_equal.
+exact (refl_equal _).
 cutrewrite (pos_of_Z (e1 - e2) = 1 + pos_of_Z (e1 - 1 - e2))%positive.
 unfold shr.
 rewrite iter_pos_plus.
@@ -1966,8 +1883,8 @@ cutrewrite (e2 + Zpos (digits m2) = e1 + Zpos (digits m1))%Z in He2.
 rewrite He1 in He2.
 rewrite He2 in Hf1.
 rewrite He2.
-rewrite (float2_binade_eq_reg_aux _ _ _ Hf1).
-apply refl_equal.
+rewrite (float2_binade_eq_reg _ _ _ Hf1).
+exact (refl_equal _).
 apply Zle_antisym ; apply Znot_gt_le ; intro.
 apply Rlt_not_eq with (2 := Hf1).
 apply Rlt_le_trans with (1 := proj2 (float2_digits_correct m1 e1)).
