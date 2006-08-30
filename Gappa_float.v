@@ -99,8 +99,6 @@ apply Zle_trans with (1 := H).
 exact (Zmax2 _ _).
 Qed.
 
-Axiom plouf : forall P : Prop, P.
-
 Theorem float_of_fix_flt :
  forall rdir : round_dir,
  forall x : R, forall xi : FF,
@@ -138,7 +136,7 @@ omega.
 exact (Zle_trans _ _ _ H1 Hx6).
 omega.
 apply Zle_trans with (2 := H2).
-apply plouf.
+exact (digits_pow2 _ _ Hx7).
 unfold round. simpl.
 rewrite round_rexp_exact.
 apply refl_equal.
@@ -150,7 +148,7 @@ omega.
 exact (Zle_trans _ _ _ H1 Hx6).
 omega.
 apply Zle_trans with (2 := H2).
-apply plouf.
+exact (digits_pow2 _ _ Hx7).
 destruct (Zle_or_lt d1 (Fexp f2)).
 exists f2.
 exact (conj (sym_eq Hx3) (conj  H Hx4)).
