@@ -1,4 +1,5 @@
 Require Import Gappa_common.
+Require Import Gappa_round.
 
 Section Gappa_pred_fixflt.
 
@@ -172,6 +173,174 @@ omega.
 apply Zpower_NR0.
 compute.
 discriminate.
+Qed.
+
+Theorem fix_of_flt_bnd :
+ forall x : R, forall xi : FF, forall n : Z, forall p : positive,
+ FLT x p -> ABS x xi ->
+ Zle_bool (n + Zpos p) (Zpos (digits (pos_of_Z (Fnum (lower xi)))) + Fexp (lower xi))
+ && Fpos (lower xi) = true ->
+ FIX x n.
+intros x xi n p (f,(Hx1,Hx2)) Hxi Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
+generalize (Fpos_correct _ H2). clear H2. intro H2.
+exists f.
+split.
+exact Hx1.
+apply Znot_gt_le.
+intro H0.
+apply Zle_not_gt with (1 := H1).
+clear H1.
+apply Zlt_gt.
+cut (Fexp (lower xi) + Zpos (digits (pos_of_Z (Fnum (lower xi)))) - 1 <
+  Fexp f + Zpos p)%Z.
+omega.
+clear H0.
+assert (He1: (Float2 (Zabs (Fnum f)) (Fexp f) = Rabs x :>R)).
+rewrite <- Hx1.
+unfold float2R. simpl.
+rewrite Rabs_mult.
+rewrite (Rabs_right (powerRZ 2 (Fexp f))).
+2: apply Rle_ge ; auto with real.
+repeat rewrite <- (Rmult_comm (powerRZ 2 (Fexp f))).
+apply Rmult_eq_compat_l.
+apply sym_eq.
+apply Rabs_Zabs.
+assert (He2: (Zpos (pos_of_Z (Zabs (Fnum f))) = Zabs (Fnum f))%Z).
+clear Hx2.
+assert (0 < Zabs (Fnum f))%Z.
+apply lt_IZR.
+apply Rmult_lt_reg_l with (powerRZ 2 (Fexp f)).
+auto with real.
+rewrite Rmult_0_r.
+apply Rlt_le_trans with (1 := H2).
+rewrite Rmult_comm.
+unfold float2R in He1.
+simpl in He1.
+rewrite He1.
+exact (proj1 (proj2 Hxi)).
+clear He1.
+induction (Zabs (Fnum f)).
+elim Zlt_irrefl with (1 := H).
+exact (refl_equal _).
+generalize (Zlt_neg_0 p0).
+omega.
+apply Zlt_le_trans with (Fexp f + Zpos (digits (pos_of_Z (Zabs (Fnum f)))))%Z.
+apply float2_pow2_lt.
+apply Rle_lt_trans with (2 := proj2 (float2_digits_correct (pos_of_Z (Zabs (Fnum f))) (Fexp f))).
+apply Rle_trans with (1 := proj1 (float2_digits_correct (pos_of_Z (Fnum (lower xi))) (Fexp (lower xi)))).
+cutrewrite (Float2 (Zpos (pos_of_Z (Fnum (lower xi)))) (Fexp (lower xi)) = lower xi).
+cutrewrite (Float2 (Zpos (pos_of_Z (Zabs (Fnum f)))) (Fexp f) = Rabs x :>R).
+exact (proj1 (proj2 Hxi)).
+rewrite He2.
+exact He1.
+cutrewrite (Zpos (pos_of_Z (Fnum (lower xi))) = Fnum (lower xi)).
+case (lower xi). intros. exact (refl_equal _).
+assert (0 < Fnum (lower xi))%Z.
+apply lt_IZR.
+apply Rmult_lt_reg_l with (powerRZ 2 (Fexp (lower xi))).
+auto with real.
+rewrite Rmult_0_r.
+rewrite Rmult_comm.
+exact H2.
+induction (Fnum (lower xi)).
+elim Zlt_irrefl with (1 := H).
+exact (refl_equal _).
+generalize (Zlt_neg_0 p0).
+omega.
+apply Zplus_le_compat_l.
+apply digits_pow2.
+rewrite He2.
+exact Hx2.
+Qed.
+
+Theorem flt_of_fix_bnd :
+ forall x : R, forall xi : FF, forall n : Z, forall p : positive,
+ FIX x n -> ABS x xi ->
+ Zle_bool (Zpos (digits (pos_of_Z (Fnum (upper xi)))) + Fexp (upper xi)) (n + Zpos p) = true ->
+ FLT x p.
+intros x xi n p (f,(Hx1,Hx2)) Hxi H.
+generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
+exists f.
+split.
+exact Hx1.
+apply Znot_ge_lt.
+intro H0.
+apply Zle_not_gt with (1 := H).
+clear H.
+assert (Float2 1 (n + Zpos p) <= upper xi)%R.
+apply Rle_trans with (2 := proj2 (proj2 Hxi)).
+rewrite <- Hx1.
+apply Rle_trans with (float2R (Float2 (Zabs (Fnum f)) n)).
+cutrewrite (Float2 1 (n + Zpos p) = Float2 (Zpower_pos 2 p) n :>R)%R.
+exact (float2_binade_le _ _ _ (Zge_le _ _ H0)).
+unfold float2R. simpl.
+rewrite Rmult_1_l.
+rewrite Zpower_pos_nat.
+replace 2%Z with (Z_of_nat 2). 2: apply refl_equal.
+rewrite Zpower_nat_powerRZ.
+rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+rewrite <- powerRZ_add. 2: discrR.
+rewrite Zplus_comm.
+exact (refl_equal _).
+unfold float2R. simpl.
+rewrite Rabs_mult.
+rewrite (Rabs_right (powerRZ 2 (Fexp f))).
+2: apply Rle_ge ; auto with real.
+cutrewrite (IZR (Zabs (Fnum f)) = Rabs (IZR (Fnum f))).
+apply Rmult_le_compat_l.
+exact (Rabs_pos _).
+cut (Float2 1 n <= Float2 1 (Fexp f))%R.
+unfold float2R.
+repeat rewrite Rmult_1_l.
+intro H1. exact H1.
+apply float2_Rle_pow2.
+exact Hx2.
+case (Fnum f) ; intros ; simpl.
+exact (sym_eq Rabs_R0).
+rewrite Rabs_right.
+exact (refl_equal _).
+auto with real.
+rewrite Rabs_left.
+rewrite Ropp_involutive.
+exact (refl_equal _).
+apply Ropp_lt_gt_0_contravar.
+exact (INR_pos _).
+clear H0.
+apply Zlt_gt.
+apply float2_pow2_lt.
+apply Rle_lt_trans with (1 := H).
+assert (0 <= upper xi)%R.
+apply Rle_trans with (1 := proj1 Hxi).
+apply Rle_trans with (1 := proj1 (proj2 Hxi)).
+exact (proj2 (proj2 Hxi)).
+destruct H0.
+assert (upper xi = Float2 (Zpos (pos_of_Z (Fnum (upper xi)))) (Fexp (upper xi))).
+clear H.
+induction (upper xi).
+simpl.
+induction Fnum.
+cutrewrite (Float2 0 Fexp = R0 :>R) in H0.
+elim Rlt_irrefl with (1 := H0).
+unfold float2R.
+apply Rmult_0_l.
+exact (refl_equal _).
+elim Rlt_not_le with (1 := H0).
+unfold float2R. simpl.
+apply Rlt_le.
+rewrite Ropp_mult_distr_l_reverse.
+apply Ropp_lt_gt_0_contravar.
+unfold Rgt.
+apply Rmult_lt_0_compat ; auto with real.
+pattern (upper xi) at 1 ; rewrite H1.
+clear H0 H1.
+rewrite Zplus_comm.
+exact (proj2 (float2_digits_correct _ _)).
+rewrite <- H0.
+unfold float2R.
+rewrite Rmult_1_l.
+auto with real.
 Qed.
 
 End Gappa_pred_fixflt.
