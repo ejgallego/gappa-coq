@@ -58,7 +58,6 @@ elim Rgt_not_eq with (2 := H).
 exact (float2_binade_lt _ _ _ (Zgt_lt _ _ H0)).
 Qed.
 
-
 Fixpoint digits (m : positive) : positive :=
  match m with
  | xH => xH
@@ -225,12 +224,6 @@ auto with real.
 exact H2.
 Qed.
 
-Definition pos_of_Z (n : Z) :=
- match n with
- | Zpos p => p
- | _ => xH
- end.
-
 Lemma float2_Rle_pow2 :
  forall k l : Z, (k <= l)%Z ->
  (Float2 1 k <= Float2 1 l)%R.
@@ -303,6 +296,44 @@ apply lt_O_nat_of_P.
 elim Zlt_not_le with (1 := H).
 apply Zlt_le_weak.
 exact (Zlt_neg_0 p).
+Qed.
+
+Lemma float2_pos_reg :
+ forall m e : Z,
+ (0 < Float2 m e)%R ->
+ (0 < m)%Z.
+intros m e H.
+apply lt_IZR.
+apply Rmult_lt_reg_l with (powerRZ 2 e).
+auto with real.
+rewrite Rmult_0_r.
+rewrite Rmult_comm.
+exact H.
+Qed.
+
+Lemma float2_pos_compat :
+ forall m e : Z,
+ (0 < m)%Z ->
+ (0 < Float2 m e)%R.
+intros m e H.
+cutrewrite (R0 = Float2 0 e).
+exact (float2_binade_lt _ _ _ H).
+unfold float2R.
+rewrite Rmult_0_l.
+exact (refl_equal _).
+Qed.
+
+Definition pos_of_Z (n : Z) :=
+ match n with
+ | Zpos p => p
+ | _ => xH
+ end.
+
+Lemma Zpos_pos_of_Z :
+ forall a : Z, (0 < a)%Z ->
+ (Zpos (pos_of_Z a) = a)%Z.
+induction a ; intros ; compute in H ; try discriminate H.
+exact (refl_equal _).
 Qed.
 
 Lemma Zpos_pos_of_Z_minus :
