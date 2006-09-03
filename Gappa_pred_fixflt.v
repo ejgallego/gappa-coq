@@ -1,5 +1,5 @@
 Require Import Gappa_common.
-Require Import Gappa_round.
+Require Import Gappa_round_aux.
 
 Section Gappa_pred_fixflt.
 

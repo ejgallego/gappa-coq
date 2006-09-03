@@ -4,6 +4,7 @@ Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_pred_bnd.
 Require Import Gappa_round_def.
+Require Import Gappa_round_aux.
 Require Import Gappa_round.
 
 Section Gappa_float.
@@ -206,7 +207,7 @@ rewrite Zpos_xO.
 generalize (Zgt_pos_0 (iter_nat n positive xO p)).
 omega.
 generalize (float2_shl_correct f1 (pos_of_Z (Fexp f1 - Fexp f2))).
-rewrite <- Zpos_pos_of_Z.
+rewrite Zpos_pos_of_Z_minus.
 2: omega.
 ring (Fexp f1 - (Fexp f1 - Fexp f2))%Z.
 rewrite Hx1.

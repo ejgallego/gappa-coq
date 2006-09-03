@@ -4,6 +4,7 @@ Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_pred_bnd.
 Require Import Gappa_round_def.
+Require Import Gappa_round_aux.
 Require Import Gappa_round.
 
 Section Gappa_fixed.
@@ -201,7 +202,7 @@ omega.
 rewrite tofloat_pair.
 rewrite <- H7.
 unfold round_pos. simpl.
-rewrite (Zpos_pos_of_Z _ _ H0).
+rewrite <- (Zpos_pos_of_Z_minus _ _ H0).
 rewrite H3.
 simpl.
 unfold fixed_shift.
@@ -219,7 +220,7 @@ apply Rle_lt_trans with (2 := H).
 rewrite tofloat_pair.
 rewrite <- H7.
 unfold round_pos.
-rewrite (Zpos_pos_of_Z _ _ (proj1 H5)).
+rewrite <- (Zpos_pos_of_Z_minus _ _ (proj1 H5)).
 rewrite <- H1.
 unfold rndZR, fst, Z_of_N, fixed_shift.
 apply Req_le.
@@ -250,7 +251,7 @@ omega.
 rewrite tofloat_pair.
 rewrite <- H6.
 unfold round_pos. simpl.
-rewrite (Zpos_pos_of_Z _ _ H).
+rewrite <- (Zpos_pos_of_Z_minus _ _ H).
 rewrite H3.
 unfold float2R.
 simpl.
@@ -259,7 +260,7 @@ apply Rmult_le_pos ; auto with real.
 rewrite tofloat_pair.
 rewrite <- H6.
 unfold round_pos. simpl.
-rewrite (Zpos_pos_of_Z _ _ (proj1 H5)).
+rewrite <- (Zpos_pos_of_Z_minus _ _ (proj1 H5)).
 rewrite <- H1.
 exact H3.
 (* *)
@@ -303,7 +304,7 @@ assert (e1 < fixed_shift e (e1 + Zpos (digits m1)))%Z.
 generalize (Zgt_pos_0 (digits m1)).
 omega.
 unfold round_pos. simpl.
-rewrite (Zpos_pos_of_Z _ _ H).
+rewrite <- (Zpos_pos_of_Z_minus _ _ H).
 rewrite H3.
 unfold fixed_shift.
 apply Rle_trans with R0.
@@ -322,7 +323,7 @@ apply Rmult_le_pos ; auto with real.
 rewrite tofloat_pair.
 rewrite <- H6.
 unfold round_pos. simpl.
-rewrite (Zpos_pos_of_Z _ _ (proj1 H5)).
+rewrite <- (Zpos_pos_of_Z_minus _ _ (proj1 H5)).
 rewrite <- H1.
 apply Rle_trans with (2 := H3).
 unfold fixed_shift.
