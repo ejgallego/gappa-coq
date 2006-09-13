@@ -1,3 +1,7 @@
+Version 0.3:
+ - proved flt_of_float, float_of_fix_flt, float_enforce, flt_of_singleton_bnd,
+   fix_of_flt_bnd, flt_of_fix_bnd
+
 Version 0.2:
  - added error propagation through opposite, division, and square root
  - added support for Gappa 0.7.1

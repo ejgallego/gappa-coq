@@ -1,4 +1,4 @@
-AC_INIT([Coq support library for Gappa], [0.2],
+AC_INIT([Coq support library for Gappa], [0.3],
         [Guillaume Melquiond <guillaume.melquiond@ens-lyon.fr>],
         [gappalib-coq])
 AM_INIT_AUTOMAKE
