@@ -156,10 +156,10 @@ generalize (Fpos0_correct _ H2). clear H2. intro H2.
 unfold rounding_fixed.
 cutrewrite (Float2 (-1) e = -Float2 1 e :>R)%R in H1.
 2: rewrite <- Fopp2_correct ; apply refl_equal.
-cut (- Float2 1 e <= round_extension roundDN (fixed_shift e) (good_shift e) x - x <= 0)%R.
+cut (- Float2 1 e < round_extension roundDN (fixed_shift e) (good_shift e) x - x <= 0)%R.
 intros (H3,H4).
 split.
-exact (Rle_trans _ _ _ H1 H3).
+exact (Rle_trans _ _ _ H1 (Rlt_le _ _ H3)).
 exact (Rle_trans _ _ _ H4 H2).
 generalize (total_order_T 0 x).
 intros [[Hx|Hx]|Hx].
@@ -176,19 +176,17 @@ unfold Rminus.
 apply Rplus_le_compat_l.
 apply Ropp_le_contravar.
 exact (proj2 H3).
-apply Rle_trans with (2 := H).
+apply Rlt_le_trans with (2 := H).
 simpl in H7.
 clear H H3 H4 H5 H6 Hx H1 H2 x zi m1 e1.
 generalize (rexp_case (fixed_shift e) (good_shift e) m2 e2).
 intros [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
 rewrite (round_rexp_exact rndZR _ _ _ H1).
 rewrite Rminus_diag_eq. 2: apply refl_equal.
-apply Rge_le.
-apply Ropp_0_le_ge_contravar.
-unfold float2R. simpl.
-rewrite Rmult_1_l.
-auto with real.
-apply Rlt_le.
+apply Ropp_lt_gt_0_contravar.
+unfold Rgt.
+apply float2_pos_compat.
+exact (refl_equal _).
 assert (tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 1 (fixed_shift e (e2 + Zpos (digits m2)))
   < tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 (Zpos m2) e2)%R.
 unfold Rminus.
@@ -209,7 +207,6 @@ unfold fixed_shift.
 apply Req_le.
 unfold float2R.
 ring.
-apply Rlt_le.
 assert (tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 (Zpos m + 1) (fixed_shift e (e2 + Zpos (digits m2)))
   < tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 (Zpos m2) e2)%R.
 unfold Rminus.
@@ -225,12 +222,12 @@ rewrite <- H1.
 unfold rndZR, fst, Z_of_N, fixed_shift.
 apply Req_le.
 rewrite <- Fminus2_correct.
-unfold Fminus2, Fshift2.
+rewrite <- Fopp2_correct.
+unfold Fminus2, Fshift2, Fopp2.
 rewrite Zminus_diag.
 unfold Fnum.
 ring (Zpos m - (Zpos m + 1))%Z.
-unfold float2R. simpl.
-auto with real.
+exact (refl_equal _).
 (* *)
 rewrite H4.
 unfold round. simpl.
@@ -253,10 +250,12 @@ rewrite <- H6.
 unfold round_pos. simpl.
 rewrite <- (Zpos_pos_of_Z_minus _ _ H).
 rewrite H3.
-unfold float2R.
 simpl.
-rewrite Rmult_0_l.
-apply Rmult_le_pos ; auto with real.
+rewrite float2_zero.
+apply Rlt_le.
+apply float2_pos_compat.
+apply Zgt_lt.
+exact (Zgt_pos_0 m1).
 rewrite tofloat_pair.
 rewrite <- H6.
 unfold round_pos. simpl.
@@ -266,13 +265,14 @@ exact H3.
 (* *)
 rewrite <- Hx.
 rewrite round_extension_prop_zero.
-unfold float2R.
-rewrite Rmult_1_l.
-rewrite Rmult_0_l.
+rewrite float2_zero.
 rewrite Rminus_0_r.
-split. 2: apply Rle_refl.
-apply Rge_le.
-auto with real.
+split.
+apply Ropp_lt_gt_0_contravar.
+unfold Rgt.
+apply float2_pos_compat.
+exact (refl_equal _).
+apply Rle_refl.
 (* *)
 unfold Rminus.
 generalize (round_extension_prop_neg roundDN (fixed_shift e) (good_shift e) _ Hx).
@@ -283,66 +283,80 @@ split.
 rewrite H4. rewrite Fopp2_correct.
 unfold round. simpl.
 rewrite tofloat_0.
-apply Rplus_le_reg_l with (tofloat (round_pos rndAW (fixed_shift e) m1 e1)).
+apply Rplus_lt_reg_r with (tofloat (round_pos rndAW (fixed_shift e) m1 e1)).
 rewrite <- Rplus_assoc.
 rewrite Rplus_opp_r. rewrite Rplus_0_l.
-apply Rle_trans with (2 := proj1 H3).
+apply Rlt_le_trans with (2 := proj1 H3).
 simpl in H6.
 clear H3 H4 H5 H7 Hx H1 H2 x zi m2 e2.
 generalize (rexp_case (fixed_shift e) (good_shift e) m1 e1).
 intros [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
 rewrite (round_rexp_exact rndAW _ _ _ H1).
 rewrite <- (Rplus_0_r (Float2 (Zpos m1) e1)).
-apply Rplus_le_compat_l.
-unfold float2R.
-rewrite Rmult_1_l.
-apply Rge_le.
-auto with real.
+apply Rplus_lt_compat_l.
+apply Ropp_lt_gt_0_contravar.
+unfold Rgt.
+apply float2_pos_compat.
+exact (refl_equal _).
 rewrite tofloat_pair.
 rewrite <- H6.
 assert (e1 < fixed_shift e (e1 + Zpos (digits m1)))%Z.
 generalize (Zgt_pos_0 (digits m1)).
 omega.
-unfold round_pos. simpl.
+unfold round_pos.
 rewrite <- (Zpos_pos_of_Z_minus _ _ H).
 rewrite H3.
 unfold fixed_shift.
-apply Rle_trans with R0.
+apply Rle_lt_trans with R0.
 case (rndAW (shr m1 (pos_of_Z (e - e1))) e).
 simpl.
 rewrite Rplus_opp_r.
 apply Rle_refl.
-unfold float2R. simpl.
-rewrite Rmult_0_l.
-rewrite Rmult_1_l.
+rewrite float2_zero.
 rewrite Rplus_0_l.
-apply Rge_le.
-auto with real.
-unfold float2R. simpl.
-apply Rmult_le_pos ; auto with real.
+apply Rlt_le.
+apply Ropp_lt_gt_0_contravar.
+unfold Rgt.
+apply float2_pos_compat.
+exact (refl_equal _).
+apply float2_pos_compat.
+exact (refl_equal _).
+destruct H3 as [H3|H3].
+apply Rle_lt_trans with (Float2 (Zpos m + 1) (fixed_shift e (e1 + Zpos (digits m1))) + - Float2 1 e)%R.
+apply Rplus_le_compat_r.
 rewrite tofloat_pair.
 rewrite <- H6.
-unfold round_pos. simpl.
+apply float2_binade_le.
+unfold round_pos.
 rewrite <- (Zpos_pos_of_Z_minus _ _ (proj1 H5)).
 rewrite <- H1.
-apply Rle_trans with (2 := H3).
 unfold fixed_shift.
 case (rndAW (shr m1 (pos_of_Z (e - e1))) e).
 simpl.
 rewrite Zpos_succ_morphism.
+apply Zle_refl.
+exact (Zle_succ _).
 rewrite <- Fopp2_correct.
 rewrite <- Fplus2_correct.
-unfold Fplus2, Fshift2.
+unfold Fplus2, Fshift2, Fopp2.
 rewrite Zminus_diag.
-unfold Fopp2, Fnum, Zsucc.
-ring (Zpos m + 1 + -(1))%Z.
-apply Rle_refl.
-rewrite <- (Rplus_0_r (Float2 (Zpos m) e)).
-apply Rplus_le_compat_l.
-unfold float2R.
-rewrite Rmult_1_l.
-apply Rge_le.
-auto with real.
+unfold Fnum.
+ring (Zpos m + 1 + - (1))%Z.
+exact H3.
+rewrite <- round_unicity with (1 := rndAW_good) (2 := H3).
+rewrite round_rexp_exact.
+2: exact (Zle_refl _).
+rewrite tofloat_pair.
+simpl.
+rewrite H3.
+apply Rplus_lt_reg_r with (Float2 1 e).
+rewrite Rplus_comm.
+rewrite Rplus_assoc.
+rewrite Rplus_opp_l.
+rewrite Rplus_comm.
+apply Rplus_lt_compat_r.
+apply float2_pos_compat.
+exact (refl_equal _).
 (* *)
 rewrite H5. rewrite Fopp2_correct.
 unfold round. simpl.

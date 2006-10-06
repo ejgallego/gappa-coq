@@ -4,6 +4,14 @@ Require Import Gappa_definitions.
 
 Section Gappa_dyadic.
 
+Lemma float2_zero :
+ forall e : Z, Float2 0 e = R0 :>R.
+intro e.
+unfold float2R.
+rewrite Rmult_0_l.
+exact (refl_equal _).
+Qed.
+
 Definition Fopp2 (x : float2) :=
  Float2 (- Fnum x) (Fexp x).
 
