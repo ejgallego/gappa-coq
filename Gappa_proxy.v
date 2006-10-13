@@ -23,8 +23,9 @@ Lemma float_absolute_ne_whole :
  (Rabs x < Float2 1 k)%R ->
  (Rabs (rounding_float roundNE p d x - x) <= Float2 1 (float_shift p d k - 1))%R.
 intros p d k x H.
-destruct (total_order_T 0 x) as [[Hx|Hx]|Hx].
-destruct (log2 _ Hx) as (k0,Hk).
+cutrewrite (Rabs (rounding_float roundNE p d x - x) = Rabs (rounding_float roundNE p d (Rabs x) - Rabs x))%R.
+destruct (Rabs_pos x).
+destruct (log2 _ H0) as (k0,Hk).
 apply Rle_trans with (Float2 1 (float_shift p d k0 - 1)).
 apply float_absolute_ne_binade.
 unfold float2R. simpl.
@@ -41,14 +42,11 @@ unfold Zminus.
 apply Zplus_le_compat_r.
 assert (k0 - 1 < k)%Z. 2: omega.
 apply float2_pow2_lt.
-apply Rle_lt_trans with x.
+apply Rle_lt_trans with (Rabs x).
 unfold float2R. rewrite Rmult_1_l.
 exact (proj1 Hk).
-rewrite <- (Rabs_right x).
 exact H.
-left.
-exact Hx.
-rewrite <- Hx.
+rewrite <- H0.
 unfold rounding_float.
 rewrite round_extension_zero.
 rewrite Rminus_0_r.
@@ -56,7 +54,20 @@ rewrite Rabs_R0.
 left.
 apply float2_pos_compat.
 exact (refl_equal _).
-Admitted.
+clear H.
+unfold rounding_float.
+destruct (Rle_or_lt 0 x) as [H|H].
+rewrite (Rabs_right _ (Rle_ge _ _ H)).
+exact (refl_equal _).
+rewrite (Rabs_left _ H).
+rewrite round_extension_opp.
+simpl.
+fold roundNE.
+unfold Rminus.
+rewrite <- Ropp_plus_distr.
+rewrite Rabs_Ropp.
+exact (refl_equal _).
+Qed.
 
 Definition float_absolute_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
  let u := upper xi in
