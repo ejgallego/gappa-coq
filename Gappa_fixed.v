@@ -161,11 +161,9 @@ intros (H3,H4).
 split.
 exact (Rle_trans _ _ _ H1 (Rlt_le _ _ H3)).
 exact (Rle_trans _ _ _ H4 H2).
-generalize (total_order_T 0 x).
-intros [[Hx|Hx]|Hx].
+destruct (total_order_T 0 x) as [[Hx|Hx]|Hx].
 (* *)
-generalize (round_extension_prop_pos roundDN (fixed_shift e) (good_shift e) _ Hx).
-intros (m1,(m2,(e1,(e2,(H3,(H4,(H5,(H6,H7)))))))).
+destruct (round_extension_prop_pos roundDN (fixed_shift e) (good_shift e) _ Hx) as (m1,(m2,(e1,(e2,(H3,(H4,(H5,(H6,H7)))))))).
 split.
 rewrite H5.
 unfold round. simpl.
@@ -179,8 +177,7 @@ exact (proj2 H3).
 apply Rlt_le_trans with (2 := H).
 simpl in H7.
 clear H H3 H4 H5 H6 Hx H1 H2 x zi m1 e1.
-generalize (rexp_case (fixed_shift e) (good_shift e) m2 e2).
-intros [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
+destruct (rexp_case (fixed_shift e) (good_shift e) m2 e2) as [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
 rewrite (round_rexp_exact rndZR _ _ _ H1).
 rewrite Rminus_diag_eq. 2: apply refl_equal.
 apply Ropp_lt_gt_0_contravar.
@@ -238,8 +235,7 @@ rewrite Rplus_0_r.
 apply Rle_trans with (2 := proj1 H3).
 simpl in H6.
 clear H3 H4 H5 H7 Hx H1 H2 x zi m2 e2.
-generalize (rexp_case (fixed_shift e) (good_shift e) m1 e1).
-intros [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
+destruct (rexp_case (fixed_shift e) (good_shift e) m1 e1) as [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
 rewrite (round_rexp_exact rndZR _ _ _ H1).
 apply Rle_refl.
 assert (e1 < fixed_shift e (e1 + Zpos (digits m1)))%Z.
@@ -289,8 +285,7 @@ rewrite Rplus_opp_r. rewrite Rplus_0_l.
 apply Rlt_le_trans with (2 := proj1 H3).
 simpl in H6.
 clear H3 H4 H5 H7 Hx H1 H2 x zi m2 e2.
-generalize (rexp_case (fixed_shift e) (good_shift e) m1 e1).
-intros [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
+destruct (rexp_case (fixed_shift e) (good_shift e) m1 e1) as [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,(H3,H4)))))]].
 rewrite (round_rexp_exact rndAW _ _ _ H1).
 rewrite <- (Rplus_0_r (Float2 (Zpos m1) e1)).
 apply Rplus_lt_compat_l.
@@ -368,8 +363,7 @@ rewrite Rplus_0_r.
 apply Rle_trans with (1 := proj2 H3).
 simpl in H7.
 clear H3 H4 H5 H6 Hx H1 H2 x zi m1 e1.
-generalize (rexp_case (fixed_shift e) (good_shift e) m2 e2).
-intros [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,H3))))]].
+destruct (rexp_case (fixed_shift e) (good_shift e) m2 e2) as [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,H3))))]].
 rewrite (round_rexp_exact rndAW _ _ _ H1).
 apply Rle_refl.
 generalize (round_constant_underflow rndAW _ (good_shift e) _ (refl_equal e) m2 e2).
@@ -377,8 +371,7 @@ simpl.
 intros (Ha,(Hb,Hc)).
 unfold fixed_shift in H4.
 apply Rlt_le.
-generalize (bracket_case_underflow _ _ _ H4).
-intros [H0|[H0|H0]].
+destruct (bracket_case_underflow _ _ _ H4) as [H0|[H0|H0]].
 rewrite (Ha H0).
 exact H4.
 rewrite (Hb H0).
@@ -388,8 +381,7 @@ exact H4.
 generalize (round_constant rndAW _ _ _ H2 m2 e2).
 simpl.
 intros (Ha,(Hb,Hc)).
-generalize (bracket_case _ _ _ _ H3).
-intros [H0|[H0|[H0|H0]]].
+destruct (bracket_case _ _ _ _ H3) as [H0|[H0|[H0|H0]]].
 rewrite (round_unicity _ (fixed_shift e) _ _ _ _ rndAW_good H0).
 unfold round_pos.
 rewrite H2.
