@@ -604,4 +604,41 @@ unfold float2R. rewrite Rmult_1_l.
 exact (proj2 Hk).
 Qed.
 
+Definition float_relative_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
+ Fle2 (Float2 1 (-d + Zpos p - 1)) (lower xi) &&
+ Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
+ Fle2 (Float2 1 (Zneg p)) (upper zi).
+
+Theorem float_relative_ne :
+ forall p : positive, forall d : Z, forall x : R, forall xi zi : FF,
+ ABS x xi ->
+ float_relative_ne_helper p d xi zi = true ->
+ BND ((rounding_float roundNE p d x - x) / x) zi.
+intros p d x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+cutrewrite (Float2 (-1) (Zneg p) = -Float2 1 (Zneg p) :>R)%R in H2.
+2: intros ; rewrite <- Fopp2_correct ; apply refl_equal.
+cut (Rabs ((rounding_float roundNE p d x - x) / x) <= Float2 1 (- Zpos p))%R.
+split.
+apply Rle_trans with (1 := H2).
+rewrite <- (Ropp_involutive ((rounding_float roundNE p d x - x) / x)%R).
+apply Ropp_le_contravar.
+apply Rle_trans with (Rabs (- ((rounding_float roundNE p d x - x) / x))%R).
+apply RRle_abs.
+rewrite Rabs_Ropp.
+exact H.
+apply Rle_trans with (2 := H3).
+apply Rle_trans with (Rabs ((rounding_float roundNE p d x - x) / x)%R).
+apply RRle_abs.
+exact H.
+destruct Hx as (_,(Hx,_)).
+clear H2 H3 zi.
+apply float_relative_ne_whole.
+exact (Rle_trans _ _ _ H1 Hx).
+Qed.
+
 End Gappa_proxy.
