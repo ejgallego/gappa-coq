@@ -199,10 +199,10 @@ Qed.
 
 Theorem mul_mibs :
  forall a b c d : R, forall zi : FF,
- BND (c * (b - d) + d * (a - c) + (a - c) * (b - d)) zi ->
+ BND (c * (b - d) + (a - c) * d + (a - c) * (b - d)) zi ->
  BND (a * b - c * d) zi.
 intros a b c d zi Hz.
-replace (a * b - c * d)%R with (c * (b - d) + d * (a - c) + (a - c) * (b - d))%R.
+replace (a * b - c * d)%R with (c * (b - d) + (a - c) * d + (a - c) * (b - d))%R.
 exact Hz.
 ring.
 Qed.

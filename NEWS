@@ -1,3 +1,7 @@
+Version 0.4:
+ - fixed mul_mibs
+ - proved float_absolute_ne, float_absolute_ne_wide, float_relative_ne
+
 Version 0.3:
  - proved flt_of_float, float_of_fix_flt, float_enforce, flt_of_singleton_bnd,
    fix_of_flt_bnd, flt_of_fix_bnd
