@@ -552,4 +552,56 @@ rewrite float2_zero.
 apply Rabs_pos.
 Qed.
 
+Lemma float_relative_ne_whole :
+ forall p : positive, forall d : Z, forall x : R,
+ (Float2 1 (-d + Zpos p - 1) <= Rabs x)%R ->
+ (Rabs ((rounding_float roundNE p d x - x) / x) <= Float2 1 (-Zpos p))%R.
+intros p d x Hx.
+assert (H9: (x <> 0)%R).
+destruct (Rle_or_lt 0 x).
+rewrite (Rabs_right _ (Rle_ge _ _ H)) in Hx.
+apply Rgt_not_eq.
+destruct H.
+exact H.
+elim (Rle_not_lt _ _ Hx).
+rewrite <- H.
+apply float2_pos_compat.
+exact (refl_equal _).
+exact (Rlt_not_eq _ _ H).
+unfold Rdiv.
+rewrite Rabs_mult.
+rewrite (Rabs_Rinv _ H9).
+rewrite float_absolute_ne_sym.
+apply Rmult_le_reg_l with (Rabs x).
+exact (Rabs_pos_lt _ H9).
+rewrite <- Rmult_assoc.
+rewrite Rinv_r_simpl_m.
+2: exact (Rabs_no_R0 _ H9).
+destruct (log2 _ (Rabs_pos_lt _ H9)) as (k,Hk).
+apply Rle_trans with (Float2 1 (float_shift p d k - 1))%R.
+apply float_absolute_ne_whole.
+rewrite Rabs_Rabsolu.
+unfold float2R. rewrite Rmult_1_l.
+exact (proj2 Hk).
+unfold float_shift.
+rewrite Zmax_inf_l.
+apply Rle_trans with (Float2 1 (k - 1) * Float2 1 (- Zpos p))%R.
+rewrite <- Fmult2_correct.
+unfold Fmult2, Zminus.
+simpl.
+cutrewrite (k + Zneg p + -1 = k + -1 + Zneg p)%Z. 2: ring.
+apply Rle_refl.
+apply Rmult_le_compat_r.
+apply Rlt_le.
+apply float2_pos_compat.
+exact (refl_equal _).
+unfold float2R. rewrite Rmult_1_l.
+exact (proj1 Hk).
+assert (-d + Zpos p - 1 < k)%Z. 2: omega.
+apply float2_pow2_lt.
+apply Rle_lt_trans with (1 := Hx).
+unfold float2R. rewrite Rmult_1_l.
+exact (proj2 Hk).
+Qed.
+
 End Gappa_proxy.
