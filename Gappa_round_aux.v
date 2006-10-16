@@ -298,6 +298,35 @@ apply Zlt_le_weak.
 exact (Zlt_neg_0 p).
 Qed.
 
+Lemma float2_pow2_le :
+ forall k l : Z, (Float2 1 k <= Float2 1 l)%R ->
+ (k <= l)%Z.
+intros k l.
+unfold float2R. simpl.
+repeat rewrite Rmult_1_l.
+intros H.
+cutrewrite (l = k + (l - k))%Z in H. 2: ring.
+rewrite powerRZ_add in H. 2: discrR.
+pattern (powerRZ 2 k) at 1 in H ; rewrite <- Rmult_1_r in H.
+assert (0 <= l - k)%Z. 2: omega.
+assert (0 < powerRZ 2 k)%R. auto with real.
+generalize (Rmult_le_reg_l _ _ _ H0 H).
+unfold powerRZ.
+case (l - k)%Z ; intros.
+apply Zle_refl.
+apply Zlt_le_weak.
+exact (Zgt_lt _ _ (Zgt_pos_0 p)).
+elim Rle_not_lt with (1 := H1).
+apply Rmult_lt_reg_l with (2 ^ nat_of_P p)%R.
+auto with real.
+rewrite Rinv_r.
+rewrite Rmult_1_r.
+auto with real.
+apply Rgt_not_eq.
+unfold Rgt.
+auto with real.
+Qed.
+
 Lemma float2_pos_reg :
  forall m e : Z,
  (0 < Float2 m e)%R ->
