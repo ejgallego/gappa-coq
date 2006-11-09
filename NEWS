@@ -1,6 +1,7 @@
 Version 0.4:
  - fixed mul_mibs
  - proved float_absolute_ne, float_absolute_ne_wide, float_relative_ne
+ - adapted to Coq 8.1gamma
 
 Version 0.3:
  - proved flt_of_float, float_of_fix_flt, float_enforce, flt_of_singleton_bnd,

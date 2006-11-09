@@ -11,7 +11,8 @@ Require Export Gappa_fixed.
 Require Export Gappa_float.
 Require Export Gappa_proxy.
 
-Ltac finalize := exact (refl_equal true).
+(*Ltac finalize := exact (refl_equal true).*)
+Ltac finalize := exact_no_check (refl_equal true).
 Ltac next_interval t h :=
  apply t with (1 := h) ; [ finalize |
  clear h ; intro h ; simpl in h ; generalize h ; clear h ].

@@ -203,7 +203,7 @@ simpl.
 unfold fixed_shift.
 apply Req_le.
 unfold float2R.
-ring.
+simpl. ring.
 assert (tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 (Zpos m + 1) (fixed_shift e (e2 + Zpos (digits m2)))
   < tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 (Zpos m2) e2)%R.
 unfold Rminus.
@@ -223,14 +223,14 @@ rewrite <- Fopp2_correct.
 unfold Fminus2, Fshift2, Fopp2.
 rewrite Zminus_diag.
 unfold Fnum.
-ring (Zpos m - (Zpos m + 1))%Z.
+replace (Zpos m - (Zpos m + 1))%Z with (-1)%Z. 2: ring.
 exact (refl_equal _).
 (* *)
 rewrite H4.
 unfold round. simpl.
 rewrite tofloat_0.
 apply Rplus_le_reg_l with x.
-ring (x + (tofloat (round_pos rndZR (fixed_shift e) m1 e1) - x))%R.
+cutrewrite (x + (tofloat (round_pos rndZR (fixed_shift e) m1 e1) - x) = tofloat (round_pos rndZR (fixed_shift e) m1 e1))%R. 2: ring.
 rewrite Rplus_0_r.
 apply Rle_trans with (2 := proj1 H3).
 simpl in H6.
@@ -336,7 +336,7 @@ rewrite <- Fplus2_correct.
 unfold Fplus2, Fshift2, Fopp2.
 rewrite Zminus_diag.
 unfold Fnum.
-ring (Zpos m + 1 + - (1))%Z.
+replace (Zpos m + 1 + - (1))%Z with (Zpos m). 2: ring.
 exact H3.
 rewrite <- round_unicity with (1 := rndAW_good) (2 := H3).
 rewrite round_rexp_exact.

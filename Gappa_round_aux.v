@@ -444,7 +444,7 @@ omega.
 clear H H0 H1 H2 H3 m2 e2.
 rewrite <- (float2_shl_correct (Float2 1 (e1 + Zpos (digits m1))) (digits m1)).
 simpl.
-ring (e1 + Zpos (digits m1) - Zpos (digits m1))%Z.
+replace (e1 + Zpos (digits m1) - Zpos (digits m1))%Z with e1. 2: ring.
 apply float2_binade_le.
 rewrite shift_pos_nat.
 unfold shift_nat.

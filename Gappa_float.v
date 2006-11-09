@@ -90,7 +90,7 @@ rewrite round_extension_float2.
 unfold round, round_pos. simpl.
 cutrewrite (-d - 1 + 1 = -d)%Z. 2: ring.
 rewrite H0.
-ring (-d - (-d - 1))%Z.
+replace (-d - (-d - 1))%Z with 1%Z. 2: ring.
 simpl.
 rewrite float2_zero.
 exact (refl_equal _).
@@ -104,7 +104,7 @@ exact (Rlt_le _ _ H2).
 rewrite <- Fminus2_correct.
 unfold Fminus2, Fshift2.
 simpl.
-ring (-d - (-d - 1))%Z.
+replace (-d - (-d - 1))%Z with 1%Z. 2: ring.
 apply Rle_refl.
 apply Rgt_ge.
 apply Rgt_minus.
@@ -158,7 +158,7 @@ rewrite <- Fminus2_correct.
 unfold Fminus2, Fshift2.
 rewrite Zminus_diag.
 unfold Fnum, Fexp.
-ring ((Zpos m + 1) * 2 - (Zpos m * 2 + 1))%Z.
+replace ((Zpos m + 1) * 2 - (Zpos m * 2 + 1))%Z with 1%Z. 2: ring.
 apply Rle_refl.
 apply Rgt_ge.
 apply Rgt_minus.
@@ -201,7 +201,7 @@ unfold Fminus2, Fshift2.
 rewrite Zminus_diag.
 unfold Fnum, Fexp.
 cutrewrite (Zpos (m * 2 + 1) = Zpos m * 2 + 1)%Z. 2: apply refl_equal.
-ring ((Zpos m + 1) * 2 - (Zpos m * 2 + 1))%Z.
+replace ((Zpos m + 1) * 2 - (Zpos m * 2 + 1))%Z with 1%Z. 2: ring.
 apply Rle_refl.
 rewrite Rabs_left.
 2: exact HA.
@@ -217,7 +217,7 @@ unfold Fminus2, Fshift2.
 rewrite Zminus_diag.
 unfold Fnum, Fexp.
 cutrewrite (Zpos (m * 2 + 1) = Zpos m * 2 + 1)%Z. 2: apply refl_equal.
-ring (Zpos m * 2 + 1 - Zpos m * 2)%Z.
+replace (Zpos m * 2 + 1 - Zpos m * 2)%Z with 1%Z. 2: ring.
 apply Rle_refl.
 destruct (Rle_or_lt x (Float2 (Zpos m) e)) as [H9|H9].
 rewrite (Rle_antisym _ _ H9 (proj1 H1)).
@@ -240,7 +240,7 @@ rewrite <- Fminus2_correct.
 unfold Fminus2, Fshift2.
 rewrite Zminus_diag.
 unfold Fnum, Fexp.
-ring (Zpos m * 2 + 1 - Zpos m * 2)%Z.
+replace (Zpos m * 2 + 1 - Zpos m * 2)%Z with 1%Z. 2: ring.
 apply Rle_refl.
 apply Rlt_minus.
 exact H9.
@@ -275,7 +275,7 @@ exact (proj2 (float2_digits_correct (Psucc m) e)).
 rewrite H4.
 rewrite <- (float2_shl_correct (Float2 1 (e + Zpos (digits m))) (digits m)).
 simpl.
-ring (e + Zpos (digits m) - Zpos (digits m))%Z.
+replace (e + Zpos (digits m) - Zpos (digits m))%Z with e. 2: ring.
 unfold shift_pos.
 apply Rle_refl.
 apply float2_repartition_underflow.
@@ -565,7 +565,7 @@ omega.
 generalize (float2_shl_correct f1 (pos_of_Z (Fexp f1 - Fexp f2))).
 rewrite Zpos_pos_of_Z_minus.
 2: omega.
-ring (Fexp f1 - (Fexp f1 - Fexp f2))%Z.
+replace (Fexp f1 - (Fexp f1 - Fexp f2))%Z with (Fexp f2). 2: ring.
 rewrite Hx1.
 rewrite <- Hx3.
 clear H H2 H1 H3 Hx4 Hx3 Hx2 Hx1 p2 p1 d2 d1 xi x rdir.
@@ -795,7 +795,7 @@ rewrite round_extension_float2.
 unfold round, round_pos.
 simpl.
 cutrewrite (float_shift p d (e + Zpos (Psucc (digits (shift_pos p 1)))) = e + 2)%Z.
-ring (e + 2 - e)%Z.
+replace (e + 2 - e)%Z with 2%Z. 2: ring.
 unfold shr, shr_aux, shift_pos.
 simpl.
 rewrite iter_nat_of_P.
@@ -831,7 +831,7 @@ rewrite H9.
 cutrewrite (digits (shift_pos p 1) = Psucc p)%Z.
 repeat rewrite Zpos_succ_morphism.
 unfold Zsucc.
-ring (Fexp + Zpos (digits p0) - Zpos p - 2 + (Zpos p + 1 + 1))%Z.
+replace (Fexp + Zpos (digits p0) - Zpos p - 2 + (Zpos p + 1 + 1))%Z with (Fexp + Zpos (digits p0))%Z. 2: ring.
 unfold float_shift.
 rewrite Zmax_inf_l.
 ring.

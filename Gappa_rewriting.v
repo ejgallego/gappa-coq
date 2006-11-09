@@ -249,7 +249,7 @@ generalize (abs_not_zero_correct _ _ Hd H2). clear Hd H2. intro Hd.
 replace ((a * b - c * d) / (c * d))%R with ((a - c) / c + (b - d) / d + ((a - c) / c) * ((b - d) / d))%R.
 exact Hz.
 field.
-repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
+exact (conj Hd Hc).
 Qed.
 
 Theorem mul_filq :
@@ -265,7 +265,7 @@ generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
 replace ((a * b - a * c) / (a * c))%R with ((b - c) / c)%R.
 exact Hz.
 field.
-repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
+exact (conj Hc Ha).
 Qed.
 
 Theorem mul_firq :
@@ -281,7 +281,7 @@ generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
 replace ((a * b - c * b) / (c * b))%R with ((a - c) / c)%R.
 exact Hz.
 field.
-repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
+exact (conj Hb Hc).
 Qed.
 
 Theorem sqrt_mibs :
@@ -316,19 +316,20 @@ rewrite Rplus_0_l in H.
 rewrite H. rewrite H0.
 cutrewrite (a = 0)%R.
 cutrewrite (b = 0)%R.
-ring (0 - 0)%R.
+rewrite Rminus_0_r.
 unfold Rdiv.
 apply Rmult_0_l.
 apply sqrt_eq_0 with (2 := H).
 apply Rle_trans with (1 := H2) (2 := proj1 Hb).
 apply sqrt_eq_0 with (2 := H0).
 apply Rle_trans with (1 := H1) (2 := proj1 Ha).
+replace (a - b)%R with (sqrt a * sqrt a - sqrt b * sqrt b)%R.
 field.
-repeat rewrite sqrt_def.
-apply Rplus_comm.
-apply Rle_trans with (1 := H1) (2 := proj1 Ha).
-apply Rle_trans with (1 := H2) (2 := proj1 Hb).
 auto with real.
+repeat rewrite sqrt_def.
+exact (refl_equal _).
+apply Rle_trans with (1 := H2) (2 := proj1 Hb).
+apply Rle_trans with (1 := H1) (2 := proj1 Ha).
 Qed.
 
 Theorem sqrt_mibq :
@@ -388,20 +389,20 @@ ring.
 Qed.
 
 Theorem val_xebq :
- forall a b : R, forall ai wi zi : FF,
- ABS a ai -> ABS (1 + (b - a) / a) wi ->
+ forall a b : R, forall ai bi zi : FF,
+ ABS a ai -> ABS b bi ->
  BND (b / (1 + (b - a) / a)) zi ->
- abs_not_zero ai && abs_not_zero wi = true ->
+ abs_not_zero ai && abs_not_zero bi = true ->
  BND a zi.
-intros a b ai ci zi Ha Hw Hz H.
+intros a b ai ci zi Ha Hb Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1, H2).
 generalize (abs_not_zero_correct _ _ Ha H1). clear Ha H1. intro Ha.
-generalize (abs_not_zero_correct _ _ Hw H2). clear Hw H2. intro Hw.
+generalize (abs_not_zero_correct _ _ Hb H2). clear Hb H2. intro Hb.
 replace a with (b / (1 + (b - a) / a))%R.
 exact Hz.
 field.
-exact Ha.
-exact Hw.
+replace (a + (b - a))%R with b. 2: ring.
+exact (conj Ha Hb).
 Qed.
 
 Theorem val_xabq :
@@ -433,14 +434,7 @@ generalize (abs_not_zero_correct _ _ Hd H3). clear Hd H3. intro Hd.
 replace ((a / b - c / d) / (c / d))%R with (((a - c) / c - (b - d) / d) / (1 + (b - d) / d))%R.
 exact Hz.
 field.
-exact Hd.
-assert (/d <> 0)%R.
-auto with real.
-repeat ( apply Rmult_integral_contrapositive ; split ) ; try assumption.
-replace (1 + (b + - d) * / d)%R with (b * / d)%R.
-repeat ( apply Rmult_integral_contrapositive ; split ) ; try assumption.
-field.
-exact Hd.
+exact (conj Hd (conj Hb Hc)).
 Qed.
 
 Theorem div_firq :
@@ -456,9 +450,7 @@ generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
 replace ((a / b - c / b) / (c / b))%R with ((a - c) / c)%R.
 exact Hz.
 field.
-repeat ( apply Rmult_integral_contrapositive ; split ) ; assumption.
-repeat ( apply Rmult_integral_contrapositive ; split ) ; try assumption.
-auto with real.
+exact (conj Hb Hc).
 Qed.
 
 Theorem err_xabq :

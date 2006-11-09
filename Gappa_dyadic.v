@@ -68,7 +68,7 @@ rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
 rewrite Rmult_comm.
 rewrite <- Rmult_assoc.
 rewrite <- powerRZ_add. 2: auto with real.
-ring (e - Zpos d + Zpos d)%Z.
+replace (e - Zpos d + Zpos d)%Z with e. 2: ring.
 rewrite Rmult_comm.
 auto with real.
 intros f d.
@@ -188,8 +188,8 @@ intros (mx, my) e (Hx, Hy) Hb.
 rewrite <- Hx.
 rewrite <- Hy.
 unfold float2R. simpl.
-ring. apply Rmult_eq_compat_l.
-apply IZR_eq.
+replace my with mx.
+exact (refl_equal _).
 apply Zcompare_Eq_eq.
 exact Hb.
 Qed.

@@ -457,7 +457,7 @@ generalize (not_Zeq _ _ H0).
 clear H0.
 generalize (shr_bracket_weak (pos_of_Z (e1 - e2)) m2 e2).
 rewrite (Zpos_pos_of_Z_minus _ _ H1).
-ring (e2 + (e1 - e2))%Z.
+replace (e2 + (e1 - e2))%Z with e1. 2: ring.
 simpl.
 generalize (Z_of_N (rnd_m (shr m2 (pos_of_Z (e1 - e2))))).
 intros m HH [H0|H0].
@@ -1570,7 +1570,7 @@ induction (Zle_lt_or_eq _ _ He) ; clear He ; rename H into He.
 rewrite <- (float2_shl_correct (Float2 (Zpos m1) e1) (pos_of_Z (e1 - rexp (e1 + Zpos (digits m1)))%Z)).
 simpl.
 rewrite (Zpos_pos_of_Z_minus _ _ He).
-ring (e1 - (e1 - rexp (e1 + Zpos (digits m1))))%Z.
+replace (e1 - (e1 - rexp (e1 + Zpos (digits m1))))%Z with (rexp (e1 + Zpos (digits m1))%Z). 2: ring.
 exists (shift_pos (pos_of_Z (e1 - rexp (e1 + Zpos (digits m1))%Z)) m1).
 exists (rexp (e1 + Zpos (digits m1))%Z).
 split. apply refl_equal.
@@ -1899,7 +1899,7 @@ apply Rle_lt_trans with (2 := proj2 Hx).
 apply Rplus_le_reg_l with (1 - r)%R.
 simpl.
 cutrewrite (1 - r + (IZR (up r) + -1) = IZR (up r) - r)%R. 2: ring.
-ring (1 - r + r)%R.
+replace (1 - r + r)%R with R1. 2: ring.
 exact (proj2 (archimed _)).
 apply lt_IZR.
 apply Rle_lt_trans with (2 := proj1 (archimed r)).
@@ -1967,7 +1967,7 @@ rewrite Rmult_1_r.
 rewrite (Rmult_comm x).
 rewrite <- Rmult_assoc.
 rewrite <- powerRZ_add. 2: discrR.
-ring (l - 1 + (- l + 1))%Z.
+replace (l - 1 + (- l + 1))%Z with Z0. 2: ring.
 rewrite Rmult_1_l.
 exact (proj1 H).
 apply Rmult_le_compat_l.
@@ -2007,7 +2007,7 @@ auto with real.
 exact (proj1 (archimed _)).
 rewrite Rmult_assoc.
 rewrite <- powerRZ_add. 2: discrR.
-ring (- (k - 2) + (k - 2))%Z.
+replace (- (k - 2) + (k - 2))%Z with Z0. 2: ring.
 apply Rmult_1_r.
 apply Rle_lt_trans with ((x * powerRZ 2 (- (k - 2)) + 1) * powerRZ 2 (k - 2))%R.
 apply Rmult_le_compat_r.
@@ -2020,7 +2020,7 @@ exact (proj2 (archimed _)).
 rewrite Rmult_plus_distr_r.
 rewrite Rmult_assoc.
 rewrite <- powerRZ_add. 2: discrR.
-ring (- (k - 2) + (k - 2))%Z.
+replace (- (k - 2) + (k - 2))%Z with Z0. 2: ring.
 rewrite Rmult_1_l.
 rewrite Rmult_1_r.
 cutrewrite (y = x + (y - x))%R. 2: ring.
@@ -2104,7 +2104,7 @@ split.
 apply refl_equal.
 rewrite (proj1 (proj2 (round_constant_underflow rdir _ Hg _ Hk 1 (k - 1))) (refl_equal _)).
 simpl.
-ring (k - 1 + 1)%Z.
+replace (k - 1 + 1)%Z with k. 2: ring.
 exact (conj Hk Hk).
 generalize (float2_density _ _ (conj Hx Hx1)).
 intros (e2,(m2,H2)).
@@ -2697,7 +2697,7 @@ exists xH. exists (rexp (e + Zpos (digits m)) + Zpos (digits n))%Z.
 split.
 generalize (float2_shl_correct (Float2 (Zpos xH) (rexp (e + Zpos (digits m)) + Zpos (digits n))%Z) (digits n)).
 simpl.
-ring (rexp (e + Zpos (digits m))%Z + Zpos (digits n) - Zpos (digits n))%Z.
+replace (rexp (e + Zpos (digits m))%Z + Zpos (digits n) - Zpos (digits n))%Z with (rexp (e + Zpos (digits m))%Z). 2: ring.
 unfold shift_pos.
 rewrite <- H1.
 intro H. exact H.

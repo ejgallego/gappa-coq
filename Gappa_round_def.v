@@ -1,3 +1,4 @@
+Require Import Bool.
 Require Import ZArith.
 
 Section Gappa_round_def.
