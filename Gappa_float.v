@@ -503,9 +503,8 @@ unfold rounding_float.
 rewrite round_extension_float2.
 induction f.
 induction Fnum.
-unfold round. simpl.
-repeat rewrite float2_zero.
-exact (refl_equal _).
+rewrite float2_zero.
+apply round_zero.
 unfold round. simpl.
 rewrite round_rexp_exact.
 apply refl_equal.
@@ -672,10 +671,10 @@ rewrite Rabs_R0.
 left.
 apply float2_pos_compat.
 exact (refl_equal _).
-rewrite float2_zero in Hx.
 elim (Req_dec x 0) ; intro H.
 exact H.
 elim Rlt_not_le with (2 := Hx).
+rewrite float2_zero.
 apply Rabs_pos_lt with (1 := H).
 apply float_absolute_ne_whole.
 apply Rle_lt_trans with (1 := Hx).
@@ -737,10 +736,10 @@ rewrite Rabs_R0.
 left.
 apply float2_pos_compat.
 exact (refl_equal _).
-rewrite float2_zero in Hx.
 elim (Req_dec x 0) ; intro H.
 exact H.
 elim Rlt_not_le with (2 := Hx).
+rewrite float2_zero.
 apply Rabs_pos_lt with (1 := H).
 simpl in e, H1.
 assert (H9: (e = Fexp + Zpos (digits p0) - Zpos p - 2)%Z).
