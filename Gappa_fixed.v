@@ -74,9 +74,9 @@ unfold rounding_fixed.
 rewrite round_extension_float2.
 induction f.
 induction Fnum.
-unfold round, float2R. simpl.
-repeat rewrite Rmult_0_l.
-apply refl_equal.
+unfold round. simpl.
+repeat rewrite float2_zero.
+exact (refl_equal _).
 unfold round. simpl.
 rewrite round_rexp_exact.
 apply refl_equal.

@@ -413,8 +413,7 @@ induction m.
 exists (Float2 0 k2).
 split.
 rewrite H1.
-unfold float2R.
-repeat rewrite Rmult_0_l.
+repeat rewrite float2_zero.
 exact (refl_equal _).
 exact (Zle_refl _).
 exists (Float2 (Zpos p0) e).
@@ -504,9 +503,9 @@ unfold rounding_float.
 rewrite round_extension_float2.
 induction f.
 induction Fnum.
-unfold round, float2R. simpl.
-repeat rewrite Rmult_0_l.
-apply refl_equal.
+unfold round. simpl.
+repeat rewrite float2_zero.
+exact (refl_equal _).
 unfold round. simpl.
 rewrite round_rexp_exact.
 apply refl_equal.

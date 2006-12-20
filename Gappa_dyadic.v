@@ -76,10 +76,9 @@ replace f with (Float2 (Fnum f) (Fexp f)).
 2: induction f ; apply refl_equal.
 simpl.
 case (Fnum f) ; intros. 2: apply H.
-unfold float2R, shl.
-simpl.
-repeat rewrite Rmult_0_l.
-apply refl_equal.
+unfold shl.
+repeat rewrite float2_zero.
+exact (refl_equal _).
 unfold shl.
 cutrewrite (Float2 (Zneg (shift_pos d p)) (Fexp f - Zpos d) =
             - Float2 (shl (Zpos p) d) (Fexp f - Zpos d) :>R)%R.
@@ -87,8 +86,7 @@ rewrite H.
 unfold float2R.
 simpl.
 auto with real.
-unfold float2R.
-unfold shl.
+unfold shl, float2R.
 simpl.
 auto with real.
 Qed.
@@ -303,9 +301,10 @@ Lemma Fis0_correct :
  forall x : float2,
  Fis0 x = true -> x = R0 :>R.
 intros x.
-unfold float2R, Fis0.
-induction (Fnum x) ; intro H0 ; try discriminate.
-apply Rmult_0_l.
+unfold Fis0.
+induction x.
+induction Fnum ; intro H0 ; try discriminate.
+apply float2_zero.
 Qed.
 
 Definition Fpos (x : float2) :=

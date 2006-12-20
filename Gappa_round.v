@@ -194,7 +194,7 @@ Lemma tofloat_pair :
  forall p : N * Z,
  tofloat p = Float2 (Z_of_N (fst p)) (snd p).
 intros (n,e).
-apply refl_equal.
+exact (refl_equal _).
 Qed.
 
 Lemma tofloat_0 :
@@ -202,11 +202,11 @@ Lemma tofloat_0 :
  float2R (match p with (N0,_) => Float2 0 0 | (Npos p, e) => Float2 (Zpos p) e end) = tofloat p.
 intros (n,e).
 case n.
-unfold tofloat, float2R.
-repeat rewrite Rmult_0_l.
-apply refl_equal.
+unfold tofloat.
+repeat rewrite float2_zero.
+exact (refl_equal _).
 intros.
-apply refl_equal.
+exact (refl_equal _).
 Qed.
 
 Lemma round_constant_xO :
@@ -2244,9 +2244,9 @@ Lemma round_zero :
  forall e : Z,
  (round rdir rexp (Float2 Z0 e) = 0 :>R)%R.
 intros rdir rexp e.
-unfold round, float2R.
+unfold round.
 simpl.
-auto with real.
+apply float2_zero.
 Qed.
 
 Lemma round_neg :
@@ -2626,9 +2626,8 @@ rewrite round_extension_float2.
 cutrewrite (f = Float2 (Fnum f) (Fexp f)).
 unfold round.
 induction (Fnum f) ; intros ; simpl.
-unfold float2R.
-repeat rewrite Rmult_0_l.
-apply refl_equal.
+repeat rewrite float2_zero.
+exact (refl_equal _).
 rewrite (round_rexp_exact (rpos rdir) _ _ _ Hr).
 apply refl_equal.
 rewrite (round_rexp_exact (rneg rdir) _ _ _ Hr).
@@ -2754,7 +2753,7 @@ exists Z0. exists Z0.
 rewrite <- Hx.
 rewrite round_extension_zero.
 split.
-unfold float2R. rewrite Rmult_0_l.
+rewrite float2_zero.
 exact (refl_equal _).
 exact I.
 generalize (round_extension_prop_neg rdir _ Hge _ Hx).
