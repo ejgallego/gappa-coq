@@ -869,7 +869,7 @@ rewrite float2_zero.
 apply Rabs_pos.
 Qed.
 
-Definition float_relative_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
+Definition float_relative_ne_helper (p : positive) (d : Z) (xi zi : FF) :=
  Fle2 (Float2 1 (-d + Zpos p - 1)) (lower xi) &&
  Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
  Fle2 (Float2 1 (Zneg p)) (upper zi).
@@ -904,6 +904,139 @@ destruct Hx as (_,(Hx,_)).
 clear H2 H3 zi.
 apply float_relative_ne_whole.
 exact (Rle_trans _ _ _ H1 Hx).
+Qed.
+
+Definition rel_of_fix_float_ne_helper (p : positive) (d xn : Z) (zi : FF) :=
+ Zle_bool (-d) xn &&
+ Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
+ Fle2 (Float2 1 (Zneg p)) (upper zi).
+
+Theorem rel_of_fix_float_ne :
+ forall p : positive, forall d xn : Z, forall x : R, forall zi : FF,
+ FIX x xn ->
+ rel_of_fix_float_ne_helper p d xn zi = true ->
+ REL (rounding_float roundNE p d x) x zi.
+intros p d xn x zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+cutrewrite (Float2 (-1) (Zneg p) = -Float2 1 (Zneg p) :>R)%R in H2.
+2: intros ; rewrite <- Fopp2_correct ; apply refl_equal.
+case (Rle_or_lt (Float2 1 (-d + Zpos p)) (Rabs x)) ; intro H0.
+exists ((rounding_float roundNE p d x - x) / x)%R.
+split.
+cut (Rabs ((rounding_float roundNE p d x - x) / x) <= Float2 1 (- Zpos p))%R.
+split.
+apply Rle_trans with (1 := H2).
+rewrite <- (Ropp_involutive ((rounding_float roundNE p d x - x) / x)%R).
+apply Ropp_le_contravar.
+apply Rle_trans with (Rabs (- ((rounding_float roundNE p d x - x) / x))%R).
+apply RRle_abs.
+rewrite Rabs_Ropp.
+exact H.
+apply Rle_trans with (2 := H3).
+apply Rle_trans with (Rabs ((rounding_float roundNE p d x - x) / x)%R).
+apply RRle_abs.
+exact H.
+(*destruct Hx as (_,(Hx,_)).*)
+clear H2 H3 zi.
+apply float_relative_ne_whole.
+apply Rle_trans with (2 := H0).
+rewrite (float2_shift_m1 (-d + Zpos p)).
+apply float2_binade_le.
+discriminate.
+field.
+case (Rcase_abs x) ; intro.
+apply Rlt_not_eq with (1 := r).
+rewrite <- (Rabs_right x r).
+apply Rgt_not_eq.
+unfold Rgt.
+apply Rlt_le_trans with (2 := H0).
+apply float2_pos_compat.
+exact (refl_equal _).
+cutrewrite (rounding_float roundNE p d x = x :>R).
+exists R0.
+split.
+2: ring.
+split.
+apply Rle_trans with (1 := H2).
+apply Rge_le.
+apply Ropp_0_le_ge_contravar.
+apply Rlt_le.
+apply float2_pos_compat.
+exact (refl_equal _).
+apply Rle_trans with (2 := H3).
+apply Rlt_le.
+apply float2_pos_compat.
+exact (refl_equal _).
+clear H2 H3.
+cut (exists m : Z, x = Float2 m (-d)).
+intros (m,H). rewrite H. rewrite H in H0. clear H.
+unfold rounding_float.
+rewrite round_extension_float2.
+cutrewrite (Float2 1 (-d + Zpos p) = Float2 (Zpower_pos 2 p) (-d) :>R) in H0.
+induction m.
+rewrite float2_zero.
+apply round_zero.
+unfold round. simpl.
+rewrite round_rexp_exact.
+apply refl_equal.
+unfold float_shift, Zmax.
+cut (Zpos (digits p0) <= Zpos p)%Z. intro H.
+case (-d + Zpos (digits p0) - Zpos p ?= - d)%Z ; omega.
+apply digits_pow2.
+case (Zle_or_lt (Zpower_pos 2 p) (Zpos p0)) ; intro H.
+2: exact H.
+elim (Rlt_not_le _ _ H0).
+rewrite Rabs_right.
+exact (float2_binade_le _ _ _ H).
+apply Rle_ge.
+apply Rlt_le.
+apply float2_pos_compat.
+exact (refl_equal _).
+unfold round. simpl.
+rewrite round_rexp_exact.
+apply refl_equal.
+unfold float_shift, Zmax.
+cut (Zpos (digits p0) <= Zpos p)%Z. intro H.
+case (-d + Zpos (digits p0) - Zpos p ?= - d)%Z ; omega.
+apply digits_pow2.
+case (Zle_or_lt (Zpower_pos 2 p) (Zpos p0)) ; intro H.
+2: exact H.
+elim (Rlt_not_le _ _ H0).
+rewrite Rabs_left.
+rewrite <- Fopp2_correct.
+exact (float2_binade_le _ _ _ H).
+cutrewrite (Float2 (Zneg p0) (-d) = -Float2 (Zpos p0) (-d) :>R)%R .
+2: intros ; rewrite <- Fopp2_correct ; apply refl_equal.
+apply Ropp_lt_gt_0_contravar.
+unfold Rgt.
+apply float2_pos_compat.
+exact (refl_equal _).
+rewrite <- (float2_shl_correct (Float2 1 (-d + Zpos p)) p).
+simpl.
+replace (-d + Zpos p - Zpos p)%Z with (-d)%Z. 2: ring.
+rewrite shift_pos_correct.
+rewrite Zmult_1_r.
+apply refl_equal.
+destruct Hx as (x0,(Hx1,Hx2)).
+rewrite <- Hx1.
+clear H0 Hx1 zi x.
+induction x0.
+case (dec_eq Fexp (-d)%Z) ; intro H.
+exists Fnum.
+rewrite H.
+apply refl_equal.
+exists (shl Fnum (pos_of_Z (Fexp - -d)%Z)).
+rewrite <- (float2_shl_correct (Float2 Fnum Fexp) (pos_of_Z (Fexp - - d))).
+rewrite Zpos_pos_of_Z.
+simpl.
+replace (Fexp - (Fexp - -d))%Z with (-d)%Z. 2: ring.
+apply refl_equal.
+simpl in Hx2.
+omega.
 Qed.
 
 End Gappa_float.
