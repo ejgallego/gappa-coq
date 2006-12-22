@@ -40,7 +40,7 @@ repeat rewrite Rmult_assoc.
 repeat rewrite (Rmult_comm (IZR (Fnum y))).
 repeat rewrite <- Rmult_assoc.
 apply refl_equal.
-replace 2%R with (INR 2). 2: apply refl_equal.
+change 2%R with (INR 2).
 auto with real.
 Qed.
 
@@ -52,8 +52,8 @@ Definition shl (m : Z) (d : positive) :=
  end.
 
 Lemma float2_shl_correct :
- forall f : float2, forall d : positive,
- Float2 (shl (Fnum f) d) (Fexp f - Zpos d) = f :>R.
+ forall m e : Z, forall d : positive,
+ Float2 (shl m d) (e - Zpos d) = Float2 m e :>R.
 assert (forall p d : positive, forall e : Z,
         Float2 (shl (Zpos p) d) (e - Zpos d) = Float2 (Zpos p) e :>R).
 intros p d e.
@@ -61,7 +61,7 @@ unfold float2R, shl.
 rewrite shift_pos_correct.
 simpl.
 rewrite Zpower_pos_nat.
-replace 2%Z with (Z_of_nat 2). 2: apply refl_equal.
+change 2%Z with (Z_of_nat 2).
 rewrite mult_IZR.
 rewrite Zpower_nat_powerRZ.
 rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
@@ -71,24 +71,20 @@ rewrite <- powerRZ_add. 2: auto with real.
 replace (e - Zpos d + Zpos d)%Z with e. 2: ring.
 rewrite Rmult_comm.
 auto with real.
-intros f d.
-replace f with (Float2 (Fnum f) (Fexp f)).
-2: induction f ; apply refl_equal.
-simpl.
-case (Fnum f) ; intros. 2: apply H.
+intros m e d.
+induction m.
+2: apply H.
 unfold shl.
 repeat rewrite float2_zero.
-exact (refl_equal _).
+apply refl_equal.
 unfold shl.
-cutrewrite (Float2 (Zneg (shift_pos d p)) (Fexp f - Zpos d) =
-            - Float2 (shl (Zpos p) d) (Fexp f - Zpos d) :>R)%R.
+cutrewrite (Float2 (Zneg (shift_pos d p)) (e - Zpos d) =
+            - Float2 (shl (Zpos p) d) (e - Zpos d) :>R)%R.
 rewrite H.
-unfold float2R.
-simpl.
-auto with real.
-unfold shl, float2R.
-simpl.
-auto with real.
+rewrite <- Fopp2_correct.
+apply refl_equal.
+rewrite <- Fopp2_correct.
+apply refl_equal.
 Qed.
 
 Definition Fshift2 (x y : float2) :=
@@ -112,12 +108,14 @@ replace (Fexp x) with (Fexp y).
 apply refl_equal.
 auto with zarith.
 replace (Fexp y) with (Fexp x - Zpos p)%Z.
+induction x.
 apply float2_shl_correct.
-auto with zarith.
+omega.
 replace (Fexp x) with (Fexp y - Zpos p)%Z.
+induction y.
 apply float2_shl_correct.
 replace (Zpos p) with (-Zneg p)%Z.
-auto with zarith.
+omega.
 apply refl_equal.
 Qed.
 

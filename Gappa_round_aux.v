@@ -13,7 +13,7 @@ unfold float2R. simpl.
 rewrite powerRZ_add. 2: discrR.
 rewrite mult_IZR.
 simpl.
-replace (IZR 2) with 2%R. 2: apply refl_equal.
+change (IZR 2) with 2%R.
 ring.
 Qed.
 
@@ -95,7 +95,7 @@ apply Rmult_le_compat_l.
 auto with real.
 rewrite <- plus_IZR.
 rewrite (Zpos_eq_Z_of_nat_o_nat_of_P (digits m)).
-cutrewrite (2 = INR 2)%R. 2: apply refl_equal.
+change 2%R with (INR 2).
 rewrite <- Zpower_nat_powerRZ.
 apply IZR_le.
 apply (Zlt_le_succ (Zpos m)).
@@ -412,7 +412,7 @@ generalize (Rmult_lt_reg_l _ _ _ H H2). clear H2. intro H2.
 generalize (INR_lt _ _ H2). clear H2. intro H2.
 apply lt_not_le with (1 := H2).
 rewrite nat_of_P_plus_morphism.
-replace (nat_of_P 1) with 1. 2: apply refl_equal.
+change (nat_of_P 1) with 1.
 omega.
 generalize H.
 unfold float2R. simpl.
@@ -427,7 +427,7 @@ generalize (Rmult_lt_reg_l _ _ _ H H2). clear H2. intro H2.
 generalize (INR_lt _ _ H2). clear H2. intro H2.
 apply lt_not_le with (1 := H2).
 rewrite nat_of_P_plus_morphism.
-replace (nat_of_P 1) with 1. 2: apply refl_equal.
+change (nat_of_P 1) with 1.
 omega.
 generalize (float2_digits_correct m1 e1).
 generalize (float2_digits_correct m2 e2).
@@ -442,9 +442,9 @@ generalize (float2_pow2_lt _ _ H1).
 generalize (float2_pow2_lt _ _ H2).
 omega.
 clear H H0 H1 H2 H3 m2 e2.
-rewrite <- (float2_shl_correct (Float2 1 (e1 + Zpos (digits m1))) (digits m1)).
+rewrite <- (float2_shl_correct 1 (e1 + Zpos (digits m1)) (digits m1)).
 simpl.
-replace (e1 + Zpos (digits m1) - Zpos (digits m1))%Z with e1. 2: ring.
+cutrewrite (e1 + Zpos (digits m1) - Zpos (digits m1) = e1)%Z. 2: ring.
 apply float2_binade_le.
 rewrite shift_pos_nat.
 unfold shift_nat.
@@ -457,11 +457,10 @@ exact IHm1.
 simpl.
 rewrite nat_of_P_succ_morphism.
 simpl.
-cutrewrite (Zpos (xI m1) = 2 * Zpos m1 + 1)%Z. 2: apply refl_equal.
-cutrewrite (Zpos (xO (iter_nat (nat_of_P (digits m1)) positive xO xH)) =
-  2 * Zpos (iter_nat (nat_of_P (digits m1)) positive xO xH))%Z.
-2: apply refl_equal.
-cutrewrite (Zpos (m1 + 1) = Zpos m1 + 1)%Z in IHm1. 2: apply refl_equal.
+change (Zpos (xI m1)) with (2 * Zpos m1 + 1)%Z.
+change (Zpos (xO (iter_nat (nat_of_P (digits m1)) positive xO xH))) with
+  (2 * Zpos (iter_nat (nat_of_P (digits m1)) positive xO xH))%Z.
+change (Zpos (m1 + 1)) with (Zpos m1 + 1)%Z in IHm1.
 omega.
 apply Zle_refl.
 Qed.

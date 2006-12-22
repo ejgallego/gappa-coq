@@ -256,7 +256,7 @@ exact (float2_binade_le _ _ _ (Zge_le _ _ H0)).
 unfold float2R. simpl.
 rewrite Rmult_1_l.
 rewrite Zpower_pos_nat.
-replace 2%Z with (Z_of_nat 2). 2: apply refl_equal.
+change 2%Z with (Z_of_nat 2).
 rewrite Zpower_nat_powerRZ.
 rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
 rewrite <- powerRZ_add. 2: discrR.
