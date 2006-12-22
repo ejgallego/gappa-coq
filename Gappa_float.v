@@ -880,7 +880,7 @@ Theorem float_relative_ne :
  forall p : positive, forall d : Z, forall x : R, forall xi zi : FF,
  ABS x xi ->
  float_relative_ne_helper p d xi zi = true ->
- BND ((rounding_float roundNE p d x - x) / x) zi.
+ REL (rounding_float roundNE p d x) x zi.
 intros p d x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -889,6 +889,8 @@ generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). clear H3. intro H3.
 cutrewrite (Float2 (-1) (Zneg p) = -Float2 1 (Zneg p) :>R)%R in H2.
 2: intros ; rewrite <- Fopp2_correct ; apply refl_equal.
+exists ((rounding_float roundNE p d x - x) / x)%R.
+split.
 cut (Rabs ((rounding_float roundNE p d x - x) / x) <= Float2 1 (- Zpos p))%R.
 split.
 apply Rle_trans with (1 := H2).
@@ -906,6 +908,16 @@ destruct Hx as (_,(Hx,_)).
 clear H2 H3 zi.
 apply float_relative_ne_whole.
 exact (Rle_trans _ _ _ H1 Hx).
+field.
+case (Rcase_abs x) ; intro.
+apply Rlt_not_eq with (1 := r).
+rewrite <- (Rabs_right x r).
+apply Rgt_not_eq.
+unfold Rgt.
+apply Rlt_le_trans with (2 := proj1 (proj2 Hx)).
+apply Rlt_le_trans with (2 := H1).
+apply float2_pos_compat.
+exact (refl_equal _).
 Qed.
 
 Definition rel_of_fix_float_ne_helper (p : positive) (d xn : Z) (zi : FF) :=
@@ -942,7 +954,6 @@ apply Rle_trans with (2 := H3).
 apply Rle_trans with (Rabs ((rounding_float roundNE p d x - x) / x)%R).
 apply RRle_abs.
 exact H.
-(*destruct Hx as (_,(Hx,_)).*)
 clear H2 H3 zi.
 apply float_relative_ne_whole.
 apply Rle_trans with (2 := H0).
