@@ -589,29 +589,40 @@ Qed.
 
 Theorem IRsqrt :
  forall yl yu zl zu : R,
- (0 <= yl)%R -> (0 <= zu)%R ->
- (zl * zl <= yl)%R -> (yu <= zu * zu)%R ->
+ match (Rlt_le_dec 0 zl) with
+ | left _ => (zl * zl <= yl)%R
+ | right _ => (0 <= yl)%R
+ end -> (0 <= zu)%R -> (yu <= zu * zu)%R ->
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= sqrt y <= zu)%R.
-intros yl yu zl zu Hy Hz Hzl Hzu y (Hyl,Hyu).
+intros yl yu zl zu.
+case (Rlt_le_dec 0 zl) ; intros Hzl1 Hzl2 Hzu1 Hzu2 y (Hyl,Hyu).
+assert (H1: (zl * zl <= y)%R).
+apply Rle_trans with (1 := Hzl2) (2 := Hyl).
+assert (H2: (0 <= y)%R).
+apply Rle_trans with (2 := H1).
+exact (Rle_0_sqr _).
 split.
-elim (Rcase_abs zl) ; intro H.
-apply Rlt_le.
-apply Rlt_le_trans with (1 := H).
+rewrite <- (sqrt_square zl).
+apply sqrt_le_1. 3: exact H1.
+exact (Rle_0_sqr _).
+exact H2.
+exact (Rlt_le _ _ Hzl1).
+rewrite <- (sqrt_square zu). 2: exact Hzu1.
+apply sqrt_le_1.
+exact H2.
+exact (Rle_0_sqr _).
+apply Rle_trans with (1 := Hyu) (2 := Hzu2).
+split.
+apply Rle_trans with (1 := Hzl1).
 apply sqrt_positivity.
-apply Rle_trans with (1 := Hy) (2 := Hyl).
-generalize (Rge_le _ _ H). clear H. intro H.
-rewrite <- (sqrt_square zl). 2: exact H.
+apply Rle_trans with (1 := Hzl2) (2 := Hyl).
+rewrite <- (sqrt_square zu). 2: exact Hzu1.
 apply sqrt_le_1.
-apply Rmult_le_pos ; exact H.
-apply Rle_trans with (1 := Hy) (2 := Hyl).
-apply Rle_trans with (1 := Hzl) (2 := Hyl).
-rewrite <- (sqrt_square zu). 2: exact Hz.
-apply sqrt_le_1.
-apply Rle_trans with (1 := Hy) (2 := Hyl).
-apply Rmult_le_pos ; exact Hz.
-apply Rle_trans with (1 := Hyu) (2 := Hzu).
+apply Rle_trans with (1 := Hzl2) (2 := Hyl).
+exact (Rle_0_sqr _).
+apply Rle_trans with (1 := Hyu) (2 := Hzu2).
 Qed.
 
 Theorem IRcompose :

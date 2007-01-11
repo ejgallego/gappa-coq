@@ -800,9 +800,9 @@ apply IRabs_n with (1 := H1) (2 := H2) (3 := H3) (4 := Hx).
 Qed.
 
 Definition sqrt_helper (xi zi : FF) :=
- Fpos0 (lower xi) &&
+ (if (Fneg0 (lower zi)) then Fpos0 (lower xi)
+  else Fle2 (Fmult2 (lower zi) (lower zi)) (lower xi)) &&
  Fpos0 (upper zi) &&
- Fle2 (Fmult2 (lower zi) (lower zi)) (lower xi) &&
  Fle2 (upper xi) (Fmult2 (upper zi) (upper zi)).
 
 Theorem sqrtG:
@@ -811,14 +811,40 @@ Theorem sqrtG:
  sqrt_helper xi zi = true ->
  BND (sqrt x) zi.
 intros x xi zi Hx Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fpos0_correct _ H1). clear H1. intro H1.
 generalize (Fpos0_correct _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
-generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-apply IRsqrt with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := Hx).
+unfold BND.
+apply IRsqrt with (2 := H2) (3 := H3) (4 := Hx).
+induction (lower zi).
+induction Fnum ; simpl in H1.
+rewrite float2_zero.
+rewrite Rmult_0_l.
+generalize (Fpos0_correct _ H1). clear H1. intro H1.
+case (Rlt_le_dec 0 0) ; intros _ ; exact H1.
+case (Rlt_le_dec 0 (Float2 (Zpos p) Fexp)).
+intros _.
+rewrite <- Fmult2_correct.
+apply Fle2_correct.
+exact H1.
+intro H.
+elim (Rlt_irrefl R0).
+apply Rlt_le_trans with (2 := H).
+unfold float2R. simpl.
+apply Rmult_lt_0_compat ; auto with real.
+case (Rlt_le_dec 0 (Float2 (Zneg p) Fexp)).
+intro H.
+elim (Rlt_irrefl R0).
+apply Rlt_le_trans with (1 := H).
+unfold float2R. simpl.
+rewrite Ropp_mult_distr_l_reverse.
+rewrite <- Ropp_0.
+apply Ropp_le_contravar.
+apply Rmult_le_pos ; auto with real.
+intros _.
+apply Fpos0_correct.
+exact H1.
 Qed.
 
 End Gappa_pred_bnd.
