@@ -20,6 +20,21 @@ apply Rle_trans with (2 := H).
 apply RRle_abs.
 Qed.
 
+Lemma nzr_of_abs :
+ forall z : R, forall zi : FF,
+ ABS z zi ->
+ Fpos (lower zi) = true ->
+ NZR z.
+intros z zi Hz Hb. 
+generalize (Fpos_correct _ Hb). clear Hb. intro H.
+case (Rcase_abs z) ; intro.
+apply Rlt_not_eq with (1 := r).
+rewrite <- (Rabs_right z r).
+unfold NZR.
+apply Rgt_not_eq.
+apply Rlt_le_trans with (1 := H) (2 := proj1 (proj2 Hz)).
+Qed.
+
 Definition bnd_of_abs_helper (xi zi : FF) :=
  Fle2 (lower zi) (Fopp2 (upper xi)) &&
  Fle2 (upper xi) (upper zi).
@@ -152,7 +167,7 @@ unfold Rdiv.
 rewrite Rabs_mult.
 rewrite Rabs_Rinv.
 apply refl_equal.
-apply abs_not_zero_correct with (1 := Hy) (2 := Hb).
+apply nzr_of_abs with (1 := Hy) (2 := Hb).
 Qed.
 
 Definition add_aa_p_helper (xi yi zi : FF) :=

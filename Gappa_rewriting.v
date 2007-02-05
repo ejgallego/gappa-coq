@@ -13,20 +13,6 @@ exact Hz.
 ring.
 Qed.
 
-Theorem opp_mibq :
- forall a b : R, forall bi zi : FF,
- ABS b bi ->
- BND ((-a - -b) / -b) zi ->
- abs_not_zero bi = true ->
- BND ((a - b) / b) zi.
-intros a b bi zi Hb Hz H.
-generalize (abs_not_zero_correct _ _ Hb H). clear H. intro H.
-replace ((a - b) / b)%R with ((-a - -b) / -b)%R.
-exact Hz.
-field.
-auto with real.
-Qed.
-
 Theorem add_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) + (c + b)) zi ->
@@ -207,61 +193,24 @@ exact Hz.
 ring.
 Qed.
 
-Theorem err_xibq :
- forall a b : R, forall bi zi : FF,
- ABS b bi -> BND (a / b * b) zi ->
- abs_not_zero bi = true ->
- BND a zi.
-intros a b bi zi Hb Hz H.
-generalize (abs_not_zero_correct _ _ Hb H). clear Hb H. intro H.
-replace a with (a / b * b)%R.
-exact Hz.
-field.
-exact H.
-Qed.
-
 Theorem err_xalq :
- forall a b c : R, forall bi ci zi : FF,
- ABS b bi -> ABS c ci ->
+ forall a b c : R, forall zi : FF,
+ NZR b -> NZR c ->
  BND ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b)) zi ->
- abs_not_zero bi && abs_not_zero ci = true ->
  BND ((a - b) / b) zi.
-intros a b c bi ci zi Hb Hc Hz H.
-generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (abs_not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
-generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
+intros a b c zi Hb Hc Hz.
 replace ((a - b) / b)%R with ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b))%R.
 exact Hz.
 field.
-auto with real.
-Qed.
-
-Theorem mul_mibq :
- forall a b c d : R, forall ci di zi : FF,
- ABS c ci -> ABS d di ->
- BND ((a - c) / c + (b - d) / d + ((a - c) / c) * ((b - d) / d)) zi ->
- abs_not_zero ci && abs_not_zero di = true ->
- BND ((a * b - c * d) / (c * d)) zi.
-intros a b c d ci di zi Hc Hd Hz H.
-generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (abs_not_zero_correct _ _ Hc H1). clear Hc H1. intro Hc.
-generalize (abs_not_zero_correct _ _ Hd H2). clear Hd H2. intro Hd.
-replace ((a * b - c * d) / (c * d))%R with ((a - c) / c + (b - d) / d + ((a - c) / c) * ((b - d) / d))%R.
-exact Hz.
-field.
-exact (conj Hd Hc).
+exact (conj Hb Hc).
 Qed.
 
 Theorem mul_filq :
- forall a b c : R, forall ai ci zi : FF,
- ABS a ai -> ABS c ci ->
+ forall a b c : R, forall zi : FF,
+ NZR a -> NZR c ->
  BND ((b - c) / c) zi ->
- abs_not_zero ai && abs_not_zero ci = true ->
  BND ((a * b - a * c) / (a * c)) zi.
-intros a b c ai ci zi Ha Hc Hz H.
-generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (abs_not_zero_correct _ _ Ha H1). clear Ha H1. intro Ha.
-generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
+intros a b c zi Ha Hc Hz.
 replace ((a * b - a * c) / (a * c))%R with ((b - c) / c)%R.
 exact Hz.
 field.
@@ -269,15 +218,11 @@ exact (conj Hc Ha).
 Qed.
 
 Theorem mul_firq :
- forall a b c : R, forall bi ci zi : FF,
- ABS b bi -> ABS c ci ->
+ forall a b c : R, forall zi : FF,
+ NZR b -> NZR c ->
  BND ((a - c) / c) zi ->
- abs_not_zero bi && abs_not_zero ci = true ->
  BND ((a * b - c * b) / (c * b)) zi.
-intros a b c bi ci zi Hb Hc Hz H.
-generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (abs_not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
-generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
+intros a b c zi Hb Hc Hz.
 replace ((a * b - c * b) / (c * b))%R with ((a - c) / c)%R.
 exact Hz.
 field.
@@ -389,15 +334,11 @@ ring.
 Qed.
 
 Theorem val_xebq :
- forall a b : R, forall ai bi zi : FF,
- ABS a ai -> ABS b bi ->
+ forall a b : R, forall zi : FF,
+ NZR a -> NZR b ->
  BND (b / (1 + (b - a) / a)) zi ->
- abs_not_zero ai && abs_not_zero bi = true ->
  BND a zi.
-intros a b ai ci zi Ha Hb Hz H.
-generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (abs_not_zero_correct _ _ Ha H1). clear Ha H1. intro Ha.
-generalize (abs_not_zero_correct _ _ Hb H2). clear Hb H2. intro Hb.
+intros a b zi Ha Hb Hz.
 replace a with (b / (1 + (b - a) / a))%R.
 exact Hz.
 field.
@@ -406,13 +347,11 @@ exact (conj Ha Hb).
 Qed.
 
 Theorem val_xabq :
- forall a b : R, forall ai zi : FF,
- ABS a ai ->
+ forall a b : R, forall zi : FF,
+ NZR a ->
  BND (a * (1 + (b - a) / a)) zi ->
- abs_not_zero ai = true ->
  BND b zi.
-intros a b ai zi Ha Hz H.
-generalize (abs_not_zero_correct _ _ Ha H). clear Ha H. intro Ha.
+intros a b zi Ha Hz.
 replace b with (a * (1 + (b - a) / a))%R.
 exact Hz.
 field.
@@ -420,17 +359,11 @@ exact Ha.
 Qed.
 
 Theorem div_mibq :
- forall a b c d : R, forall bi ci di zi : FF,
- ABS b bi -> ABS c ci -> ABS d di ->
+ forall a b c d : R, forall zi : FF,
+ NZR b -> NZR c -> NZR d ->
  BND (((a - c) / c - (b - d) / d) / (1 + (b - d) / d)) zi ->
- abs_not_zero bi && abs_not_zero ci && abs_not_zero di = true ->
  BND ((a / b - c / d) / (c / d)) zi.
-intros a b c d bi ci di zi Hb Hc Hd Hz H.
-generalize (andb_prop _ _ H). clear H. intros (H, H3).
-generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (abs_not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
-generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
-generalize (abs_not_zero_correct _ _ Hd H3). clear Hd H3. intro Hd.
+intros a b c d zi Hb Hc Hd Hz.
 replace ((a / b - c / d) / (c / d))%R with (((a - c) / c - (b - d) / d) / (1 + (b - d) / d))%R.
 exact Hz.
 field.
@@ -438,15 +371,11 @@ exact (conj Hd (conj Hb Hc)).
 Qed.
 
 Theorem div_firq :
- forall a b c : R, forall bi ci zi : FF,
- ABS b bi -> ABS c ci ->
+ forall a b c : R, forall zi : FF,
+ NZR b -> NZR c ->
  BND ((a - c) / c) zi ->
- abs_not_zero bi && abs_not_zero ci = true ->
  BND ((a / b - c / b) / (c / b)) zi.
-intros a b c bi ci zi Hb Hc Hz H.
-generalize (andb_prop _ _ H). clear H. intros (H1, H2).
-generalize (abs_not_zero_correct _ _ Hb H1). clear Hb H1. intro Hb.
-generalize (abs_not_zero_correct _ _ Hc H2). clear Hc H2. intro Hc.
+intros a b c zi Hb Hc Hz.
 replace ((a / b - c / b) / (c / b))%R with ((a - c) / c)%R.
 exact Hz.
 field.
@@ -454,29 +383,25 @@ exact (conj Hb Hc).
 Qed.
 
 Theorem err_xabq :
- forall a b : R, forall bi zi : FF,
- ABS b bi -> BND (1 + (a - b) / b) zi ->
- abs_not_zero bi = true ->
+ forall a b : R, forall zi : FF,
+ NZR b -> BND (1 + (a - b) / b) zi ->
  BND (a / b) zi.
-intros a b bi zi Hb Hz H.
-generalize (abs_not_zero_correct _ _ Hb H). clear Hb H. intro H.
+intros a b zi Hb Hz.
 replace (a / b)%R with (1 + (a - b) / b)%R.
 exact Hz.
 field.
-exact H.
+exact Hb.
 Qed.
 
 Theorem err_fabq :
- forall a b : R, forall bi zi : FF,
- ABS b bi -> BND (a / b) zi ->
- abs_not_zero bi = true ->
+ forall a b : R, forall zi : FF,
+ NZR b -> BND (a / b) zi ->
  BND (1 + (a - b) / b) zi.
-intros a b bi zi Hb Hz H.
-generalize (abs_not_zero_correct _ _ Hb H). clear Hb H. intro H.
+intros a b zi Hb Hz.
 replace (1 + (a - b) / b)%R with (a / b)%R .
 exact Hz.
 field.
-exact H.
+exact Hb.
 Qed.
 
 End Gappa_rewriting.

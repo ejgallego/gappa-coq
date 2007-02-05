@@ -280,27 +280,24 @@ rewrite (Rplus_opp_r x).
 apply contains_zero with (1 := Hb).
 Qed.
 
-Definition div_refl_helper (xi zi : FF) :=
- abs_not_zero xi &&
+Definition div_refl_helper (zi : FF) :=
  Fle2 (lower zi) (Float2 1 0) &&
  Fle2 (Float2 1 0) (upper zi).
 
 Lemma div_refl :
- forall x : R, forall xi zi : FF,
- ABS x xi ->
- div_refl_helper xi zi = true ->
+ forall x : R, forall zi : FF,
+ NZR x ->
+ div_refl_helper zi = true ->
  BND (x / x) zi.
-intros x xi zi Hx Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+intros x zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (abs_not_zero_correct _ _ Hx H1). clear H1. intro H1.
 assert (Float2 1 0 = 1 :>R)%R.
 unfold float2R. auto with real.
+generalize (Fle2_correct _ _ H1). clear H1. rewrite H. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. rewrite H. intro H2.
-generalize (Fle2_correct _ _ H3). clear H3. rewrite H. intro H3.
 unfold Rdiv.
-rewrite Rinv_r. 2: exact H1.
-split. exact H2. exact H3.
+rewrite Rinv_r. 2: exact Hx.
+exact (conj H1 H2).
 Qed.
 
 Definition mul_pp_helper (xi yi zi : FF) :=
