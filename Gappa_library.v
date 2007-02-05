@@ -5,6 +5,7 @@ Require Export Gappa_definitions.
 Require Export Gappa_pred_bnd.
 Require Export Gappa_pred_abs.
 Require Export Gappa_pred_fixflt.
+Require Export Gappa_pred_nzr.
 Require Export Gappa_pred_rel.
 Require Export Gappa_rewriting.
 Require Export Gappa_round_def.

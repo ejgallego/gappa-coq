@@ -1,4 +1,5 @@
 Require Import Gappa_common.
+Require Import Gappa_pred_nzr.
 
 Section Gappa_pred_abs.
 
@@ -18,21 +19,6 @@ apply Rabs_pos.
 apply Rge_le with (1 := r).
 apply Rle_trans with (2 := H).
 apply RRle_abs.
-Qed.
-
-Lemma nzr_of_abs :
- forall z : R, forall zi : FF,
- ABS z zi ->
- Fpos (lower zi) = true ->
- NZR z.
-intros z zi Hz Hb. 
-generalize (Fpos_correct _ Hb). clear Hb. intro H.
-case (Rcase_abs z) ; intro.
-apply Rlt_not_eq with (1 := r).
-rewrite <- (Rabs_right z r).
-unfold NZR.
-apply Rgt_not_eq.
-apply Rlt_le_trans with (1 := H) (2 := proj1 (proj2 Hz)).
 Qed.
 
 Definition bnd_of_abs_helper (xi zi : FF) :=
