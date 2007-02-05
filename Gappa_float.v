@@ -874,7 +874,8 @@ Qed.
 Definition float_relative_ne_helper (p : positive) (d : Z) (xi zi : FF) :=
  Fle2 (Float2 1 (-d + Zpos p - 1)) (lower xi) &&
  Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
- Fle2 (Float2 1 (Zneg p)) (upper zi).
+ Fle2 (Float2 1 (Zneg p)) (upper zi) &&
+ Flt2 (Float2 (-1) 0) (lower zi).
 
 Theorem float_relative_ne :
  forall p : positive, forall d : Z, forall x : R, forall xi zi : FF,
@@ -882,14 +883,20 @@ Theorem float_relative_ne :
  float_relative_ne_helper p d xi zi = true ->
  REL (rounding_float roundNE p d x) x zi.
 intros p d x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+generalize (Flt2_correct _ _ H4). clear H4. intro H4.
 cutrewrite (Float2 (-1) (Zneg p) = -Float2 1 (Zneg p) :>R)%R in H2.
 2: intros ; rewrite <- Fopp2_correct ; apply refl_equal.
 exists ((rounding_float roundNE p d x - x) / x)%R.
+split.
+cutrewrite (-1 = Float2 (-1) 0)%R.
+exact H4.
+unfold float2R. auto with real.
 split.
 cut (Rabs ((rounding_float roundNE p d x - x) / x) <= Float2 1 (- Zpos p))%R.
 split.
@@ -905,7 +912,7 @@ apply Rle_trans with (Rabs ((rounding_float roundNE p d x - x) / x)%R).
 apply RRle_abs.
 exact H.
 destruct Hx as (_,(Hx,_)).
-clear H2 H3 zi.
+clear H2 H3 H4 zi.
 apply float_relative_ne_whole.
 exact (Rle_trans _ _ _ H1 Hx).
 field.
@@ -923,7 +930,8 @@ Qed.
 Definition rel_of_fix_float_ne_helper (p : positive) (d xn : Z) (zi : FF) :=
  Zle_bool (-d) xn &&
  Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
- Fle2 (Float2 1 (Zneg p)) (upper zi).
+ Fle2 (Float2 1 (Zneg p)) (upper zi) &&
+ Flt2 (Float2 (-1) 0) (lower zi).
 
 Theorem rel_of_fix_float_ne :
  forall p : positive, forall d xn : Z, forall x : R, forall zi : FF,
@@ -931,15 +939,21 @@ Theorem rel_of_fix_float_ne :
  rel_of_fix_float_ne_helper p d xn zi = true ->
  REL (rounding_float roundNE p d x) x zi.
 intros p d xn x zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+generalize (Flt2_correct _ _ H4). clear H4. intro H4.
 cutrewrite (Float2 (-1) (Zneg p) = -Float2 1 (Zneg p) :>R)%R in H2.
 2: intros ; rewrite <- Fopp2_correct ; apply refl_equal.
 case (Rle_or_lt (Float2 1 (-d + Zpos p)) (Rabs x)) ; intro H0.
 exists ((rounding_float roundNE p d x - x) / x)%R.
+split.
+cutrewrite (-1 = Float2 (-1) 0)%R.
+exact H4.
+unfold float2R. auto with real.
 split.
 cut (Rabs ((rounding_float roundNE p d x - x) / x) <= Float2 1 (- Zpos p))%R.
 split.
@@ -954,7 +968,7 @@ apply Rle_trans with (2 := H3).
 apply Rle_trans with (Rabs ((rounding_float roundNE p d x - x) / x)%R).
 apply RRle_abs.
 exact H.
-clear H2 H3 zi.
+clear H2 H3 H4 zi.
 apply float_relative_ne_whole.
 apply Rle_trans with (2 := H0).
 rewrite (float2_shift_m1 (-d + Zpos p)).
@@ -972,6 +986,10 @@ exact (refl_equal _).
 cutrewrite (rounding_float roundNE p d x = x :>R).
 exists R0.
 split.
+cutrewrite (-1 = Float2 (-1) 0)%R.
+exact H4.
+unfold float2R. auto with real.
+split.
 2: ring.
 split.
 apply Rle_trans with (1 := H2).
@@ -984,7 +1002,7 @@ apply Rle_trans with (2 := H3).
 apply Rlt_le.
 apply float2_pos_compat.
 exact (refl_equal _).
-clear H2 H3.
+clear H2 H3 H4.
 cut (exists m : Z, x = Float2 m (-d)).
 intros (m,H). rewrite H. rewrite H in H0. clear H.
 unfold rounding_float.
