@@ -1,4 +1,5 @@
 Require Import Decidable.
+Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
 Require Import Gappa_definitions.
@@ -7,6 +8,17 @@ Require Import Gappa_round_def.
 Require Import Gappa_round_aux.
 
 Section Gappa_round.
+
+Lemma iter_nat_simpl :
+ forall n : nat, forall A : Set, forall f : A -> A, forall a : A,
+ iter_nat (S n) A f a = iter_nat n A f (f a).
+intros.
+replace (S n) with (n + 1).
+rewrite iter_nat_plus.
+apply refl_equal.
+rewrite plus_comm.
+apply refl_equal.
+Qed.
 
 Definition shr_aux (p : rnd_record) : rnd_record :=
  let s := rnd_r p || rnd_s p in
@@ -496,9 +508,7 @@ elim Zle_not_lt with (1 := H).
 generalize (Zgt_pos_0 (digits m)).
 simpl.
 omega.
-rewrite S_to_plus_one.
-rewrite plus_comm.
-rewrite iter_nat_plus.
+rewrite iter_nat_simpl.
 simpl.
 unfold shr_aux at 2.
 simpl.
@@ -784,9 +794,7 @@ elim Zle_not_lt with (1 := H).
 generalize (Zgt_pos_0 (digits m2)).
 simpl.
 omega.
-rewrite S_to_plus_one.
-rewrite plus_comm.
-rewrite iter_nat_plus.
+rewrite iter_nat_simpl.
 simpl.
 unfold shr_aux at 2.
 simpl.
@@ -843,17 +851,13 @@ unfold shr.
 rewrite iter_nat_of_P.
 rewrite shift_pos_nat.
 cutrewrite (nat_of_P p = S (nat_of_P (pos_of_Z (e1 - 1 - e2)))).
-rewrite S_to_plus_one.
-rewrite plus_comm.
-rewrite iter_nat_plus.
+rewrite iter_nat_simpl.
 simpl.
 unfold shr_aux at 2, shift_nat.
 simpl.
 induction (nat_of_P (pos_of_Z (e1 - 1 - e2))).
 exact (refl_equal _).
-pattern (S n) at 1 ; rewrite S_to_plus_one.
-rewrite plus_comm.
-rewrite iter_nat_plus.
+rewrite iter_nat_simpl.
 simpl.
 unfold shr_aux at 2. simpl.
 exact IHn.

@@ -1,3 +1,4 @@
+Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
 Require Import Gappa_definitions.

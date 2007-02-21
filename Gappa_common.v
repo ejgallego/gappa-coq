@@ -1,3 +1,4 @@
+Require Export Bool.
 Require Export ZArith.
 Require Export Reals.
 Require Export Gappa_real.
