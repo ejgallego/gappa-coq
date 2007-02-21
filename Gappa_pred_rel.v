@@ -14,6 +14,25 @@ field.
 exact Hb.
 Qed.
 
+Theorem rel_of_nzr_bnd :
+ forall a b : R, forall zi : FF,
+ NZR b -> BND ((a - b) / b) zi ->
+ Flt2 (Float2 (-1) 0) (lower zi) = true ->
+ REL a b zi.
+intros a b zi Hb Hr H.
+generalize (Flt2_correct _ _ H).
+cutrewrite (Float2 (-1) 0 = -1 :>R)%R.
+2: unfold float2R ; auto with real.
+clear H. intro H.
+exists ((a - b) / b)%R.
+split.
+exact H.
+split.
+exact Hr.
+field.
+exact Hb.
+Qed.
+
 Definition mul_rr_helper (xi yi zi : FF) :=
  Flt2 (Float2 (-1) 0) (lower zi) &&
  Fle2 (lower zi) (Fplus2 (Fplus2 (lower xi) (lower yi))
