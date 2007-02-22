@@ -34,7 +34,7 @@ Gappa_pred_bnd.vo: Gappa_pred_bnd.v Gappa_common.vo Gappa_decimal.vo
 Gappa_pred_fixflt.vo: Gappa_pred_fixflt.v Gappa_common.vo Gappa_round_aux.vo
 Gappa_pred_nzr.vo: Gappa_pred_nzr.v Gappa_common.vo
 Gappa_pred_rel.vo: Gappa_pred_rel.v Gappa_common.vo Gappa_pred_bnd.vo
-Gappa_proxy.vo: Gappa_proxy.v Gappa_common.vo
+Gappa_proxy.vo: Gappa_proxy.v Gappa_common.vo Gappa_round_def.vo Gappa_fixed.vo Gappa_float.vo
 Gappa_real.vo: Gappa_real.v
 Gappa_rewriting.vo: Gappa_rewriting.v Gappa_common.vo
 Gappa_round_aux.vo: Gappa_round_aux.v Gappa_definitions.vo Gappa_dyadic.vo
