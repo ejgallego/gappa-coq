@@ -344,14 +344,16 @@ generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
 apply IRmult_pn with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
 Qed.
 
+Definition mul_np_helper (xi yi zi : FF) := mul_pn_helper yi xi zi.
+
 Theorem mul_np :
  forall x y : R, forall xi yi zi : FF,
  BND x xi -> BND y yi ->
- mul_pn_helper yi xi zi = true ->
+ mul_np_helper xi yi zi = true ->
  BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
-apply mul_pn with (1 := Hy) (2 := Hx) (3 := Hb).
+exact (mul_pn _ _ _ _ _ Hy Hx Hb).
 Qed.
 
 Definition mul_nn_helper (xi yi zi : FF) :=
@@ -400,6 +402,8 @@ generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
 apply IRmult_po with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := H5) (6 := Hx) (7 := Hy).
 Qed.
 
+Definition mul_op_helper (xi yi zi : FF) := mul_po_helper yi xi zi.
+
 Theorem mul_op :
  forall x y : R, forall xi yi zi : FF,
  BND x xi -> BND y yi ->
@@ -407,7 +411,7 @@ Theorem mul_op :
  BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
-apply mul_po with (1 := Hy) (2 := Hx) (3 := Hb).
+exact (mul_po _ _ _ _ _ Hy Hx Hb).
 Qed.
 
 Definition mul_no_helper (xi yi zi : FF) :=
@@ -434,6 +438,8 @@ generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
 apply IRmult_no with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := H5) (6 := Hx) (7 := Hy).
 Qed.
 
+Definition mul_on_helper (xi yi zi : FF) := mul_no_helper yi xi zi.
+
 Theorem mul_on :
  forall x y : R, forall xi yi zi : FF,
  BND x xi -> BND y yi ->
@@ -441,7 +447,7 @@ Theorem mul_on :
  BND (x * y) zi.
 intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
-apply mul_no with (1 := Hy) (2 := Hx) (3 := Hb).
+exact (mul_no _ _ _ _ _ Hy Hx Hb).
 Qed.
 
 Definition mul_oo_helper (xi yi zi : FF) :=

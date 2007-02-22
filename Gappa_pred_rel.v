@@ -1,4 +1,5 @@
 Require Import Gappa_common.
+Require Import Gappa_pred_bnd.
 
 Section Gappa_pred_rel.
 
@@ -33,201 +34,32 @@ field.
 exact Hb.
 Qed.
 
-Definition error_of_rel_pp_helper (xi yi zi : FF) :=
- Fpos0 (lower xi) &&
- Fpos (lower yi) &&
- Fle2 (lower zi) (Fmult2 (lower xi) (lower yi)) &&
- Fle2 (Fmult2 (upper xi) (upper yi)) (upper zi).
-
-Theorem error_of_rel_pp :
+Lemma error_of_rel_generic :
+ forall f,
+ forall t: (forall x y : R, forall xi yi zi : FF,
+            BND x xi -> BND y yi -> f xi yi zi = true ->
+            BND (x * y) zi),
  forall a b : R, forall xi yi zi : FF,
  REL a b xi -> BND b yi ->
- error_of_rel_pp_helper xi yi zi = true ->
+ f xi yi zi = true ->
  BND (a - b) zi.
-intros a b xi yi zi Hr Hb H.
-generalize (andb_prop _ _ H). clear H. intros (H,H4).
-generalize (andb_prop _ _ H). clear H. intros (H,H3).
-generalize (andb_prop _ _ H). clear H. intros (H1,H2).
-generalize (Fpos0_correct _ H1). clear H1. intro H1.
-generalize (Fpos_correct _ H2). clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
-generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-assert (b <> 0)%R.
-apply Rgt_not_eq.
-apply Rlt_le_trans with (1 := H2) (2 := proj1 Hb).
-cutrewrite (a - b = (a - b) / b * b)%R.
-unfold BND.
-apply IRmult_pp with (1 := H1) (2 := Rlt_le _ _ H2) (3 := H3) (4 := H4) (6 := Hb).
-apply bnd_of_nzr_rel.
-exact H.
-exact Hr.
-field.
-exact H.
+intros f t a b xi yi zi (x,(_,(Hr1,Hr2))).
+cutrewrite (a - b = x * b)%R.
+apply t.
+exact Hr1.
+rewrite Hr2.
+ring.
 Qed.
 
-Definition error_of_rel_pn_helper (xi yi zi : FF) :=
- Fpos0 (lower xi) &&
- Fneg (upper yi) &&
- Fle2 (lower zi) (Fmult2 (upper xi) (lower yi)) &&
- Fle2 (Fmult2 (lower xi) (upper yi)) (upper zi).
-
-Theorem error_of_rel_pn :
- forall a b : R, forall xi yi zi : FF,
- REL a b xi -> BND b yi ->
- error_of_rel_pn_helper xi yi zi = true ->
- BND (a - b) zi.
-intros a b xi yi zi Hr Hb H.
-generalize (andb_prop _ _ H). clear H. intros (H,H4).
-generalize (andb_prop _ _ H). clear H. intros (H,H3).
-generalize (andb_prop _ _ H). clear H. intros (H1,H2).
-generalize (Fpos0_correct _ H1). clear H1. intro H1.
-generalize (Fneg_correct _ H2). clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
-generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-assert (b <> 0)%R.
-apply Rlt_not_eq.
-apply Rle_lt_trans with (1 := proj2 Hb) (2 := H2).
-cutrewrite (a - b = (a - b) / b * b)%R.
-unfold BND.
-apply IRmult_pn with (1 := H1) (2 := Rlt_le _ _ H2) (3 := H3) (4 := H4) (6 := Hb).
-apply bnd_of_nzr_rel.
-exact H.
-exact Hr.
-field.
-exact H.
-Qed.
-
-Definition error_of_rel_np_helper (xi yi zi : FF) :=
- Fneg0 (upper xi) &&
- Fpos (lower yi) &&
- Fle2 (lower zi) (Fmult2 (lower xi) (upper yi)) &&
- Fle2 (Fmult2 (upper xi) (lower yi)) (upper zi).
-
-Theorem error_of_rel_np :
- forall a b : R, forall xi yi zi : FF,
- REL a b xi -> BND b yi ->
- error_of_rel_np_helper xi yi zi = true ->
- BND (a - b) zi.
-intros a b xi yi zi Hr Hb H.
-generalize (andb_prop _ _ H). clear H. intros (H,H4).
-generalize (andb_prop _ _ H). clear H. intros (H,H3).
-generalize (andb_prop _ _ H). clear H. intros (H1,H2).
-generalize (Fneg0_correct _ H1). clear H1. intro H1.
-generalize (Fpos_correct _ H2). clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
-generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-assert (b <> 0)%R.
-apply Rgt_not_eq.
-apply Rlt_le_trans with (1 := H2) (2 := proj1 Hb).
-cutrewrite (a - b = (a - b) / b * b)%R.
-unfold BND.
-apply IRmult_np with (1 := H1) (2 := Rlt_le _ _ H2) (3 := H3) (4 := H4) (6 := Hb).
-apply bnd_of_nzr_rel.
-exact H.
-exact Hr.
-field.
-exact H.
-Qed.
-
-Definition error_of_rel_nn_helper (xi yi zi : FF) :=
- Fneg0 (upper xi) &&
- Fneg (upper yi) &&
- Fle2 (lower zi) (Fmult2 (upper xi) (upper yi)) &&
- Fle2 (Fmult2 (lower xi) (lower yi)) (upper zi).
-
-Theorem error_of_rel_nn :
- forall a b : R, forall xi yi zi : FF,
- REL a b xi -> BND b yi ->
- error_of_rel_nn_helper xi yi zi = true ->
- BND (a - b) zi.
-intros a b xi yi zi Hr Hb H.
-generalize (andb_prop _ _ H). clear H. intros (H,H4).
-generalize (andb_prop _ _ H). clear H. intros (H,H3).
-generalize (andb_prop _ _ H). clear H. intros (H1,H2).
-generalize (Fneg0_correct _ H1). clear H1. intro H1.
-generalize (Fneg_correct _ H2). clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). rewrite Fmult2_correct. clear H3. intro H3.
-generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-assert (b <> 0)%R.
-apply Rlt_not_eq.
-apply Rle_lt_trans with (1 := proj2 Hb) (2 := H2).
-cutrewrite (a - b = (a - b) / b * b)%R.
-unfold BND.
-apply IRmult_nn with (1 := H1) (2 := Rlt_le _ _ H2) (3 := H3) (4 := H4) (6 := Hb).
-apply bnd_of_nzr_rel.
-exact H.
-exact Hr.
-field.
-exact H.
-Qed.
-
-Definition error_of_rel_op_helper (xi yi zi : FF) :=
- Fneg0 (lower xi) && Fpos0 (upper xi) &&
- Fpos (lower yi) &&
- Fle2 (lower zi) (Fmult2 (lower xi) (upper yi)) &&
- Fle2 (Fmult2 (upper xi) (upper yi)) (upper zi).
-
-Theorem error_of_rel_op :
- forall a b : R, forall xi yi zi : FF,
- REL a b xi -> BND b yi ->
- error_of_rel_op_helper xi yi zi = true ->
- BND (a - b) zi.
-intros a b xi yi zi Hr Hb H.
-generalize (andb_prop _ _ H). clear H. intros (H,H5).
-generalize (andb_prop _ _ H). clear H. intros (H,H4).
-generalize (andb_prop _ _ H). clear H. intros (H,H3).
-generalize (andb_prop _ _ H). clear H. intros (H1,H2).
-generalize (Fneg0_correct _ H1). clear H1. intro H1.
-generalize (Fpos0_correct _ H2). clear H2. intro H2.
-generalize (Fpos_correct _ H3). clear H3. intro H3.
-generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
-assert (b <> 0)%R.
-apply Rgt_not_eq.
-apply Rlt_le_trans with (1 := H3) (2 := proj1 Hb).
-cutrewrite (a - b = (a - b) / b * b)%R.
-unfold BND.
-apply IRmult_op with (1 := H1) (2 := H2) (3 := Rlt_le _ _ H3) (4 := H4) (5 := H5) (7 := Hb).
-apply bnd_of_nzr_rel.
-exact H.
-exact Hr.
-field.
-exact H.
-Qed.
-
-Definition error_of_rel_on_helper (xi yi zi : FF) :=
- Fneg0 (lower xi) && Fpos0 (upper xi) &&
- Fneg (upper yi) &&
- Fle2 (lower zi) (Fmult2 (upper xi) (lower yi)) &&
- Fle2 (Fmult2 (lower xi) (lower yi)) (upper zi).
-
-Theorem error_of_rel_on :
- forall a b : R, forall xi yi zi : FF,
- REL a b xi -> BND b yi ->
- error_of_rel_on_helper xi yi zi = true ->
- BND (a - b) zi.
-intros a b xi yi zi Hr Hb H.
-generalize (andb_prop _ _ H). clear H. intros (H,H5).
-generalize (andb_prop _ _ H). clear H. intros (H,H4).
-generalize (andb_prop _ _ H). clear H. intros (H,H3).
-generalize (andb_prop _ _ H). clear H. intros (H1,H2).
-generalize (Fneg0_correct _ H1). clear H1. intro H1.
-generalize (Fpos0_correct _ H2). clear H2. intro H2.
-generalize (Fneg_correct _ H3). clear H3. intro H3.
-generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
-assert (b <> 0)%R.
-apply Rlt_not_eq.
-apply Rle_lt_trans with (1 := proj2 Hb) (2 := H3).
-cutrewrite (a - b = (a - b) / b * b)%R.
-unfold BND.
-apply IRmult_on with (1 := H1) (2 := H2) (3 := Rlt_le _ _ H3) (4 := H4) (5 := H5) (7 := Hb).
-apply bnd_of_nzr_rel.
-exact H.
-exact Hr.
-field.
-exact H.
-Qed.
+Definition error_of_rel_pp := error_of_rel_generic mul_pp_helper mul_pp.
+Definition error_of_rel_po := error_of_rel_generic mul_po_helper mul_po.
+Definition error_of_rel_pn := error_of_rel_generic mul_pn_helper mul_pn.
+Definition error_of_rel_op := error_of_rel_generic mul_op_helper mul_op.
+Definition error_of_rel_oo := error_of_rel_generic mul_oo_helper mul_oo.
+Definition error_of_rel_on := error_of_rel_generic mul_on_helper mul_on.
+Definition error_of_rel_np := error_of_rel_generic mul_np_helper mul_np.
+Definition error_of_rel_no := error_of_rel_generic mul_no_helper mul_no.
+Definition error_of_rel_nn := error_of_rel_generic mul_nn_helper mul_nn.
 
 Definition mul_rr_helper (xi yi zi : FF) :=
  Flt2 (Float2 (-1) 0) (lower zi) &&
