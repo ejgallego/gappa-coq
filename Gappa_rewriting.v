@@ -289,7 +289,7 @@ generalize (Fpos0_correct _ H1). clear H1. intro H1.
 generalize (Fpos_correct _ H2). clear H2. intro H2.
 replace ((sqrt a - sqrt b) / sqrt b)%R with (sqrt (1 + (a - b) / b) - 1)%R.
 exact Hz.
-replace (1+ (a - b) / b)%R with (a / b)%R.
+replace (1 + (a - b) / b)%R with (a / b)%R.
 rewrite sqrt_div.
 field.
 apply Rgt_not_eq.
