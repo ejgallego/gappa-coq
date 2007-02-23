@@ -1,3 +1,9 @@
+Version 0.5:
+ - improved sqrt
+ - proved rel_of_fix_float_ne, nzr_of_abs, nzr_of_bnd, bnd_of_nzr_rel,
+   rel_of_nzr_bnd, error_of_rel, mul_rr
+ - adapted to Coq 8.1
+
 Version 0.4:
  - fixed mul_mibs
  - proved float_absolute_ne, float_absolute_ne_wide, float_relative_ne
