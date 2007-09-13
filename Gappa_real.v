@@ -656,6 +656,51 @@ rewrite (H0 zl). exact (Rplus_le_compat_r _ _ _ (proj1 H)).
 rewrite (H0 zu). exact (Rplus_le_compat_r _ _ _ (proj2 H)).
 Qed.
 
+Theorem IRcompose_inv :
+ forall xl xu yl yu zl zu : R,
+ (-1 <= xl)%R -> (-1 < yl)%R ->
+ (yu + zl + yu * zl <= xl)%R -> (xu <= yl + zu + yl * zu)%R ->
+ forall x y : R,
+ (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
+ (zl <= (x - y) / (1 + y) <= zu)%R.
+intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
+assert (H0: (0 = 1 + -1)%R). ring.
+assert (Hc: (0 < 1 + yl)%R).
+rewrite H0.
+apply Rplus_lt_compat_l with (1 := Hy).
+replace ((x - y) / (1 + y))%R with ((1 + x) / (1 + y) - 1)%R.
+assert (H : (1 + zl <= (1 + x) / (1 + y) <= 1 + zu)%R).
+assert (Hi : forall a b c : R, (a <= b)%R -> (b <= c)%R -> (1 + a <= 1 + b <= 1 + c)%R).
+intros a b c H1 H2. split.
+apply Rplus_le_compat_l with (1 := H1).
+apply Rplus_le_compat_l with (1 := H2).
+destruct (IRdiv_aux_p _ _ _ Hc (Hi _ _ _ Hyl Hyu))%R as (H1, (H2, (H3, (H4, H5)))).
+unfold Rdiv.
+apply IRmult_pp with (2 := H2) (5 := Hi _ _ _ Hxl Hxu) (6 := H5).
+rewrite H0. apply Rplus_le_compat_l with (1 := Hx).
+replace (1 + zl)%R with ((1 + zl) * (1 + yu) * /(1 + yu))%R.
+apply monotony_2p with (1 := H2).
+replace ((1 + zl) * (1 + yu))%R with (1 + (yu + zl + yu * zl))%R. 2: ring.
+apply Rplus_le_compat_l with (1 := Hzl).
+field. exact H4.
+replace (1 + zu)%R with ((1 + zu) * (1 + yl) * /(1 + yl))%R.
+apply monotony_2p with (1 := H1).
+replace ((1 + zu) * (1 + yl))%R with (1 + (yl + zu + yl * zu))%R. 2: ring.
+apply Rplus_le_compat_l with (1 := Hzu).
+field. exact H3.
+replace zl with (1 + zl + -1)%R. 2: ring.
+replace zu with (1 + zu + -1)%R. 2: ring.
+unfold Rminus.
+split ; apply Rplus_le_compat_r.
+exact (proj1 H).
+exact (proj2 H).
+field.
+apply Rgt_not_eq.
+unfold Rgt.
+apply Rlt_le_trans with (1 := Hc).
+apply Rplus_le_compat_l with (1 := Hyl).
+Qed.
+
 Theorem IRabs_p :
  forall yl yu zl zu : R,
  (0 <= yl)%R ->
