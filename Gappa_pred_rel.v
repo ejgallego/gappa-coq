@@ -61,6 +61,76 @@ Definition error_of_rel_np := error_of_rel_generic mul_np_helper mul_np.
 Definition error_of_rel_no := error_of_rel_generic mul_no_helper mul_no.
 Definition error_of_rel_nn := error_of_rel_generic mul_nn_helper mul_nn.
 
+Definition intersect_rr_helper (xf yf : float2) (zi : FF) :=
+ Flt2 (Float2 (-1) 0) (lower zi) &&
+ Fle2 (lower zi) (upper zi) &&
+ Fle2 (lower zi) yf &&
+ Fle2 xf (upper zi).
+
+Theorem intersect_rr :
+ forall z1 z2 : R, forall xi yi zi : FF,
+ REL z1 z2 xi -> REL z1 z2 yi ->
+ intersect_rr_helper (upper xi) (lower yi) zi = true ->
+ REL z1 z2 zi.
+intros z1 z2 xi yi zi (xe,(Hx1,(Hx2,Hx3))) (ye,(Hy1,(Hy2,Hy3))) Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Flt2_correct _ _ H1).
+cutrewrite (Float2 (-1) 0 = -1 :>R)%R.
+2: unfold float2R ; auto with real.
+clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+generalize (Fle2_correct _ _ H4). clear H4. intro H4.
+case (Req_dec z2 0) ; intro.
+exists (lower zi).
+split.
+exact H1.
+split.
+split.
+apply Rle_refl.
+exact H2.
+rewrite Hx3.
+rewrite H.
+repeat rewrite Rmult_0_l.
+apply refl_equal.
+exists xe.
+split.
+exact H1.
+split.
+split.
+apply Rle_trans with (1 := H3).
+replace xe with ye.
+exact (proj1 Hy2).
+apply Rplus_eq_reg_l with R1.
+apply Rmult_eq_reg_l with (2 := H).
+rewrite <- Hy3.
+exact Hx3.
+apply Rle_trans with (2 := H4).
+exact (proj2 Hx2).
+exact Hx3.
+Qed.
+
+Theorem absurd_intersect_rr :
+ forall z1 z2 : R, forall xi yi : FF,
+ REL z1 z2 xi -> REL z1 z2 yi -> NZR z2 ->
+ Flt2 (upper xi) (lower yi) = true ->
+ contradiction.
+intros z1 z2 xi yi (xe,(Hx1,(Hx2,Hx3))) (ye,(Hy1,(Hy2,Hy3))) Hz Hb.
+generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
+generalize (Rle_lt_trans _ _ _ (proj2 Hx2) H). clear H. intro H.
+replace xe with ye in H.
+generalize (Rlt_le_trans _ _ _ H (proj1 Hy2)). clear H. intro H.
+elim (Rlt_irrefl _ H).
+clear H.
+apply sym_eq.
+apply Rplus_eq_reg_l with R1.
+apply Rmult_eq_reg_l with (2 := Hz).
+rewrite <- Hx3.
+exact Hy3.
+Qed.
+
 Definition mul_rr_helper (xi yi zi : FF) :=
  Flt2 (Float2 (-1) 0) (lower zi) &&
  Fle2 (lower zi) (Fplus2 (Fplus2 (lower xi) (lower yi))
