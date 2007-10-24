@@ -404,4 +404,48 @@ field.
 exact Hb.
 Qed.
 
+Theorem addf_1 :
+  forall a b : R, forall zi : FF,
+  NZR a -> NZR (a + b) -> BND (1 / (1 + b / a)) zi ->
+  BND (a / (a + b)) zi.
+intros a b zi Ha Hab Hz.
+replace (a / (a + b))%R with (1 / (1 + b / a))%R.
+exact Hz.
+field.
+exact (conj Hab Ha).
+Qed.
+
+Theorem addf_2 :
+  forall a b : R, forall zi : FF,
+  NZR b -> NZR (a + b) -> BND (1 - 1 / (1 + a / b)) zi ->
+  BND (a / (a + b)) zi.
+intros a b zi Hb Hab Hz.
+replace (a / (a + b))%R with (1 - 1 / (1 + a / b))%R.
+exact Hz.
+field.
+exact (conj Hab Hb).
+Qed.
+
+Theorem addf_3 :
+  forall a b : R, forall zi : FF,
+  NZR a -> NZR (a - b) -> BND (1 / (1 - b / a)) zi ->
+  BND (a / (a - b)) zi.
+intros a b zi Ha Hab Hz.
+replace (a / (a - b))%R with (1 / (1 - b / a))%R.
+exact Hz.
+field.
+exact (conj Hab Ha).
+Qed.
+
+Theorem addf_4 :
+  forall a b : R, forall zi : FF,
+  NZR b -> NZR (a - b) -> BND (1 + 1 / (a / b - 1)) zi ->
+  BND (a / (a - b)) zi.
+intros a b zi Hb Hab Hz.
+replace (a / (a - b))%R with (1 + 1 / (a / b - 1))%R.
+exact Hz.
+field.
+exact (conj Hab Hb).
+Qed.
+
 End Gappa_rewriting.
