@@ -35,6 +35,18 @@ Theorem flt_float_of_flt :
  FLT (rounding_float rdir p d x) zn.
 Admitted.
 
+Axiom add_rr :
+ forall x1 x2 y1 y2 : R, forall xi yi qi zi : FF,
+ REL x1 x2 xi -> REL y1 y2 yi -> BND (x2 / (x2 + y2)) qi -> NZR (x2 + y2) ->
+ true = true ->
+ REL (x1 + y1) (x2 + y2) zi.
+
+Axiom sub_rr :
+ forall x1 x2 y1 y2 : R, forall xi yi qi zi : FF,
+ REL x1 x2 xi -> REL y1 y2 yi -> BND (x2 / (x2 - y2)) qi -> NZR (x2 - y2) ->
+ true = true ->
+ REL (x1 - y1) (x2 - y2) zi.
+
 Axiom relative_add : forall (p : positive) (e : Z) (r1 r2 : R), R.
 Axiom relative_sub : forall (p : positive) (e : Z) (r1 r2 : R), R.
 Axiom relative_mul : forall (p : positive) (e : Z) (r1 r2 : R), R.
