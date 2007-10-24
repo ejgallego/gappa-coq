@@ -41,7 +41,7 @@ Gappa_rewriting.vo: Gappa_rewriting.v Gappa_common.vo
 Gappa_round_aux.vo: Gappa_round_aux.v Gappa_definitions.vo Gappa_dyadic.vo
 Gappa_round_def.vo: Gappa_round_def.v
 Gappa_round.vo: Gappa_round.v Gappa_definitions.vo Gappa_dyadic.vo Gappa_round_def.vo Gappa_round_aux.vo
-Gappa_user.vo: Gappa_user.v Gappa_common.vo
+Gappa_user.vo: Gappa_user.v Gappa_common.vo Gappa_pred_bnd.vo
 
 %.vo: %.v
 	$(COQC) $<
