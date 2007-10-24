@@ -140,4 +140,39 @@ apply Rplus_lt_compat_l with (1 := Hy1).
 exact Hy4.
 Qed.
 
+Theorem compose :
+ forall x1 x2 y2 : R, forall xi yi zi : FF,
+ REL x1 x2 xi -> REL x2 y2 yi ->
+ mul_rr_helper xi yi zi = true ->
+ REL x1 y2 zi.
+intros x1 x2 y2 xi yi zi Hx Hy Hb.
+generalize (mul_rr _ _ _ _ _ _ _ Hx Hy Hb).
+destruct Hx as (xe,(Hx1,(Hx2,Hx3))).
+destruct Hy as (ye,(Hy1,(Hy2,Hy3))).
+intros (ze,(Hz1,(Hz2,Hz3))).
+exists ze.
+split.
+exact Hz1.
+split.
+exact Hz2.
+case (Req_dec y2 0) ; intro.
+rewrite Hx3.
+rewrite Hy3.
+rewrite H.
+repeat rewrite Rmult_0_l.
+apply refl_equal.
+apply Rmult_eq_reg_l with x2.
+rewrite Rmult_comm.
+rewrite <- Rmult_assoc.
+exact Hz3.
+rewrite Hy3.
+apply prod_neq_R0.
+exact H.
+apply Rgt_not_eq.
+rewrite <- (Rplus_opp_r R1).
+apply Rplus_gt_compat_l.
+apply Rge_gt_trans with (1 := Rle_ge _ _ (proj1 Hy2)).
+exact Hy1.
+Qed.
+
 End Gappa_pred_rel.

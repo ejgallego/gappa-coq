@@ -680,36 +680,6 @@ generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
 apply IRdiv_nn with (1 := H2) (2 := H1) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
 Qed.
 
-Definition compose_helper (xi yi zi : FF) :=
- Fle2 (Float2 (-1) 0) (lower xi) &&
- Fle2 (Float2 (-1) 0) (lower yi) &&
- Fle2 (lower zi) (Fplus2 (Fplus2 (lower xi) (lower yi))
-                         (Fmult2 (lower xi) (lower yi))) &&
- Fle2 (Fplus2 (Fplus2 (upper xi) (upper yi))
-              (Fmult2 (upper xi) (upper yi))) (upper zi).
-
-Theorem compose :
- forall x y : R, forall xi yi zi : FF,
- BND x xi -> BND y yi ->
- compose_helper xi yi zi = true ->
- BND ((x + y) + x * y) zi.
-intros x y xi yi zi Hx Hy Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
-generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-assert (float2R (Float2 (-1) 0) = -1)%R.
-unfold float2R. auto with real.
-generalize (Fle2_correct _ _ H1). clear H1. rewrite H. intro H1.
-generalize (Fle2_correct _ _ H2). clear H2. rewrite H. intro H2.
-generalize (Fle2_correct _ _ H3).
-repeat rewrite Fplus2_correct.
-rewrite Fmult2_correct. clear H3. intro H3.
-generalize (Fle2_correct _ _ H4).
-repeat rewrite Fplus2_correct.
-rewrite Fmult2_correct. clear H4. intro H4.
-apply IRcompose with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := Hx) (6 := Hy).
-Qed.
-
 Lemma Rabs_idem :
  forall x : R, (x <= Rabs x)%R.
 intro x.
