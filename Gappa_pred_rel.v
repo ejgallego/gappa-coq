@@ -84,7 +84,7 @@ generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). clear H4. intro H4.
 case (Req_dec z2 0) ; intro.
-exists (lower zi).
+exists (float2R (lower zi)).
 split.
 exact H1.
 split.
