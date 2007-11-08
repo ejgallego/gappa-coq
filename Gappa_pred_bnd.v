@@ -64,6 +64,28 @@ generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 apply IRsubset with (1 := H1) (2 := H2) (3 := Hx).
 Qed.
 
+Theorem subset_l :
+ forall x : R, forall xi : FF, forall f : float2,
+ BND x xi ->
+ Fle2 f (lower xi) = true ->
+ (f <= x)%R.
+intros x xi f Hx Hb.
+generalize (Fle2_correct _ _ Hb). clear Hb. intro H1.
+apply Rle_trans with (1 := H1).
+exact (proj1 Hx).
+Qed.
+
+Theorem subset_r :
+ forall x : R, forall xi : FF, forall f : float2,
+ BND x xi ->
+ Fle2 (upper xi) f = true ->
+ (x <= f)%R.
+intros x xi f Hx Hb.
+generalize (Fle2_correct _ _ Hb). clear Hb. intro H1.
+apply Rle_trans with (2 := H1).
+exact (proj2 Hx).
+Qed.
+
 Definition intersect_helper (xf yf : float2) (zi : FF) :=
  Fle2 (lower zi) yf &&
  Fle2 xf (upper zi).
