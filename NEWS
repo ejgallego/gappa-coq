@@ -1,3 +1,11 @@
+Version 0.6:
+ - proved rewrite_* for constraints on user rewriting rules
+ - proved subset_* for half-bounded goals
+ - proved intersect_rr, absurd_intersect_rr, and div_rr for relative errors
+ - proved addf_* rewriting helpers for relative error of addition
+ - moved compose to relative errors
+ - adapted to Coq 8.1pl1
+
 Version 0.5:
  - improved sqrt
  - proved rel_of_fix_float_ne, nzr_of_abs, nzr_of_bnd, bnd_of_nzr_rel,
