@@ -39,9 +39,8 @@ induction m.
 exists (Float2 0 k2).
 split.
 rewrite H1.
-unfold float2R.
-repeat rewrite Rmult_0_l.
-exact (refl_equal _).
+do 2 rewrite float2_zero.
+apply refl_equal.
 exact (Zle_refl _).
 exists (Float2 (Zpos p) e).
 split.
@@ -202,8 +201,10 @@ rewrite H3.
 simpl.
 unfold fixed_shift.
 apply Req_le.
-unfold float2R.
-simpl. ring.
+rewrite float2_zero.
+unfold Rminus.
+rewrite Rplus_0_l.
+apply refl_equal.
 assert (tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 (Zpos m + 1) (fixed_shift e (e2 + Zpos (digits m2)))
   < tofloat (round_pos rndZR (fixed_shift e) m2 e2) - Float2 (Zpos m2) e2)%R.
 unfold Rminus.

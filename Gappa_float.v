@@ -3,6 +3,7 @@ Require Import ZArith.
 Require Import Reals.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
+Require Import Gappa_integer.
 Require Import Gappa_pred_bnd.
 Require Import Gappa_round_def.
 Require Import Gappa_round_aux.
@@ -311,8 +312,7 @@ destruct (Rabs_pos x).
 destruct (log2 _ H0) as (k0,Hk).
 apply Rle_trans with (Float2 1 (float_shift p d k0 - 1)).
 apply float_absolute_ne_binade.
-unfold float2R. simpl.
-repeat rewrite Rmult_1_l.
+do 2 rewrite float2_pow2.
 exact Hk.
 apply float2_Rle_pow2.
 unfold Zminus.
@@ -325,8 +325,8 @@ unfold Zminus.
 apply Zplus_le_compat_r.
 assert (k0 - 1 < k)%Z. 2: omega.
 apply float2_pow2_lt.
+rewrite float2_pow2.
 apply Rle_lt_trans with (Rabs x).
-unfold float2R. rewrite Rmult_1_l.
 exact (proj1 Hk).
 exact H.
 rewrite <- H0.
@@ -378,7 +378,7 @@ destruct (log2 _ (Rabs_pos_lt _ H9)) as (k,Hk).
 apply Rle_trans with (Float2 1 (float_shift p d k - 1))%R.
 apply float_absolute_ne_whole.
 rewrite Rabs_Rabsolu.
-unfold float2R. rewrite Rmult_1_l.
+rewrite float2_pow2.
 exact (proj2 Hk).
 unfold float_shift.
 rewrite Zmax_inf_l.
@@ -392,12 +392,12 @@ apply Rmult_le_compat_r.
 apply Rlt_le.
 apply float2_pos_compat.
 exact (refl_equal _).
-unfold float2R. rewrite Rmult_1_l.
+rewrite float2_pow2.
 exact (proj1 Hk).
 assert (-d + Zpos p - 1 < k)%Z. 2: omega.
 apply float2_pow2_lt.
 apply Rle_lt_trans with (1 := Hx).
-unfold float2R. rewrite Rmult_1_l.
+rewrite float2_pow2.
 exact (proj2 Hk).
 Qed.
 
@@ -455,14 +455,14 @@ rewrite Zpower_pos_nat.
 change 2%Z with (Z_of_nat 2).
 rewrite Zpower_nat_powerRZ.
 rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+rewrite <- Z2R_IZR.
 apply Rlt_le_trans with (1 := proj2 (digits_correct p)).
 assert (Float2 1 (Zpos (digits p)) <= Float2 1 (Zpos p2))%R.
 apply Rle_trans with (2 := float2_Rle_pow2 _ _ H).
 apply float2_Rle_pow2.
 generalize (Zmax1 (e + Zpos (digits p) - Zpos p1) (- k)).
 omega.
-unfold float2R in H0.
-repeat rewrite Rmult_1_l in H0.
+do 2 rewrite <- float2_pow2.
 exact H0.
 simpl.
 apply lt_IZR.
@@ -470,14 +470,14 @@ rewrite Zpower_pos_nat.
 change 2%Z with (Z_of_nat 2).
 rewrite Zpower_nat_powerRZ.
 rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+rewrite <- Z2R_IZR.
 apply Rlt_le_trans with (1 := proj2 (digits_correct p)).
 assert (Float2 1 (Zpos (digits p)) <= Float2 1 (Zpos p2))%R.
 apply Rle_trans with (2 := float2_Rle_pow2 _ _ H).
 apply float2_Rle_pow2.
 generalize (Zmax1 (e + Zpos (digits p) - Zpos p1) (- k)).
 omega.
-unfold float2R in H0.
-repeat rewrite Rmult_1_l in H0.
+do 2 rewrite <- float2_pow2.
 exact H0.
 Qed.
 

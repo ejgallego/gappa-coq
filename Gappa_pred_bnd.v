@@ -1,9 +1,10 @@
 Require Import Gappa_common.
 Require Import Gappa_decimal.
+Require Import Gappa_integer.
 
 Section Gappa_pred_bnd.
 
-Definition Float1 := IZR.
+Definition Float1 := Z2R.
 
 Definition constant2_helper (x : float2) (zi : FF) :=
  Fle2 (lower zi) x && Fle2 x (upper zi).
@@ -22,16 +23,13 @@ Qed.
 Theorem constant1 :
  forall x : Z, forall zi : FF,
  constant2_helper (Float2 x 0) zi = true ->
- BND (IZR x) zi.
+ BND (Float1 x) zi.
 intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-replace (IZR x) with (float2R (Float2 x 0)).
+change (Float1 x) with (float2R (Float2 x 0)).
 split ; assumption.
-unfold float2R.
-simpl.
-apply Rmult_1_r.
 Qed.
 
 Definition constant10_helper (x : float10) (zi : FF) :=
@@ -816,8 +814,8 @@ induction (lower zi).
 induction Fnum ; simpl in H1.
 rewrite float2_zero.
 rewrite Rmult_0_l.
-generalize (Fpos0_correct _ H1). clear H1. intro H1.
-case (Rlt_le_dec 0 0) ; intros _ ; exact H1.
+assert (H4 := Fpos0_correct _ H1).
+case (Rlt_le_dec 0 0) ; intros _ ; exact H4.
 case (Rlt_le_dec 0 (Float2 (Zpos p) Fexp)).
 intros _.
 rewrite <- Fmult2_correct.
@@ -826,17 +824,14 @@ exact H1.
 intro H.
 elim (Rlt_irrefl R0).
 apply Rlt_le_trans with (2 := H).
-unfold float2R. simpl.
-apply Rmult_lt_0_compat ; auto with real.
+apply Fpos_correct.
+apply refl_equal.
 case (Rlt_le_dec 0 (Float2 (Zneg p) Fexp)).
 intro H.
 elim (Rlt_irrefl R0).
-apply Rlt_le_trans with (1 := H).
-unfold float2R. simpl.
-rewrite Ropp_mult_distr_l_reverse.
-rewrite <- Ropp_0.
-apply Ropp_le_contravar.
-apply Rmult_le_pos ; auto with real.
+apply Rlt_trans with (1 := H).
+apply Fneg_correct.
+apply refl_equal.
 intros _.
 apply Fpos0_correct.
 exact H1.

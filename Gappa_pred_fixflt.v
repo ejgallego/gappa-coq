@@ -1,4 +1,5 @@
 Require Import Gappa_common.
+Require Import Gappa_integer.
 Require Import Gappa_round_aux.
 
 Section Gappa_pred_fixflt.
@@ -200,13 +201,17 @@ clear H0.
 assert (He1: (Float2 (Zabs (Fnum f)) (Fexp f) = Rabs x :>R)).
 rewrite <- Hx1.
 unfold float2R. simpl.
+do 2 rewrite F2R_split.
 rewrite Rabs_mult.
-rewrite (Rabs_right (powerRZ 2 (Fexp f))).
-2: apply Rle_ge ; auto with real.
-repeat rewrite <- (Rmult_comm (powerRZ 2 (Fexp f))).
+rewrite (Rabs_right (powerRZ (P2R 2) (Fexp f))).
+do 2 rewrite <- (Rmult_comm (powerRZ 2 (Fexp f))).
 apply Rmult_eq_compat_l.
+do 2 rewrite Z2R_IZR.
 apply sym_eq.
 apply Rabs_Zabs.
+apply Rle_ge.
+apply Rlt_le.
+apply power_radix_pos.
 assert (He2: (Zpos (pos_of_Z (Zabs (Fnum f))) = Zabs (Fnum f))%Z).
 apply Zpos_pos_of_Z.
 apply float2_pos_reg with (Fexp f).
@@ -254,30 +259,35 @@ apply Rle_trans with (float2R (Float2 (Zabs (Fnum f)) n)).
 cutrewrite (Float2 1 (n + Zpos p) = Float2 (Zpower_pos 2 p) n :>R)%R.
 exact (float2_binade_le _ _ _ (Zge_le _ _ H0)).
 unfold float2R. simpl.
+do 2 rewrite F2R_split.
 rewrite Rmult_1_l.
-rewrite Zpower_pos_nat.
-change 2%Z with (Z_of_nat 2).
-rewrite Zpower_nat_powerRZ.
-rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
-rewrite <- powerRZ_add. 2: discrR.
-rewrite Zplus_comm.
-exact (refl_equal _).
+rewrite powerRZ_add.
+apply sym_eq.
+rewrite Rmult_comm.
+apply Rmult_eq_compat_l.
+exact (Zpower_pos_powerRZ _ _).
+apply Rgt_not_eq.
+exact (Z2R_lt 0 2 (refl_equal _)).
 unfold float2R. simpl.
+do 2 rewrite F2R_split.
 rewrite Rabs_mult.
-rewrite (Rabs_right (powerRZ 2 (Fexp f))).
-2: apply Rle_ge ; auto with real.
-cutrewrite (IZR (Zabs (Fnum f)) = Rabs (IZR (Fnum f))).
+rewrite (Rabs_right (powerRZ (P2R 2) (Fexp f))).
+do 2 rewrite Z2R_IZR.
+rewrite Rabs_Zabs.
 apply Rmult_le_compat_l.
-exact (Rabs_pos _).
-cut (Float2 1 n <= Float2 1 (Fexp f))%R.
-unfold float2R.
-repeat rewrite Rmult_1_l.
-intro H1. exact H1.
+apply (IZR_le 0).
+apply Zabs_pos.
+assert (Float2 1 n <= Float2 1 (Fexp f))%R.
 apply float2_Rle_pow2.
 exact Hx2.
-apply sym_eq.
-apply Rabs_Zabs.
-clear H0.
+unfold float2R in H.
+simpl in H.
+do 2 rewrite F2R_split in H.
+apply Rmult_le_reg_l with (2 := H).
+exact (Z2R_lt 0 1 (refl_equal _)).
+apply Rle_ge.
+apply Rlt_le.
+apply power_radix_pos.
 apply Zlt_gt.
 apply float2_pow2_lt.
 apply Rle_lt_trans with (1 := H).
@@ -285,19 +295,18 @@ assert (0 <= upper xi)%R.
 apply Rle_trans with (1 := proj1 Hxi).
 apply Rle_trans with (1 := proj1 (proj2 Hxi)).
 exact (proj2 (proj2 Hxi)).
-destruct H0.
+destruct H1.
 assert (upper xi = Float2 (Zpos (pos_of_Z (Fnum (upper xi)))) (Fexp (upper xi))).
 rewrite Zpos_pos_of_Z.
 case (upper xi). intros. exact (refl_equal _).
 apply float2_pos_reg with (Fexp (upper xi)).
-exact H0.
-pattern (upper xi) at 1 ; rewrite H1.
-clear H0 H1.
+exact H1.
+pattern (upper xi) at 1 ; rewrite H2.
 rewrite Zplus_comm.
 exact (proj2 (float2_digits_correct _ _)).
-rewrite <- H0.
+rewrite <- H1.
 apply float2_pos_compat.
-exact (refl_equal _).
+split.
 Qed.
 
 End Gappa_pred_fixflt.

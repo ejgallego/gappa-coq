@@ -1,12 +1,13 @@
 Require Import Reals.
 Require Import ZArith.
+Require Import Gappa_integer.
 
 Section Gappa_definitions.
 
 Record float2 : Set := Float2 {Fnum : Z; Fexp : Z}.
-Coercion float2R (x : float2) := (IZR (Fnum x) * powerRZ 2 (Fexp x))%R.
+Coercion float2R (x : float2) := F2R 2 (Fnum x) (Fexp x).
 Record float10 : Set := Float10 { Fnum10 : Z ; Fexp10 : Z }.
-Coercion float10R := fun x : float10 => (IZR (Fnum10 x) * powerRZ 10 (Fexp10 x))%R.
+Coercion float10R (x : float10) := F2R 10 (Fnum10 x) (Fexp10 x).
 
 Record FF: Set := makepairF { lower : float2 ; upper : float2 }.
 

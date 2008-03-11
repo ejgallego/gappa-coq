@@ -4,6 +4,7 @@ Require Import ZArith.
 Require Import Reals.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
+Require Import Gappa_integer.
 Require Import Gappa_round_def.
 Require Import Gappa_round_aux.
 
@@ -411,10 +412,14 @@ apply refl_equal.
 rewrite inj_S.
 simpl.
 unfold float2R in *.
+repeat rewrite F2R_split in *.
+rewrite Rmult_1_l in *.
+rewrite Z2R_IZR.
 simpl in *.
 rewrite nat_of_P_xO.
 rewrite mult_INR.
 rewrite Rmult_assoc.
+rewrite <- P2R_INR.
 rewrite <- IHn.
 unfold Zsucc.
 rewrite Zplus_assoc.
@@ -1852,7 +1857,7 @@ exact (proj2 Hx).
 generalize (x * powerRZ 2 (-k))%R H.
 clear Hx H.
 intros r Hx.
-cut (powerRZ 2 (l - 1 - k) <= IZR (Zpos (pos_of_Z (up r - 1))) < powerRZ 2 (l - k))%R.
+cut (powerRZ 2 (l - 1 - k) <= Z2R (Zpos (pos_of_Z (up r - 1))) < powerRZ 2 (l - k))%R.
 generalize (pos_of_Z (up r - 1)).
 intros p H.
 assert (Zpos (digits p) = l - k)%Z.
@@ -1863,25 +1868,30 @@ apply Rle_trans with (2 := proj1 (digits_correct p)).
 assert (Float2 1 (l - k) <= Float2 1 (Zpos (digits p) - 1))%R.
 apply float2_Rle_pow2.
 omega.
-unfold float2R in H1. repeat rewrite Rmult_1_l in H1.
+unfold float2R in H1.
+do 2 rewrite F2R_split in H1.
+do 2 rewrite Rmult_1_l in H1.
 exact H1.
 apply Rle_not_lt with (1 := proj1 H).
 apply Rlt_le_trans with (1 := proj2 (digits_correct p)).
 assert (Float2 1 (Zpos (digits p)) <= Float2 1 (l - 1 - k))%R.
 apply float2_Rle_pow2.
 omega.
-unfold float2R in H1. repeat rewrite Rmult_1_l in H1.
+unfold float2R in H1.
+do 2 rewrite F2R_split in H1.
+do 2 rewrite Rmult_1_l in H1.
 exact H1.
 rewrite Zpos_pos_of_Z_minus.
 unfold Zminus at 3 4.
-rewrite plus_IZR.
+rewrite plus_Z2R.
 split.
 cut (exists n : nat, (l - 1 - k = Z_of_nat n)%Z).
 intros (n,H1).
 generalize (proj1 Hx).
 cutrewrite (powerRZ 2 (l - 1 - k) = IZR (Zpower_nat 2 n))%R.
 intro H.
-rewrite <- plus_IZR.
+rewrite <- plus_Z2R.
+rewrite Z2R_IZR.
 apply IZR_le.
 cut (Zpower_nat 2 n < up r)%Z.
 omega.
@@ -1901,8 +1911,9 @@ apply refl_equal.
 apply Rle_lt_trans with (2 := proj2 Hx).
 apply Rplus_le_reg_l with (1 - r)%R.
 simpl.
-cutrewrite (1 - r + (IZR (up r) + -1) = IZR (up r) - r)%R. 2: ring.
-cutrewrite (1 - r + r = 1)%R. 2: ring.
+rewrite Z2R_IZR.
+replace (1 - r + (IZR (up r) + -1))%R with (IZR (up r) - r)%R by ring.
+replace (1 - r + r)%R with R1 by ring.
 exact (proj2 (archimed _)).
 apply lt_IZR.
 apply Rle_lt_trans with (2 := proj1 (archimed r)).
@@ -1910,7 +1921,9 @@ apply Rle_trans with (2 := proj1 Hx).
 assert (Float2 1 0 <= Float2 1 (l - 1 - k))%R.
 apply float2_Rle_pow2.
 omega.
-unfold float2R in H. repeat rewrite Rmult_1_l in H.
+unfold float2R in H.
+do 2 rewrite F2R_split in H.
+do 2 rewrite Rmult_1_l in H.
 exact H.
 Qed.
 
@@ -1934,15 +1947,16 @@ exact (rexp_case_real_aux _ Hx _ _ H0 H).
 rewrite Zpos_pos_of_Z_minus.
 unfold float2R. simpl.
 split.
+rewrite F2R_split.
 apply Rle_trans with (((x * powerRZ 2 (- rexp l) + 1) - 1) * powerRZ 2 (rexp l))%R.
 apply Rmult_le_compat_r.
 auto with real.
-unfold Zminus. rewrite plus_IZR.
+rewrite minus_Z2R.
 unfold Rminus. apply Rplus_le_compat_r.
-cutrewrite (IZR (up (x * powerRZ 2 (- rexp l))) = x * powerRZ 2 (- rexp l) +
-  (IZR (up (x * powerRZ 2 (- rexp l))) - x * powerRZ 2 (- rexp l)))%R.
-2: ring.
+replace (Z2R (up (x * powerRZ 2 (- rexp l)))) with (x * powerRZ 2 (- rexp l) +
+  (Z2R (up (x * powerRZ 2 (- rexp l))) - x * powerRZ 2 (- rexp l)))%R by ring.
 apply Rplus_le_compat_l.
+rewrite Z2R_IZR.
 exact (proj2 (archimed _)).
 unfold Rminus. rewrite Rplus_assoc.
 rewrite Rplus_opp_r. rewrite Rplus_0_r.
@@ -1957,12 +1971,13 @@ rewrite Rmult_assoc.
 rewrite <- powerRZ_add. 2: discrR.
 rewrite Zplus_opp_l.
 auto with real.
+rewrite F2R_split.
 apply Rmult_lt_compat_r.
-auto with real.
+apply power_radix_pos.
+rewrite Z2R_IZR.
 exact (proj1 (archimed _)).
 apply lt_IZR.
-apply Rle_lt_trans with (x * powerRZ 2 (- rexp l))%R.
-2: exact (proj1 (archimed _)).
+apply Rle_lt_trans with (2 := proj1 (archimed (x * powerRZ 2 (- rexp l)))).
 apply Rle_trans with (x * powerRZ 2 (-l + 1))%R.
 apply Rmult_le_reg_l with (powerRZ 2 (l - 1)).
 auto with real.
@@ -1970,7 +1985,7 @@ rewrite Rmult_1_r.
 rewrite (Rmult_comm x).
 rewrite <- Rmult_assoc.
 rewrite <- powerRZ_add. 2: discrR.
-cutrewrite (l - 1 + (- l + 1) = 0)%Z. 2: ring.
+replace (l - 1 + (- l + 1))%Z with Z0 by ring.
 rewrite Rmult_1_l.
 exact (proj1 H).
 apply Rmult_le_compat_l.
@@ -1978,8 +1993,9 @@ exact (Rlt_le _ _ Hx).
 assert (-l + 1 <= - rexp l)%Z.
 omega.
 generalize (float2_Rle_pow2 _ _ H1).
-unfold float2R. simpl.
-repeat rewrite Rmult_1_l.
+unfold float2R.
+do 2 rewrite F2R_split.
+do 2 rewrite Rmult_1_l.
 intro H2. exact H2.
 left.
 exists (rexp l).
@@ -1990,7 +2006,9 @@ apply Rlt_le_trans with (1 := proj2 H).
 cutrewrite (powerRZ 2 l = Float2 1 l).
 apply float2_Rle_pow2 with (1 := H0).
 unfold float2R.
-auto with real.
+rewrite F2R_split.
+rewrite Rmult_1_l.
+apply refl_equal.
 Qed.
 
 Lemma float2_density :
@@ -2003,21 +2021,25 @@ intros (k, H0).
 exists (k - 2)%Z.
 exists (pos_of_Z (up (x * powerRZ 2 (- (k - 2))))).
 cutrewrite (Zpos (pos_of_Z (up (x * powerRZ 2 (- (k - 2))))) = up (x * powerRZ 2 (- (k - 2)))).
-split ; unfold float2R ; simpl.
+unfold float2R.
+rewrite F2R_split.
+simpl.
+rewrite Z2R_IZR.
+split.
 pattern x at 1 ; replace x with (x * powerRZ 2 (- (k - 2)) * powerRZ 2 (k - 2))%R.
 apply Rmult_lt_compat_r.
 auto with real.
 exact (proj1 (archimed _)).
 rewrite Rmult_assoc.
 rewrite <- powerRZ_add. 2: discrR.
-cutrewrite (-(k - 2) + (k - 2) = 0)%Z. 2: ring.
+replace (-(k - 2) + (k - 2))%Z with Z0 by ring.
 apply Rmult_1_r.
 apply Rle_lt_trans with ((x * powerRZ 2 (- (k - 2)) + 1) * powerRZ 2 (k - 2))%R.
 apply Rmult_le_compat_r.
 auto with real.
-cutrewrite (IZR (up (x * powerRZ 2 (- (k - 2)))) =
-  x * powerRZ 2 (- (k - 2)) + (IZR (up (x * powerRZ 2 (- (k - 2))))
-  - x * powerRZ 2 (- (k - 2))))%R. 2: ring.
+replace (IZR (up (x * powerRZ 2 (- (k - 2))))) with
+  (x * powerRZ 2 (- (k - 2)) + (IZR (up (x * powerRZ 2 (- (k - 2))))
+  - x * powerRZ 2 (- (k - 2))))%R by ring.
 apply Rplus_le_compat_l.
 exact (proj2 (archimed _)).
 rewrite Rmult_plus_distr_r.
@@ -2032,7 +2054,8 @@ apply Rlt_le_trans with (2 := proj1 H0).
 assert (k - 2 < k - 1)%Z. omega.
 generalize (float2_Rlt_pow2 _ _ H1).
 unfold float2R. simpl.
-repeat rewrite Rmult_1_l.
+do 2 rewrite F2R_split.
+do 2 rewrite Rmult_1_l.
 intro H2. exact H2.
 assert (0 < IZR (up (x * powerRZ 2 (- (k - 2)))))%R.
 apply Rlt_trans with (x * powerRZ 2 (- (k - 2)))%R.
@@ -2112,9 +2135,8 @@ exact (conj Hk Hk).
 generalize (float2_density _ _ (conj Hx Hx1)).
 intros (e2,(m2,H2)).
 assert (0 < Float2 1 (k - 1))%R.
-unfold float2R. simpl.
-rewrite Rmult_1_l.
-auto with real.
+apply float2_pos_compat.
+split.
 generalize (float2_density _ _ (conj H Hx2)).
 intros (e1,(m1,H1)).
 clear H.
@@ -2148,8 +2170,8 @@ generalize (conj Hx2 (proj2 Hx1)). clear Hx1 Hx2. intro Hx1.
 generalize (total_order_T x (Float2 (Zpos m * 2 + 1) (e - 1))).
 intros [[Hx2|Hx2]|Hx2].
 assert (0 < Float2 (Zpos m) e)%R.
-unfold float2R. simpl.
-apply Rmult_lt_0_compat ; auto with real.
+apply float2_pos_compat.
+split.
 generalize (float2_density _ _ (conj H (proj1 Hx1))).
 intros (e1,(m1,(H1a,H1b))).
 clear H.
@@ -2197,8 +2219,8 @@ cutrewrite (e - 1 + (Zpos (digits m) + 1) = e + Zpos (digits m))%Z.
 rewrite He.
 split ; apply refl_equal.
 assert (0 < Float2 (Zpos m * 2 + 1) (e - 1))%R.
-unfold float2R. simpl.
-apply Rmult_lt_0_compat ; auto with real.
+apply float2_pos_compat.
+split.
 generalize (float2_density _ _ (conj H Hx2)).
 intros (e1,(m1,(H1a,H1b))).
 clear H.
@@ -2371,13 +2393,12 @@ intros rdir rexp Hge f.
 cutrewrite (f = Float2 (Fnum f) (Fexp f)).
 2: induction f ; apply refl_equal.
 case (Fnum f) ; intros.
-unfold float2R at 2.
-rewrite Rmult_0_l.
+rewrite float2_zero.
 rewrite round_extension_prop_zero.
 apply refl_equal.
 assert (0 < Float2 (Zpos p) (Fexp f))%R.
-unfold float2R. simpl.
-apply Rmult_lt_0_compat ; auto with real.
+apply float2_pos_compat.
+split.
 generalize (round_extension_prop_pos rdir rexp Hge _ H).
 intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,_))))))).
 apply Rle_antisym.
@@ -2392,10 +2413,11 @@ repeat rewrite tofloat_0.
 apply (round_monotone _ _ (rpos_good rdir) Hge).
 exact (proj2 H1).
 assert (0 > Float2 (Zneg p) (Fexp f))%R.
-unfold float2R. simpl.
-rewrite Ropp_mult_distr_l_reverse.
+change (0 > Fopp2 (Float2 (Zpos p) (Fexp f)))%R.
+rewrite Fopp2_correct.
 apply Ropp_0_lt_gt_contravar.
-apply Rmult_lt_0_compat ; auto with real.
+apply float2_pos_compat.
+split.
 generalize (round_extension_prop_neg rdir rexp Hge _ H).
 intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,_))))))).
 cutrewrite (round rdir rexp (Float2 (Zneg p) (Fexp f)) = -round
@@ -2429,8 +2451,7 @@ Lemma round_extension_zero :
  round_extension rdir rexp Hge 0 = R0 :>R.
 intros rdir rexp Hge.
 rewrite round_extension_prop_zero.
-unfold float2R.
-exact (Rmult_0_l _).
+apply refl_equal.
 Qed.
 
 Lemma round_extension_positive :
@@ -2444,12 +2465,11 @@ intros (mx1,(mx2,(ex1,(ex2,(_,(Hx2,_)))))).
 rewrite Hx2.
 unfold round. simpl.
 case (round_pos (rpos rdir) rexp mx1 ex1) ; intros.
-unfold float2R.
 case n ; intros.
-rewrite Rmult_0_l.
 apply Rle_refl.
-simpl.
-apply Rmult_le_pos ; auto with real.
+apply Rlt_le.
+apply float2_pos_compat.
+split.
 Qed.
 
 Lemma round_extension_negative :
@@ -2463,15 +2483,14 @@ intros (mx1,(mx2,(ex1,(ex2,(_,(Hx2,_)))))).
 rewrite Hx2.
 unfold round. simpl.
 case (round_pos (rneg rdir) rexp mx1 ex1) ; intros.
-unfold float2R, Fopp2.
-case n ; intros.
-rewrite Rmult_0_l.
+destruct n.
 apply Rle_refl.
-simpl.
-rewrite Ropp_mult_distr_l_reverse.
 apply Rge_le.
+rewrite Fopp2_correct.
 apply Ropp_0_le_ge_contravar.
-apply Rmult_le_pos ; auto with real.
+apply Rlt_le.
+apply float2_pos_compat.
+split.
 Qed.
 
 Lemma round_extension_monotone :
@@ -2777,9 +2796,8 @@ exists (Zneg r). exists s.
 split. 2: exact H2.
 rewrite Fopp2_correct.
 rewrite H1.
-unfold float2R.
-simpl.
-auto with real.
+rewrite <- Fopp2_correct.
+apply refl_equal.
 Qed.
 
 End Gappa_round.

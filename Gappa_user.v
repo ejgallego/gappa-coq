@@ -15,18 +15,12 @@ destruct (orb_prop _ _ Hb) as [H|H] ; clear Hb.
 generalize (Flt2_correct _ _ H). clear H. intro H.
 apply Rlt_not_eq.
 apply Rle_lt_trans with (1 := proj2 Hx).
-replace (Float1 n) with (float2R (Float2 n 0)).
 exact H.
-unfold float2R. simpl.
-apply Rmult_1_r.
 generalize (Flt2_correct _ _ H). clear H. intro H.
 apply Rgt_not_eq.
 unfold Rgt.
 apply Rlt_le_trans with (2 := proj1 Hx).
-replace (Float1 n) with (float2R (Float2 n 0)).
 exact H.
-unfold float2R. simpl.
-apply Rmult_1_r.
 Qed.
 
 Definition rewrite_lt_helper (xi : FF) (n : Z) :=
@@ -39,10 +33,7 @@ Lemma rewrite_lt :
 intros x xi n Hx Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 apply Rle_lt_trans with (1 := proj2 Hx).
-replace (Float1 n) with (float2R (Float2 n 0)).
 exact H.
-unfold float2R. simpl.
-apply Rmult_1_r.
 Qed.
 
 Definition rewrite_le_helper (xi : FF) (n : Z) :=
@@ -55,10 +46,7 @@ Lemma rewrite_le :
 intros x xi n Hx Hb.
 generalize (Fle2_correct _ _ Hb). clear Hb. intro H.
 apply Rle_trans with (1 := proj2 Hx).
-replace (Float1 n) with (float2R (Float2 n 0)).
 exact H.
-unfold float2R. simpl.
-apply Rmult_1_r.
 Qed.
 
 Definition rewrite_gt_helper (xi : FF) (n : Z) :=
@@ -72,10 +60,7 @@ intros x xi n Hx Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 unfold Rgt.
 apply Rlt_le_trans with (2 := proj1 Hx).
-replace (Float1 n) with (float2R (Float2 n 0)).
 exact H.
-unfold float2R. simpl.
-apply Rmult_1_r.
 Qed.
 
 Definition rewrite_ge_helper (xi : FF) (n : Z) :=
@@ -89,10 +74,7 @@ intros x xi n Hx Hb.
 generalize (Fle2_correct _ _ Hb). clear Hb. intro H.
 apply Rle_ge.
 apply Rle_trans with (2 := proj1 Hx).
-replace (Float1 n) with (float2R (Float2 n 0)).
 exact H.
-unfold float2R. simpl.
-apply Rmult_1_r.
 Qed.
 
 Definition rewrite_lt0_helper (xi : FF) :=

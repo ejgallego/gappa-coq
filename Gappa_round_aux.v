@@ -2,6 +2,7 @@ Require Import ZArith.
 Require Import Reals.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
+Require Import Gappa_integer.
 
 Section Gappa_round_aux.
 
@@ -10,11 +11,13 @@ Lemma float2_shift_p1 :
  Float2 m (e + 1) = Float2 (m * 2) e :>R.
 intros e m.
 unfold float2R. simpl.
-rewrite powerRZ_add. 2: discrR.
-rewrite mult_IZR.
+do 2 rewrite F2R_split.
+rewrite powerRZ_add.
+rewrite mult_Z2R.
 simpl.
-change (IZR 2) with 2%R.
 ring.
+apply Rgt_not_eq.
+exact (Z2R_lt 0 2 (refl_equal _)).
 Qed.
 
 Lemma float2_shift_m1 :
@@ -29,20 +32,27 @@ Lemma float2_binade_lt :
  forall m1 m2 : Z, forall e : Z,
  (m1 < m2)%Z -> (Float2 m1 e < Float2 m2 e)%R.
 intros m1 m2 e H.
-unfold float2R. simpl.
-apply Rmult_lt_compat_r.
-auto with real.
-apply IZR_lt with (1 := H).
+apply Flt2_correct.
+unfold Flt2, Fcomp2, Fshift2.
+rewrite Zminus_diag.
+unfold Zlt in H.
+simpl.
+rewrite H.
+apply refl_equal.
 Qed.
 
 Lemma float2_binade_le :
  forall m1 m2 : Z, forall e : Z,
  (m1 <= m2)%Z -> (Float2 m1 e <= Float2 m2 e)%R.
 intros m1 m2 e H.
-unfold float2R. simpl.
-apply Rmult_le_compat_r.
-auto with real.
-apply IZR_le with (1 := H).
+apply Fle2_correct.
+unfold Fle2, Fcomp2, Fshift2.
+rewrite Zminus_diag.
+unfold Zle in H.
+simpl.
+induction (m1 ?= m2)%Z ; try apply refl_equal.
+elim H.
+apply refl_equal.
 Qed.
 
 Lemma float2_binade_eq_reg :
@@ -67,7 +77,7 @@ Fixpoint digits (m : positive) : positive :=
 
 Lemma digits_correct :
  forall m : positive,
- (powerRZ 2 (Zpos (digits m) - 1)%Z <= IZR (Zpos m) < powerRZ 2 (Zpos (digits m)))%R.
+ (powerRZ 2 (Zpos (digits m) - 1)%Z <= Z2R (Zpos m) < powerRZ 2 (Zpos (digits m)))%R.
 intros m.
 induction m.
 simpl (digits (xI m)).
@@ -79,29 +89,33 @@ split ; (rewrite powerRZ_add ; [
   rewrite Rmult_comm ;
   simpl (powerRZ 2 1) ;
   rewrite Rmult_1_r | discrR ]).
-apply Rle_trans with (IZR 2 * IZR (Zpos m))%R.
+apply Rle_trans with (Z2R 2 * Z2R (Zpos m))%R.
 apply Rmult_le_compat_l.
-simpl. auto with real.
+apply (Z2R_le 0).
+discriminate.
 exact (proj1 IHm).
-rewrite <- mult_IZR.
-apply IZR_le.
+rewrite <- mult_Z2R.
+apply Z2R_le.
 exact (Zle_succ _).
-apply Rlt_le_trans with (IZR 2 * (IZR (Zpos m) + IZR 1))%R.
-rewrite <- plus_IZR.
-rewrite <- mult_IZR.
-apply IZR_lt.
+apply Rlt_le_trans with (Z2R 2 * (Z2R (Zpos m) + Z2R 1))%R.
+rewrite <- plus_Z2R.
+rewrite <- mult_Z2R.
+apply Z2R_lt.
 omega.
 apply Rmult_le_compat_l.
-auto with real.
-rewrite <- plus_IZR.
+apply (Z2R_le 0 2).
+discriminate.
+rewrite <- plus_Z2R.
 rewrite (Zpos_eq_Z_of_nat_o_nat_of_P (digits m)).
 change 2%R with (INR 2).
 rewrite <- Zpower_nat_powerRZ.
+rewrite Z2R_IZR.
 apply IZR_le.
 apply (Zlt_le_succ (Zpos m)).
 apply lt_IZR.
 rewrite Zpower_nat_powerRZ.
 rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
+rewrite <- Z2R_IZR.
 exact (proj2 IHm).
 simpl (digits (xO m)).
 rewrite Zpos_succ_morphism.
@@ -112,13 +126,14 @@ split ; (rewrite powerRZ_add ; [
   rewrite Rmult_comm ;
   simpl (powerRZ 2 1) ;
   rewrite Rmult_1_r | discrR ]).
-rewrite mult_IZR.
+rewrite mult_Z2R.
 apply Rmult_le_compat_l.
-simpl. auto with real.
+apply (Z2R_le 0).
+discriminate.
 exact (proj1 IHm).
-rewrite mult_IZR.
+rewrite mult_Z2R.
 apply Rmult_lt_compat_l.
-auto with real.
+exact (Z2R_lt 0 2 (refl_equal _)).
 exact (proj2 IHm).
 simpl.
 rewrite Rmult_1_r.
@@ -202,129 +217,97 @@ right.
 split ; exact (refl_equal _).
 Qed.
 
+Lemma float2_pow2 :
+  forall e,
+  Float2 1 e = powerRZ 2 e :>R.
+intros.
+unfold float2R.
+rewrite F2R_split.
+rewrite Rmult_1_l.
+apply refl_equal.
+Qed.
+
 Lemma float2_digits_correct :
  forall m : positive, forall e: Z,
  (Float2 1 (e + Zpos (digits m) - 1)%Z <= Float2 (Zpos m) e < Float2 1 (e + Zpos (digits m))%Z)%R.
 intros m e.
 generalize (digits_correct m). intros (H1,H2).
-unfold float2R. simpl.
-repeat rewrite Rmult_1_l.
+do 2 rewrite float2_pow2.
+unfold float2R.
+rewrite F2R_split.
+simpl.
 split.
 unfold Zminus.
 rewrite <- Zplus_assoc.
-rewrite powerRZ_add. 2: discrR.
+rewrite powerRZ_add.
 rewrite Rmult_comm.
 apply Rmult_le_compat_r.
 auto with real.
 exact H1.
-rewrite powerRZ_add. 2: discrR.
+discrR.
+rewrite powerRZ_add.
 rewrite Rmult_comm.
 apply Rmult_lt_compat_l.
 auto with real.
 exact H2.
-Qed.
-
-Lemma float2_Rle_pow2 :
- forall k l : Z, (k <= l)%Z ->
- (Float2 1 k <= Float2 1 l)%R.
-intros k l H.
-unfold float2R. simpl.
-repeat rewrite Rmult_1_l.
-cutrewrite (l = l - k + k)%Z. 2: ring.
-rewrite powerRZ_add. 2: discrR.
-pattern (powerRZ 2 k) at 1 ; rewrite <- Rmult_1_l.
-apply Rmult_le_compat_r.
-auto with real.
-unfold powerRZ.
-cut (0 <= l - k)%Z. 2: omega.
-clear H.
-case (l - k)%Z ; intros.
-apply Rle_refl.
-apply pow_R1_Rle.
-auto with real.
-elim Zle_not_lt with (1 := H).
-exact (Zlt_neg_0 p).
-Qed.
-
-Lemma float2_pow2_lt :
- forall k l : Z, (Float2 1 k < Float2 1 l)%R ->
- (k < l)%Z.
-intros k l.
-unfold float2R. simpl.
-repeat rewrite Rmult_1_l.
-intros H.
-cutrewrite (l = k + (l - k))%Z in H. 2: ring.
-rewrite powerRZ_add in H. 2: discrR.
-pattern (powerRZ 2 k) at 1 in H ; rewrite <- Rmult_1_r in H.
-assert (0 < l - k)%Z. 2: omega.
-assert (0 < powerRZ 2 k)%R. auto with real.
-generalize (Rmult_lt_reg_l _ _ _ H0 H).
-unfold powerRZ.
-case (l - k)%Z ; intros.
-elim (Rlt_irrefl _ H1).
-exact (Zgt_lt _ _ (Zgt_pos_0 p)).
-elim Rlt_not_le with (1 := H1).
-apply Rmult_le_reg_l with (2 ^ nat_of_P p)%R.
-auto with real.
-rewrite Rinv_r.
-rewrite Rmult_1_r.
-auto with real.
-apply Rgt_not_eq.
-unfold Rgt.
-auto with real.
+discrR.
 Qed.
 
 Lemma float2_Rlt_pow2 :
  forall k l : Z, (k < l)%Z ->
  (Float2 1 k < Float2 1 l)%R.
 intros k l H.
-unfold float2R. simpl.
-repeat rewrite Rmult_1_l.
-cutrewrite (l = l - k + k)%Z. 2: ring.
+do 2 rewrite float2_pow2.
+replace l with (l - k + k)%Z by ring.
 rewrite powerRZ_add. 2: discrR.
-pattern (powerRZ 2 k) at 1 ; rewrite <- Rmult_1_l.
+pattern (powerRZ 2 k) at 1 ; (rewrite <- Rmult_1_l).
 apply Rmult_lt_compat_r.
 auto with real.
 unfold powerRZ.
-cut (0 < l - k)%Z. 2: omega.
+assert (0 < l - k)%Z by omega.
 clear H.
-case (l - k)%Z ; intros.
-elim (Zlt_irrefl _ H).
+induction (l - k)%Z.
+discriminate H0.
 apply Rlt_pow_R1.
 auto with real.
 apply lt_O_nat_of_P.
-elim Zlt_not_le with (1 := H).
-apply Zlt_le_weak.
-exact (Zlt_neg_0 p).
+discriminate H0.
+Qed.
+
+Lemma float2_Rle_pow2 :
+ forall k l : Z, (k <= l)%Z ->
+ (Float2 1 k <= Float2 1 l)%R.
+intros k l H.
+destruct (Zle_lt_or_eq _ _ H).
+apply Rlt_le.
+apply float2_Rlt_pow2.
+exact H0.
+rewrite H0.
+apply Rle_refl.
+Qed.
+
+Lemma float2_pow2_lt :
+ forall k l : Z, (Float2 1 k < Float2 1 l)%R ->
+ (k < l)%Z.
+intros k l H.
+apply Znot_ge_lt.
+intro H0.
+elim Rlt_not_le with (1 := H).
+apply float2_Rle_pow2.
+apply Zge_le.
+exact H0.
 Qed.
 
 Lemma float2_pow2_le :
  forall k l : Z, (Float2 1 k <= Float2 1 l)%R ->
  (k <= l)%Z.
-intros k l.
-unfold float2R. simpl.
-repeat rewrite Rmult_1_l.
-intros H.
-cutrewrite (l = k + (l - k))%Z in H. 2: ring.
-rewrite powerRZ_add in H. 2: discrR.
-pattern (powerRZ 2 k) at 1 in H ; rewrite <- Rmult_1_r in H.
-assert (0 <= l - k)%Z. 2: omega.
-assert (0 < powerRZ 2 k)%R. auto with real.
-generalize (Rmult_le_reg_l _ _ _ H0 H).
-unfold powerRZ.
-case (l - k)%Z ; intros.
-apply Zle_refl.
-apply Zlt_le_weak.
-exact (Zgt_lt _ _ (Zgt_pos_0 p)).
-elim Rle_not_lt with (1 := H1).
-apply Rmult_lt_reg_l with (2 ^ nat_of_P p)%R.
-auto with real.
-rewrite Rinv_r.
-rewrite Rmult_1_r.
-auto with real.
-apply Rgt_not_eq.
-unfold Rgt.
-auto with real.
+intros k l H.
+apply Znot_gt_le.
+intro H0.
+elim Rle_not_lt with (1 := H).
+apply float2_Rlt_pow2.
+apply Zgt_lt.
+exact H0.
 Qed.
 
 Lemma float2_pos_reg :
@@ -332,11 +315,12 @@ Lemma float2_pos_reg :
  (0 < Float2 m e)%R ->
  (0 < m)%Z.
 intros m e H.
-apply lt_IZR.
-apply Rmult_lt_reg_l with (powerRZ 2 e).
-auto with real.
+apply lt_Z2R.
+apply Rmult_lt_reg_l with (powerRZ (P2R 2) e).
+apply power_radix_pos.
 rewrite Rmult_0_r.
 rewrite Rmult_comm.
+rewrite <- F2R_split.
 exact H.
 Qed.
 
@@ -345,11 +329,8 @@ Lemma float2_pos_compat :
  (0 < m)%Z ->
  (0 < Float2 m e)%R.
 intros m e H.
-cutrewrite (R0 = Float2 0 e).
+rewrite <- (float2_zero e).
 exact (float2_binade_lt _ _ _ H).
-unfold float2R.
-rewrite Rmult_0_l.
-exact (refl_equal _).
 Qed.
 
 Definition pos_of_Z (n : Z) :=
@@ -393,6 +374,7 @@ split.
 apply Znot_ge_lt.
 intros H0.
 generalize (Zle_lt_or_eq _ _ (Zge_le _ _ H0)).
+(* e1 < e2 *)
 clear H0. intros [H0|H0].
 generalize (Fshift2_correct (Float2 (Zpos m1) e1) (Float2 (Zpos m2) e2)).
 unfold Fshift2.
@@ -403,32 +385,32 @@ generalize H.
 rewrite <- H1.
 clear H H0 H1.
 unfold float2R. simpl.
-repeat rewrite <- (Rmult_comm (powerRZ 2 e1)).
+do 3 rewrite F2R_split.
+do 3 rewrite <- (Rmult_comm (powerRZ (P2R 2) e1)).
 intros (H1,H2).
-assert (0 < powerRZ 2 e1)%R. auto with real.
+assert (0 < powerRZ (P2R 2) e1)%R by apply power_radix_pos.
 generalize (Rmult_lt_reg_l _ _ _ H H1). clear H1. intro H1.
-generalize (INR_lt _ _ H1). clear H1. intro H1.
+generalize (lt_Z2R _ _ H1). clear H1. intro H1.
 generalize (Rmult_lt_reg_l _ _ _ H H2). clear H2. intro H2.
-generalize (INR_lt _ _ H2). clear H2. intro H2.
-apply lt_not_le with (1 := H2).
-rewrite nat_of_P_plus_morphism.
-change (nat_of_P 1) with 1.
+generalize (lt_Z2R _ _ H2). clear H2. intro H2.
+change (Zpos (m1 + 1)) with (Zpos m1 + 1)%Z in H2.
 omega.
-generalize H.
-unfold float2R. simpl.
-rewrite <- H0.
-clear H H0.
-repeat rewrite <- (Rmult_comm (powerRZ 2 e1)).
-intros (H1,H2).
-assert (0 < powerRZ 2 e1)%R. auto with real.
+(* e1 = e2 *)
+generalize H. clear H.
+rewrite H0.
+unfold float2R.
+do 3 rewrite F2R_split.
+do 3 rewrite <- (Rmult_comm (powerRZ (P2R 2) e2)).
+clear H0. intros (H1, H2).
+assert (0 < powerRZ (P2R 2) e2)%R by apply power_radix_pos.
 generalize (Rmult_lt_reg_l _ _ _ H H1). clear H1. intro H1.
-generalize (INR_lt _ _ H1). clear H1. intro H1.
+generalize (lt_Z2R _ _ H1). clear H1. intro H1.
 generalize (Rmult_lt_reg_l _ _ _ H H2). clear H2. intro H2.
-generalize (INR_lt _ _ H2). clear H2. intro H2.
-apply lt_not_le with (1 := H2).
-rewrite nat_of_P_plus_morphism.
-change (nat_of_P 1) with 1.
+generalize (lt_Z2R _ _ H2). clear H2. intro H2.
+simpl in H1, H2.
+change (Zpos (m1 + 1)) with (Zpos m1 + 1)%Z in H2.
 omega.
+(* . *)
 generalize (float2_digits_correct m1 e1).
 generalize (float2_digits_correct m2 e2).
 intros (H0,H1) (H2,H3).
