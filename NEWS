@@ -1,3 +1,6 @@
+Version 0.7:
+ - changed coercions to produce user-friendly constants
+
 Version 0.6:
  - proved rewrite_* for constraints on user rewriting rules
  - proved subset_* for half-bounded goals
