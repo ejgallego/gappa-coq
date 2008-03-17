@@ -18,11 +18,14 @@ FILES = \
 	Gappa_round_aux.v \
 	Gappa_round_def.v \
 	Gappa_round.v \
+	Gappa_tactic.v \
 	Gappa_user.v
 
 data_DATA = $(FILES:=o)
 EXTRA_DIST = autogen.sh $(FILES)
 CLEANFILES = $(FILES:=o)
+
+datadir = $(libdir)
 
 Gappa_common.vo: Gappa_common.v Gappa_real.vo Gappa_definitions.vo Gappa_dyadic.vo
 Gappa_decimal.vo: Gappa_decimal.v Gappa_integer.vo Gappa_common.vo
@@ -43,7 +46,8 @@ Gappa_rewriting.vo: Gappa_rewriting.v Gappa_common.vo
 Gappa_round_aux.vo: Gappa_round_aux.v Gappa_definitions.vo Gappa_dyadic.vo Gappa_integer.vo
 Gappa_round_def.vo: Gappa_round_def.v
 Gappa_round.vo: Gappa_round.v Gappa_definitions.vo Gappa_dyadic.vo Gappa_integer.vo Gappa_round_def.vo Gappa_round_aux.vo
+Gappa_tactic.vo: Gappa_tactic.v Gappa_library.vo Gappa_integer.vo
 Gappa_user.vo: Gappa_user.v Gappa_common.vo Gappa_pred_bnd.vo
 
 %.vo: %.v
-	$(COQC) $<
+	$(COQC) $(COQRFLAG) $<

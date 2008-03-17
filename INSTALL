@@ -14,9 +14,14 @@ Configuring, compiling and installing
 
 Ideally, you should just have to type:
 
-  $ ./configure && make
+  $ ./configure && make && make install
 
-The environment variable "COQC" can be set to the Coq compiler command; the
-configure script defaults to "coqc". The option "--datadir=DIR" can be set to
-the directory where the compiled library files should be installed by "make
-install".
+The environment variable "COQC" can be set to the Coq compiler command. The
+configure script defaults to "coqc".
+
+The option "--libdir=DIR" can be set to the directory where the compiled
+library files should be installed by "make install". By default, the target
+directory is "`$COQC -where`/user-contrib/Gappa".
+
+The files are compiled at a logical location starting with "Gappa". This
+default prefix can be removed with the "--disable-prefix" option.
