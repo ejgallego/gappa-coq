@@ -15,16 +15,24 @@ field.
 exact Hb.
 Qed.
 
+Definition Flt2_m1 f :=
+ Flt2 (Float2 (-1) 0) f.
+
+Lemma Flt2_m1_correct :
+ forall f,
+ Flt2_m1 f = true ->
+ (-1 < f)%R.
+intros f Hb.
+exact (Flt2_correct _ _ Hb).
+Qed.
+
 Theorem rel_of_nzr_bnd :
  forall a b : R, forall zi : FF,
  NZR b -> BND ((a - b) / b) zi ->
- Flt2 (Float2 (-1) 0) (lower zi) = true ->
+ Flt2_m1 (lower zi) = true ->
  REL a b zi.
 intros a b zi Hb Hr H.
-generalize (Flt2_correct _ _ H).
-cutrewrite (Float2 (-1) 0 = -1 :>R)%R.
-2: unfold float2R ; auto with real.
-clear H. intro H.
+generalize (Flt2_m1_correct _ H). clear H. intro H.
 exists ((a - b) / b)%R.
 split.
 exact H.
@@ -61,8 +69,32 @@ Definition error_of_rel_np := error_of_rel_generic mul_np_helper mul_np.
 Definition error_of_rel_no := error_of_rel_generic mul_no_helper mul_no.
 Definition error_of_rel_nn := error_of_rel_generic mul_nn_helper mul_nn.
 
+Definition rel_subset_helper (xi zi : FF) :=
+ Flt2_m1 (lower zi) &&
+ Fle2 (lower zi) (lower xi) &&
+ Fle2 (upper xi) (upper zi).
+
+Theorem rel_subset :
+ forall x xr : R, forall xi zi : FF,
+ REL x xr xi ->
+ rel_subset_helper xi zi = true ->
+ REL x xr zi.
+intros x xr xi zi (xe,(Hx1,(Hx2,Hx3))) Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Flt2_m1_correct _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+exists xe.
+split.
+exact H1.
+split.
+apply IRsubset with (1 := H2) (2 := H3) (3 := Hx2).
+exact Hx3.
+Qed.
+
 Definition intersect_rr_helper (xf yf : float2) (zi : FF) :=
- Flt2 (Float2 (-1) 0) (lower zi) &&
+ Flt2_m1 (lower zi) &&
  Fle2 (lower zi) (upper zi) &&
  Fle2 (lower zi) yf &&
  Fle2 xf (upper zi).
@@ -76,10 +108,7 @@ intros z1 z2 xi yi zi (xe,(Hx1,(Hx2,Hx3))) (ye,(Hy1,(Hy2,Hy3))) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Flt2_correct _ _ H1).
-cutrewrite (Float2 (-1) 0 = -1 :>R)%R.
-2: unfold float2R ; auto with real.
-clear H1. intro H1.
+generalize (Flt2_m1_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). clear H4. intro H4.
@@ -132,7 +161,7 @@ exact Hy3.
 Qed.
 
 Definition mul_rr_helper (xi yi zi : FF) :=
- Flt2 (Float2 (-1) 0) (lower zi) &&
+ Flt2_m1 (lower zi) &&
  Fle2 (lower zi) (Fplus2 (Fplus2 (lower xi) (lower yi))
                          (Fmult2 (lower xi) (lower yi))) &&
  Fle2 (Fplus2 (Fplus2 (upper xi) (upper yi))
@@ -146,10 +175,7 @@ Theorem mul_rr :
 intros x1 x2 y1 y2 xi yi zi (xe,(Hx1,(Hx2,Hx3))) (ye,(Hy1,(Hy2,Hy3))) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Flt2_correct _ _ H1).
-cutrewrite (Float2 (-1) 0 = -1 :>R)%R.
-2: unfold float2R ; auto with real.
-clear H1. intro H1.
+generalize (Flt2_m1_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2).
 repeat rewrite Fplus2_correct.
 rewrite Fmult2_correct. clear H2. intro H2.
@@ -168,7 +194,7 @@ ring.
 Qed.
 
 Definition div_rr_helper (xi yi zi : FF) :=
- Flt2 (Float2 (-1) 0) (lower zi) &&
+ Flt2_m1 (lower zi) &&
  Fle2 (upper xi) (Fplus2 (Fplus2 (lower yi) (upper zi))
                          (Fmult2 (lower yi) (upper zi))) &&
  Fle2 (Fplus2 (Fplus2 (upper yi) (lower zi))
@@ -182,10 +208,7 @@ Theorem div_rr :
 intros x1 x2 y1 y2 xi yi zi (xe,(Hx1,(Hx2,Hx3))) (ye,(Hy1,(Hy2,Hy3))) Hy4 Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Flt2_correct _ _ H1).
-cutrewrite (Float2 (-1) 0 = -1 :>R)%R.
-2: unfold float2R ; auto with real.
-clear H1. intro H1.
+generalize (Flt2_m1_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2).
 repeat rewrite Fplus2_correct.
 rewrite Fmult2_correct. clear H2. intro H2.

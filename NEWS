@@ -1,5 +1,7 @@
 Version 0.7:
  - changed coercions to produce user-friendly constants
+ - added tactic support for calling Gappa from Coq
+ - proved *_subset
 
 Version 0.6:
  - proved rewrite_* for constraints on user rewriting rules

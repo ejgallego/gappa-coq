@@ -4,6 +4,37 @@ Require Import Gappa_round_aux.
 
 Section Gappa_pred_fixflt.
 
+Theorem fix_subset :
+ forall x : R, forall xn zn : Z,
+ FIX x xn ->
+ Zle_bool zn xn = true ->
+ FIX x zn.
+intros x xn zn (xf,(Hx1,Hx2)) Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H.
+exists xf.
+split.
+exact Hx1.
+apply Zle_trans with (1 := H) (2 := Hx2).
+Qed.
+
+Theorem flt_subset :
+ forall x : R, forall xn zn : positive,
+ FLT x xn ->
+ Zle_bool (Zpos xn) (Zpos zn) = true ->
+ FLT x zn.
+intros x xn zn (xf,(Hx1,Hx2)) Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H.
+exists xf.
+split.
+exact Hx1.
+apply Zlt_le_trans with (1 := Hx2).
+apply le_Z2R.
+do 2 rewrite Zpower_pos_powerRZ.
+do 2 rewrite <- float2_pow2.
+apply float2_Rle_pow2.
+exact H.
+Qed.
+
 Definition fix_of_singleton_bnd_helper (xi : FF) (n : Z) :=
  Zeq_bool (Fnum (lower xi)) (Fnum (upper xi)) &&
  Zeq_bool (Fexp (lower xi)) (Fexp (upper xi)) &&

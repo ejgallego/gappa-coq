@@ -65,6 +65,27 @@ apply Rle_trans with (1 := H2) (2 := proj1 Hx).
 apply Rle_trans with (1 := proj2 Hx) (2 := H3).
 Qed.
 
+Definition abs_subset_helper (xi zi : FF) :=
+ Fpos0 (lower zi) &&
+ Fle2 (lower zi) (lower xi) &&
+ Fle2 (upper xi) (upper zi).
+
+Theorem abs_subset :
+ forall x : R, forall xi zi : FF,
+ ABS x xi ->
+ abs_subset_helper xi zi = true ->
+ ABS x zi.
+intros x xi zi (Hx1,Hx2) Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fpos0_correct _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+split.
+exact H1.
+apply IRsubset with (1 := H2) (2 := H3) (3 := Hx2).
+Qed.
+
 Definition intersect_aa_helper (xf yf : float2) (zi : FF) :=
  Fpos0 (lower zi) &&
  Fle2 (lower zi) yf &&
