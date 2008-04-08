@@ -47,6 +47,12 @@ Axiom sub_rr :
  true = true ->
  REL (x1 - y1) (x2 - y2) zi.
 
+Axiom float_absolute_inv_ne :
+ forall p : positive, forall d : Z, forall x : R, forall xi zi : FF,
+ ABS (rounding_float roundNE p d x) xi ->
+ float_absolute_ne_helper p d xi zi = true ->
+ BND (rounding_float roundNE p d x - x) zi.
+
 Axiom relative_add : forall (p : positive) (e : Z) (r1 r2 : R), R.
 Axiom relative_sub : forall (p : positive) (e : Z) (r1 r2 : R), R.
 Axiom relative_mul : forall (p : positive) (e : Z) (r1 r2 : R), R.
