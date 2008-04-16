@@ -735,63 +735,6 @@ apply Rle_trans with (2 := H2).
 apply Rle_trans with (1 := Rabs_idem x) (2 := proj2 Hx).
 Qed.
 
-Definition abs_p_helper (xi zi : FF) :=
- Fpos0 (lower xi) &&
- Fle2 (lower zi) (lower xi) &&
- Fle2 (upper xi) (upper zi).
-
-Theorem abs_p :
- forall x : R, forall xi zi : FF,
- BND x xi ->
- abs_p_helper xi zi = true ->
- BND (Rabs x) zi.
-intros x xi zi Hx Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
-generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fpos0_correct _ H1). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). clear H3. intro H3.
-apply IRabs_p with (1 := H1) (2 := H2) (3 := H3) (4 := Hx).
-Qed.
-
-Definition abs_o_helper (xi zi : FF) :=
- Fneg0 (lower zi) &&
- Fle2 (upper xi) (upper zi) &&
- Fle2 (Fopp2 (lower xi)) (upper zi).
-
-Theorem abs_o :
- forall x : R, forall xi zi : FF,
- BND x xi ->
- abs_o_helper xi zi = true ->
- BND (Rabs x) zi.
-intros x xi zi Hx Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
-generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fneg0_correct _ H1). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. clear H3. intro H3.
-apply IRabs_o with (1 := H1) (2 := H3) (3 := H2) (4 := Hx).
-Qed.
-
-Definition abs_n_helper (xi zi : FF) :=
- Fneg0 (upper xi) &&
- Fle2 (lower zi) (Fopp2 (upper xi)) &&
- Fle2 (Fopp2 (lower xi)) (upper zi).
-
-Theorem abs_n :
- forall x : R, forall xi zi : FF,
- BND x xi ->
- abs_n_helper xi zi = true ->
- BND (Rabs x) zi.
-intros x xi zi Hx Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
-generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fneg0_correct _ H1). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). rewrite Fopp2_correct. clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. clear H3. intro H3.
-apply IRabs_n with (1 := H1) (2 := H2) (3 := H3) (4 := Hx).
-Qed.
-
 Definition sqrt_helper (xi zi : FF) :=
  (if (Fneg0 (lower zi)) then Fpos0 (lower xi)
   else Fle2 (Fmult2 (lower zi) (lower zi)) (lower xi)) &&

@@ -41,15 +41,33 @@ apply Rle_trans with (1 := H1) (2 := proj1 H).
 apply Rle_trans with (1 := proj2 H) (2 := H2).
 Qed.
 
-Definition abs_of_bnd_helper (xi zi : FF) :=
+Theorem abs_of_uabs :
+ forall x : R, forall zi : FF,
+ BND (Rabs x) zi ->
+ Fpos0 (lower zi) = true ->
+ ABS x zi.
+intros x zi Hx Hb.
+generalize (Fpos0_correct _ Hb). clear Hb. intro H1.
+exact (conj H1 Hx).
+Qed.
+
+Theorem uabs_of_abs :
+ forall x : R, forall zi : FF,
+ ABS x zi ->
+ BND (Rabs x) zi.
+intros x zi (_,Hx2).
+exact Hx2.
+Qed.
+
+Definition abs_of_bnd_p_helper (xi zi : FF) :=
  Fpos0 (lower zi) &&
  Fle2 (lower zi) (lower xi) &&
  Fle2 (upper xi) (upper zi).
 
-Theorem abs_of_bnd :
+Theorem abs_of_bnd_p :
  forall x : R, forall xi zi : FF,
- BND (Rabs x) xi ->
- abs_of_bnd_helper xi zi = true ->
+ BND x xi ->
+ abs_of_bnd_p_helper xi zi = true ->
  ABS x zi.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -57,12 +75,58 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fpos0_correct _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). clear H3. intro H3.
-unfold ABS.
 split.
 exact H1.
+apply IRabs_p with (2 := H2) (3 := H3) (4 := Hx).
+apply Rle_trans with (1 := H1) (2 := H2).
+Qed.
+
+Definition abs_of_bnd_o_helper (xi zi : FF) :=
+ Fis0 (lower zi) &&
+ Fle2 (upper xi) (upper zi) &&
+ Fle2 (Fopp2 (lower xi)) (upper zi).
+
+Theorem abs_of_bnd_o :
+ forall x : R, forall xi zi : FF,
+ BND x xi ->
+ abs_of_bnd_o_helper xi zi = true ->
+ ABS x zi.
+intros x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fis0_correct _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. clear H3. intro H3.
 split.
-apply Rle_trans with (1 := H2) (2 := proj1 Hx).
-apply Rle_trans with (1 := proj2 Hx) (2 := H3).
+rewrite H1.
+apply Rle_refl.
+apply IRabs_o with (2 := H3) (3 := H2) (4 := Hx).
+rewrite H1.
+apply Rle_refl.
+Qed.
+
+Definition abs_of_bnd_n_helper (xi zi : FF) :=
+ Fpos0 (lower zi) &&
+ Fle2 (lower zi) (Fopp2 (upper xi)) &&
+ Fle2 (Fopp2 (lower xi)) (upper zi).
+
+Theorem abs_of_bnd_n :
+ forall x : R, forall xi zi : FF,
+ BND x xi ->
+ abs_of_bnd_n_helper xi zi = true ->
+ ABS x zi.
+intros x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fpos0_correct _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). rewrite Fopp2_correct. clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). rewrite Fopp2_correct. clear H3. intro H3.
+split.
+exact H1.
+apply IRabs_n with (2 := H2) (3 := H3) (4 := Hx).
+apply Ropp_le_cancel.
+rewrite Ropp_0.
+apply Rle_trans with (1 := H1) (2 := H2).
 Qed.
 
 Definition abs_subset_helper (xi zi : FF) :=
