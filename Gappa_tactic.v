@@ -3,6 +3,8 @@ Require Import List.
 Require Export Gappa_library.
 Require Import Gappa_integer.
 
+Definition gappa_rounding (f : R -> float2) (x : R) : R := f x.
+
 Inductive UnaryOp : Set :=
   | uoNeg | uoSqrt | uoAbs | uoInv.
 
@@ -17,7 +19,8 @@ Inductive RExpr : Set :=
   | reUnary : UnaryOp -> RExpr -> RExpr
   | reBinary : BinaryOp -> RExpr -> RExpr -> RExpr
   | rePow2 : Z -> RExpr
-  | reINR : positive -> RExpr.
+  | reINR : positive -> RExpr
+  | reRound : (R -> float2) -> RExpr -> RExpr.
 
 (* convert to an expression on real numbers *)
 Fixpoint convert t : R :=
@@ -43,6 +46,8 @@ Fixpoint convert t : R :=
     powerRZ 2%R x
   | reINR x =>
     INR (nat_of_P x)
+  | reRound f x =>
+    gappa_rounding f (convert x)
   end.
 
 Definition is_stable f :=
@@ -54,6 +59,7 @@ Definition recursive_transform f :=
     match t with
     | reUnary  o x   => reUnary  o (aux x)
     | reBinary o x y => reBinary o (aux x) (aux y)
+    | reRound  o x   => reRound  o (aux x)
     | _ => t
     end in
   aux.
@@ -71,6 +77,9 @@ apply refl_equal.
 simpl.
 rewrite IHt1.
 rewrite IHt2.
+apply refl_equal.
+simpl.
+rewrite IHt.
 apply refl_equal.
 Qed.
 
@@ -194,6 +203,9 @@ Ltac get_inductive_term t :=
       | true => constr:(rePow2 y)
       end
     end
+  | gappa_rounding ?f ?x =>
+     let x' := get_inductive_term x in
+     constr:(reRound f x')
   | ?f ?x ?y =>
     let bo :=
       match f with
@@ -220,7 +232,7 @@ Ltac get_inductive_term t :=
   end.
 
 (* factor an integer into odd*2^e *)
-Definition get_float2 x :=
+Definition float2_of_pos x :=
   let fix aux (m : positive) e { struct m } :=
     match m with
     | xO p => aux p (Zsucc e)
@@ -228,10 +240,10 @@ Definition get_float2 x :=
     end in
   aux x Z0.
 
-Lemma get_float2_correct :
-  forall x, float2R (get_float2 x) = Z2R (Zpos x).
+Lemma float2_of_pos_correct :
+  forall x, float2R (float2_of_pos x) = Z2R (Zpos x).
 intros x.
-unfold get_float2.
+unfold float2_of_pos.
 change (Z2R (Zpos x)) with (float2R (Float2 (Zpos x) 0%Z)).
 generalize 0%Z.
 induction x ; intros e ; try apply refl_equal.
@@ -244,13 +256,57 @@ rewrite Zmult_comm.
 apply refl_equal.
 Qed.
 
+Definition compact_float2 m e :=
+  match m with
+  | Z0 => Float2 0 0
+  | Zpos p =>
+    match float2_of_pos p with
+    | Float2 m e1 => Float2 m (e + e1)
+    end
+  | Zneg p =>
+    match float2_of_pos p with
+    | Float2 m e1 => Float2 (-m) (e + e1)
+    end
+  end.
+
+Lemma compact_float2_correct :
+  forall m e, float2R (compact_float2 m e) = float2R (Float2 m e).
+intros [|m|m] e ; simpl.
+rewrite (Gappa_dyadic.float2_zero e).
+apply refl_equal.
+generalize (float2_of_pos_correct m).
+destruct (float2_of_pos m) as (m1, e1).
+intros H.
+rewrite Zplus_comm.
+rewrite <- (Zmult_1_r m1).
+change (Gappa_dyadic.Fmult2 (Float2 m1 e1) (Float2 1 e) = Float2 (Zpos m) e :>R).
+rewrite Gappa_dyadic.Fmult2_correct.
+rewrite Gappa_round_aux.float2_pow2.
+rewrite H.
+apply sym_eq.
+exact (F2R_split _ (Zpos m) e).
+generalize (float2_of_pos_correct m).
+destruct (float2_of_pos m) as (m1, e1).
+intros H.
+rewrite Zplus_comm.
+rewrite <- (Zmult_1_r m1).
+change (Gappa_dyadic.Fopp2 (Gappa_dyadic.Fmult2 (Float2 m1 e1) (Float2 1 e)) = Float2 (Zneg m) e :>R).
+rewrite Gappa_dyadic.Fopp2_correct.
+rewrite Gappa_dyadic.Fmult2_correct.
+rewrite Gappa_round_aux.float2_pow2.
+rewrite H.
+rewrite <- Ropp_mult_distr_l_reverse.
+apply sym_eq.
+exact (F2R_split _ (Zneg m) e).
+Qed.
+
 (* transform INR and IZR into real integers, change a/b and a*2^b into floats *)
 Definition gen_float2_func t :=
   match t with
   | reUnary uoNeg (reInteger (Zpos x)) =>
     reInteger (Zneg x)
   | reBinary boDiv (reInteger x) (reInteger (Zpos y)) =>
-    match get_float2 y with
+    match float2_of_pos y with
     | Float2 1 (Zpos y') => reFloat2 x (Zneg y')
     | _ => t
     end
@@ -263,7 +319,7 @@ Definition gen_float2_func t :=
 
 Lemma gen_float2_prop :
   is_stable gen_float2_func.
-intros [x|x|x y|o x|o x y|x|x] ; try apply refl_equal.
+intros [x|x|x y|o x|o x y|x|x|f x] ; try apply refl_equal.
 (* unary ops *)
 destruct o ; try apply refl_equal.
 destruct x ; try apply refl_equal.
@@ -279,9 +335,9 @@ rewrite F2R_split.
 apply refl_equal.
 (* . x / 2*2*2*2 *)
 destruct z0 ; try apply refl_equal.
-generalize (get_float2_correct p).
+generalize (float2_of_pos_correct p).
 simpl.
-destruct (get_float2 p) as ([|[m|m|]|m], [|e|e]) ; intros H ; try apply refl_equal.
+destruct (float2_of_pos p) as ([|[m|m|]|m], [|e|e]) ; intros H ; try apply refl_equal.
 rewrite <- H.
 simpl.
 unfold float2R.
@@ -304,7 +360,7 @@ Definition clean_pow2_func t :=
 
 Lemma clean_pow2_prop :
   is_stable clean_pow2_func.
-intros [x|x|x y|o x|o x y|x|x] ; try apply refl_equal.
+intros [x|x|x y|o x|o x y|x|x|f x] ; try apply refl_equal.
 simpl.
 apply Gappa_round_aux.float2_pow2.
 Qed.
@@ -312,21 +368,36 @@ Qed.
 Definition clean_pow2 := mkTF clean_pow2_func clean_pow2_prop.
 
 (* compute on constant terms, so that they are hopefully represented by a single float *)
+Definition merge_float2_aux m e :=
+  match compact_float2 m e with
+  | Float2 m1 e1 => reFloat2 m1 e1
+  end.
+
 Definition merge_float2_func t :=
   match t with
-  | reInteger x => reFloat2 x 0
-  | reUnary uoNeg (reFloat2 x y) => reFloat2 (- x) y
-  | reBinary boMul (reFloat2 x1 y1) (reFloat2 x2 y2) => reFloat2 (x1 * x2) (y1 + y2)
+  | reInteger x => merge_float2_aux x 0
+  | reUnary uoNeg (reFloat2 x y) => merge_float2_aux (- x) y
+  | reBinary boMul (reFloat2 x1 y1) (reFloat2 x2 y2) => merge_float2_aux (x1 * x2) (y1 + y2)
+  | reFloat2 x y => merge_float2_aux x y
   | _ => t
   end.
 
 Lemma merge_float2_prop :
   is_stable merge_float2_func.
-intros [x|x|x y|o x|o x y|x|x] ; try apply refl_equal.
+assert (forall m e, convert (merge_float2_aux m e) = convert (reFloat2 m e)).
+intros.
+unfold merge_float2_aux.
+generalize (compact_float2_correct m e).
+destruct (compact_float2 m e).
+intro H.
+exact H.
+(* . *)
+intros [x|x|x y|o x|o x y|x|x|f x] ; try apply refl_equal ; try exact (H x _).
 (* unary ops *)
 destruct o ; try apply refl_equal.
 destruct x ; try apply refl_equal.
 simpl.
+rewrite H.
 rewrite <- Gappa_dyadic.Fopp2_correct.
 apply refl_equal.
 (* binary ops *)
@@ -334,11 +405,28 @@ destruct o ; try apply refl_equal.
 destruct x ; try apply refl_equal.
 destruct y ; try apply refl_equal.
 simpl.
+rewrite H.
 rewrite <- Gappa_dyadic.Fmult2_correct.
 apply refl_equal.
 Qed.
 
 Definition merge_float2 := mkTF merge_float2_func merge_float2_prop.
+
+(* change /a into 1/a *)
+Definition remove_inv_func t :=
+  match t with
+  | reUnary uoInv x => reBinary boDiv (reInteger 1) x
+  | _ => t
+  end.
+
+Lemma remove_inv_prop :
+  is_stable remove_inv_func.
+intros [x|x|x y|o x|o x y|x|x|f x] ; try apply refl_equal.
+destruct o ; try apply refl_equal.
+exact (Rmult_1_l _).
+Qed.
+
+Definition remove_inv := mkTF remove_inv_func remove_inv_prop.
 
 (* some dummy definition to ensure precise rewriting of the terms and termination *)
 Definition convertTODO1 := convert.
@@ -350,9 +438,10 @@ Definition reUnknownTODO := reUnknown.
    some integers may no longer be closed terms, but they can be evaluated to closed terms *)
 Ltac gappa_prepare :=
   intros ; subst ;
-  let trans_expr := constr:(gen_float2 :: clean_pow2 :: nil) in
-  let trans_bound := constr:(gen_float2 :: clean_pow2 :: merge_float2 :: nil) in
+  let trans_expr := constr:(remove_inv :: gen_float2 :: clean_pow2 :: nil) in
+  let trans_bound := constr:(remove_inv :: gen_float2 :: clean_pow2 :: merge_float2 :: nil) in
   (* complete half-range on absolute values *)
+  try
   match goal with
   | |- (Rabs ?e <= ?b)%R =>
     refine (proj2 (_ : (0 <= Rabs e <= b)%R))
@@ -370,9 +459,9 @@ Ltac gappa_prepare :=
     let b' := get_inductive_term b in
     let e' := get_inductive_term e in
     change (convertTODO1 a' <= convertTODO2 e' <= convertTODO3 b')%R ;
-    let w := eval simpl in (multi_transform trans_bound a') in
+    let w := eval compute in (multi_transform trans_bound a') in
     replace (convertTODO1 a') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound a')] ;
-    let w := eval simpl in (multi_transform trans_bound b') in
+    let w := eval compute in (multi_transform trans_bound b') in
     replace (convertTODO3 b') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound b')] ;
     let w := eval simpl in (multi_transform trans_expr e') in
     replace (convertTODO2 e') with (convert w) ; [idtac | exact (multi_transform_correct trans_expr e')]
@@ -386,9 +475,9 @@ Ltac gappa_prepare :=
     let e' := get_inductive_term e in
     change (convertTODO1 a' <= convertTODO2 e' <= convertTODO3 b')%R in H ;
     generalize H ; clear H ;
-    let w := eval simpl in (multi_transform trans_bound a') in
+    let w := eval compute in (multi_transform trans_bound a') in
     replace (convertTODO1 a') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound a')] ;
-    let w := eval simpl in (multi_transform trans_bound b') in
+    let w := eval compute in (multi_transform trans_bound b') in
     replace (convertTODO3 b') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound b')] ;
     let w := eval simpl in (multi_transform trans_expr e') in
     replace (convertTODO2 e') with (convert w) ; [idtac | exact (multi_transform_correct trans_expr e')]
