@@ -352,6 +352,16 @@ Ltac gappa_prepare :=
   intros ; subst ;
   let trans_expr := constr:(gen_float2 :: clean_pow2 :: nil) in
   let trans_bound := constr:(gen_float2 :: clean_pow2 :: merge_float2 :: nil) in
+  (* complete half-range on absolute values *)
+  match goal with
+  | |- (Rabs ?e <= ?b)%R =>
+    refine (proj2 (_ : (0 <= Rabs e <= b)%R))
+  end ;
+  repeat
+  match goal with
+  | H: (Rabs ?e <= ?b)%R |- _ =>
+    generalize (conj (Rabs_pos e) H) ; clear H ; intro
+  end ;
   (* - get an inductive object for the bounded expression without any INR, INZ, powerRZ 2
      - same for the bounds, but try harder to get single floats *)
   match goal with
