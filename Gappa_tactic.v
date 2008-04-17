@@ -16,9 +16,11 @@ Inductive RExpr : Set :=
   | reUnknown : R -> RExpr
   | reInteger : Z -> RExpr
   | reFloat2 : Z -> Z -> RExpr
+  | reFloat10 : Z -> Z -> RExpr
   | reUnary : UnaryOp -> RExpr -> RExpr
   | reBinary : BinaryOp -> RExpr -> RExpr -> RExpr
   | rePow2 : Z -> RExpr
+  | rePow10 : Z -> RExpr
   | reINR : positive -> RExpr
   | reRound : (R -> float2) -> RExpr -> RExpr.
 
@@ -28,6 +30,7 @@ Fixpoint convert t : R :=
   | reUnknown x => x
   | reInteger x => Float1 x
   | reFloat2 x y => float2R (Float2 x y)
+  | reFloat10 x y => float10R (Float10 x y)
   | reUnary o x =>
     match o with
     | uoNeg  => Ropp
@@ -44,6 +47,8 @@ Fixpoint convert t : R :=
     end (convert x) (convert y)
   | rePow2 x =>
     powerRZ 2%R x
+  | rePow10 x =>
+    powerRZ 10%R x
   | reINR x =>
     INR (nat_of_P x)
   | reRound f x =>
@@ -202,6 +207,10 @@ Ltac get_inductive_term t :=
       match is_integer y with
       | true => constr:(rePow2 y)
       end
+    | reInteger 10%Z =>
+      match is_integer y with
+      | true => constr:(rePow10 y)
+      end
     end
   | gappa_rounding ?f ?x =>
      let x' := get_inductive_term x in
@@ -301,7 +310,7 @@ exact (F2R_split _ (Zneg m) e).
 Qed.
 
 (* transform INR and IZR into real integers, change a/b and a*2^b into floats *)
-Definition gen_float2_func t :=
+Definition gen_float_func t :=
   match t with
   | reUnary uoNeg (reInteger (Zpos x)) =>
     reInteger (Zneg x)
@@ -312,14 +321,16 @@ Definition gen_float2_func t :=
     end
   | reBinary boMul (reInteger x) (rePow2 y) =>
     reFloat2 x y
+  | reBinary boMul (reInteger x) (rePow10 y) =>
+    reFloat10 x y
   | reINR x =>
     reInteger (Zpos x)
   | _ => t
   end.
 
-Lemma gen_float2_prop :
-  is_stable gen_float2_func.
-intros [x|x|x y|o x|o x y|x|x|f x] ; try apply refl_equal.
+Lemma gen_float_prop :
+  is_stable gen_float_func.
+intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
 (* unary ops *)
 destruct o ; try apply refl_equal.
 destruct x ; try apply refl_equal.
@@ -331,6 +342,11 @@ destruct o ; try apply refl_equal ;
 (* . x * 2^y *)
 simpl.
 unfold float2R.
+rewrite F2R_split.
+apply refl_equal.
+(* . x * 10^y *)
+simpl.
+unfold float10R.
 rewrite F2R_split.
 apply refl_equal.
 (* . x / 2*2*2*2 *)
@@ -349,23 +365,29 @@ apply refl_equal.
 exact (P2R_INR _).
 Qed.
 
-Definition gen_float2 := mkTF gen_float2_func gen_float2_prop.
+Definition gen_float := mkTF gen_float_func gen_float_prop.
 
-(* remove pending powerRZ 2 *)
-Definition clean_pow2_func t :=
+(* remove pending powerRZ *)
+Definition clean_pow_func t :=
   match t with
   | rePow2 x => reFloat2 1 x
+  | rePow10 x => reFloat10 1 x
   | _ => t
   end.
 
-Lemma clean_pow2_prop :
-  is_stable clean_pow2_func.
-intros [x|x|x y|o x|o x y|x|x|f x] ; try apply refl_equal.
+Lemma clean_pow_prop :
+  is_stable clean_pow_func.
+intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
 simpl.
 apply Gappa_round_aux.float2_pow2.
+simpl.
+unfold float10R.
+rewrite F2R_split.
+rewrite Rmult_1_l.
+apply refl_equal.
 Qed.
 
-Definition clean_pow2 := mkTF clean_pow2_func clean_pow2_prop.
+Definition clean_pow := mkTF clean_pow_func clean_pow_prop.
 
 (* compute on constant terms, so that they are hopefully represented by a single float *)
 Definition merge_float2_aux m e :=
@@ -392,7 +414,7 @@ destruct (compact_float2 m e).
 intro H.
 exact H.
 (* . *)
-intros [x|x|x y|o x|o x y|x|x|f x] ; try apply refl_equal ; try exact (H x _).
+intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal ; try exact (H x _).
 (* unary ops *)
 destruct o ; try apply refl_equal.
 destruct x ; try apply refl_equal.
@@ -421,7 +443,7 @@ Definition remove_inv_func t :=
 
 Lemma remove_inv_prop :
   is_stable remove_inv_func.
-intros [x|x|x y|o x|o x y|x|x|f x] ; try apply refl_equal.
+intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
 destruct o ; try apply refl_equal.
 exact (Rmult_1_l _).
 Qed.
@@ -438,8 +460,8 @@ Definition reUnknownTODO := reUnknown.
    some integers may no longer be closed terms, but they can be evaluated to closed terms *)
 Ltac gappa_prepare :=
   intros ; subst ;
-  let trans_expr := constr:(remove_inv :: gen_float2 :: clean_pow2 :: nil) in
-  let trans_bound := constr:(remove_inv :: gen_float2 :: clean_pow2 :: merge_float2 :: nil) in
+  let trans_expr := constr:(remove_inv :: gen_float :: clean_pow :: nil) in
+  let trans_bound := constr:(remove_inv :: gen_float :: clean_pow :: merge_float2 :: nil) in
   (* complete half-range on absolute values *)
   try
   match goal with
