@@ -47,6 +47,12 @@ Axiom sub_rr :
  true = true ->
  REL (x1 - y1) (x2 - y2) zi.
 
+Axiom bnd_div_of_rel_bnd_div :
+ forall x1 x2 y : R, forall xi yi zi : FF,
+ REL x1 x2 xi -> BND (x2 / y) yi ->
+ true = true ->
+ BND ((x1 - x2) / y) zi.
+
 Axiom float_absolute_inv_ne :
  forall p : positive, forall d : Z, forall x : R, forall xi zi : FF,
  ABS (rounding_float roundNE p d x) xi ->

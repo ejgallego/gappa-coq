@@ -370,6 +370,18 @@ field.
 exact (conj Hd (conj Hb Hc)).
 Qed.
 
+Theorem div_xals :
+ forall a b c : R, forall zi : FF,
+ NZR c ->
+ BND ((b - a) / c + a / c) zi ->
+ BND (b / c) zi.
+intros a b c zi Hc Hz.
+replace (b / c)%R with ((b - a) / c + a / c)%R.
+exact Hz.
+field.
+exact Hc.
+Qed.
+
 Theorem div_firq :
  forall a b c : R, forall zi : FF,
  NZR b -> NZR c ->
