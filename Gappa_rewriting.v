@@ -382,6 +382,30 @@ field.
 exact (conj Hb Hc).
 Qed.
 
+Theorem div_fir :
+ forall a b : R, forall zi : FF,
+ NZR b ->
+ BND a zi ->
+ BND ((a * b) / b) zi.
+intros a b zi Hb Hz.
+replace (( a * b) / b)%R with a.
+exact Hz.
+field.
+exact Hb.
+Qed.
+
+Theorem div_fil :
+ forall a b : R, forall zi : FF,
+ NZR a ->
+ BND b zi ->
+ BND ((a * b) / a) zi.
+intros a b zi Hb Hz.
+replace (( a * b) / a)%R with b.
+exact Hz.
+field.
+exact Hb.
+Qed.
+
 Theorem err_xabq :
  forall a b : R, forall zi : FF,
  NZR b -> BND (1 + (a - b) / b) zi ->
