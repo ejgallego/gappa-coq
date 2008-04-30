@@ -103,6 +103,28 @@ exact Hz.
 ring.
 Qed.
 
+Theorem add_filq :
+ forall a b c : R, forall zi : FF,
+ NZR (a + c) -> BND ((b - c) / (a + c)) zi ->
+ BND (((a + b) - (a + c)) / (a + c)) zi.
+intros a b c zi Hac Hz.
+replace (((a + b) - (a + c)) / (a + c))%R with ((b - c) / (a + c))%R.
+exact Hz.
+field.
+exact Hac.
+Qed.
+
+Theorem add_firq :
+ forall a b c : R, forall zi : FF,
+ NZR (c + b) -> BND ((a - c) / (c + b)) zi ->
+ BND (((a + b) - (c + b)) / (c + b)) zi.
+intros a b c zi Hac Hz.
+replace (((a + b) - (c + b)) / (c + b))%R with ((a - c) / (c + b))%R.
+exact Hz.
+field.
+exact Hac.
+Qed.
+
 Theorem sub_mibs :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) + -(b - d)) zi ->
@@ -131,6 +153,28 @@ intros a b c zi Hz.
 replace ((a - b) - (c - b))%R with (a - c)%R.
 exact Hz.
 ring.
+Qed.
+
+Theorem sub_filq :
+ forall a b c : R, forall zi : FF,
+ NZR (a - c) -> BND (- ((b - c) / (a - c))) zi ->
+ BND (((a - b) - (a - c)) / (a - c)) zi.
+intros a b c zi Hac Hz.
+replace (((a - b) - (a - c)) / (a - c))%R with (-((b - c) / (a - c)))%R.
+exact Hz.
+field.
+exact Hac.
+Qed.
+
+Theorem sub_firq :
+ forall a b c : R, forall zi : FF,
+ NZR (c - b) -> BND ((a - c) / (c - b)) zi ->
+ BND (((a - b) - (c - b)) / (c - b)) zi.
+intros a b c zi Hac Hz.
+replace (((a - b) - (c - b)) / (c - b))%R with ((a - c) / (c - b))%R.
+exact Hz.
+field.
+exact Hac.
 Qed.
 
 Theorem mul_fils :
@@ -461,13 +505,13 @@ Qed.
 
 Theorem addf_2 :
   forall a b : R, forall zi : FF,
-  NZR b -> NZR (a + b) -> BND (1 - 1 / (1 + a / b)) zi ->
+  NZR (a + b) -> BND (1 - b / (a + b)) zi ->
   BND (a / (a + b)) zi.
-intros a b zi Hb Hab Hz.
-replace (a / (a + b))%R with (1 - 1 / (1 + a / b))%R.
+intros a b zi Hab Hz.
+replace (a / (a + b))%R with (1 - b / (a + b))%R.
 exact Hz.
 field.
-exact (conj Hab Hb).
+exact Hab.
 Qed.
 
 Theorem addf_3 :
@@ -483,13 +527,57 @@ Qed.
 
 Theorem addf_4 :
   forall a b : R, forall zi : FF,
-  NZR b -> NZR (a - b) -> BND (1 + 1 / (a / b - 1)) zi ->
+  NZR (a - b) -> BND (1 + b / (a - b)) zi ->
   BND (a / (a - b)) zi.
+intros a b zi Hab Hz.
+replace (a / (a - b))%R with (1 + b / (a - b))%R.
+exact Hz.
+field.
+exact Hab.
+Qed.
+
+Theorem addf_5 :
+  forall a b : R, forall zi : FF,
+  NZR b -> NZR (a + b) -> BND (1 / (a / b + 1)) zi ->
+  BND (b / (a + b)) zi.
 intros a b zi Hb Hab Hz.
-replace (a / (a - b))%R with (1 + 1 / (a / b - 1))%R.
+replace (b / (a + b))%R with (1 / (a / b + 1))%R.
 exact Hz.
 field.
 exact (conj Hab Hb).
+Qed.
+
+Theorem addf_6 :
+  forall a b : R, forall zi : FF,
+  NZR (a + b) -> BND (1 - a / (a + b)) zi ->
+  BND (b / (a + b)) zi.
+intros a b zi Hab Hz.
+replace (b / (a + b))%R with (1 - a / (a + b))%R.
+exact Hz.
+field.
+exact Hab.
+Qed.
+
+Theorem addf_7 :
+  forall a b : R, forall zi : FF,
+  NZR b -> NZR (a - b) -> BND (1 / (a / b - 1)) zi ->
+  BND (b / (a - b)) zi.
+intros a b zi Hb Hab Hz.
+replace (b / (a - b))%R with (1 / (a / b - 1))%R.
+exact Hz.
+field.
+exact (conj Hab Hb).
+Qed.
+
+Theorem addf_8 :
+  forall a b : R, forall zi : FF,
+  NZR (a - b) -> BND (a / (a - b) - 1) zi ->
+  BND (b / (a - b)) zi.
+intros a b zi Hab Hz.
+replace (b / (a - b))%R with (a / (a - b) - 1)%R.
+exact Hz.
+field.
+exact Hab.
 Qed.
 
 End Gappa_rewriting.

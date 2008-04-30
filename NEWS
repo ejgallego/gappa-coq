@@ -1,7 +1,7 @@
 Version 0.7:
  - changed coercions to produce user-friendly constants
  - added tactic support for calling Gappa from Coq
- - proved *_subset, nzr_of_nzr_rel*, div_fi*, div_xals
+ - proved *_subset, nzr_of_nzr_rel*, div_xals, div_fi*, addf_*, *_fi?q
  - moved abs_* theorem to ABS predicate
 
 Version 0.6:
