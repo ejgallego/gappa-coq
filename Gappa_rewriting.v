@@ -207,26 +207,31 @@ Qed.
 
 Theorem mul_filq :
  forall a b c : R, forall zi : FF,
- NZR a -> NZR c ->
- BND ((b - c) / c) zi ->
- BND ((a * b - a * c) / (a * c)) zi.
-intros a b c zi Ha Hc Hz.
-replace ((a * b - a * c) / (a * c))%R with ((b - c) / c)%R.
-exact Hz.
-field.
-exact (conj Hc Ha).
+ REL b c zi ->
+ REL (a * b) (a * c) zi.
+intros a b c zi (ze, (Hz1, (Hz2, Hz3))).
+exists ze.
+split.
+exact Hz1.
+split.
+exact Hz2.
+rewrite Hz3.
+apply sym_eq.
+apply Rmult_assoc.
 Qed.
 
 Theorem mul_firq :
  forall a b c : R, forall zi : FF,
- NZR b -> NZR c ->
- BND ((a - c) / c) zi ->
- BND ((a * b - c * b) / (c * b)) zi.
-intros a b c zi Hb Hc Hz.
-replace ((a * b - c * b) / (c * b))%R with ((a - c) / c)%R.
-exact Hz.
-field.
-exact (conj Hb Hc).
+ REL a c zi ->
+ REL (a * b) (c * b) zi.
+intros a b c zi (ze, (Hz1, (Hz2, Hz3))).
+exists ze.
+split.
+exact Hz1.
+split.
+exact Hz2.
+rewrite Hz3.
+ring.
 Qed.
 
 Theorem sqrt_mibs :
@@ -384,14 +389,17 @@ Qed.
 
 Theorem div_firq :
  forall a b c : R, forall zi : FF,
- NZR b -> NZR c ->
- BND ((a - c) / c) zi ->
- BND ((a / b - c / b) / (c / b)) zi.
-intros a b c zi Hb Hc Hz.
-replace ((a / b - c / b) / (c / b))%R with ((a - c) / c)%R.
-exact Hz.
-field.
-exact (conj Hb Hc).
+ REL a c zi ->
+ REL (a / b) (c / b) zi.
+intros a b c zi (ze, (Hz1, (Hz2, Hz3))).
+exists ze.
+split.
+exact Hz1.
+split.
+exact Hz2.
+rewrite Hz3.
+unfold Rdiv.
+ring.
 Qed.
 
 Theorem div_fir :
