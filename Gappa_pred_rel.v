@@ -42,6 +42,43 @@ field.
 exact Hb.
 Qed.
 
+Definition rel_of_equal_helper xi zi :=
+  Flt2_m1 (lower zi) &&
+  Fneg0 (lower zi) &&
+  Fpos0 (upper zi) &&
+  Fis0 (lower xi) &&
+  Fis0 (upper xi).
+
+Theorem rel_of_equal :
+  forall a b : R, forall xi zi : FF,
+  BND (a - b) xi ->
+  rel_of_equal_helper xi zi = true ->
+  REL a b zi.
+intros a b xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Flt2_m1_correct _ H1). clear H1. intro H1.
+generalize (Fneg0_correct _ H2). clear H2. intro H2.
+generalize (Fpos0_correct _ H3). clear H3. intro H3.
+generalize (Fis0_correct _ H4). clear H4. intro H4.
+generalize (Fis0_correct _ H5). clear H5. intro H5.
+exists R0.
+split.
+exact H1.
+split.
+exact (conj H2 H3).
+rewrite Rplus_0_r.
+rewrite Rmult_1_r.
+apply Rminus_diag_uniq.
+apply Rle_antisym.
+rewrite <- H5.
+exact (proj2 Hx).
+rewrite <- H4.
+exact (proj1 Hx).
+Qed.
+
 Lemma error_of_rel_generic :
  forall f,
  forall t: (forall x y : R, forall xi yi zi : FF,
