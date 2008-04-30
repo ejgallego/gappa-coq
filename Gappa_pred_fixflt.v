@@ -42,26 +42,32 @@ Definition fix_of_singleton_bnd_helper (xi : FF) (n : Z) :=
 
 Theorem fix_of_singleton_bnd :
  forall x : R, forall xi : FF, forall n : Z,
- BND x xi ->
+ ABS x xi ->
  fix_of_singleton_bnd_helper xi n = true ->
  FIX x n.
-intros x xi n Hx Hb.
+intros x xi n (_, (Hx1, Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zeq_bool_correct_t _ _ H1). clear H1. intro H1.
 generalize (Zeq_bool_correct_t _ _ H2). clear H2. intro H2.
 generalize (Zle_bool_imp_le _ _ H3). clear H3. intro H3.
-assert (float2R (lower xi) = x).
+assert (float2R (lower xi) = Rabs x).
 apply Rle_antisym.
-exact (proj1 Hx).
+exact Hx1.
 replace (lower xi) with (upper xi).
-exact (proj2 Hx).
+exact Hx2.
 apply sym_equal.
 induction (lower xi). induction (upper xi).
-simpl in H1, H2.
-rewrite H1.
-rewrite H2.
-apply refl_equal.
+exact (f_equal2 _ H1 H2).
+unfold Rabs in H.
+induction (Rcase_abs x).
+exists (Fopp2 (lower xi)).
+split.
+rewrite Fopp2_correct.
+rewrite <- (Ropp_involutive x).
+apply Ropp_eq_compat.
+exact H.
+exact H3.
 exists (lower xi).
 exact (conj H H3).
 Qed.
@@ -73,26 +79,34 @@ Definition flt_of_singleton_bnd_helper (xi : FF) (n : positive) :=
 
 Theorem flt_of_singleton_bnd :
  forall x : R, forall xi : FF, forall n : positive,
- BND x xi ->
+ ABS x xi ->
  flt_of_singleton_bnd_helper xi n = true ->
  FLT x n.
-intros x xi n Hx Hb.
+intros x xi n (_, (Hx1, Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zeq_bool_correct_t _ _ H1). clear H1. intro H1.
 generalize (Zeq_bool_correct_t _ _ H2). clear H2. intro H2.
 generalize (Zlt_cases (Zabs (Fnum (lower xi))) (two_power_pos n)). rewrite H3. rewrite two_power_pos_correct. clear H3. intro H3.
-assert (float2R (lower xi) = x).
+assert (float2R (lower xi) = Rabs x).
 apply Rle_antisym.
-exact (proj1 Hx).
+exact Hx1.
 replace (lower xi) with (upper xi).
-exact (proj2 Hx).
+exact Hx2.
 apply sym_equal.
 induction (lower xi). induction (upper xi).
-simpl in H1, H2.
-rewrite H1.
-rewrite H2.
-apply refl_equal.
+exact (f_equal2 _ H1 H2).
+unfold Rabs in H.
+induction (Rcase_abs x).
+exists (Fopp2 (lower xi)).
+split.
+rewrite Fopp2_correct.
+rewrite <- (Ropp_involutive x).
+apply Ropp_eq_compat.
+exact H.
+simpl.
+rewrite Zabs_Zopp.
+exact H3.
 exists (lower xi).
 exact (conj H H3).
 Qed.

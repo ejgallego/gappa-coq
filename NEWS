@@ -1,8 +1,9 @@
 Version 0.7:
  - changed coercions to produce user-friendly constants
  - added tactic support for calling Gappa from Coq
- - proved *_subset, nzr_of_nzr_rel*, div_xals, div_fi*, addf_*, *_fi?q
- - moved abs_* theorem to ABS predicate
+ - proved *_subset, nzr_of_nzr_rel*, div_xals, div_fi*, addf_*, add_fi?q, sub_fi?q
+ - moved abs_*, *_of_singleton_bnd theorems to ABS predicate
+ - moved mul_fi?q, div_filq to REL predicate
 
 Version 0.6:
  - proved rewrite_* for constraints on user rewriting rules
