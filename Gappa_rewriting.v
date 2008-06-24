@@ -45,10 +45,10 @@ Qed.
 
 Theorem sub_xars :
  forall a b c : R, forall zi : FF,
- BND ((a - c) + -(b - c)) zi ->
+ BND ((a - c) - (b - c)) zi ->
  BND (a - b) zi.
 intros a b c zi Hz.
-replace (a - b)%R with ((a - c) + -(b - c))%R.
+replace (a - b)%R with ((a - c) - (b - c))%R.
 exact Hz.
 ring.
 Qed.
@@ -219,10 +219,10 @@ Qed.
 
 Theorem mul_mabs :
  forall a b c d : R, forall zi : FF,
- BND (a * (b - d) + (a - c) * b + -((a - c) * (b - d))) zi ->
+ BND (a * (b - d) + (a - c) * b - ((a - c) * (b - d))) zi ->
  BND (a * b - c * d) zi.
 intros a b c d zi Hz.
-replace (a * b - c * d)%R with (a * (b - d) + (a - c) * b + -((a - c) * (b - d)))%R.
+replace (a * b - c * d)%R with (a * (b - d) + (a - c) * b - ((a - c) * (b - d)))%R.
 exact Hz.
 ring.
 Qed.
@@ -364,10 +364,10 @@ Qed.
 
 Theorem val_xebs :
  forall a b : R, forall zi : FF,
- BND (b + -(b - a)) zi ->
+ BND (b - (b - a)) zi ->
  BND a zi.
 intros a b zi Hz.
-replace a with (b + -(b - a))%R.
+replace a with (b - (b - a))%R.
 exact Hz.
 ring.
 Qed.
