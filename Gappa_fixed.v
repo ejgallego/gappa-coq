@@ -367,7 +367,7 @@ clear H3 H4 H5 H6 Hx H1 H2 x zi m1 e1.
 destruct (rexp_case (fixed_shift e) (good_shift e) m2 e2) as [H1|[(H1,(H2,(H3,H4)))|(H5,(m,(H1,(H2,H3))))]].
 rewrite (round_rexp_exact rndAW _ _ _ H1).
 apply Rle_refl.
-generalize (round_constant_underflow rndAW _ (good_shift e) _ (refl_equal e) m2 e2).
+generalize (round_constant_underflow rndAW _ (good_shift e) e (refl_equal e) m2 e2).
 simpl.
 intros (Ha,(Hb,Hc)).
 unfold fixed_shift in H4.
