@@ -73,6 +73,7 @@ Theorem recursive_transform_correct :
   forall f,
   is_stable f ->
   is_stable (recursive_transform f).
+Proof.
 unfold is_stable.
 intros f Hf t.
 induction t ; simpl ; rewrite Hf ; try apply refl_equal.
@@ -99,6 +100,7 @@ Definition multi_transform :=
 Theorem multi_transform_correct :
   forall l t,
   convert (multi_transform l t) = convert t.
+Proof.
 intros l.
 unfold multi_transform.
 rewrite <- (rev_involutive l).
@@ -251,6 +253,7 @@ Definition float2_of_pos x :=
 
 Lemma float2_of_pos_correct :
   forall x, float2R (float2_of_pos x) = Z2R (Zpos x).
+Proof.
 intros x.
 unfold float2_of_pos.
 change (Z2R (Zpos x)) with (float2R (Float2 (Zpos x) 0%Z)).
@@ -280,6 +283,7 @@ Definition compact_float2 m e :=
 
 Lemma compact_float2_correct :
   forall m e, float2R (compact_float2 m e) = float2R (Float2 m e).
+Proof.
 intros [|m|m] e ; simpl.
 rewrite (Gappa_dyadic.float2_zero e).
 apply refl_equal.
@@ -330,6 +334,7 @@ Definition gen_float_func t :=
 
 Lemma gen_float_prop :
   is_stable gen_float_func.
+Proof.
 intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
 (* unary ops *)
 destruct o ; try apply refl_equal.
@@ -377,6 +382,7 @@ Definition clean_pow_func t :=
 
 Lemma clean_pow_prop :
   is_stable clean_pow_func.
+Proof.
 intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
 simpl.
 apply Gappa_round_aux.float2_pow2.
@@ -406,6 +412,7 @@ Definition merge_float2_func t :=
 
 Lemma merge_float2_prop :
   is_stable merge_float2_func.
+Proof.
 assert (forall m e, convert (merge_float2_aux m e) = convert (reFloat2 m e)).
 intros.
 unfold merge_float2_aux.
@@ -450,6 +457,36 @@ Qed.
 
 Definition remove_inv := mkTF remove_inv_func remove_inv_prop.
 
+(* make sure bounds have correct format *)
+Definition is_bound t :=
+  match t with
+  | reFloat2 m e => Some t
+  | _ => None
+  end.
+
+Ltac check_bound t :=
+  let w := eval hnf in (is_bound t) in
+  match w with
+  | Some ?t => eval vm_compute in t
+  end.
+
+Lemma change_equality :
+  forall x y,
+ (0 <= x - y <= 0)%R ->
+  x = y.
+Proof.
+intros x y (Ha, Hb).
+apply Rle_antisym.
+apply Rplus_le_reg_l with (-y)%R.
+rewrite Rplus_opp_l.
+rewrite Rplus_comm.
+exact Hb.
+apply Ropp_le_cancel.
+apply Rplus_le_reg_l with x.
+rewrite Rplus_opp_r.
+exact Ha.
+Qed.
+
 (* some dummy definition to ensure precise rewriting of the terms and termination *)
 Definition convertTODO1 := convert.
 Definition convertTODO2 := convert.
@@ -467,6 +504,8 @@ Ltac gappa_prepare :=
   match goal with
   | |- (Rabs ?e <= ?b)%R =>
     refine (proj2 (_ : (0 <= Rabs e <= b)%R))
+  | |- (?a = ?b) =>
+    apply change_equality
   end ;
   repeat
   match goal with
@@ -481,9 +520,9 @@ Ltac gappa_prepare :=
     let b' := get_inductive_term b in
     let e' := get_inductive_term e in
     change (convertTODO1 a' <= convertTODO2 e' <= convertTODO3 b')%R ;
-    let w := eval compute in (multi_transform trans_bound a') in
+    let w := check_bound (multi_transform trans_bound a') in
     replace (convertTODO1 a') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound a')] ;
-    let w := eval compute in (multi_transform trans_bound b') in
+    let w := check_bound (multi_transform trans_bound b') in
     replace (convertTODO3 b') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound b')] ;
     let w := eval simpl in (multi_transform trans_expr e') in
     replace (convertTODO2 e') with (convert w) ; [idtac | exact (multi_transform_correct trans_expr e')]
@@ -497,9 +536,9 @@ Ltac gappa_prepare :=
     let e' := get_inductive_term e in
     change (convertTODO1 a' <= convertTODO2 e' <= convertTODO3 b')%R in H ;
     generalize H ; clear H ;
-    let w := eval compute in (multi_transform trans_bound a') in
+    let w := check_bound (multi_transform trans_bound a') in
     replace (convertTODO1 a') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound a')] ;
-    let w := eval compute in (multi_transform trans_bound b') in
+    let w := check_bound (multi_transform trans_bound b') in
     replace (convertTODO3 b') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound b')] ;
     let w := eval simpl in (multi_transform trans_expr e') in
     replace (convertTODO2 e') with (convert w) ; [idtac | exact (multi_transform_correct trans_expr e')]
