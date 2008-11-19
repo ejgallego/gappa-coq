@@ -1,4 +1,8 @@
-Version 0.8
+Version 0.9:
+ - prevented gappa_prepare from computing on non-reducible bounds
+ - improved gappa_prepare to deal with equality goal
+
+Version 0.8:
  - added tactic support for calling Gappa from Coq
  - proved *_subset, nzr_of_nzr_rel*, div_xals, div_fi*, addf_*, add_fi?q,
    sub_fi?q, rel_of_equal
