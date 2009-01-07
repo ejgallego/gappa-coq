@@ -2320,7 +2320,7 @@ Qed.
 
 Lemma round_extension_prop_pos :
  forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge :good_rexp rexp,
+ forall Hge : good_rexp rexp,
  forall x : R, (0 < x)%R ->
  { m1 : positive & { m2 : positive &
  { e1 : Z & { e2 : Z |
