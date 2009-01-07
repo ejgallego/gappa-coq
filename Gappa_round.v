@@ -1440,7 +1440,6 @@ generalize (rexp_case_aux m1 e1 (nat_of_P (pos_of_Z (e2 - e1))) H).
 rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
 rewrite (Zpos_pos_of_Z_minus _ _ He1).
 cutrewrite (e1 + (e2 - e1) = e2)%Z. 2: ring.
-cutrewrite (P_of_succ_nat (pred (nat_of_P (pos_of_Z (e2 - e1)))) = pos_of_Z (e2 - e1)).
 clear H. intros (m2,H).
 split.
 exact (conj He1 He1').
@@ -1467,14 +1466,6 @@ rewrite inj_plus.
 repeat rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
 rewrite (Zpos_pos_of_Z_minus _ _ He1).
 ring.
-caseEq (nat_of_P (pos_of_Z (e2 - e1))).
-generalize (ZL4 (pos_of_Z (e2 - e1))).
-intros (h, H0) H1. rewrite H0 in H1. discriminate H1.
-simpl.
-intros n H0.
-apply nat_of_P_inj.
-rewrite nat_of_P_o_P_of_succ_nat_eq_succ.
-apply sym_eq with (1 := H0).
 split. exact He1'.
 split.
 generalize (proj2 (Hg _) He1').
