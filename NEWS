@@ -1,3 +1,6 @@
+Version 0.10:
+ - fixed an incompatibility with Coq 8.2
+
 Version 0.9:
  - prevented gappa_prepare from computing on non-reducible bounds
  - improved gappa_prepare to deal with equality goal
