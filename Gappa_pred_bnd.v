@@ -167,32 +167,12 @@ elim (Rlt_irrefl _ H).
 Qed.
 
 Theorem union :
- forall x z : R, forall xi xi1 zi : FF,
- (BND x xi1 -> BND z zi) ->
+ forall x : R, forall P : Prop, forall xi xi1 : FF,
+ (BND x xi1 -> P) ->
  Fle2 (lower xi1) (lower xi) = true ->
- (BND x (makepairF (upper xi1) (upper xi)) -> BND z zi) ->
- BND x xi ->
- BND z zi.
-intros x z xi xi1 zi Hx1 Hb Hx2 Hx.
-generalize (Fle2_correct _ _ Hb). clear Hb. intro H1.
-case (Rlt_le_dec x (upper xi1)) ; intro H.
-apply Hx1.
-split ; auto with real.
-apply Rle_trans with (1 := H1) (2 := (proj1 Hx)).
-apply Hx2.
-split.
-exact H.
-exact (proj2 Hx).
-Qed.
-
-Theorem absurd_union :
- forall x : R, forall xi xi1 : FF,
- (BND x xi1 -> contradiction) ->
- Fle2 (lower xi1) (lower xi) = true ->
- (BND x (makepairF (upper xi1) (upper xi)) -> contradiction) ->
- BND x xi ->
- contradiction.
-intros x xi xi1 Hx1 Hb Hx2 Hx.
+ (BND x (makepairF (upper xi1) (upper xi)) -> P) ->
+ BND x xi -> P.
+intros x P xi xi1 Hx1 Hb Hx2 Hx.
 generalize (Fle2_correct _ _ Hb). clear Hb. intro H1.
 case (Rlt_le_dec x (upper xi1)) ; intro H.
 apply Hx1.
