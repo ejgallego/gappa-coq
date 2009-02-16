@@ -15,7 +15,10 @@ AS_HELP_STRING([--libdir=DIR], [library @<:@DIR=`$COQC -where`/user-contrib/Gapp
 m4_divert_pop([HELP_ENABLE])
 
 AC_ARG_VAR(COQC, [Coq compiler command [coqc]])
-AC_CHECK_TOOL(COQC, coqc)
+AC_PATH_TOOL(COQC, coqc)
+
+AC_ARG_VAR(COQDEP, [Coq dependency analyzer command [coqdep]])
+AC_PATH_TOOL(COQDEP, coqdep)
 
 if test "$libdir" = '${exec_prefix}/lib'; then
   libdir='`$(COQC) -where`/user-contrib/Gappa'
