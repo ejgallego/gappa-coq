@@ -557,3 +557,5 @@ Ltac gappa_prepare :=
     generalize z ; intro
   end ;
   intros.
+
+Declare ML Module "gappatac".

@@ -21,9 +21,10 @@ FILES = \
 	Gappa_tactic.v \
 	Gappa_user.v
 
-data_DATA = $(FILES:=o)
-EXTRA_DIST = autogen.sh $(FILES)
-CLEANFILES = $(FILES:=o) $(FILES:=d) $(FILES:.v=.glob)
+data_DATA = $(FILES:=o) gappatac.cmi gappatac.cmo gappatac.cmxs
+EXTRA_DIST = autogen.sh $(FILES) Gappa_tactic.ml
+CLEANFILES = $(FILES:=o) $(FILES:=d) $(FILES:.v=.glob) \
+	gappatac.cmi gappatac.cmo gappatac.cmx gappatac.cmxs gappatac.o
 
 datadir = $(libdir)
 
@@ -36,5 +37,15 @@ datadir = $(libdir)
 	@$(COQDEP) -I . $< > $@
 
 SUFFIXES = .v .vo .vd
+
+COQTREES = kernel lib interp parsing proofs pretyping tactics library
+
+gappatac.cmo: gappatac.ml
+	@echo OCAMLC $<
+	@$(OCAMLC) -rectypes $(COQTREES:%=-I $(COQCMI)/%) $< -c -o $@
+
+gappatac.cmxs: gappatac.ml
+	@echo OCAMLOPT $<
+	@$(OCAMLOPT) -shared -rectypes $(COQTREES:%=-I $(COQCMI)/%) $< -o $@
 
 -include $(FILES:=d)

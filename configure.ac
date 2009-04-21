@@ -20,9 +20,18 @@ AC_PATH_TOOL(COQC, coqc)
 AC_ARG_VAR(COQDEP, [Coq dependency analyzer command [coqdep]])
 AC_PATH_TOOL(COQDEP, coqdep)
 
+AC_ARG_VAR(OCAMLC, [OCaml compiler command [ocamlc]])
+AC_PATH_TOOL(OCAMLC, ocamlc)
+
+AC_ARG_VAR(OCAMLOPT, [OCaml compiler command [ocamlopt]])
+AC_PATH_TOOL(OCAMLOPT, ocamlopt)
+
 if test "$libdir" = '${exec_prefix}/lib'; then
   libdir='`$(COQC) -where`/user-contrib/Gappa'
 fi
+
+AC_SUBST(COQCMI)
+COQCMI=`$COQC -where`
 
 AC_SUBST(COQRFLAG, ['-R . Gappa'])
 AC_ARG_ENABLE([prefix], AS_HELP_STRING([--disable-prefix], [do not compile files into a Gappa module]),
