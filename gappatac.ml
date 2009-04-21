@@ -89,22 +89,15 @@ let read_gappa_proof f =
   let buf = Buffer.create 1024 in
   Buffer.add_char buf '(';
   let cin = open_in f in
-  let rec skip_space () =
-    let c = input_char cin in
-    if c = ' ' then skip_space () else c
-    in
-  while input_char cin <> '=' do () done;
+  while input_char cin <> ':' do () done;
   try
     while true do
-      let c = skip_space () in
-      if c = ':' then raise Exit;
-      Buffer.add_char buf c;
       let s = input_line cin in
       Buffer.add_string buf s; 
       Buffer.add_char buf '\n';
     done;
     assert false
-  with Exit ->
+  with End_of_file ->
     close_in cin;
     remove_file f;
     Buffer.add_char buf ')';
@@ -118,30 +111,27 @@ let patch_gappa_proof fin fout =
   let cout = open_out fout in
   let fmt = formatter_of_out_channel cout in
   let last = ref "" in
-  let defs = ref "" in
   try
     while true do
       let s = input_line cin in
-      if s = "Qed." then
-        fprintf fmt "Defined.@\n"
-      else begin
-        begin 
-          try Scanf.sscanf s "Lemma %s "
-            (fun n -> defs := n ^ " " ^ !defs; last := n)
-          with Scanf.Scan_failure _ ->
-            try Scanf.sscanf s "Definition %s "
-              (fun n -> defs := n ^ " " ^ !defs)
-            with Scanf.Scan_failure _ ->
-              ()
-        end;
-        fprintf fmt "%s@\n" s
-      end
+      let t =
+        try
+          Scanf.sscanf s "Lemma %s " (fun n -> last := n);
+          s
+        with Scanf.Scan_failure _ ->
+          let l = String.length s in
+          if l > 10 && String.sub s 0 10 = "Definition" then
+            "Let " ^ String.sub s 11 (l - 11)
+          else
+            s
+        in
+      fprintf fmt "%s@\n" t
     done
   with End_of_file ->
     close_in cin;
-    fprintf fmt "Definition proof := Eval cbv delta [%s] in %s.@." !defs !last;
+    fprintf fmt "Require Import Gappa_obfuscate.\nSet Printing Width 999999.\nSet Printing Depth 999999.\nSet Printing All.\nCheck %s.@." !last;
     close_out cout
-    
+
 let call_gappa hl p =
   let gappa_in = temp_file "gappa_input" in
   let c = open_out gappa_in in
@@ -151,30 +141,20 @@ let call_gappa hl p =
   fprintf fmt "%a }@]@." print_pred p;
   close_out c;
   let gappa_out = temp_file "gappa_output" in
-  let cmd = sprintf "gappa -Bcoq < %s > %s 2> /dev/null" gappa_in gappa_out in
+  let cmd = sprintf "gappa -Bcoq %s > %s 2> /dev/null" gappa_in gappa_out in
   let out = Sys.command cmd in
   if out <> 0 then raise GappaFailed;
   remove_file gappa_in;
-  let gappa_out2 = temp_file "gappa2" in
-  patch_gappa_proof gappa_out gappa_out2;
+  let coq_in = temp_file "coq_input" in
+  patch_gappa_proof gappa_out coq_in;
   remove_file gappa_out;
-  let cmd = (Filename.concat (Envars.coqbin ()) "coqc") ^ " " ^ gappa_out2 in
+  let coq_out = temp_file "coq_output" in
+  let cmd = (Filename.concat (Envars.coqbin ()) "coqc") ^ " -dont-load-proofs -noglob " ^ coq_in ^ " > " ^coq_out in
   let out = Sys.command cmd in
   if out <> 0 then raise GappaProofFailed;
-  let gappa_out3 = temp_file "gappa3" in
-  let c = open_out gappa_out3 in
-  let gappa2 = Filename.chop_suffix (Filename.basename gappa_out2) ".v" in
-  Printf.fprintf c 
-    "Require \"%s\". Set Printing Depth 999999. Print %s.proof."
-    (Filename.chop_suffix gappa_out2 ".v") gappa2;
-  close_out c;
-  let lambda = temp_file "gappa_lambda" in
-  let cmd = (Filename.concat (Envars.coqbin ()) "coqc") ^ " " ^ gappa_out3 ^ " > " ^ lambda in
-  let out = Sys.command cmd in
-  if out <> 0 then raise GappaProofFailed;
-  remove_file gappa_out2; remove_file gappa_out3;
-  remove_file (gappa_out2 ^ "o"); remove_file (gappa_out3 ^ "o");
-  read_gappa_proof lambda
+  remove_file coq_in;
+  remove_file (coq_in ^ "o");
+  read_gappa_proof coq_out
 
 (* 2. coq -> gappa translation *)
 
@@ -396,27 +376,34 @@ let constr_of_string gl s =
   let parse_constr = Pcoq.parse_string Pcoq.Constr.constr in
   Constrintern.interp_constr (project gl) (pf_env gl) (parse_constr s)
 
+let admit_type gl t =
+  let name = Nameops.add_suffix (Pfedit.get_current_proof_name ()) "_gappa" in
+  let na = Termops.next_global_ident_away false name (pf_ids_of_hyps gl) in
+  let cd = Entries.ParameterEntry (t, false) in
+  let con = Declare.declare_internal_constant na (cd, Decl_kinds.IsAssumption Decl_kinds.Logical) in
+  constr_of_global (ConstRef con)
+
 let var_name = function
-  | Name id -> 
+  | Name id ->
       let s = string_of_id id in
       let s = String.sub s 1 (String.length s - 1) in
       mkVar (id_of_string s)
   | Anonymous -> 
-       assert false
+      assert false
 
-let build_proof_term c0 =
-  let bl,c = decompose_lam c0 in
-  List.fold_right 
-    (fun (x,t) pf -> 
+let build_proof_term c t =
+  let bl, _ = decompose_prod t in
+  List.fold_right
+    (fun (x,t) pf ->
       mkApp (pf, [| if is_R t then var_name x else mk_new_meta () |]))
-    bl c0
+    bl c
 
 let gappa_internal gl =
   try
     let c = tr_pred (pf_concl gl) in
     let s = call_gappa (tr_hyps (pf_hyps_types gl)) c in
-    let pf = constr_of_string gl s in
-    let pf = build_proof_term pf in
+    let t = constr_of_string gl s in
+    let pf = build_proof_term (admit_type gl t) t in
     Refiner.tclTHEN (Tacmach.refine_no_check pf) Tactics.assumption gl
   with 
     | NotGappa -> error "not a gappa goal"
@@ -431,5 +418,6 @@ let gappa gl =
   Coqlib.check_required_library ["Gappa"; "Gappa_tactic"];
   Refiner.tclTHEN (Lazy.force gappa_prepare) gappa_internal gl
 
-let _ = Tacinterp.overwriting_add_tactic "Gappa" (fun _ -> gappa)
-let _ = Tacinterp.overwriting_add_tactic "Gappa_internal" (fun _ -> gappa_internal)
+let _ =
+  Tacinterp.overwriting_add_tactic "Gappa" (fun _ -> gappa);
+  Tacinterp.overwriting_add_tactic "Gappa_internal" (fun _ -> gappa_internal)
