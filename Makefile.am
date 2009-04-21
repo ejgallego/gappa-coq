@@ -7,6 +7,7 @@ FILES = \
 	Gappa_float.v \
 	Gappa_integer.v \
 	Gappa_library.v \
+	Gappa_obfuscate.v \
 	Gappa_pred_abs.v \
 	Gappa_pred_bnd.v \
 	Gappa_pred_fixflt.v \
