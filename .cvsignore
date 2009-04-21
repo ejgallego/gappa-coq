@@ -8,3 +8,4 @@ Makefile
 *.vo
 *.vd
 *.glob
+*.cm?*
