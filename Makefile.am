@@ -22,10 +22,11 @@ FILES = \
 	Gappa_tactic.v \
 	Gappa_user.v
 
-data_DATA = $(FILES:=o) gappatac.cmi gappatac.cmo gappatac.cmxs
-EXTRA_DIST = autogen.sh $(FILES) Gappa_tactic.ml
+data_DATA = $(FILES:=o) $(TACTIC_TARGETS) Gappa_tactic_ml.vo
+EXTRA_DIST = autogen.sh $(FILES) gappatac.ml
 CLEANFILES = $(FILES:=o) $(FILES:=d) $(FILES:.v=.glob) \
-	gappatac.cmi gappatac.cmo gappatac.cmx gappatac.cmxs gappatac.o
+	gappatac.cmi gappatac.cmo gappatac.cmx gappatac.cmxs gappatac.o \
+	Gappa_tactic_ml.v Gappa_tactic_ml.vo Gappa_tactic_ml.glob
 
 datadir = $(libdir)
 
@@ -39,14 +40,32 @@ datadir = $(libdir)
 
 SUFFIXES = .v .vo .vd
 
-COQTREES = kernel lib interp parsing proofs pretyping tactics library
+COQSUBTREES = kernel lib interp parsing proofs pretyping tactics library
+
+Gappa_tactic_ml.vo: Gappa_tactic_ml.v $(TACTIC_TARGETS)
+	@echo COQC $<
+	@$(COQC) $(TACTIC_PARAM) $(COQRFLAG) -dont-load-proofs $<
+
+Gappa_tactic.vo: Gappa_tactic.v
+	@echo COQC $<
+	@$(COQC) $(TACTIC_PARAM) $(COQRFLAG) -dont-load-proofs $<
+
+Gappa_tactic.vd: Gappa_tactic_ml.v
+
+Gappa_tactic_ml.v:
+	@echo GENR $@
+	@if test "$(TACTIC_TARGETS)"; then \
+	  echo 'Declare ML Module "gappatac".' > $@; \
+	else \
+	  echo > $@; \
+	fi
 
 gappatac.cmo: gappatac.ml
 	@echo OCAMLC $<
-	@$(OCAMLC) -rectypes $(COQTREES:%=-I $(COQCMI)/%) $< -c -o $@
+	@$(OCAMLC) -rectypes $(COQSUBTREES:%=-I $(COQLIBS)/%) $< -c -o $@
 
 gappatac.cmxs: gappatac.ml
 	@echo OCAMLOPT $<
-	@$(OCAMLOPT) -shared -rectypes $(COQTREES:%=-I $(COQCMI)/%) $< -o $@
+	@$(OCAMLOPT) -shared -rectypes $(COQSUBTREES:%=-I $(COQLIBS)/%) $< -o $@
 
 -include $(FILES:=d)
