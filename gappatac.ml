@@ -322,9 +322,22 @@ let tr_hyps =
   List.fold_left 
     (fun acc (_,h) -> try tr_pred h :: acc with NotGappa -> acc) []
 
+let no_glob f =
+  let dg = Dumpglob.coqdoc_freeze () in
+  Dumpglob.pause ();
+  let res =
+    try f () with e ->
+      Dumpglob.continue ();
+      Dumpglob.coqdoc_unfreeze dg;
+      raise e
+    in
+  Dumpglob.continue ();
+  Dumpglob.coqdoc_unfreeze dg;
+  res
+
 let constr_of_stream gl s =
-  Constrintern.interp_constr (project gl) (pf_env gl)
-    (Pcoq.Gram.Entry.parse Pcoq.Constr.constr (Pcoq.Gram.parsable s))
+  no_glob (fun () -> Constrintern.interp_constr (project gl) (pf_env gl)
+    (Pcoq.Gram.Entry.parse Pcoq.Constr.constr (Pcoq.Gram.parsable s)))
 
 let var_name = function
   | Name id ->
