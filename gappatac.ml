@@ -358,7 +358,7 @@ let gappa_prepare =
 
 let gappa gl =
   Coqlib.check_required_library ["Gappa"; "Gappa_tactic"];
-  Refiner.tclTHEN (Lazy.force gappa_prepare) gappa_internal gl
+  Tactics.tclABSTRACT None (Tacticals.tclTHEN (Lazy.force gappa_prepare) gappa_internal) gl
 
 let _ =
   Tacinterp.overwriting_add_tactic "Gappa" (fun _ -> gappa);
