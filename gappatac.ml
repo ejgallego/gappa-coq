@@ -81,7 +81,7 @@ let print_pred fmt = function
       fprintf fmt "%a in [%a, %a]"
         print_term t Constant.print c1 Constant.print c2
 
-let temp_file f = if !debug then f else Filename.temp_file f ".v"
+let temp_file f = if !debug then f else Filename.temp_file f ""
 let remove_file f = if not !debug then try Sys.remove f with _ -> ()
 
 exception GappaFailed
