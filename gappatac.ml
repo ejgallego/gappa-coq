@@ -11,7 +11,6 @@ open Util
 open Pp
 open Term
 open Tacmach
-open Tactics
 open Names
 open Coqlib
 open Libnames
@@ -85,54 +84,10 @@ let print_pred fmt = function
 let temp_file f = if !debug then f else Filename.temp_file f ".v"
 let remove_file f = if not !debug then try Sys.remove f with _ -> ()
 
-let read_gappa_proof f =
-  let buf = Buffer.create 1024 in
-  Buffer.add_char buf '(';
-  let cin = open_in f in
-  while input_char cin <> ':' do () done;
-  try
-    while true do
-      let s = input_line cin in
-      Buffer.add_string buf s; 
-      Buffer.add_char buf '\n';
-    done;
-    assert false
-  with End_of_file ->
-    close_in cin;
-    remove_file f;
-    Buffer.add_char buf ')';
-    Buffer.contents buf
-
 exception GappaFailed
 exception GappaProofFailed
 
-let patch_gappa_proof fin fout =
-  let cin = open_in fin in
-  let cout = open_out fout in
-  let fmt = formatter_of_out_channel cout in
-  let last = ref "" in
-  try
-    while true do
-      let s = input_line cin in
-      let t =
-        try
-          Scanf.sscanf s "Lemma %s " (fun n -> last := n);
-          s
-        with Scanf.Scan_failure _ ->
-          let l = String.length s in
-          if l > 10 && String.sub s 0 10 = "Definition" then
-            "Let " ^ String.sub s 11 (l - 11)
-          else
-            s
-        in
-      fprintf fmt "%s@\n" t
-    done
-  with End_of_file ->
-    close_in cin;
-    fprintf fmt "Require Import Gappa_obfuscate.\nSet Printing Width 999999.\nSet Printing Depth 999999.\nSet Printing All.\nCheck %s.@." !last;
-    close_out cout
-
-let call_gappa hl p =
+let call_gappa c_of_s hl p =
   let gappa_in = temp_file "gappa_input" in
   let c = open_out gappa_in in
   let fmt = formatter_of_out_channel c in
@@ -141,20 +96,15 @@ let call_gappa hl p =
   fprintf fmt "%a }@]@." print_pred p;
   close_out c;
   let gappa_out = temp_file "gappa_output" in
-  let cmd = sprintf "gappa -Bcoq %s > %s 2> /dev/null" gappa_in gappa_out in
+  let cmd = sprintf "gappa -Bcoq-lambda %s > %s 2> /dev/null" gappa_in gappa_out in
   let out = Sys.command cmd in
   if out <> 0 then raise GappaFailed;
   remove_file gappa_in;
-  let coq_in = temp_file "coq_input" in
-  patch_gappa_proof gappa_out coq_in;
+  let cin = open_in gappa_out in
+  let constr = c_of_s (Stream.of_channel cin) in
+  close_in cin;
   remove_file gappa_out;
-  let coq_out = temp_file "coq_output" in
-  let cmd = (Filename.concat (Envars.coqbin ()) "coqc") ^ " -dont-load-proofs -noglob " ^ coq_in ^ " > " ^coq_out in
-  let out = Sys.command cmd in
-  if out <> 0 then raise GappaProofFailed;
-  remove_file coq_in;
-  remove_file (coq_in ^ "o");
-  read_gappa_proof coq_out
+  constr
 
 (* 2. coq -> gappa translation *)
 
@@ -372,16 +322,9 @@ let tr_hyps =
   List.fold_left 
     (fun acc (_,h) -> try tr_pred h :: acc with NotGappa -> acc) []
 
-let constr_of_string gl s =
-  let parse_constr = Pcoq.parse_string Pcoq.Constr.constr in
-  Constrintern.interp_constr (project gl) (pf_env gl) (parse_constr s)
-
-let admit_type gl t =
-  let name = Nameops.add_suffix (Pfedit.get_current_proof_name ()) "_gappa" in
-  let na = Termops.next_global_ident_away false name (pf_ids_of_hyps gl) in
-  let cd = Entries.ParameterEntry (t, false) in
-  let con = Declare.declare_internal_constant na (cd, Decl_kinds.IsAssumption Decl_kinds.Logical) in
-  constr_of_global (ConstRef con)
+let constr_of_stream gl s =
+  Constrintern.interp_constr (project gl) (pf_env gl)
+    (Pcoq.Gram.Entry.parse Pcoq.Constr.constr (Pcoq.Gram.parsable s))
 
 let var_name = function
   | Name id ->
@@ -391,8 +334,8 @@ let var_name = function
   | Anonymous -> 
       assert false
 
-let build_proof_term c t =
-  let bl, _ = decompose_prod t in
+let build_proof_term c =
+  let bl, _ = decompose_lam c in
   List.fold_right
     (fun (x,t) pf ->
       mkApp (pf, [| if is_R t then var_name x else mk_new_meta () |]))
@@ -401,10 +344,9 @@ let build_proof_term c t =
 let gappa_internal gl =
   try
     let c = tr_pred (pf_concl gl) in
-    let s = call_gappa (tr_hyps (pf_hyps_types gl)) c in
-    let t = constr_of_string gl s in
-    let pf = build_proof_term (admit_type gl t) t in
-    Refiner.tclTHEN (Tacmach.refine_no_check pf) Tactics.assumption gl
+    let pf = call_gappa (constr_of_stream gl) (tr_hyps (pf_hyps_types gl)) c in
+    let pf = build_proof_term pf in
+    Tacticals.tclTHEN (Tactics.apply pf) Tactics.assumption gl
   with 
     | NotGappa -> error "not a gappa goal"
     | GappaFailed -> error "gappa failed"
