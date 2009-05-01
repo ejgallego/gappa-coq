@@ -59,7 +59,7 @@ type pred =
 let rec print_term fmt = function
   | Tconst c -> Constant.print fmt c
   | Tvar s -> pp_print_string fmt s
-  | Tbinop (op, t1, t2) -> 
+  | Tbinop (op, t1, t2) ->
       let op =
         match op with
           | Bplus -> "+" | Bminus -> "-" | Bmult -> "*" | Bdiv -> "/"
@@ -69,15 +69,15 @@ let rec print_term fmt = function
       fprintf fmt "|%a|" print_term t
   | Tunop (Uopp | Usqrt as op, t) ->
       let s =
-        match op with 
-          | Uopp -> "-" | Usqrt -> "sqrt" | _ -> assert false 
+        match op with
+          | Uopp -> "-" | Usqrt -> "sqrt" | _ -> assert false
         in
       fprintf fmt "(%s(%a))" s print_term t
   | Tround (m, t) ->
       fprintf fmt "(%s(%a))" m print_term t
 
 let print_pred fmt = function
-  | Pin (t, c1, c2) -> 
+  | Pin (t, c1, c2) ->
       fprintf fmt "%a in [%a, %a]"
         print_term t Constant.print c1 Constant.print c2
 
@@ -101,10 +101,11 @@ let call_gappa c_of_s hl p =
   if out <> 0 then raise GappaFailed;
   remove_file gappa_in;
   let cin = open_in gappa_out in
+  let nb_hyp = Scanf.sscanf (input_line cin) "(* %d *)" (fun i -> i) in
   let constr = c_of_s (Stream.of_channel cin) in
   close_in cin;
   remove_file gappa_out;
-  constr
+  (constr, nb_hyp)
 
 (* 2. coq -> gappa translation *)
 
@@ -157,6 +158,7 @@ let coq_uoSqrt = lazy (constant "uoSqrt")
 let coq_subset = lazy (constant "subset")
 let coq_makepairF = lazy (constant "makepairF")
 
+let coq_bool = lazy (constant "bool")
 let coq_true = lazy (constant "true")
 let coq_false = lazy (constant "false")
 
@@ -285,7 +287,7 @@ let rec tr_term c0 =
 let tr_rle c =
   let c, args = decompose_app c in
   match kind_of_term c, args with
-    | _, [a;b] when c = Lazy.force coq_Rle ->  
+    | _, [a;b] when c = Lazy.force coq_Rle ->
         begin match decompose_app a, decompose_app b with
           | (ac, [at]), (bc, [bt]) 
             when ac = Lazy.force coq_convert && bc = Lazy.force coq_convert ->
@@ -293,7 +295,7 @@ let tr_rle c =
           | _ ->
               raise NotGappa
         end
-    | _ -> 
+    | _ ->
         raise NotGappa
 
 let tr_pred c =
@@ -301,17 +303,17 @@ let tr_pred c =
   match kind_of_term c, args with
     | _, [a;b] when c = build_coq_and () ->
         begin match tr_rle a, tr_rle b with
-          | (c1, t1), (t2, c2) when t1 = t2 -> 
+          | (c1, t1), (t2, c2) when t1 = t2 ->
               begin match tr_term c1, tr_term c2 with
                 | Tconst c1, Tconst c2 ->
                     Pin (tr_term t1, c1, c2)
-                | _ -> 
+                | _ ->
                     raise NotGappa
               end
-          | _ -> 
+          | _ ->
               raise NotGappa
         end
-    | _ -> 
+    | _ ->
         raise NotGappa
 
 let is_R c = match decompose_app c with
@@ -335,8 +337,20 @@ let no_glob f =
   Dumpglob.coqdoc_unfreeze dg;
   res
 
+let evars_to_vmcast sigma (emap, c) =
+  let emap = nf_evars emap in
+  let change_exist evar =
+    let ty = Reductionops.nf_betaiota emap (Evd.existential_type emap evar) in
+    mkCast (mkApp (Lazy.force coq_refl_equal,
+      [| Lazy.force coq_bool; Lazy.force coq_true|]), VMcast, ty) in
+  let rec replace c =
+    match kind_of_term c with
+      | Evar ev -> change_exist ev
+      | _ -> map_constr replace c in
+  replace c
+
 let constr_of_stream gl s =
-  no_glob (fun () -> Constrintern.interp_constr (project gl) (pf_env gl)
+  no_glob (fun () -> Constrintern.interp_open_constr (project gl) (pf_env gl)
     (Pcoq.Gram.Entry.parse Pcoq.Constr.constr (Pcoq.Gram.parsable s)))
 
 let var_name = function
@@ -347,19 +361,21 @@ let var_name = function
   | Anonymous -> 
       assert false
 
-let build_proof_term c =
+let build_proof_term c nb_hyp =
   let bl, _ = decompose_lam c in
-  List.fold_right
-    (fun (x,t) pf ->
-      mkApp (pf, [| if is_R t then var_name x else mk_new_meta () |]))
-    bl c
+  let pf = List.fold_right (fun (x,t) pf -> mkApp (pf, [| var_name x |])) bl c in
+  let rec aux n pf =
+    if n > 0 then aux (n - 1) (mkApp (pf, [| mk_new_meta () |])) else pf
+    in
+  aux nb_hyp pf
 
 let gappa_internal gl =
   try
     let c = tr_pred (pf_concl gl) in
-    let pf = call_gappa (constr_of_stream gl) (tr_hyps (pf_hyps_types gl)) c in
-    let pf = build_proof_term pf in
-    Tacticals.tclTHEN (Tactics.apply pf) Tactics.assumption gl
+    let ((emap, pf), nb_hyp) = call_gappa (constr_of_stream gl) (tr_hyps (pf_hyps_types gl)) c in
+    let pf = evars_to_vmcast (project gl) (emap, pf) in
+    let pf = build_proof_term pf nb_hyp in
+    Tacticals.tclTHEN (Tacmach.refine_no_check pf) Tactics.assumption gl
   with 
     | NotGappa -> error "not a gappa goal"
     | GappaFailed -> error "gappa failed"
