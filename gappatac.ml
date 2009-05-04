@@ -120,7 +120,7 @@ let coq_modules =
        ["Coq"; "Reals"; "Rbasic_fun";];
        ["Coq"; "Reals"; "R_sqrt";];
        ["Coq"; "Reals"; "Rfunctions";];
-       ["Gappa"; "Gappa_tactic";];
+       ["Gappa"; "Gappa_tactic_plugin";];
        ["Gappa"; "Gappa_fixed";];
        ["Gappa"; "Gappa_float";];
        ["Gappa"; "Gappa_round_def";];
@@ -386,7 +386,7 @@ let gappa_prepare =
   lazy (Tacinterp.interp (Tacexpr.TacArg (Tacexpr.Reference id)))
 
 let gappa gl =
-  Coqlib.check_required_library ["Gappa"; "Gappa_tactic"];
+  Coqlib.check_required_library ["Gappa"; "Gappa_tactic_plugin"];
   Tactics.tclABSTRACT None (Tacticals.tclTHEN (Lazy.force gappa_prepare) gappa_internal) gl
 
 let _ =

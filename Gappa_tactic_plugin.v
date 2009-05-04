@@ -558,4 +558,4 @@ Ltac gappa_prepare :=
   end ;
   intros.
 
-Require Gappa_tactic_ml.
+Declare ML Module "gappatac".
