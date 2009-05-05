@@ -5,243 +5,6 @@ Require Import Gappa_integer.
 
 Definition gappa_rounding (f : R -> float2) (x : R) : R := f x.
 
-Inductive UnaryOp : Set :=
-  | uoNeg | uoSqrt | uoAbs | uoInv.
-
-Inductive BinaryOp : Set :=
-  | boAdd | boSub | boMul | boDiv.
-
-(* represent an expression on real numbers *)
-Inductive RExpr : Set :=
-  | reUnknown : R -> RExpr
-  | reInteger : Z -> RExpr
-  | reFloat2 : Z -> Z -> RExpr
-  | reFloat10 : Z -> Z -> RExpr
-  | reUnary : UnaryOp -> RExpr -> RExpr
-  | reBinary : BinaryOp -> RExpr -> RExpr -> RExpr
-  | rePow2 : Z -> RExpr
-  | rePow10 : Z -> RExpr
-  | reINR : positive -> RExpr
-  | reRound : (R -> float2) -> RExpr -> RExpr.
-
-(* convert to an expression on real numbers *)
-Fixpoint convert t : R :=
-  match t with
-  | reUnknown x => x
-  | reInteger x => Float1 x
-  | reFloat2 x y => float2R (Float2 x y)
-  | reFloat10 x y => float10R (Float10 x y)
-  | reUnary o x =>
-    match o with
-    | uoNeg  => Ropp
-    | uoSqrt => sqrt
-    | uoAbs  => Rabs
-    | uoInv  => Rinv
-    end (convert x)
-  | reBinary o x y =>
-    match o with
-    | boAdd => Rplus
-    | boSub => Rminus
-    | boMul => Rmult
-    | boDiv => Rdiv
-    end (convert x) (convert y)
-  | rePow2 x =>
-    powerRZ 2%R x
-  | rePow10 x =>
-    powerRZ 10%R x
-  | reINR x =>
-    INR (nat_of_P x)
-  | reRound f x =>
-    gappa_rounding f (convert x)
-  end.
-
-Definition is_stable f :=
-  forall t, convert (f t) = convert t.
-
-(* apply a function recursively, starting from the leafs of an expression *)
-Definition recursive_transform f :=
-  let fix aux (t : RExpr) := f
-    match t with
-    | reUnary  o x   => reUnary  o (aux x)
-    | reBinary o x y => reBinary o (aux x) (aux y)
-    | reRound  o x   => reRound  o (aux x)
-    | _ => t
-    end in
-  aux.
-
-Theorem recursive_transform_correct :
-  forall f,
-  is_stable f ->
-  is_stable (recursive_transform f).
-Proof.
-unfold is_stable.
-intros f Hf t.
-induction t ; simpl ; rewrite Hf ; try apply refl_equal.
-simpl.
-rewrite IHt.
-apply refl_equal.
-simpl.
-rewrite IHt1.
-rewrite IHt2.
-apply refl_equal.
-simpl.
-rewrite IHt.
-apply refl_equal.
-Qed.
-
-Record TF : Set := mkTF
-  { trans_func :> RExpr -> RExpr ;
-    trans_prop : is_stable trans_func }.
-
-(* apply several recursive transformations in a row (selected from head to tail) *)
-Definition multi_transform :=
-  fold_left (fun v f => recursive_transform (trans_func f) v).
-
-Theorem multi_transform_correct :
-  forall l t,
-  convert (multi_transform l t) = convert t.
-Proof.
-intros l.
-unfold multi_transform.
-rewrite <- (rev_involutive l).
-induction (rev l) ; intros t.
-apply refl_equal.
-simpl.
-rewrite fold_left_app.
-simpl.
-rewrite recursive_transform_correct.
-apply IHl0.
-apply trans_prop.
-Qed.
-
-(* detect closed integers *)
-Ltac is_natural t :=
-  match t with
-  | O => true
-  | S ?t' => is_natural t'
-  | _ => false
-  end.
-
-Ltac is_positive t :=
-  match t with
-  | xH => true
-  | xO ?t' => is_positive t'
-  | xI ?t' => is_positive t'
-  | _ => false
-  end.
-
-Ltac is_integer t :=
-  match t with
-  | Z0 => true
-  | Zpos ?t' => is_positive t'
-  | Zneg ?t' => is_positive t'
-  | _ => false
-  end.
-
-(* produce an inductive object u such that convert(u) is convertible to t,
-   all the integers contained in u are closed expressions *)
-Ltac get_inductive_term t :=
-  match t with
-  | 0%R =>
-    constr:(reInteger 0%Z)
-  | 1%R =>
-    constr:(reInteger 1%Z)
-  | 2%R =>
-    constr:(reInteger 2%Z)
-  | 3%R =>
-    constr:(reInteger 3%Z)
-  | (2 * ?x)%R =>
-    match get_inductive_term x with
-    | reInteger (Zpos (?c ?y)) => constr:(reInteger (Zpos (xO (c y))))
-    | ?x' => constr:(reBinary boMul (reInteger 2%Z) x')
-    end
-  | (1 + 2 * ?x)%R =>
-    match get_inductive_term x with
-    | reInteger (Zpos (?c ?y)) => constr:(reInteger (Zpos (xI (c y))))
-    | ?x' => constr:(reBinary boAdd (reInteger 1%Z) (reBinary boMul (reInteger 2%Z) x'))
-    end
-  | IZR 0%Z =>
-    constr:(reInteger 0%Z)
-  | IZR 1%Z =>
-    constr:(reInteger 1%Z)
-  | IZR 2%Z =>
-    constr:(reInteger 2%Z)
-  | IZR (-1)%Z =>
-    constr:(reInteger (-1)%Z)
-  | IZR (-2)%Z =>
-    constr:(reInteger (-2)%Z)
-  | INR 0%nat =>
-    constr:(reInteger 0%Z)
-  | INR 1%nat =>
-    constr:(reInteger 1%Z)
-  | INR 2%nat =>
-    constr:(reInteger 2%Z)
-  | INR (S ?x) =>
-    match is_natural x with
-    | true =>
-      let x' := eval vm_compute in (P_of_succ_nat x) in
-      constr:(reINR x')
-    end
-  | IZR (Zpos ?x) =>
-    match is_positive x with
-    | true => constr:(reINR x)
-    end
-  | IZR (Zneg ?x) =>
-    match is_positive x with
-    | true => constr:(reUnary uoNeg (reINR x))
-    end
-  | Ropp ?x =>
-    match get_inductive_term x with
-    | reInteger (Zpos ?y) => constr:(reInteger (Zneg y))
-    | ?x' => constr:(reUnary uoNeg x')
-    end
-  | (?x + -?y)%R =>
-    let x' := get_inductive_term x in
-    let y' := get_inductive_term y in
-    constr:(reBinary boSub x' y')
-  | (?x * /?y)%R =>
-    let x' := get_inductive_term x in
-    let y' := get_inductive_term y in
-    constr:(reBinary boDiv x' y')
-  | powerRZ ?x ?y =>
-    match get_inductive_term x with
-    | reInteger 2%Z =>
-      match is_integer y with
-      | true => constr:(rePow2 y)
-      end
-    | reInteger 10%Z =>
-      match is_integer y with
-      | true => constr:(rePow10 y)
-      end
-    end
-  | gappa_rounding ?f ?x =>
-     let x' := get_inductive_term x in
-     constr:(reRound f x')
-  | ?f ?x ?y =>
-    let bo :=
-      match f with
-      | Rplus  => boAdd
-      | Rminus => boSub
-      | Rmult  => boMul
-      | Rdiv   => boDiv
-      end in
-    let x' := get_inductive_term x in
-    let y' := get_inductive_term y in
-    constr:(reBinary bo x' y')
-  | ?f ?x =>
-    let bo :=
-      match f with
-      | Ropp => uoNeg
-      | sqrt => uoSqrt
-      | Rinv => uoInv
-      | Rabs => uoAbs
-      end in
-    let x' := get_inductive_term x in
-    constr:(reUnary bo x')
-  | _ =>
-    constr:(reUnknown t)
-  end.
-
 (* factor an integer into odd*2^e *)
 Definition float2_of_pos x :=
   let fix aux (m : positive) e { struct m } :=
@@ -264,8 +27,7 @@ unfold float2R.
 simpl.
 replace (Zpos (xO x)) with (Zpos x * 2)%Z.
 exact (Gappa_round_aux.float2_shift_p1 _ _).
-rewrite Zmult_comm.
-apply refl_equal.
+now rewrite Zmult_comm.
 Qed.
 
 Definition compact_float2 m e :=
@@ -313,6 +75,214 @@ apply sym_eq.
 exact (F2R_split _ (Zneg m) e).
 Qed.
 
+Section ListProp.
+
+Variable A : Type.
+Variable P : A -> Prop.
+
+Inductive list_prop : list A -> Prop :=
+  | Pnil : list_prop nil
+  | Pcons x q : P x -> list_prop q -> list_prop (x :: q).
+
+End ListProp.
+
+Inductive UnaryOp : Set :=
+  | uoNeg | uoSqrt | uoAbs | uoInv.
+
+Inductive BinaryOp : Set :=
+  | boAdd | boSub | boMul | boDiv.
+
+(* represent an expression on real numbers *)
+Inductive RExpr :=
+  | reUnknown : positive -> RExpr
+  | reInteger : Z -> RExpr
+  | reFloat2 : Z -> Z -> RExpr
+  | reFloat10 : Z -> Z -> RExpr
+  | reUnary : UnaryOp -> RExpr -> RExpr
+  | reBinary : BinaryOp -> RExpr -> RExpr -> RExpr
+  | rePow2 : Z -> RExpr
+  | rePow10 : Z -> RExpr
+  | reINR : positive -> RExpr
+  | reRound : (R -> float2) -> RExpr -> RExpr.
+
+(* represent an atomic proposition *)
+Inductive RAtom :=
+  | raBound : option RExpr -> RExpr -> option RExpr -> RAtom
+  | raLe : RExpr -> RExpr -> RAtom
+  | raEq : RExpr -> RExpr -> RAtom
+  | raFalse : RAtom.
+
+(* represent a complete proposition *)
+Definition RGoal := (list RAtom * RAtom)%type.
+
+Section Convert.
+
+Variable unknown_values : list R.
+
+(* convert to an expression on real numbers *)
+Fixpoint convert_expr (t : RExpr) : R :=
+  match t with
+  | reUnknown x =>
+    nth (nat_of_P x) (R0 :: unknown_values) R0
+  | reInteger x => Z2R x
+  | reFloat2 x y => F2R 2 x y
+  | reFloat10 x y => F2R 10 x y
+  | reUnary o x =>
+    match o with
+    | uoNeg  => Ropp
+    | uoSqrt => sqrt
+    | uoAbs  => Rabs
+    | uoInv  => Rinv
+    end (convert_expr x)
+  | reBinary o x y =>
+    match o with
+    | boAdd => Rplus
+    | boSub => Rminus
+    | boMul => Rmult
+    | boDiv => Rdiv
+    end (convert_expr x) (convert_expr y)
+  | rePow2 x =>
+    powerRZ 2%R x
+  | rePow10 x =>
+    powerRZ 10%R x
+  | reINR x =>
+    INR (nat_of_P x)
+  | reRound f x =>
+    gappa_rounding f (convert_expr x)
+  end.
+
+(* convert to an atomic proposition *)
+Definition convert_atom (a : RAtom) : Prop :=
+  match a with
+  | raBound None _ None => False
+  | raBound (Some l) e None => (convert_expr l <= convert_expr e)%R
+  | raBound None e (Some u) => (convert_expr e <= convert_expr u)%R
+  | raBound (Some l) e (Some u) => (convert_expr l <= convert_expr e <= convert_expr u)%R
+  | raLe x y => (convert_expr x <= convert_expr y)%R
+  | raEq x y => (convert_expr x = convert_expr y)%R
+  | raFalse => False
+  end.
+
+(* convert to a complete proposition *)
+Definition convert_goal (g : RGoal) : Prop :=
+  fold_right (fun a (r : Prop) => convert_atom a -> r) (convert_atom (snd g)) (fst g).
+
+Section RecursiveTransform.
+
+Definition stable_expr f :=
+  forall t, convert_expr (f t) = convert_expr t.
+
+Variable chg_expr : RExpr -> RExpr.
+
+(* apply a function recursively, starting from the leafs of an expression *)
+Fixpoint transform_expr (t : RExpr) :=
+  chg_expr
+    match t with
+    | reUnary o x => reUnary o (transform_expr x)
+    | reBinary o x y => reBinary o (transform_expr x) (transform_expr y)
+    | reRound f x => reRound f (transform_expr x)
+    | _ => t
+    end.
+
+Theorem transform_expr_correct :
+  stable_expr chg_expr ->
+  stable_expr transform_expr.
+Proof.
+unfold stable_expr.
+intros Hf t.
+induction t ; simpl ; rewrite Hf ; simpl ; try easy.
+now rewrite IHt.
+now rewrite IHt1, IHt2.
+now rewrite IHt.
+Qed.
+
+Definition stable_atom_neg f :=
+  forall a, list_prop _ (fun b => convert_atom a -> convert_atom b) (f a).
+
+Variable chg_atom_neg : RAtom -> list RAtom.
+
+Definition transform_goal_neg (g : RGoal) :=
+  let '(c, g) := g in (fold_right (fun a r => chg_atom_neg a ++ r) nil c, g).
+
+Theorem transform_goal_neg_correct :
+  stable_atom_neg chg_atom_neg ->
+  forall g, convert_goal (transform_goal_neg g) -> convert_goal g.
+Proof.
+intros Hn (c, g).
+simpl.
+induction c.
+easy.
+intros H1 H2.
+apply IHc.
+clear IHc.
+specialize (Hn a).
+simpl in H1.
+induction (chg_atom_neg a).
+exact H1.
+inversion_clear Hn.
+apply IHl.
+exact H0.
+apply H1.
+now apply H.
+Qed.
+
+Definition stable_atom_pos f :=
+  forall a, convert_atom (f a) -> convert_atom a.
+
+Variable chg_atom_pos : RAtom -> RAtom.
+
+Definition transform_goal_pos (g : RGoal) :=
+  let '(c, g) := g in (c, chg_atom_pos g).
+
+Theorem transform_goal_pos_correct :
+  stable_atom_pos chg_atom_pos ->
+  forall g, convert_goal (transform_goal_pos g) -> convert_goal g.
+Proof.
+intros Hp (c, g).
+simpl.
+induction c.
+exact (Hp g).
+intros H1 H2.
+apply IHc.
+now apply H1.
+Qed.
+
+End RecursiveTransform.
+
+Definition transform_atom_bound f a :=
+  match a with
+  | raBound (Some l) e (Some u) => raBound (Some (f l)) e (Some (f u))
+  | raBound (Some l) e None => raBound (Some (f l)) e None
+  | raBound None e (Some u) => raBound None e (Some (f u))
+  | _ => a
+  end.
+
+Theorem transform_atom_bound_correct :
+  forall f,
+  stable_expr f ->
+  forall a,
+  convert_atom (transform_atom_bound f a) <-> convert_atom a.
+Proof.
+now intros f Hf [[l|] e [u|]|x y|x y|] ;
+  simpl ; split ; repeat rewrite Hf.
+Qed.
+
+Definition transform_atom_expr f a :=
+  match a with
+  | raBound l e u => raBound l (f e) u
+  | _ => a
+  end.
+
+Theorem transform_atom_expr_correct :
+  forall f,
+  stable_expr f ->
+  forall a,
+  convert_atom (transform_atom_expr f a) <-> convert_atom a.
+Proof.
+now intros f Hf [l e u|x y|x y|] ;
+  simpl ; split ; repeat rewrite Hf.
+Qed.
+
 (* transform INR and IZR into real integers, change a/b and a*2^b into floats *)
 Definition gen_float_func t :=
   match t with
@@ -333,7 +303,7 @@ Definition gen_float_func t :=
   end.
 
 Lemma gen_float_prop :
-  is_stable gen_float_func.
+  stable_expr gen_float_func.
 Proof.
 intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
 (* unary ops *)
@@ -360,17 +330,14 @@ generalize (float2_of_pos_correct p).
 simpl.
 destruct (float2_of_pos p) as ([|[m|m|]|m], [|e|e]) ; intros H ; try apply refl_equal.
 rewrite <- H.
-simpl.
+unfold convert_expr.
 unfold float2R.
 do 2 rewrite F2R_split.
 simpl.
-rewrite Rmult_1_l.
-apply refl_equal.
+now rewrite Rmult_1_l.
 (* INR *)
 exact (P2R_INR _).
 Qed.
-
-Definition gen_float := mkTF gen_float_func gen_float_prop.
 
 (* remove pending powerRZ *)
 Definition clean_pow_func t :=
@@ -381,7 +348,7 @@ Definition clean_pow_func t :=
   end.
 
 Lemma clean_pow_prop :
-  is_stable clean_pow_func.
+  stable_expr clean_pow_func.
 Proof.
 intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
 simpl.
@@ -392,8 +359,6 @@ rewrite F2R_split.
 rewrite Rmult_1_l.
 apply refl_equal.
 Qed.
-
-Definition clean_pow := mkTF clean_pow_func clean_pow_prop.
 
 (* compute on constant terms, so that they are hopefully represented by a single float *)
 Definition merge_float2_aux m e :=
@@ -411,15 +376,13 @@ Definition merge_float2_func t :=
   end.
 
 Lemma merge_float2_prop :
-  is_stable merge_float2_func.
+  stable_expr merge_float2_func.
 Proof.
-assert (forall m e, convert (merge_float2_aux m e) = convert (reFloat2 m e)).
+assert (forall m e, convert_expr (merge_float2_aux m e) = convert_expr (reFloat2 m e)).
 intros.
 unfold merge_float2_aux.
 generalize (compact_float2_correct m e).
-destruct (compact_float2 m e).
-intro H.
-exact H.
+now destruct (compact_float2 m e).
 (* . *)
 intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal ; try exact (H x _).
 (* unary ops *)
@@ -427,19 +390,17 @@ destruct o ; try apply refl_equal.
 destruct x ; try apply refl_equal.
 simpl.
 rewrite H.
-rewrite <- Gappa_dyadic.Fopp2_correct.
-apply refl_equal.
+change (- F2R 2 z z0)%R with (- float2R (Float2 z z0))%R.
+now rewrite <- Gappa_dyadic.Fopp2_correct.
 (* binary ops *)
 destruct o ; try apply refl_equal.
 destruct x ; try apply refl_equal.
 destruct y ; try apply refl_equal.
 simpl.
 rewrite H.
-rewrite <- Gappa_dyadic.Fmult2_correct.
-apply refl_equal.
+change (F2R 2 z z0 * F2R 2 z1 z2)%R with (float2R (Float2 z z0) * float2R (Float2 z1 z2))%R.
+now rewrite <- Gappa_dyadic.Fmult2_correct.
 Qed.
-
-Definition merge_float2 := mkTF merge_float2_func merge_float2_prop.
 
 (* change /a into 1/a *)
 Definition remove_inv_func t :=
@@ -449,113 +410,143 @@ Definition remove_inv_func t :=
   end.
 
 Lemma remove_inv_prop :
-  is_stable remove_inv_func.
+  stable_expr remove_inv_func.
+Proof.
 intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
 destruct o ; try apply refl_equal.
 exact (Rmult_1_l _).
 Qed.
 
-Definition remove_inv := mkTF remove_inv_func remove_inv_prop.
-
-(* make sure bounds have correct format *)
-Definition is_bound t :=
-  match t with
-  | reFloat2 m e => Some t
-  | _ => None
+Definition change_eq_pos_func a :=
+  match a with
+  | raEq u v => raBound (Some (reFloat2 0 0)) (reBinary boSub u v) (Some (reFloat2 0 0))
+  | _ => a
   end.
 
-Ltac check_bound t :=
-  let w := eval hnf in (is_bound t) in
-  match w with
-  | Some ?t => eval vm_compute in t
-  end.
-
-Lemma change_equality :
-  forall x y,
- (0 <= x - y <= 0)%R ->
-  x = y.
+Lemma change_eq_pos_prop :
+  stable_atom_pos change_eq_pos_func.
 Proof.
-intros x y (Ha, Hb).
+intros [l u v|x y|x y|] H ; try exact H.
 apply Rle_antisym.
-apply Rplus_le_reg_l with (-y)%R.
+apply Rplus_le_reg_l with (- convert_expr y)%R.
 rewrite Rplus_opp_l.
 rewrite Rplus_comm.
-exact Hb.
+apply H.
 apply Ropp_le_cancel.
-apply Rplus_le_reg_l with x.
+apply Rplus_le_reg_l with (convert_expr x).
 rewrite Rplus_opp_r.
-exact Ha.
+apply H.
 Qed.
 
-(* some dummy definition to ensure precise rewriting of the terms and termination *)
-Definition convertTODO1 := convert.
-Definition convertTODO2 := convert.
-Definition convertTODO3 := convert.
-Definition reUnknownTODO := reUnknown.
+Definition change_eq_neg_func a :=
+  match a with
+  | raEq u v => raBound (Some (reFloat2 0 0)) (reBinary boSub u v) (Some (reFloat2 0 0)) :: nil
+  | _ => a :: nil
+  end.
 
-(* produce a compatible goal where all the Gappa-usable enclosures have been converted,
-   some integers may no longer be closed terms, but they can be evaluated to closed terms *)
-Ltac gappa_prepare :=
-  intros ; subst ;
-  let trans_expr := constr:(remove_inv :: gen_float :: clean_pow :: nil) in
-  let trans_bound := constr:(remove_inv :: gen_float :: clean_pow :: merge_float2 :: nil) in
-  (* complete half-range on absolute values *)
-  try
-  match goal with
-  | |- (Rabs ?e <= ?b)%R =>
-    refine (proj2 (_ : (0 <= Rabs e <= b)%R))
-  | |- (?a = ?b) =>
-    apply change_equality
-  end ;
-  repeat
-  match goal with
-  | H: (Rabs ?e <= ?b)%R |- _ =>
-    generalize (conj (Rabs_pos e) H) ; clear H ; intro
-  end ;
-  (* - get an inductive object for the bounded expression without any INR, INZ, powerRZ 2
-     - same for the bounds, but try harder to get single floats *)
-  match goal with
-  | |- (?a <= ?e <= ?b)%R =>
-    let a' := get_inductive_term a in
-    let b' := get_inductive_term b in
-    let e' := get_inductive_term e in
-    change (convertTODO1 a' <= convertTODO2 e' <= convertTODO3 b')%R ;
-    let w := check_bound (multi_transform trans_bound a') in
-    replace (convertTODO1 a') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound a')] ;
-    let w := check_bound (multi_transform trans_bound b') in
-    replace (convertTODO3 b') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound b')] ;
-    let w := eval simpl in (multi_transform trans_expr e') in
-    replace (convertTODO2 e') with (convert w) ; [idtac | exact (multi_transform_correct trans_expr e')]
-  end ;
-  (* apply the same transformation to the hypotheses and move them to the goal *)
-  repeat
-  match goal with
-  | H: (?a <= ?e <= ?b)%R |- _ =>
-    let a' := get_inductive_term a in
-    let b' := get_inductive_term b in
-    let e' := get_inductive_term e in
-    change (convertTODO1 a' <= convertTODO2 e' <= convertTODO3 b')%R in H ;
-    generalize H ; clear H ;
-    let w := check_bound (multi_transform trans_bound a') in
-    replace (convertTODO1 a') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound a')] ;
-    let w := check_bound (multi_transform trans_bound b') in
-    replace (convertTODO3 b') with (convert w) ; [idtac | exact (multi_transform_correct trans_bound b')] ;
-    let w := eval simpl in (multi_transform trans_expr e') in
-    replace (convertTODO2 e') with (convert w) ; [idtac | exact (multi_transform_correct trans_expr e')]
-  end ;
-  (* generalize any unrecognized expression *)
-  change reUnknown with reUnknownTODO ;
-  repeat
-  match goal with
-  | z: R |- _ =>
-    match goal with
-    | |- context [reUnknownTODO z] =>
-      change (reUnknownTODO z) with (reUnknown z)
-    end
-  | |- context [reUnknownTODO ?z] =>
-    change (reUnknownTODO z) with (reUnknown z) ;
-    generalize z ; intro
-  end ;
-  intros.
+Lemma change_eq_neg_prop :
+  stable_atom_neg change_eq_neg_func.
+Proof.
+unfold change_eq_neg_func.
+intros [l u v|x y|x y|] ; apply Pcons ; try apply Pnil ; intros H ; try exact H.
+simpl.
+rewrite H.
+unfold Rminus.
+rewrite Rplus_opp_r.
+split ; apply Rle_refl.
+Qed.
+
+End Convert.
+
+Inductive TG :=
+  | TGneg (f : RAtom -> list RAtom) : (forall u, stable_atom_neg u f) -> TG
+  | TGpos (f : RAtom -> RAtom) : (forall u, stable_atom_pos u f) -> TG
+  | TGbound (f : RExpr -> RExpr) : (forall u, stable_expr u f) -> TG
+  | TGexpr (f : RExpr -> RExpr) : (forall u, stable_expr u f) -> TG.
+
+Definition transform_goal_once t g :=
+  match t with
+  | TGneg f _ => transform_goal_neg f g
+  | TGpos f _ => transform_goal_pos f g
+  | TGbound f _ =>
+    let '(c, g) := g in (map (transform_atom_bound f) c, transform_atom_bound f g)
+  | TGexpr f _ =>
+    let '(c, g) := g in (map (transform_atom_expr f) c, transform_atom_expr f g)
+  end.
+
+Theorem transform_goal_once_correct :
+  forall u t g,
+  convert_goal u (transform_goal_once t g) -> convert_goal u g.
+Proof.
+intros k [f Hf|f Hf|f Hf|f Hf] (c, g) ; simpl.
+intros H.
+now apply transform_goal_neg_correct with f.
+intros H.
+now apply transform_goal_pos_correct with f.
+induction c.
+unfold convert_goal. simpl.
+now apply -> transform_atom_bound_correct.
+unfold convert_goal. simpl.
+intros H1 H2.
+apply IHc.
+apply H1.
+now apply <- transform_atom_bound_correct.
+induction c.
+unfold convert_goal. simpl.
+now apply -> transform_atom_expr_correct.
+unfold convert_goal. simpl.
+intros H1 H2.
+apply IHc.
+apply H1.
+now apply <- transform_atom_expr_correct.
+Qed.
+
+Definition transform_goal :=
+  fold_left (fun v t => transform_goal_once t v).
+
+Theorem transform_goal_correct :
+  forall l u g,
+  convert_goal u (transform_goal l g) -> convert_goal u g.
+Proof.
+intros l u.
+rewrite <- (rev_involutive l).
+induction (rev l) ; intros g ; simpl.
+easy.
+unfold transform_goal.
+rewrite fold_left_app.
+simpl.
+intros H.
+apply IHl0.
+now apply transform_goal_once_correct in H.
+Qed.
+
+Definition trans :=
+  TGneg change_eq_neg_func change_eq_neg_prop ::
+  TGpos change_eq_pos_func change_eq_pos_prop ::
+  TGbound remove_inv_func remove_inv_prop ::
+  TGbound gen_float_func gen_float_prop ::
+  TGbound clean_pow_func clean_pow_prop ::
+  TGbound merge_float2_func merge_float2_prop ::
+  TGexpr remove_inv_func remove_inv_prop ::
+  TGexpr gen_float_func gen_float_prop ::
+  TGexpr clean_pow_func clean_pow_prop ::
+  nil.
 
 Declare ML Module "gappatac".
+
+Ltac gappa_prepare :=
+  intros ; subst ;
+  gappa_quote ;
+  let convert_apply t :=
+    match goal with
+    | |- (convert_goal ?u ?g) => t u g
+    end in
+  convert_apply ltac:(fun u g =>
+    let rec generalize_list l :=
+      match l with
+      | (List.cons ?h ?t) => generalize h ; generalize_list t
+      | List.nil => clear ; intros
+      end in 
+    generalize_list u) ;
+  convert_apply ltac:(fun u g => refine (transform_goal_correct trans u g _)) ;
+  convert_apply ltac:(fun u g => let g := eval vm_compute in g in change (convert_goal u g)).
