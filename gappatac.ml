@@ -147,6 +147,7 @@ let coq_Ropp = lazy (constant "Ropp")
 let coq_Rmult = lazy (constant "Rmult")
 let coq_Rdiv = lazy (constant "Rdiv")
 let coq_Rinv = lazy (constant "Rinv")
+let coq_Rabs = lazy (constant "Rabs")
 let coq_sqrt = lazy (constant "sqrt")
 
 let coq_Some = lazy (constant "Some")
@@ -187,6 +188,7 @@ let coq_boMul = lazy (constant "boMul")
 let coq_boDiv = lazy (constant "boDiv")
 let coq_uoAbs = lazy (constant "uoAbs")
 let coq_uoNeg = lazy (constant "uoNeg")
+let coq_uoInv = lazy (constant "uoInv")
 let coq_uoSqrt = lazy (constant "uoSqrt")
 
 let coq_bool = lazy (constant "bool")
@@ -262,6 +264,15 @@ let rec qt_Rint t =
 and qt_no_Rint t =
   try
     match decompose_app t with
+      | c, [a] ->
+          let o =
+            if c = Lazy.force coq_Ropp then coq_uoNeg else
+            if c = Lazy.force coq_Rinv then coq_uoInv else
+            if c = Lazy.force coq_Rabs then coq_uoAbs else
+            if c = Lazy.force coq_sqrt then coq_uoSqrt else
+            raise NotGappa
+            in
+          mkLApp coq_reUnary [|Lazy.force o; qt_term a|]
       | c, [a;b] ->
           let o =
             (*if c = Lazy.force coq_Rplus then coq_boAdd else*)
@@ -298,7 +309,7 @@ let qt_pred p = match decompose_app p with
       mkLApp coq_raLe [|qt_term a; qt_term b|]
   | c, [a;b] when c = Lazy.force coq_Rge ->
       mkLApp coq_raLe [|qt_term b; qt_term a|]
-  | c, [t;a;b] when (c = Lazy.force coq_eq && t = Lazy.force coq_R) ->
+  | c, [t;a;b] when c = Lazy.force coq_eq && t = Lazy.force coq_R ->
       mkLApp coq_raEq [|qt_term a; qt_term b|]
   | _ -> raise NotGappa
 
@@ -447,17 +458,12 @@ let rec tr_vars c =
 let tr_goal c =
   match decompose_app c with
     | c, [a;b] when c = Lazy.force coq_convert_goal ->
-        Pp.msgerrnl (Pp.str "goal");
         let v = Array.of_list (tr_vars a) in
         begin match decompose_app b with
           | _, [_;_;h;g] -> (tr_hyps v h, tr_pred v g)
           | _ -> raise NotGappa
         end
     | _ -> raise NotGappa
-
-let is_R c = match decompose_app c with
-  | c, [] when c = Lazy.force coq_R -> true
-  | _ -> false
 
 let no_glob f =
   let dg = Dumpglob.coqdoc_freeze () in
@@ -540,7 +546,7 @@ let gappa_quote gl =
     let u = List.fold_left (fun acc t -> mkLApp coq_cons [|_R; t; acc|])
           (mkLApp coq_nil [|_R|]) !var_list in
     let e = mkLApp coq_convert_goal [|u; g|] in
-    Pp.msgerrnl (Printer.pr_constr e);
+    (*Pp.msgerrnl (Printer.pr_constr e);*)
     Hashtbl.clear var_table;
     var_list := [];
     Tacticals.tclTHEN
