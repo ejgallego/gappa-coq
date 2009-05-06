@@ -427,7 +427,7 @@ Definition change_eq_pos_func a :=
 Lemma change_eq_pos_prop :
   stable_atom_pos change_eq_pos_func.
 Proof.
-intros [l u v|x y|x y|] H ; try exact H.
+intros [l v u|x y|x y|] H ; try exact H.
 apply Rle_antisym.
 apply Rplus_le_reg_l with (- convert_expr y)%R.
 rewrite Rplus_opp_l.
@@ -449,12 +449,45 @@ Lemma change_eq_neg_prop :
   stable_atom_neg change_eq_neg_func.
 Proof.
 unfold change_eq_neg_func.
-intros [l u v|x y|x y|] ; apply Pcons ; try apply Pnil ; intros H ; try exact H.
+intros [l v u|x y|x y|] ; apply Pcons ; try apply Pnil ; intros H ; try exact H.
 simpl.
 rewrite H.
 unfold Rminus.
 rewrite Rplus_opp_r.
 split ; apply Rle_refl.
+Qed.
+
+Definition change_abs_pos_func a :=
+  match a with
+  | raLe (reUnary uoAbs u as u') v => raBound (Some (reFloat2 0 0)) u' (Some v)
+  | _ => a
+  end.
+
+Lemma change_abs_pos_prop :
+  stable_atom_pos change_abs_pos_func.
+Proof.
+intros [l v u|v w|v w|] H ; try exact H.
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try exact H.
+destruct o ; try exact H.
+exact (proj2 H).
+Qed.
+
+Definition change_abs_neg_func a :=
+  match a with
+  | raLe (reUnary uoAbs u as u') v => raBound (Some (reFloat2 0 0)) u' (Some v) :: nil
+  | _ => a :: nil
+  end.
+
+Lemma change_abs_neg_prop :
+  stable_atom_neg change_abs_neg_func.
+Proof.
+unfold change_abs_neg_func.
+intros [l v u|v w|v w|] ; try (apply Pcons ; try apply Pnil ; intros H ; exact H).
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try (apply Pcons ; try apply Pnil ; intros H ; exact H).
+destruct o ; apply Pcons ; try apply Pnil ; intros H ; try exact H.
+split.
+apply Rabs_pos.
+exact H.
 Qed.
 
 End Convert.
@@ -524,6 +557,8 @@ Qed.
 Definition trans :=
   TGneg change_eq_neg_func change_eq_neg_prop ::
   TGpos change_eq_pos_func change_eq_pos_prop ::
+  TGneg change_abs_neg_func change_abs_neg_prop ::
+  TGpos change_abs_pos_func change_abs_pos_prop ::
   TGbound remove_inv_func remove_inv_prop ::
   TGbound gen_float_func gen_float_prop ::
   TGbound clean_pow_func clean_pow_prop ::

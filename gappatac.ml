@@ -149,6 +149,7 @@ let coq_Rdiv = lazy (constant "Rdiv")
 let coq_Rinv = lazy (constant "Rinv")
 let coq_Rabs = lazy (constant "Rabs")
 let coq_sqrt = lazy (constant "sqrt")
+let coq_powerRZ = lazy (constant "powerRZ")
 
 let coq_Some = lazy (constant "Some")
 
@@ -169,6 +170,8 @@ let coq_RExpr = lazy (constant "RExpr")
 let coq_reUnknown = lazy (constant "reUnknown")
 let coq_reFloat2 = lazy (constant "reFloat2")
 let coq_reFloat10 = lazy (constant "reFloat10")
+let coq_rePow2 = lazy (constant "rePow2")
+let coq_rePow10 = lazy (constant "rePow10")
 let coq_reInteger = lazy (constant "reInteger")
 let coq_reBinary = lazy (constant "reBinary")
 let coq_reUnary = lazy (constant "reUnary")
@@ -216,6 +219,59 @@ let rec mk_pos n =
   else mkLApp coq_xI [|mk_pos (n / 2)|]
 
 type int_type = It_1 | It_2 | It_even of constr | It_int of constr | It_none of constr
+type int_type_partial = Itp_1 | Itp_2 | Itp_even of int | Itp_int of int
+
+(* translates a closed Coq term p:positive into an int *)
+let rec tr_positive p = match kind_of_term p with
+  | Term.Construct _ when p = Lazy.force coq_xH -> 1
+  | Term.App (f, [|a|]) when f = Lazy.force coq_xI -> 2 * (tr_positive a) + 1
+  | Term.App (f, [|a|]) when f = Lazy.force coq_xO -> 2 * (tr_positive a)
+  | Term.Cast (p, _, _) -> tr_positive p
+  | _ ->
+      raise NotGappa
+
+(* translates a closed Coq term t:Z into an int *)
+let rec tr_arith_constant t = match kind_of_term t with
+  | Term.Construct _ when t = Lazy.force coq_Z0 -> 0
+  | Term.App (f, [|a|]) when f = Lazy.force coq_Zpos -> tr_positive a
+  | Term.App (f, [|a|]) when f = Lazy.force coq_Zneg -> - (tr_positive a)
+  | Term.Cast (t, _, _) -> tr_arith_constant t
+  | _ -> raise NotGappa
+
+(* translates a closed Coq term t:R into an int *)
+let tr_real_constant t =
+  let rec aux t =
+    match decompose_app t with
+      | c, [] when c = Lazy.force coq_R1 -> Itp_1
+      | c, [a;b] ->
+          if c = Lazy.force coq_Rplus then
+            if aux a = Itp_1 then
+              match aux b with
+                | Itp_1 -> Itp_2
+                | Itp_2 -> Itp_int 3
+                | Itp_even n -> Itp_int (2 * n + 1)
+                | _ -> raise NotGappa
+            else
+              raise NotGappa
+          else if c = Lazy.force coq_Rmult then
+            if aux a = Itp_2 then
+              match aux b with
+                | Itp_2 -> Itp_even 2
+                | Itp_even n -> Itp_even (2 * n)
+                | Itp_int n -> Itp_even n
+                | _ -> raise NotGappa
+            else
+              raise NotGappa
+          else
+            raise NotGappa
+      | _ ->
+        raise NotGappa
+    in
+  match aux t with
+    | Itp_1 -> 1
+    | Itp_2 -> 2
+    | Itp_even n -> 2 * n
+    | Itp_int n -> n
 
 let plain_of_int =
   let wrap t =
@@ -297,6 +353,14 @@ and qt_no_Rint t =
                 n
               in
             mkLApp coq_reApply [|n; qt_b|]
+          else if c = Lazy.force coq_powerRZ then
+            let p =
+              match tr_real_constant a with
+                | 2 -> coq_rePow2
+                | 10 -> coq_rePow10
+                | _ -> raise NotGappa
+              in
+            mkLApp p [|(ignore (tr_arith_constant b); b)|]
           else raise NotGappa
       | _ -> raise NotGappa
   with NotGappa ->
@@ -333,28 +397,7 @@ let qt_hyps =
   List.fold_left
     (fun acc (n, h) -> try (n, qt_pred h) :: acc with NotGappa -> acc) []
 
-(* translates a closed Coq term p:positive into a FOL term of type int *)
-let rec tr_positive p = match kind_of_term p with
-  | Term.Construct _ when p = Lazy.force coq_xH ->
-      1
-  | Term.App (f, [|a|]) when f = Lazy.force coq_xI ->
-      2 * (tr_positive a) + 1
-  | Term.App (f, [|a|]) when f = Lazy.force coq_xO ->
-      2 * (tr_positive a)
-  | Term.Cast (p, _, _) ->
-      tr_positive p
-  | _ ->
-      raise NotGappa
-
-(* translates a closed Coq term t:Z into a term of type int *)
-let rec tr_arith_constant t = match kind_of_term t with
-  | Term.Construct _ when t = Lazy.force coq_Z0 -> 0
-  | Term.App (f, [|a|]) when f = Lazy.force coq_Zpos -> tr_positive a
-  | Term.App (f, [|a|]) when f = Lazy.force coq_Zneg -> - (tr_positive a)
-  | Term.Cast (t, _, _) -> tr_arith_constant t
-  | _ -> raise NotGappa
-
-(* translates a closed Coq term p:positive into a FOL term of type bigint *)
+(* translates a closed Coq term p:positive into a bigint *)
 let rec tr_bigpositive p = match kind_of_term p with
   | Term.Construct _ when p = Lazy.force coq_xH -> 
       Bigint.one
@@ -367,7 +410,7 @@ let rec tr_bigpositive p = match kind_of_term p with
   | _ ->
       raise NotGappa
 
-(* translates a closed Coq term t:Z into a term of type bigint *)
+(* translates a closed Coq term t:Z into a bigint *)
 let rec tr_arith_bigconstant t = match kind_of_term t with
   | Term.Construct _ when t = Lazy.force coq_Z0 -> Bigint.zero
   | Term.App (f, [|a|]) when f = Lazy.force coq_Zpos -> tr_bigpositive a
@@ -587,7 +630,7 @@ let gappa_quote gl =
       (Tacticals.tclTHEN
         (Tactics.generalize (List.map (fun (n, _) -> mkVar n) (List.rev l)))
         (Tactics.keep []))
-      (Tactics.change_in_concl None e) gl
+      (Tachmach.convert_concl_no_check e DEFAULTcast) gl
   with
     | NotGappa -> error "something wrong happened"
 
