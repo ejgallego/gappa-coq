@@ -158,7 +158,6 @@ let coq_list = lazy (constant "list")
 let coq_cons = lazy (constant "cons")
 let coq_nil = lazy (constant "nil")
 
-let coq_convert = lazy (constant "convert")
 let coq_convert_goal = lazy (constant "convert_goal")
 
 let coq_RAtom = lazy (constant "RAtom")
@@ -173,7 +172,7 @@ let coq_reFloat10 = lazy (constant "reFloat10")
 let coq_reInteger = lazy (constant "reInteger")
 let coq_reBinary = lazy (constant "reBinary")
 let coq_reUnary = lazy (constant "reUnary")
-let coq_reRound = lazy (constant "reRound")
+let coq_reApply = lazy (constant "reApply")
 
 let coq_roundDN = lazy (constant "roundDN")
 let coq_roundUP = lazy (constant "roundUP")
@@ -204,7 +203,9 @@ let coq_xO = lazy (constant "xO")
 let coq_IZR = lazy (constant "IZR")
 
 let var_table = Hashtbl.create 17
+let fun_table = Hashtbl.create 17
 let var_list = ref []
+let fun_list = ref []
 
 let mkLApp f v = mkApp (Lazy.force f, v)
 
@@ -265,14 +266,18 @@ and qt_no_Rint t =
   try
     match decompose_app t with
       | c, [a] ->
-          let o =
-            if c = Lazy.force coq_Ropp then coq_uoNeg else
-            if c = Lazy.force coq_Rinv then coq_uoInv else
-            if c = Lazy.force coq_Rabs then coq_uoAbs else
-            if c = Lazy.force coq_sqrt then coq_uoSqrt else
+        begin
+          let gen_un f = mkLApp coq_reUnary [|Lazy.force f; qt_term a|] in
+          if c = Lazy.force coq_Ropp then gen_un coq_uoNeg else
+          if c = Lazy.force coq_Rinv then gen_un coq_uoInv else
+          if c = Lazy.force coq_Rabs then gen_un coq_uoAbs else
+          if c = Lazy.force coq_sqrt then gen_un coq_uoSqrt else
+          try
+            let n = Hashtbl.find fun_table c in
+            mkLApp coq_reApply [|n; qt_term a|]
+          with Not_found ->
             raise NotGappa
-            in
-          mkLApp coq_reUnary [|Lazy.force o; qt_term a|]
+        end
       | c, [a;b] ->
           let o =
             (*if c = Lazy.force coq_Rplus then coq_boAdd else*)
@@ -402,11 +407,11 @@ let tr_rounding_mode c = match decompose_app c with
       raise NotGappa
 
 (* RExpr -> term *)
-let rec tr_term v c =
+let rec tr_term uv uf c =
   match decompose_app c with
     | c, [a] when c = Lazy.force coq_reUnknown ->
         let n = tr_positive a - 1 in
-        if (n < Array.length v) then Tvar v.(n)
+        if (n < Array.length uv) then Tvar uv.(n)
         else raise NotGappa
     | c, [a; b] when c = Lazy.force coq_reFloat2 ->
         Tconst (Constant.create (tr_float 2 a b))
@@ -415,33 +420,35 @@ let rec tr_term v c =
     | c, [a] when c = Lazy.force coq_reInteger ->
         Tconst (Constant.create (1, tr_arith_bigconstant a, Bigint.zero))
     | c, [op;a;b] when c = Lazy.force coq_reBinary ->
-        Tbinop (tr_binop op, tr_term v a, tr_term v b)
+        Tbinop (tr_binop op, tr_term uv uf a, tr_term uv uf b)
     | c, [op;a] when c = Lazy.force coq_reUnary ->
-        Tunop (tr_unop op, tr_term v a)
-    | c, [op;a] when c = Lazy.force coq_reRound ->
-        Tround (tr_rounding_mode op, tr_term v a)
+        Tunop (tr_unop op, tr_term uv uf a)
+    | c, [a;b] when c = Lazy.force coq_reApply ->
+        let n = tr_positive a - 1 in
+        if (n < Array.length uv) then Tround (uv.(n), tr_term uv uf b)
+        else raise NotGappa
     | _ ->
         raise NotGappa
 
 let tr_const c =
-  match tr_term [||] c with
+  match tr_term [||] [||] c with
     | Tconst v -> v
     | _ -> raise NotGappa
 
-let tr_pred v c =
+let tr_pred uv uf c =
   match decompose_app c with
     | c, [l;e;u] when c = Lazy.force coq_raBound ->
         begin match decompose_app l, decompose_app u with
           | (_, [_;l]), (_, [_;u]) ->
-              Pin (tr_term v e, tr_const l, tr_const u)
+              Pin (tr_term uv uf e, tr_const l, tr_const u)
           | _ -> raise NotGappa
         end
     | _ ->
         raise NotGappa
 
-let rec tr_hyps v c =
+let rec tr_hyps uv uf c =
   match decompose_app c with
-    | _, [_;h;t] -> tr_pred v h :: tr_hyps v t
+    | _, [_;h;t] -> tr_pred uv uf h :: tr_hyps uv uf t
     | _, [_] -> []
     | _ -> raise NotGappa
 
@@ -457,10 +464,11 @@ let rec tr_vars c =
 
 let tr_goal c =
   match decompose_app c with
-    | c, [a;b] when c = Lazy.force coq_convert_goal ->
-        let v = Array.of_list (tr_vars a) in
-        begin match decompose_app b with
-          | _, [_;_;h;g] -> (tr_hyps v h, tr_pred v g)
+    | c, [uv;uf;e] when c = Lazy.force coq_convert_goal ->
+        let uv = Array.of_list (tr_vars uv) in
+        let uf = Array.of_list [] in
+        begin match decompose_app e with
+          | _, [_;_;h;g] -> (tr_hyps uv uf h, tr_pred uv uf g)
           | _ -> raise NotGappa
         end
     | _ -> raise NotGappa
@@ -543,12 +551,16 @@ let gappa_quote gl =
         List.fold_left (fun acc (_, h) -> mkLApp coq_cons [|_RAtom; h; acc|])
           (mkLApp coq_nil [|_RAtom|]) l;
         qt_pred (pf_concl gl)|] in
-    let u = List.fold_left (fun acc t -> mkLApp coq_cons [|_R; t; acc|])
+    let uv = List.fold_left (fun acc t -> mkLApp coq_cons [|_R; t; acc|])
           (mkLApp coq_nil [|_R|]) !var_list in
-    let e = mkLApp coq_convert_goal [|u; g|] in
+    let uf = List.fold_left (fun acc t -> mkLApp coq_cons [|mkArrow _R _R; t; acc|])
+          (mkLApp coq_nil [|mkArrow _R _R|]) !fun_list in
+    let e = mkLApp coq_convert_goal [|uv; uf; g|] in
     (*Pp.msgerrnl (Printer.pr_constr e);*)
     Hashtbl.clear var_table;
+    Hashtbl.clear fun_table;
     var_list := [];
+    fun_list := [];
     Tacticals.tclTHEN
       (Tacticals.tclTHEN
         (Tactics.generalize (List.map (fun (n, _) -> mkVar n) l))

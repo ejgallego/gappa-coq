@@ -103,7 +103,7 @@ Inductive RExpr :=
   | rePow2 : Z -> RExpr
   | rePow10 : Z -> RExpr
   | reINR : positive -> RExpr
-  | reRound : (R -> float2) -> RExpr -> RExpr.
+  | reApply : positive -> RExpr -> RExpr.
 
 (* represent an atomic proposition *)
 Inductive RAtom :=
@@ -118,6 +118,7 @@ Definition RGoal := (list RAtom * RAtom)%type.
 Section Convert.
 
 Variable unknown_values : list R.
+Variable unknown_functions : list (R -> R).
 
 (* convert to an expression on real numbers *)
 Fixpoint convert_expr (t : RExpr) : R :=
@@ -147,8 +148,8 @@ Fixpoint convert_expr (t : RExpr) : R :=
     powerRZ 10%R x
   | reINR x =>
     INR (nat_of_P x)
-  | reRound f x =>
-    gappa_rounding f (convert_expr x)
+  | reApply f x =>
+    nth (nat_of_P f) ((fun x => x) :: unknown_functions) (fun x => x) (convert_expr x)
   end.
 
 (* convert to an atomic proposition *)
@@ -180,7 +181,7 @@ Fixpoint transform_expr (t : RExpr) :=
     match t with
     | reUnary o x => reUnary o (transform_expr x)
     | reBinary o x y => reBinary o (transform_expr x) (transform_expr y)
-    | reRound f x => reRound f (transform_expr x)
+    | reApply f x => reApply f (transform_expr x)
     | _ => t
     end.
 
@@ -459,10 +460,10 @@ Qed.
 End Convert.
 
 Inductive TG :=
-  | TGneg (f : RAtom -> list RAtom) : (forall u, stable_atom_neg u f) -> TG
-  | TGpos (f : RAtom -> RAtom) : (forall u, stable_atom_pos u f) -> TG
-  | TGbound (f : RExpr -> RExpr) : (forall u, stable_expr u f) -> TG
-  | TGexpr (f : RExpr -> RExpr) : (forall u, stable_expr u f) -> TG.
+  | TGneg (f : RAtom -> list RAtom) : (forall uv uf, stable_atom_neg uv uf f) -> TG
+  | TGpos (f : RAtom -> RAtom) : (forall uv uf, stable_atom_pos uv uf f) -> TG
+  | TGbound (f : RExpr -> RExpr) : (forall uv uf, stable_expr uv uf f) -> TG
+  | TGexpr (f : RExpr -> RExpr) : (forall uv uf, stable_expr uv uf f) -> TG.
 
 Definition transform_goal_once t g :=
   match t with
@@ -475,10 +476,10 @@ Definition transform_goal_once t g :=
   end.
 
 Theorem transform_goal_once_correct :
-  forall u t g,
-  convert_goal u (transform_goal_once t g) -> convert_goal u g.
+  forall uv uf t g,
+  convert_goal uv uf (transform_goal_once t g) -> convert_goal uv uf g.
 Proof.
-intros k [f Hf|f Hf|f Hf|f Hf] (c, g) ; simpl.
+intros uv uf [f Hf|f Hf|f Hf|f Hf] (c, g) ; simpl.
 intros H.
 now apply transform_goal_neg_correct with f.
 intros H.
@@ -505,10 +506,10 @@ Definition transform_goal :=
   fold_left (fun v t => transform_goal_once t v).
 
 Theorem transform_goal_correct :
-  forall l u g,
-  convert_goal u (transform_goal l g) -> convert_goal u g.
+  forall l uv uf g,
+  convert_goal uv uf (transform_goal l g) -> convert_goal uv uf g.
 Proof.
-intros l u.
+intros l uv uf.
 rewrite <- (rev_involutive l).
 induction (rev l) ; intros g ; simpl.
 easy.
@@ -539,14 +540,14 @@ Ltac gappa_prepare :=
   gappa_quote ;
   let convert_apply t :=
     match goal with
-    | |- (convert_goal ?u ?g) => t u g
+    | |- (convert_goal ?uv ?uf ?g) => t uv uf g
     end in
-  convert_apply ltac:(fun u g =>
+  convert_apply ltac:(fun uv _ g =>
     let rec generalize_list l :=
       match l with
       | (List.cons ?h ?t) => generalize h ; generalize_list t
       | List.nil => clear ; intros
       end in 
-    generalize_list u) ;
-  convert_apply ltac:(fun u g => refine (transform_goal_correct trans u g _)) ;
-  convert_apply ltac:(fun u g => let g := eval vm_compute in g in change (convert_goal u g)).
+    generalize_list uv) ;
+  convert_apply ltac:(fun uv uf g => refine (transform_goal_correct trans uv uf g _)) ;
+  convert_apply ltac:(fun uv uf g => let g := eval vm_compute in g in change (convert_goal uv uf g)).
