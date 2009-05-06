@@ -174,6 +174,7 @@ let coq_reBinary = lazy (constant "reBinary")
 let coq_reUnary = lazy (constant "reUnary")
 let coq_reApply = lazy (constant "reApply")
 
+let coq_gappa_rounding = lazy (constant "gappa_rounding")
 let coq_roundDN = lazy (constant "roundDN")
 let coq_roundUP = lazy (constant "roundUP")
 let coq_roundNE = lazy (constant "roundNE")
@@ -230,8 +231,8 @@ let rec qt_Rint t =
   match decompose_app t with
     | c, [] when c = Lazy.force coq_R1 -> It_1
     | c, [a;b] ->
-        let a = qt_Rint a in
         if c = Lazy.force coq_Rplus then
+          let a = qt_Rint a in
           if a = It_1 then
             match qt_Rint b with
               | It_1 -> It_2
@@ -247,6 +248,7 @@ let rec qt_Rint t =
             It_none (mkLApp coq_reBinary
               [|Lazy.force coq_boAdd; plain_of_int a; qt_term b|])
         else if c = Lazy.force coq_Rmult then
+          let a = qt_Rint a in
           if a = It_2 then
             match qt_Rint b with
               | It_2 -> It_even (mkLApp coq_xO [|Lazy.force coq_xH|])
@@ -279,14 +281,23 @@ and qt_no_Rint t =
             raise NotGappa
         end
       | c, [a;b] ->
-          let o =
-            (*if c = Lazy.force coq_Rplus then coq_boAdd else*)
-            if c = Lazy.force coq_Rminus then coq_boSub else
-            (*if c = Lazy.force coq_Rmult then coq_boMul else*)
-            if c = Lazy.force coq_Rdiv then coq_boDiv else
-            raise NotGappa
-            in
-          mkLApp coq_reBinary [|Lazy.force o; qt_term a; qt_term b|]
+          let gen_bin f = mkLApp coq_reBinary [|Lazy.force f; qt_term a; qt_term b|] in
+          if c = Lazy.force coq_Rminus then gen_bin coq_boSub else
+          if c = Lazy.force coq_Rdiv then gen_bin coq_boDiv else
+          if c = Lazy.force coq_gappa_rounding then
+            let qt_a = mkLApp coq_gappa_rounding [|a|] in
+            let qt_b = qt_term b in
+            let n =
+              try
+                Hashtbl.find fun_table qt_a
+              with Not_found ->
+                let n = mk_pos (Hashtbl.length fun_table + 1) in
+                Hashtbl.replace fun_table qt_a n;
+                fun_list := qt_a :: !fun_list;
+                n
+              in
+            mkLApp coq_reApply [|n; qt_b|]
+          else raise NotGappa
       | _ -> raise NotGappa
   with NotGappa ->
     try
@@ -425,7 +436,7 @@ let rec tr_term uv uf c =
         Tunop (tr_unop op, tr_term uv uf a)
     | c, [a;b] when c = Lazy.force coq_reApply ->
         let n = tr_positive a - 1 in
-        if (n < Array.length uv) then Tround (uv.(n), tr_term uv uf b)
+        if (n < Array.length uf) then Tround (uf.(n), tr_term uv uf b)
         else raise NotGappa
     | _ ->
         raise NotGappa
@@ -462,11 +473,22 @@ let rec tr_vars c =
     | _, [_] -> []
     | _ -> raise NotGappa
 
+let tr_fun c =
+  match decompose_app c with
+    | c, [a] when c = Lazy.force coq_gappa_rounding -> tr_rounding_mode a
+    | _ -> raise NotGappa
+
+let rec tr_funs c =
+  match decompose_app c with
+    | _, [_;h;t] -> tr_fun h :: tr_funs t
+    | _, [_] -> []
+    | _ -> raise NotGappa
+
 let tr_goal c =
   match decompose_app c with
     | c, [uv;uf;e] when c = Lazy.force coq_convert_goal ->
         let uv = Array.of_list (tr_vars uv) in
-        let uf = Array.of_list [] in
+        let uf = Array.of_list (tr_funs uf) in
         begin match decompose_app e with
           | _, [_;_;h;g] -> (tr_hyps uv uf h, tr_pred uv uf g)
           | _ -> raise NotGappa
