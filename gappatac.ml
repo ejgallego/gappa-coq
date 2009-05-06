@@ -585,7 +585,7 @@ let gappa_quote gl =
     fun_list := [];
     Tacticals.tclTHEN
       (Tacticals.tclTHEN
-        (Tactics.generalize (List.map (fun (n, _) -> mkVar n) l))
+        (Tactics.generalize (List.map (fun (n, _) -> mkVar n) (List.rev l)))
         (Tactics.keep []))
       (Tactics.change_in_concl None e) gl
   with
