@@ -4,6 +4,7 @@ Require Export Gappa_library.
 Require Import Gappa_integer.
 
 Definition gappa_rounding (f : R -> float2) (x : R) : R := f x.
+Strategy 1000 [gappa_rounding].
 
 (* factor an integer into odd*2^e *)
 Definition float2_of_pos x :=
