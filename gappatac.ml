@@ -630,7 +630,7 @@ let gappa_quote gl =
       (Tacticals.tclTHEN
         (Tactics.generalize (List.map (fun (n, _) -> mkVar n) (List.rev l)))
         (Tactics.keep []))
-      (Tachmach.convert_concl_no_check e DEFAULTcast) gl
+      (Tacmach.convert_concl_no_check e DEFAULTcast) gl
   with
     | NotGappa -> error "something wrong happened"
 
