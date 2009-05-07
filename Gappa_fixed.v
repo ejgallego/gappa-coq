@@ -23,20 +23,8 @@ intros l _. clear l.
 apply refl_equal.
 Qed.
 
-Lemma rounding_fixed_def :
-  forall rdir e x, { y : float2 | y = round_extension rdir (fixed_shift e) (good_shift e) x }.
-eexists ; split.
-Qed.
-
-Definition rounding_fixed (rdir : round_dir) (e : Z) (x : R) :=
-  projT1 (rounding_fixed_def rdir e x).
-
-Lemma rounding_fixed_spec :
-  forall rdir e x, rounding_fixed rdir e x = round_extension rdir (fixed_shift e) (good_shift e) x.
-intros.
-unfold rounding_fixed.
-now destruct rounding_fixed_def.
-Qed.
+Definition rounding_fixed (rdir : round_dir) (e : Z) :=
+ round_extension rdir (fixed_shift e) (good_shift e).
 
 Theorem fix_of_fixed :
  forall rdir : round_dir,
@@ -45,8 +33,7 @@ Theorem fix_of_fixed :
  FIX (rounding_fixed rdir k1 x) k2.
 intros rdir x k1 k2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
-unfold FIX.
-rewrite rounding_fixed_spec.
+unfold FIX, rounding_fixed.
 destruct (representable_round_extension rdir _ (good_shift k1) x) as (m,(e,(H1,H2))).
 induction m.
 exists (Float2 0 k2).
@@ -83,7 +70,7 @@ unfold Rminus.
 rewrite (Rplus_opp_r x).
 apply contains_zero with (1 := H2).
 rewrite <- Hx1.
-rewrite rounding_fixed_spec.
+unfold rounding_fixed.
 rewrite round_extension_float2.
 induction f.
 induction Fnum.
@@ -143,7 +130,7 @@ intros rdir e x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite <- (round_extension_float2 rdir _ (good_shift e)). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite <- (round_extension_float2 rdir _ (good_shift e)). clear H2. intro H2.
-rewrite rounding_fixed_spec.
+unfold rounding_fixed.
 split.
 apply Rle_trans with (1 := H1).
 apply round_extension_monotone.
@@ -165,7 +152,7 @@ intros e x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fpos0_correct _ H2). clear H2. intro H2.
-rewrite rounding_fixed_spec.
+unfold rounding_fixed.
 cutrewrite (Float2 (-1) e = -Float2 1 e :>R)%R in H1.
 2: rewrite <- Fopp2_correct ; apply refl_equal.
 cut (- Float2 1 e < round_extension roundDN (fixed_shift e) (good_shift e) x - x <= 0)%R.
