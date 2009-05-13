@@ -165,6 +165,7 @@ let coq_RAtom = lazy (constant "RAtom")
 let coq_raBound = lazy (constant "raBound")
 let coq_raEq = lazy (constant "raEq")
 let coq_raLe = lazy (constant "raLe")
+let coq_raFalse = lazy (constant "raFalse")
 
 let coq_RExpr = lazy (constant "RExpr")
 let coq_reUnknown = lazy (constant "reUnknown")
@@ -497,6 +498,10 @@ let tr_pred uv uf c =
               Pin (tr_term uv uf e, tr_const l, tr_const u)
           | _ -> raise NotGappa
         end
+    | c, [] when c = Lazy.force coq_raFalse ->
+        let cr i = Constant.create (1, i, Bigint.zero) in
+        let c0 = cr Bigint.zero in
+        Pin (Tconst (cr Bigint.one), c0, c0)
     | _ ->
         raise NotGappa
 
