@@ -137,6 +137,7 @@ let coq_refl_equal = lazy (constant "refl_equal")
 let coq_and = lazy (constant "and")
 
 let coq_R = lazy (constant "R")
+let coq_R0 = lazy (constant "R0")
 let coq_R1 = lazy (constant "R1")
 let coq_Rle = lazy (constant "Rle")
 let coq_Rge = lazy (constant "Rge")
@@ -324,6 +325,8 @@ let rec qt_Rint t =
 and qt_no_Rint t =
   try
     match decompose_app t with
+      | c, [] when c = Lazy.force coq_R0 ->
+        mkLApp coq_reInteger [|Lazy.force coq_Z0|]
       | c, [a] ->
         begin
           let gen_un f = mkLApp coq_reUnary [|Lazy.force f; qt_term a|] in
