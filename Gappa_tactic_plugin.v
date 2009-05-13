@@ -265,10 +265,10 @@ Theorem transform_atom_bound_correct :
   forall f,
   stable_expr f ->
   forall a,
-  convert_atom (transform_atom_bound f a) <-> convert_atom a.
+  convert_atom (transform_atom_bound (transform_expr f) a) <-> convert_atom a.
 Proof.
 now intros f Hf [[l|] e [u|]|x y|x y|] ;
-  simpl ; split ; repeat rewrite Hf.
+  simpl ; split ; repeat rewrite (transform_expr_correct _ Hf).
 Qed.
 
 Definition transform_atom_expr f a :=
@@ -281,10 +281,10 @@ Theorem transform_atom_expr_correct :
   forall f,
   stable_expr f ->
   forall a,
-  convert_atom (transform_atom_expr f a) <-> convert_atom a.
+  convert_atom (transform_atom_expr (transform_expr f) a) <-> convert_atom a.
 Proof.
 now intros f Hf [l e u|x y|x y|] ;
-  simpl ; split ; repeat rewrite Hf.
+  simpl ; split ; repeat rewrite (transform_expr_correct _ Hf).
 Qed.
 
 (* transform INR and IZR into real integers, change a/b and a*2^b into floats *)
@@ -493,6 +493,58 @@ apply Rabs_pos.
 exact H.
 Qed.
 
+Definition remove_unknown_pos_func a :=
+  match a with
+  | raBound (Some l) _ (Some u) =>
+    match l with
+    | reInteger _
+    | reFloat2 _ _ =>
+      match u with
+      | reInteger _
+      | reFloat2 _ _ => a
+      | _ => raFalse
+      end
+    | _ => raFalse
+    end
+  | _ => raFalse
+  end.
+
+Lemma remove_unknown_pos_prop :
+  stable_atom_pos remove_unknown_pos_func.
+Proof.
+unfold remove_unknown_pos_func.
+intros [[l|] v [u|]|v w|v w|] ; try (apply Pcons ; try apply Pnil ; intros H ; exact H) ; try easy.
+destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|fl xl] ; try easy ;
+  destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|fu xu] ; easy.
+Qed.
+
+Definition remove_unknown_neg_func a :=
+  match a with
+  | raBound (Some l) _ (Some u) =>
+    match l with
+    | reInteger _
+    | reFloat2 _ _ =>
+      match u with
+      | reInteger _
+      | reFloat2 _ _ => a :: nil
+      | _ => nil
+      end
+    | _ => nil
+    end
+  | raBound _ _ _ => a :: nil
+  | _ => nil
+  end.
+
+Lemma remove_unknown_neg_prop :
+  stable_atom_neg remove_unknown_neg_func.
+Proof.
+unfold remove_unknown_neg_func.
+intros [[l|] v [u|]|v w|v w|] ; try (apply Pcons ; try apply Pnil ; intros H ; exact H) ; try apply Pnil.
+destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|fl xl] ; try apply Pnil ;
+  destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|fu xu] ; try apply Pnil ;
+  apply Pcons ; try apply Pnil ; intros H ; exact H.
+Qed.
+
 End Convert.
 
 Inductive TG :=
@@ -506,9 +558,11 @@ Definition transform_goal_once t g :=
   | TGneg f _ => transform_goal_neg f g
   | TGpos f _ => transform_goal_pos f g
   | TGbound f _ =>
-    let '(c, g) := g in (map (transform_atom_bound f) c, transform_atom_bound f g)
+    let f' := transform_atom_bound (transform_expr f) in
+    let '(c, g) := g in (map f' c, f' g)
   | TGexpr f _ =>
-    let '(c, g) := g in (map (transform_atom_expr f) c, transform_atom_expr f g)
+    let f' := transform_atom_expr (transform_expr f) in
+    let '(c, g) := g in (map f' c, f' g)
   end.
 
 Theorem transform_goal_once_correct :
@@ -569,6 +623,8 @@ Definition trans :=
   TGexpr remove_inv_func remove_inv_prop ::
   TGexpr gen_float_func gen_float_prop ::
   TGexpr clean_pow_func clean_pow_prop ::
+  TGneg remove_unknown_neg_func remove_unknown_neg_prop ::
+  TGpos remove_unknown_pos_func remove_unknown_pos_prop ::
   nil.
 
 Declare ML Module "gappatac".
