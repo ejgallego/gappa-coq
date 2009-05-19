@@ -108,15 +108,18 @@ Inductive RExpr :=
   | reINR : positive -> RExpr
   | reApply : positive -> RExpr -> RExpr.
 
+Scheme Equality for positive.
+Scheme Equality for Z.
+Scheme Equality for UnaryOp.
+Scheme Equality for BinaryOp.
+Scheme Equality for RExpr.
+
 (* represent an atomic proposition *)
 Inductive RAtom :=
   | raBound : option RExpr -> RExpr -> option RExpr -> RAtom
   | raLe : RExpr -> RExpr -> RAtom
   | raEq : RExpr -> RExpr -> RAtom
   | raFalse : RAtom.
-
-(* represent a complete proposition *)
-Definition RGoal := (list RAtom * RAtom)%type.
 
 Section Convert.
 
@@ -158,7 +161,7 @@ Fixpoint convert_expr (t : RExpr) : R :=
 (* convert to an atomic proposition *)
 Definition convert_atom (a : RAtom) : Prop :=
   match a with
-  | raBound None _ None => False
+  | raBound None _ None => True
   | raBound (Some l) e None => (convert_expr l <= convert_expr e)%R
   | raBound None e (Some u) => (convert_expr e <= convert_expr u)%R
   | raBound (Some l) e (Some u) => (convert_expr l <= convert_expr e <= convert_expr u)%R
@@ -167,11 +170,23 @@ Definition convert_atom (a : RAtom) : Prop :=
   | raFalse => contradiction
   end.
 
-(* convert to a complete proposition *)
-Definition convert_goal (g : RGoal) : Prop :=
-  fold_right (fun a (r : Prop) => convert_atom a -> r) (convert_atom (snd g)) (fst g).
+Section ConvertGoal.
 
-Section RecursiveTransform.
+Variable gc : RAtom.
+
+(* convert to a complete proposition *)
+Fixpoint convert_goal_aux gh : Prop :=
+  match gh with
+  | h :: gh => convert_atom h -> convert_goal_aux gh
+  | nil => convert_atom gc
+  end.
+
+End ConvertGoal.
+
+Definition convert_goal g :=
+  let '(gh, gc) := g in convert_goal_aux gc gh.
+
+Section StableExpr.
 
 Definition stable_expr f :=
   forall t, convert_expr (f t) = convert_expr t.
@@ -200,27 +215,33 @@ now rewrite IHt1, IHt2.
 now rewrite IHt.
 Qed.
 
+End StableExpr.
+
+Section StableAtomNeg.
+
 Definition stable_atom_neg f :=
   forall a, list_prop _ (fun b => convert_atom a -> convert_atom b) (f a).
 
 Variable chg_atom_neg : RAtom -> list RAtom.
 
-Definition transform_goal_neg (g : RGoal) :=
-  let '(c, g) := g in (fold_right (fun a r => chg_atom_neg a ++ r) nil c, g).
+Fixpoint transform_goal_neg gh :=
+  match gh with
+  | h :: gh => chg_atom_neg h ++ (transform_goal_neg gh)
+  | nil => nil
+  end.
 
 Theorem transform_goal_neg_correct :
   stable_atom_neg chg_atom_neg ->
-  forall g, convert_goal (transform_goal_neg g) -> convert_goal g.
+  forall gh gc, convert_goal_aux gc (transform_goal_neg gh) -> convert_goal_aux gc gh.
 Proof.
-intros Hn (c, g).
-simpl.
-induction c.
+intros Hn gh gc.
+induction gh.
 easy.
+simpl.
 intros H1 H2.
-apply IHc.
-clear IHc.
+apply IHgh.
+clear IHgh.
 specialize (Hn a).
-simpl in H1.
 induction (chg_atom_neg a).
 exact H1.
 inversion_clear Hn.
@@ -230,28 +251,13 @@ apply H1.
 now apply H.
 Qed.
 
+End StableAtomNeg.
+
 Definition stable_atom_pos f :=
   forall a, convert_atom (f a) -> convert_atom a.
 
-Variable chg_atom_pos : RAtom -> RAtom.
-
-Definition transform_goal_pos (g : RGoal) :=
-  let '(c, g) := g in (c, chg_atom_pos g).
-
-Theorem transform_goal_pos_correct :
-  stable_atom_pos chg_atom_pos ->
-  forall g, convert_goal (transform_goal_pos g) -> convert_goal g.
-Proof.
-intros Hp (c, g).
-simpl.
-induction c.
-exact (Hp g).
-intros H1 H2.
-apply IHc.
-now apply H1.
-Qed.
-
-End RecursiveTransform.
+Definition stable_goal f :=
+  forall gh gc, convert_goal (f gh gc) -> convert_goal (gh, gc).
 
 Definition transform_atom_bound f a :=
   match a with
@@ -545,49 +551,232 @@ destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|fl xl] ; try apply Pnil
   apply Pcons ; try apply Pnil ; intros H ; exact H.
 Qed.
 
+Definition Gmax_lower x y :=
+  match x, y with
+  | None, _ => Some y
+  | _, None => Some x
+  | Some (reFloat2 xm xe as x'), Some (reFloat2 ym ye as y') =>
+    Some (Some (if Gappa_dyadic.Fle2 (Float2 xm xe) (Float2 ym ye) then y' else x'))
+  | _, _ => None
+  end.
+
+Definition Gmin_upper x y :=
+  match x, y with
+  | None, _ => Some y
+  | _, None => Some x
+  | Some (reFloat2 xm xe as x'), Some (reFloat2 ym ye as y') =>
+    Some (Some (if Gappa_dyadic.Fle2 (Float2 xm xe) (Float2 ym ye) then x' else y'))
+  | _, _ => None
+  end.
+
+Lemma Gmax_lower_correct :
+  forall e l1 l2,
+  convert_atom (raBound l1 e None) ->
+  convert_atom (raBound l2 e None) ->
+  match Gmax_lower l1 l2 with
+  | Some l => convert_atom (raBound l e None)
+  | _ => True
+  end.
+Proof.
+intros e l1 l2 H1 H2.
+case_eq (Gmax_lower l1 l2) ; try easy.
+intros o Hl.
+destruct l1 as [l1|] ; simpl in H1 ; try easy.
+destruct l2 as [l2|] ; simpl in H2 ; try easy.
+destruct l1 as [xl1|xl1|xl1 yl1|xl1 yl1|ol1 xl1|ol1 xl1 yl1|xl1|xl1|xl1|fl1 xl1] ; try discriminate Hl.
+destruct l2 as [xl2|xl2|xl2 yl2|xl2 yl2|ol2 xl2|ol2 xl2 yl2|xl2|xl2|xl2|fl2 xl2] ; try discriminate Hl.
+inversion_clear Hl.
+now destruct (Gappa_dyadic.Fle2_spec (Float2 xl1 yl1) (Float2 xl2 yl2)).
+destruct l1 as [xl1|xl1|xl1 yl1|xl1 yl1|ol1 xl1|ol1 xl1 yl1|xl1|xl1|xl1|fl1 xl1] ; now inversion_clear Hl.
+revert H2.
+now inversion_clear Hl.
+Qed.
+
+Lemma Gmin_upper_correct :
+  forall e u1 u2,
+  convert_atom (raBound None e u1) ->
+  convert_atom (raBound None e u2) ->
+  match Gmin_upper u1 u2 with
+  | Some u => convert_atom (raBound None e u)
+  | _ => True
+  end.
+Proof.
+intros e u1 u2 H1 H2.
+case_eq (Gmin_upper u1 u2) ; try easy.
+intros o Hu.
+destruct u1 as [u1|] ; simpl in H1 ; try easy.
+destruct u2 as [u2|] ; simpl in H2 ; try easy.
+destruct u1 as [xu1|xu1|xu1 yu1|xu1 yu1|ou1 xu1|ou1 xu1 yu1|xu1|xu1|xu1|fu1 xu1] ; try discriminate Hu.
+destruct u2 as [xu2|xu2|xu2 yu2|xu2 yu2|ou2 xu2|ou2 xu2 yu2|xu2|xu2|xu2|fu2 xu2] ; try discriminate Hu.
+inversion_clear Hu.
+now destruct (Gappa_dyadic.Fle2_spec (Float2 xu1 yu1) (Float2 xu2 yu2)).
+destruct u1 as [xu1|xu1|xu1 yu1|xu1 yu1|ou1 xu1|ou1 xu1 yu1|xu1|xu1|xu1|fu1 xu1] ; now inversion_clear Hu.
+revert H2.
+now inversion_clear Hu.
+Qed.
+
+Lemma raBound_split :
+  forall e l u,
+  convert_atom (raBound l e u) <->
+  convert_atom (raBound l e None) /\ convert_atom (raBound None e u).
+Proof.
+intros e [l|] [u|] ; split ; (intros (H1,H2) || intros H) ; try split ; easy.
+Qed.
+
+Lemma Gminmax_correct :
+  forall e l1 u1 l2 u2,
+  convert_atom (raBound l1 e u1) ->
+  convert_atom (raBound l2 e u2) ->
+  match Gmax_lower l1 l2, Gmin_upper u1 u2 with
+  | Some l, Some u => convert_atom (raBound l e u)
+  | _, _ => True
+  end.
+Proof.
+intros e l1 u1 l2 u2 H1 H2.
+destruct (proj1 (raBound_split _ _ _) H1) as (H1l,H1u).
+destruct (proj1 (raBound_split _ _ _) H2) as (H2l,H2u).
+generalize (Gmax_lower_correct _ _ _ H1l H2l).
+destruct (Gmax_lower l1 l2) as [l|] ; try easy.
+intros Hl.
+generalize (Gmin_upper_correct _ _ _ H1u H2u).
+destruct (Gmin_upper u1 u2) as [u|] ; try easy.
+intros Hu.
+apply <- raBound_split ; now split.
+Qed.
+
+Section MergeHypsFunc1.
+
+Variable e : RExpr.
+Variable l u : option RExpr.
+
+Fixpoint merge_hyps_func_aux1 gh :=
+  match gh with
+  | nil => raBound l e u :: nil
+  | raBound l' e' u' as h' :: gh =>
+    if RExpr_beq e e' then
+      match Gmax_lower l l', Gmin_upper u u' with
+      | Some l'', Some u'' => raBound l'' e' u'' :: gh
+      | _, _ => h' :: merge_hyps_func_aux1 gh
+      end
+    else h' :: merge_hyps_func_aux1 gh
+  | h' :: gh => h' :: merge_hyps_func_aux1 gh
+  end.
+
+Lemma merge_hyps_func_aux1_correct :
+  forall gh gc,
+  convert_goal_aux gc (merge_hyps_func_aux1 gh) -> convert_goal_aux gc (raBound l e u :: gh).
+Proof.
+intros gh gc.
+induction gh.
+easy.
+intros H H1 H2.
+change (convert_goal_aux gc gh).
+destruct a as [l' v u'|v w|v w|] ; try (apply IHgh ; try apply H ; easy).
+simpl in H.
+case_eq (RExpr_beq e v) ; intros H3 ; rewrite H3 in H.
+rewrite (RExpr_dec_bl _ _ H3) in H1, IHgh.
+generalize (Gminmax_correct _ _ _ _ _ H1 H2).
+destruct (Gmax_lower l l') as [l''|].
+destruct (Gmin_upper u u') as [u''|].
+intros H4.
+now apply H.
+intros _.
+apply IHgh.
+now apply H.
+easy.
+intros _.
+apply IHgh.
+now apply H.
+easy.
+apply IHgh.
+now apply H.
+easy.
+Qed.
+
+End MergeHypsFunc1.
+
+Fixpoint merge_hyps_func_aux2 gh :=
+  match gh with
+  | raBound l e u :: gh => (merge_hyps_func_aux1 e l u gh)
+  | h :: gh => h :: merge_hyps_func_aux2 gh
+  | nil => nil
+  end.
+
+Lemma merge_hyps_func_aux2_correct :
+  forall gh gc,
+  convert_goal_aux gc (merge_hyps_func_aux2 gh) -> convert_goal_aux gc gh.
+Proof.
+intros gh gc.
+induction gh.
+easy.
+intros H1 H2.
+change (convert_goal_aux gc gh).
+destruct a as [l' v u'|v w|v w|] ; try (apply IHgh ; apply H1 ; apply H2).
+simpl in H1.
+now apply (merge_hyps_func_aux1_correct v l' u' gh gc).
+Qed.
+
+Definition merge_hyps_func gh (gc : RAtom) :=
+  (merge_hyps_func_aux2 gh, gc).
+
+Lemma merge_hyps_prop :
+  stable_goal merge_hyps_func.
+Proof.
+intros gh gc.
+unfold merge_hyps_func.
+apply merge_hyps_func_aux2_correct.
+Qed.
+
 End Convert.
 
 Inductive TG :=
+  | TGall f : (forall uv uf, stable_goal uv uf f) -> TG
   | TGneg (f : RAtom -> list RAtom) : (forall uv uf, stable_atom_neg uv uf f) -> TG
   | TGpos (f : RAtom -> RAtom) : (forall uv uf, stable_atom_pos uv uf f) -> TG
   | TGbound (f : RExpr -> RExpr) : (forall uv uf, stable_expr uv uf f) -> TG
   | TGexpr (f : RExpr -> RExpr) : (forall uv uf, stable_expr uv uf f) -> TG.
 
 Definition transform_goal_once t g :=
+  let '(gh, gc) := g in
   match t with
-  | TGneg f _ => transform_goal_neg f g
-  | TGpos f _ => transform_goal_pos f g
+  | TGall f _ => f gh gc
+  | TGneg f _ => (transform_goal_neg f gh, gc)
+  | TGpos f _ => (gh, f gc)
   | TGbound f _ =>
     let f' := transform_atom_bound (transform_expr f) in
-    let '(c, g) := g in (map f' c, f' g)
+    (map f' gh, f' gc)
   | TGexpr f _ =>
     let f' := transform_atom_expr (transform_expr f) in
-    let '(c, g) := g in (map f' c, f' g)
+    (map f' gh, f' gc)
   end.
 
 Theorem transform_goal_once_correct :
   forall uv uf t g,
-  convert_goal uv uf (transform_goal_once t g) -> convert_goal uv uf g.
+  convert_goal uv uf (transform_goal_once t g) ->
+  convert_goal uv uf g.
 Proof.
-intros uv uf [f Hf|f Hf|f Hf|f Hf] (c, g) ; simpl.
+intros uv uf [f Hf|f Hf|f Hf|f Hf|f Hf] (gh, gc) ; simpl.
+intros H.
+now apply Hf.
 intros H.
 now apply transform_goal_neg_correct with f.
-intros H.
-now apply transform_goal_pos_correct with f.
-induction c.
-unfold convert_goal. simpl.
-now apply -> transform_atom_bound_correct.
-unfold convert_goal. simpl.
+induction gh.
+apply Hf.
 intros H1 H2.
-apply IHc.
+apply IHgh.
+now apply H1.
+induction gh.
+intros H.
+now apply -> (transform_atom_bound_correct uv uf f).
+intros H1 H2.
+apply IHgh.
 apply H1.
 now apply <- transform_atom_bound_correct.
-induction c.
-unfold convert_goal. simpl.
-now apply -> transform_atom_expr_correct.
-unfold convert_goal. simpl.
+induction gh.
+intros H.
+now apply -> (transform_atom_expr_correct uv uf f).
 intros H1 H2.
-apply IHc.
+apply IHgh.
 apply H1.
 now apply <- transform_atom_expr_correct.
 Qed.
@@ -625,6 +814,7 @@ Definition trans :=
   TGexpr clean_pow_func clean_pow_prop ::
   TGneg remove_unknown_neg_func remove_unknown_neg_prop ::
   TGpos remove_unknown_pos_func remove_unknown_pos_prop ::
+  TGall merge_hyps_func merge_hyps_prop ::
   nil.
 
 Declare ML Module "gappatac".

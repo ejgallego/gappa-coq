@@ -309,6 +309,27 @@ rewrite H in Hb.
 discriminate Hb.
 Qed.
 
+Inductive Fle2_prop (x y : float2) : bool -> Prop :=
+  | Fle2_true : (x <= y)%R -> Fle2_prop x y true
+  | Fle2_false : (y < x)%R -> Fle2_prop x y false.
+
+Lemma Fle2_spec :
+  forall x y, Fle2_prop x y (Fle2 x y).
+Proof.
+intros x y.
+case_eq (Fle2 x y) ; intros H.
+apply Fle2_true.
+apply Fle2_correct.
+exact H.
+generalize H. clear H.
+unfold Fle2.
+case_eq (Fcomp2 x y) ; try (intros ; discriminate).
+intros H _.
+apply Fle2_false.
+apply Fcomp2_Gt.
+exact H.
+Qed.
+
 Definition Fis0 (x : float2) :=
  match (Fnum x) with
    Z0 => true
