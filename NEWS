@@ -2,6 +2,7 @@ Version 0.12:
  - imported the OCaml code of the gappa tactic in the library
    (support requires Coq 8.2, OCaml 3.11, and Gappa 0.12.0)
  - fixed incompatibility between the tactic and glob dumping
+ - improved tactic with respect to redundant or contradictory hypotheses
 
 Version 0.11:
  - added support for Gappa 0.11.0
