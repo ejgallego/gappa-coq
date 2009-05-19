@@ -167,7 +167,7 @@ Definition convert_atom (a : RAtom) : Prop :=
   | raBound (Some l) e (Some u) => (convert_expr l <= convert_expr e <= convert_expr u)%R
   | raLe x y => (convert_expr x <= convert_expr y)%R
   | raEq x y => (convert_expr x = convert_expr y)%R
-  | raFalse => contradiction
+  | raFalse => False
   end.
 
 Section ConvertGoal.
@@ -519,9 +519,9 @@ Lemma remove_unknown_pos_prop :
   stable_atom_pos remove_unknown_pos_func.
 Proof.
 unfold remove_unknown_pos_func.
-intros [[l|] v [u|]|v w|v w|] ; try (apply Pcons ; try apply Pnil ; intros H ; exact H) ; try (intros H ; apply H).
+intros [[l|] v [u|]|v w|v w|] ; try (apply Pcons ; try apply Pnil ; intros H ; exact H) ; try easy.
 destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|fl xl] ; try (intros H ; apply H) ;
-  destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|fu xu] ; intros H ; apply H.
+  destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|fu xu] ; easy.
 Qed.
 
 Definition remove_unknown_neg_func a :=
@@ -725,6 +725,18 @@ Proof.
 intros gh gc.
 unfold merge_hyps_func.
 apply merge_hyps_func_aux2_correct.
+Qed.
+
+Theorem contradict_goal :
+  forall gh gc,
+  convert_goal_aux raFalse gh -> convert_goal (gh, gc).
+Proof.
+intros gh gc.
+induction gh.
+easy.
+intros H1 H2.
+apply IHgh.
+now apply H1.
 Qed.
 
 End Convert.

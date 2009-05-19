@@ -101,11 +101,12 @@ let call_gappa c_of_s hl p =
   if out <> 0 then raise GappaFailed;
   remove_file gappa_in;
   let cin = open_in gappa_out in
-  let nb_hyp = Scanf.sscanf (input_line cin) "(* %d *)" (fun i -> i) in
+  let format = Scanf.sscanf (input_line cin) "(* %d%s *)"
+    (fun i s -> (i, s = ",contradiction")) in
   let constr = c_of_s (Stream.of_channel cin) in
   close_in cin;
   remove_file gappa_out;
-  (constr, nb_hyp)
+  (constr, format)
 
 (* 2. coq -> gappa translation *)
 
@@ -131,6 +132,7 @@ let coq_modules =
 
 let constant = gen_constant_in_modules "gappa" coq_modules
 
+let coq_False = lazy (constant "False")
 let coq_eq = lazy (constant "eq")
 let coq_refl_equal = lazy (constant "refl_equal")
 
@@ -161,6 +163,7 @@ let coq_cons = lazy (constant "cons")
 let coq_nil = lazy (constant "nil")
 
 let coq_convert_goal = lazy (constant "convert_goal")
+let coq_contradict_goal = lazy (constant "contradict_goal")
 
 let coq_RAtom = lazy (constant "RAtom")
 let coq_raBound = lazy (constant "raBound")
@@ -584,23 +587,30 @@ let var_name = function
   | Anonymous -> 
       assert false
 
-let build_proof_term c nb_hyp =
+let build_proof_term c nb_hyp contra =
   let bl, _ = decompose_lam c in
   let pf = List.fold_right (fun (x,t) pf -> mkApp (pf, [| var_name x |])) bl c in
   let rec aux n pf =
     if n > 0 then aux (n - 1) (mkApp (pf, [| mk_new_meta () |])) else pf
     in
-  aux nb_hyp pf
+  let pf = aux nb_hyp pf in
+  if contra then mkApp (pf, [| Lazy.force coq_False |])
+  else pf
 
 let gappa_internal gl =
   try
     let (h, g) = tr_goal (pf_concl gl) in
-    let ((emap, pf), nb_hyp) = call_gappa (constr_of_stream gl) h g in
+    let ((emap, pf), (nb_hyp, contra)) = call_gappa (constr_of_stream gl) h g in
     let pf = evars_to_vmcast (project gl) (emap, pf) in
-    let pf = build_proof_term pf nb_hyp in
+    let pf = build_proof_term pf nb_hyp contra in
     Tacticals.tclTHEN
-      (Tacticals.tclMAP (fun _ -> Tactics.introf) h)
-      (Tacticals.tclTHEN (Tacmach.refine_no_check pf) Tactics.assumption) gl
+      (if contra then
+         Tactics.apply (Lazy.force coq_contradict_goal)
+       else
+         Tacticals.tclIDTAC)
+      (Tacticals.tclTHEN
+        (Tacticals.tclMAP (fun _ -> Tactics.introf) h)
+        (Tacticals.tclTHEN (Tacmach.refine_no_check pf) Tactics.assumption)) gl
   with 
     | NotGappa -> error "not a gappa goal"
     | GappaFailed -> error "gappa failed"
