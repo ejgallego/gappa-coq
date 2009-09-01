@@ -67,7 +67,7 @@ destruct (rexp_case_real _ (good_shift p d) _ H) as [(k0,(H0,H1))|(e,(m,(H0,H1))
 (* *)
 assert (k0 = -d)%Z.
 unfold float_shift in H0.
-destruct (Zmax_irreducible_inf (k0 - Zpos p) (-d)).
+destruct (Zmax_irreducible_inf (k0 - Zpos p) (-d)) as [H2|H2].
 generalize (Zgt_pos_0 p).
 omega.
 rewrite H0 in H2.
