@@ -652,10 +652,14 @@ let gappa_quote gl =
   with
     | NotGappa -> error "something wrong happened"
 
-let _ =
-  Tacinterp.overwriting_add_tactic "Gappa" (fun _ -> gappa);
-  Tacinterp.overwriting_add_tactic "Gappa_internal" (fun _ -> gappa_internal);
-  Tacinterp.overwriting_add_tactic "Gappa_quote" (fun _ -> gappa_quote);
-  Egrammar.extend_tactic_grammar "Gappa" [[Egrammar.TacTerm "gappa"]];
-  Egrammar.extend_tactic_grammar "Gappa_internal" [[Egrammar.TacTerm "gappa_internal"]];
-  Egrammar.extend_tactic_grammar "Gappa_quote" [[Egrammar.TacTerm "gappa_quote"]]
+TACTIC EXTEND gappatac_gappa
+| [ "gappa" ] -> [ gappa ]
+END
+
+TACTIC EXTEND gappatac_gappa_internal
+| [ "gappa_internal" ] -> [ gappa_internal ]
+END
+
+TACTIC EXTEND gappatac_gappa_quote
+| [ "gappa_quote" ] -> [ gappa_quote ]
+END

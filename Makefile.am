@@ -41,7 +41,9 @@ datadir = $(libdir)
 
 SUFFIXES = .v .vo .vd
 
-COQSUBTREES = kernel lib interp parsing proofs pretyping tactics library
+COQSUBTREES = kernel lib interp parsing proofs pretyping tactics library toplevel
+
+PP = -pp "$(CAMLP4)o $(COQLIBS)/parsing/grammar.cma"
 
 Gappa_tactic_plugin.vo: Gappa_tactic_plugin.v $(TACTIC_TARGETS)
 	@echo COQC $<
@@ -63,10 +65,10 @@ Gappa_tactic.v: $(TACTIC_DEFAULT)
 
 gappatac.cmo: gappatac.ml
 	@echo OCAMLC $<
-	@$(OCAMLC) -rectypes $(COQSUBTREES:%=-I $(COQLIBS)/%) $< -c -o $@
+	@$(OCAMLC) $(PP) -rectypes $(COQSUBTREES:%=-I $(COQLIBS)/%) $< -c -o $@
 
 gappatac.cmxs: gappatac.ml
 	@echo OCAMLOPT $<
-	@$(OCAMLOPT) -shared -rectypes $(COQSUBTREES:%=-I $(COQLIBS)/%) $< -o $@
+	@$(OCAMLOPT) $(PP) -shared -rectypes $(COQSUBTREES:%=-I $(COQLIBS)/%) $< -o $@
 
 -include $(FILES:=d) Gappa_tactic.vd

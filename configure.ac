@@ -41,6 +41,9 @@ AC_PATH_TOOL(COQDEP, coqdep)
 AC_ARG_VAR(OCAMLC, [OCaml compiler command [ocamlc]])
 AC_PATH_TOOL(OCAMLC, ocamlc)
 
+AC_ARG_VAR(CAMLP4, [OCaml preprocessor [camlp5]])
+AC_PATH_TOOL(CAMLP4, camlp5)
+
 AC_ARG_VAR(OCAMLOPT, [OCaml compiler command [ocamlopt]])
 AC_CACHE_CHECK([for ocamlopt >= 3.11], [gappa_cv_ocamlopt], [
   if test "$OCAMLOPT"; then
