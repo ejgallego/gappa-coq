@@ -1,5 +1,5 @@
-Require Import Gappa_integer.
 Require Import Gappa_common.
+Require Import Gappa_integer.
 
 Section Gappa_decimal.
 
