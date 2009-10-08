@@ -5,7 +5,12 @@ aclocal.m4
 autom4te.cache
 Makefile.in
 Makefile
+missing
+install-sh
+ChangeLog
+*.o
 *.vo
 *.vd
 *.glob
 *.cm?*
+Gappa_tactic.v
