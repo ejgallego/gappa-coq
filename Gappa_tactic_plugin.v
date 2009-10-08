@@ -183,8 +183,11 @@ Fixpoint convert_goal_aux gh : Prop :=
 
 End ConvertGoal.
 
+Inductive RData :=
+  | rdAll (gh : list RAtom) (gc : RAtom) (rl : list RExpr) : RData.
+
 Definition convert_goal g :=
-  let '(gh, gc) := g in convert_goal_aux gc gh.
+  let '(rdAll gh gc _) := g in convert_goal_aux gc gh.
 
 Section StableExpr.
 
@@ -257,7 +260,7 @@ Definition stable_atom_pos f :=
   forall a, convert_atom (f a) -> convert_atom a.
 
 Definition stable_goal f :=
-  forall gh gc, convert_goal (f gh gc) -> convert_goal (gh, gc).
+  forall gh gc rl, convert_goal (f gh gc rl) -> convert_goal (rdAll gh gc rl).
 
 Definition transform_atom_bound f a :=
   match a with
@@ -716,22 +719,22 @@ simpl in H1.
 now apply (merge_hyps_func_aux1_correct v l' u' gh gc).
 Qed.
 
-Definition merge_hyps_func gh (gc : RAtom) :=
-  (merge_hyps_func_aux2 gh, gc).
+Definition merge_hyps_func gh gc rl :=
+  rdAll (merge_hyps_func_aux2 gh) gc rl.
 
 Lemma merge_hyps_prop :
   stable_goal merge_hyps_func.
 Proof.
-intros gh gc.
+intros gh gc rl.
 unfold merge_hyps_func.
 apply merge_hyps_func_aux2_correct.
 Qed.
 
 Theorem contradict_goal :
-  forall gh gc,
-  convert_goal_aux raFalse gh -> convert_goal (gh, gc).
+  forall gh gc rl,
+  convert_goal_aux raFalse gh -> convert_goal (rdAll gh gc rl).
 Proof.
-intros gh gc.
+intros gh gc rl.
 induction gh.
 easy.
 intros H1 H2.
@@ -749,17 +752,17 @@ Inductive TG :=
   | TGexpr (f : RExpr -> RExpr) : (forall uv uf, stable_expr uv uf f) -> TG.
 
 Definition transform_goal_once t g :=
-  let '(gh, gc) := g in
+  let '(rdAll gh gc rl) := g in
   match t with
-  | TGall f _ => f gh gc
-  | TGneg f _ => (transform_goal_neg f gh, gc)
-  | TGpos f _ => (gh, f gc)
+  | TGall f _ => f gh gc rl
+  | TGneg f _ => rdAll (transform_goal_neg f gh) gc rl
+  | TGpos f _ => rdAll gh (f gc) rl
   | TGbound f _ =>
     let f' := transform_atom_bound (transform_expr f) in
-    (map f' gh, f' gc)
+    rdAll (map f' gh) (f' gc) rl
   | TGexpr f _ =>
     let f' := transform_atom_expr (transform_expr f) in
-    (map f' gh, f' gc)
+    rdAll (map f' gh) (f' gc) (map f rl)
   end.
 
 Theorem transform_goal_once_correct :
@@ -767,12 +770,13 @@ Theorem transform_goal_once_correct :
   convert_goal uv uf (transform_goal_once t g) ->
   convert_goal uv uf g.
 Proof.
-intros uv uf [f Hf|f Hf|f Hf|f Hf|f Hf] (gh, gc) ; simpl.
+intros uv uf [f Hf|f Hf|f Hf|f Hf|f Hf] (gh, gc, rl).
 intros H.
 now apply Hf.
 intros H.
 now apply transform_goal_neg_correct with f.
 induction gh.
+simpl.
 apply Hf.
 intros H1 H2.
 apply IHgh.
@@ -831,9 +835,10 @@ Definition trans :=
 
 Declare ML Module "gappatac".
 
-Ltac gappa_prepare :=
-  intros ; subst ;
-  gappa_quote ;
+Ltac gappa_prepare1 :=
+  intros ; subst.
+
+Ltac gappa_prepare2 :=
   let convert_apply t :=
     match goal with
     | |- (convert_goal ?uv ?uf ?g) => t uv uf g

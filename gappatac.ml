@@ -87,13 +87,20 @@ let remove_file f = if not !debug then try Sys.remove f with _ -> ()
 exception GappaFailed
 exception GappaProofFailed
 
-let call_gappa c_of_s hl p =
+let call_gappa c_of_s hl p bl =
   let gappa_in = temp_file "gappa_input" in
   let c = open_out gappa_in in
   let fmt = formatter_of_out_channel c in
   fprintf fmt "@[{ "; 
   List.iter (fun h -> fprintf fmt "%a ->@ " print_pred h) hl;
   fprintf fmt "%a }@]@." print_pred p;
+  begin match bl, p with
+    | [], _ -> ()
+    | h :: tl, Pin (gt, _, _) ->
+        fprintf fmt "@[%a $ %a" print_term gt print_term h;
+        List.iter (fun t -> fprintf fmt ", %a" print_term t) tl;
+        fprintf fmt ";@]@."
+  end;
   close_out c;
   let gappa_out = temp_file "gappa_output" in
   let cmd = sprintf "gappa -Bcoq-lambda %s > %s 2> /dev/null" gappa_in gappa_out in
@@ -165,6 +172,8 @@ let coq_nil = lazy (constant "nil")
 let coq_convert_goal = lazy (constant "convert_goal")
 let coq_contradict_goal = lazy (constant "contradict_goal")
 
+let coq_rdAll = lazy (constant "rdAll")
+
 let coq_RAtom = lazy (constant "RAtom")
 let coq_raBound = lazy (constant "raBound")
 let coq_raEq = lazy (constant "raEq")
@@ -217,6 +226,9 @@ let var_list = ref []
 let fun_list = ref []
 
 let mkLApp f v = mkApp (Lazy.force f, v)
+
+let mkList t =
+  List.fold_left (fun acc v -> mkLApp coq_cons [|t; v; acc|]) (mkLApp coq_nil [|t|])
 
 let rec mk_pos n =
   if n = 1 then Lazy.force coq_xH
@@ -521,30 +533,27 @@ let tr_var c = match kind_of_term c with
   | Var x -> string_of_id x
   | _ -> raise NotGappa
 
-let rec tr_vars c =
-  match decompose_app c with
-    | _, [_;h;t] -> tr_var h :: tr_vars t
-    | _, [_] -> []
-    | _ -> raise NotGappa
-
 let tr_fun c =
   match decompose_app c with
     | c, [a] when c = Lazy.force coq_gappa_rounding -> tr_rounding_mode a
     | _ -> raise NotGappa
 
-let rec tr_funs c =
-  match decompose_app c with
-    | _, [_;h;t] -> tr_fun h :: tr_funs t
-    | _, [_] -> []
-    | _ -> raise NotGappa
+let tr_list f =
+  let rec aux c =
+    match decompose_app c with
+      | _, [_;h;t] -> f h :: aux t
+      | _, [_] -> []
+      | _ -> raise NotGappa
+    in
+  aux
 
 let tr_goal c =
   match decompose_app c with
     | c, [uv;uf;e] when c = Lazy.force coq_convert_goal ->
-        let uv = Array.of_list (tr_vars uv) in
-        let uf = Array.of_list (tr_funs uf) in
+        let uv = Array.of_list (tr_list tr_var uv) in
+        let uf = Array.of_list (tr_list tr_fun uf) in
         begin match decompose_app e with
-          | _, [_;_;h;g] -> (tr_hyps uv uf h, tr_pred uv uf g)
+          | _, [h;g;rl] -> (tr_hyps uv uf h, tr_pred uv uf g, tr_list (tr_term uv uf) rl)
           | _ -> raise NotGappa
         end
     | _ -> raise NotGappa
@@ -599,8 +608,8 @@ let build_proof_term c nb_hyp contra =
 
 let gappa_internal gl =
   try
-    let (h, g) = tr_goal (pf_concl gl) in
-    let ((emap, pf), (nb_hyp, contra)) = call_gappa (constr_of_stream gl) h g in
+    let (h, g, rl) = tr_goal (pf_concl gl) in
+    let ((emap, pf), (nb_hyp, contra)) = call_gappa (constr_of_stream gl) h g rl in
     let pf = evars_to_vmcast (project gl) (emap, pf) in
     let pf = build_proof_term pf nb_hyp contra in
     Tacticals.tclTHEN
@@ -616,28 +625,26 @@ let gappa_internal gl =
     | GappaFailed -> error "gappa failed"
     | GappaProofFailed -> error "incorrect gappa proof term"
 
-let gappa_prepare =
-  let id = Ident (dummy_loc, id_of_string "gappa_prepare") in
+let gappa_prepare1 =
+  let id = Ident (dummy_loc, id_of_string "gappa_prepare1") in
   lazy (Tacinterp.interp (Tacexpr.TacArg (Tacexpr.Reference id)))
 
-let gappa gl =
-  Coqlib.check_required_library ["Gappa"; "Gappa_tactic_plugin"];
-  Tactics.tclABSTRACT None (Tacticals.tclTHEN (Lazy.force gappa_prepare) gappa_internal) gl
+let gappa_prepare2 =
+  let id = Ident (dummy_loc, id_of_string "gappa_prepare2") in
+  lazy (Tacinterp.interp (Tacexpr.TacArg (Tacexpr.Reference id)))
 
-let gappa_quote gl =
+let gappa_quote rl gl =
   try
     let l = qt_hyps (pf_hyps_types gl) in
     let _R = Lazy.force coq_R in
     let _RAtom = Lazy.force coq_RAtom in
-    let g = mkLApp coq_pair
-      [|mkLApp coq_list [|_RAtom|]; _RAtom;
-        List.fold_left (fun acc (_, h) -> mkLApp coq_cons [|_RAtom; h; acc|])
-          (mkLApp coq_nil [|_RAtom|]) l;
-        qt_pred (pf_concl gl)|] in
-    let uv = List.fold_left (fun acc t -> mkLApp coq_cons [|_R; t; acc|])
-          (mkLApp coq_nil [|_R|]) !var_list in
-    let uf = List.fold_left (fun acc t -> mkLApp coq_cons [|mkArrow _R _R; t; acc|])
-          (mkLApp coq_nil [|mkArrow _R _R|]) !fun_list in
+    let _RExpr = Lazy.force coq_RExpr in
+    let g = mkLApp coq_rdAll
+      [|mkList _RAtom (List.map (fun (_, h) -> h) l);
+        qt_pred (pf_concl gl);
+        mkList _RExpr (List.rev_map qt_term rl)|] in
+    let uv = mkList _R !var_list in
+    let uf = mkList (mkArrow _R _R) !fun_list in
     let e = mkLApp coq_convert_goal [|uv; uf; g|] in
     (*Pp.msgerrnl (Printer.pr_constr e);*)
     Hashtbl.clear var_table;
@@ -650,10 +657,23 @@ let gappa_quote gl =
         (Tactics.keep []))
       (Tacmach.convert_concl_no_check e DEFAULTcast) gl
   with
-    | NotGappa -> error "something wrong happened"
+    | NotGappa ->
+      Hashtbl.clear var_table;
+      Hashtbl.clear fun_table;
+      var_list := [];
+      fun_list := [];
+      error "something wrong happened"
+
+let gappa rl gl =
+  Coqlib.check_required_library ["Gappa"; "Gappa_tactic_plugin"];
+  Tactics.tclABSTRACT None (Tacticals.tclTHEN
+    (Lazy.force gappa_prepare1) (Tacticals.tclTHEN
+    (gappa_quote rl) (Tacticals.tclTHEN
+    (Lazy.force gappa_prepare2) gappa_internal))) gl
 
 TACTIC EXTEND gappatac_gappa
-| [ "gappa" ] -> [ gappa ]
+| [ "gappa" ] -> [ gappa [] ]
+| [ "gappa" "$" ne_constr_list(l) ] -> [ gappa l ]
 END
 
 TACTIC EXTEND gappatac_gappa_internal
@@ -661,5 +681,5 @@ TACTIC EXTEND gappatac_gappa_internal
 END
 
 TACTIC EXTEND gappatac_gappa_quote
-| [ "gappa_quote" ] -> [ gappa_quote ]
+| [ "gappa_quote" constr_list(l) ] -> [ gappa_quote l ]
 END
