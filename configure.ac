@@ -119,5 +119,5 @@ echo "Module name              $module_name"
 echo "Gappa tactic            $tactic_mode (default: $tactic_default)"
 echo
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile testsuite/Makefile])
 AC_OUTPUT
