@@ -29,7 +29,7 @@ module Constant = struct
   let create (b, m, e) =
     { mantissa = m; base = b; exp = e }
 
-  let of_int x = 
+  let of_int x =
     { mantissa = x; base = 1; exp = zero }
 
   let print fmt x = match x.base with
@@ -91,7 +91,7 @@ let call_gappa c_of_s hl p =
   let gappa_in = temp_file "gappa_input" in
   let c = open_out gappa_in in
   let fmt = formatter_of_out_channel c in
-  fprintf fmt "@[{ "; 
+  fprintf fmt "@[{ ";
   List.iter (fun h -> fprintf fmt "%a ->@ " print_pred h) hl;
   fprintf fmt "%a }@]@." print_pred p;
   close_out c;
@@ -406,7 +406,7 @@ let qt_hyps =
 
 (* translates a closed Coq term p:positive into a bigint *)
 let rec tr_bigpositive p = match kind_of_term p with
-  | Term.Construct _ when p = Lazy.force coq_xH -> 
+  | Term.Construct _ when p = Lazy.force coq_xH ->
       Bigint.one
   | Term.App (f, [|a|]) when f = Lazy.force coq_xI ->
       Bigint.add_1 (Bigint.mult_2 (tr_bigpositive a))
@@ -584,7 +584,7 @@ let var_name = function
       let s = string_of_id id in
       let s = String.sub s 1 (String.length s - 1) in
       mkVar (id_of_string s)
-  | Anonymous -> 
+  | Anonymous ->
       assert false
 
 let build_proof_term c nb_hyp contra =
@@ -611,7 +611,7 @@ let gappa_internal gl =
       (Tacticals.tclTHEN
         (Tacticals.tclMAP (fun _ -> Tactics.introf) h)
         (Tacticals.tclTHEN (Tacmach.refine_no_check pf) Tactics.assumption)) gl
-  with 
+  with
     | NotGappa -> error "not a gappa goal"
     | GappaFailed -> error "gappa failed"
     | GappaProofFailed -> error "incorrect gappa proof term"

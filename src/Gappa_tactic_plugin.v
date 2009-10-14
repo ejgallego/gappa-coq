@@ -843,7 +843,7 @@ Ltac gappa_prepare :=
       match l with
       | (List.cons ?h ?t) => generalize h ; generalize_list t
       | List.nil => clear ; intros
-      end in 
+      end in
     generalize_list uv) ;
   convert_apply ltac:(fun uv uf g => refine (transform_goal_correct trans uv uf g _)) ;
   convert_apply ltac:(fun uv uf g => let g := eval vm_compute in g in change (convert_goal uv uf g)).

@@ -2545,7 +2545,7 @@ exact H.
 Qed.
 
 Lemma round_extension_opp :
- forall rdir : round_dir, forall rexp : Z -> Z, 
+ forall rdir : round_dir, forall rexp : Z -> Z,
  forall Hge : good_rexp rexp, forall x : R,
  (round_extension rdir rexp Hge (-x) = - round_extension
   (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir))
