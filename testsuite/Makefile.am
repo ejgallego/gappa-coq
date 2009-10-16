@@ -12,7 +12,7 @@ check:
 	    (echo "*** $$f exited with error code $${return_code}"; cat output.tmp; echo) >> "$$logfile"; \
 	    echo "$$f exited with error code $${return_code}" >> log.tmp; \
 	  fi; \
-	  rm check_tmp.v output.tmp; \
+	  rm -f check_tmp.v check_tmp.vo check_tmp.glob output.tmp; \
 	done; \
 	nb=$$(cat log.tmp | wc -l); \
 	if [ $$nb -gt 0 ]; then \
