@@ -585,12 +585,15 @@ apply <- change_rel_aux.
 now rewrite Hb in H.
 Qed.
 
-(*
 Definition change_rel_neg_func a :=
   match a with
   | raLe (reUnary uoAbs (reBinary boSub er ex)) (reBinary boMul b (reUnary uoAbs ex')) =>
     if RExpr_beq ex ex' then
-      raRel er ex b :: nil
+      match transform_expr merge_float2_func (transform_expr clean_pow_func
+        (transform_expr gen_float_func (transform_expr remove_inv_func b))) with
+      | reFloat2 (Zpos m) e => raRel er ex (reFloat2 (Zneg m) e) (reFloat2 (Zpos m) e) :: nil
+      | _ => a :: nil
+      end
     else a :: nil
   | _ => a :: nil
   end.
@@ -606,19 +609,28 @@ destruct x as [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try nothing.
 destruct o ; try nothing.
 destruct w as [u|u|u v|u v|o u|o u v|u|u|u|f u] ; try nothing.
 destruct o ; try nothing.
-destruct u as [u|u|m e|u w|o u|o u w|u|u|u|f u] ; try nothing.
-destruct v as [u|u|u v|u v|o u|o u v|u|u|u|f u] ; try nothing.
+destruct v as [v|v|v w|v w|o v|o v w|v|v|v|f v] ; try nothing.
 destruct o ; try nothing.
-case_eq (RExpr_beq y u) ; intros Hb ; almost_nothing.
+case_eq (RExpr_beq y v) ; intros Hb ; try nothing.
+set (w := transform_expr clean_pow_func (transform_expr gen_float_func (transform_expr remove_inv_func u))).
+generalize (transform_expr_correct _ merge_float2_prop w).
+unfold w at 2.
+rewrite (transform_expr_correct _ clean_pow_prop).
+rewrite (transform_expr_correct _ gen_float_prop).
+rewrite (transform_expr_correct _ remove_inv_prop).
+intros H1.
+destruct (transform_expr merge_float2_func w) as [u1|u1|m e|u1 u2|o u1|o u1 u2|u1|u1|u1|f u1] ; try nothing.
+destruct m as [|m|m] ; almost_nothing.
 simpl.
-change (F2R 2 (-m) e) with (float2R (Gappa_dyadic.Fopp2 (Float2 m e))).
+change (F2R 2 (Zneg m) e) with (float2R (Gappa_dyadic.Fopp2 (Float2 (Zpos m) e))).
 rewrite Gappa_dyadic.Fopp2_correct.
 apply -> change_rel_aux.
 split.
-admit.
-now rewrite <- RExpr_dec_bl with (1 := Hb) in H.
+now apply (Gappa_dyadic.Fpos0_correct (Float2 (Zpos m) e)).
+rewrite <- RExpr_dec_bl with (1 := Hb) in H.
+simpl in H1.
+now rewrite H1.
 Qed.
-*)
 
 Definition remove_unknown_pos_func a :=
   match a with
@@ -942,6 +954,7 @@ Qed.
 Definition trans :=
   TGneg change_eq_neg_func change_eq_neg_prop ::
   TGpos change_eq_pos_func change_eq_pos_prop ::
+  TGneg change_rel_neg_func change_rel_neg_prop ::
   TGpos change_rel_pos_func change_rel_pos_prop ::
   TGneg change_abs_neg_func change_abs_neg_prop ::
   TGpos change_abs_pos_func change_abs_pos_prop ::
