@@ -166,7 +166,7 @@ Definition convert_atom (a : RAtom) : Prop :=
   | raBound (Some l) e None => (convert_expr l <= convert_expr e)%R
   | raBound None e (Some u) => (convert_expr e <= convert_expr u)%R
   | raBound (Some l) e (Some u) => (convert_expr l <= convert_expr e <= convert_expr u)%R
-  | raRel er ex l u => exists eps : R, (-1 < convert_expr l)%R /\ (convert_expr l <= eps <= convert_expr u)%R /\ (convert_expr er = convert_expr ex * (1 + eps))%R
+  | raRel er ex l u => exists eps : R, (convert_expr l <= eps <= convert_expr u)%R /\ (convert_expr er = convert_expr ex * (1 + eps))%R
   | raLe x y => (convert_expr x <= convert_expr y)%R
   | raEq x y => (convert_expr x = convert_expr y)%R
   | raFalse => False
@@ -507,7 +507,7 @@ exact H.
 Qed.
 
 Lemma change_rel_aux:
-  forall x y b, (0 <= b < 1 /\Rabs (x - y) <= b * Rabs y)%R <-> (exists eps, -1 < -b /\ -b <= eps <= b /\ x = y * (1 + eps))%R.
+  forall x y b, (0 <= b /\ Rabs (x - y) <= b * Rabs y)%R <-> (exists eps, -b <= eps <= b /\ x = y * (1 + eps))%R.
 Proof.
 intros x y b.
 split.
@@ -515,8 +515,6 @@ split.
 intros (H1, H2).
 destruct (Req_dec y 0) as [Hy|Hy].
 exists R0.
-split.
-now apply Ropp_lt_contravar.
 repeat split.
 rewrite <- Ropp_0.
 now apply Ropp_le_contravar.
@@ -529,8 +527,6 @@ now rewrite Hy, Rminus_0_r, Rabs_R0, Rmult_0_r in H2.
 apply Rabs_pos.
 exists ((x - y) / y)%R.
 split.
-now apply Ropp_lt_contravar.
-split.
 2: now field.
 apply Rabs_def2b.
 apply Rmult_le_reg_l with (Rabs y).
@@ -539,7 +535,7 @@ rewrite <- Rabs_mult.
 replace (y * ((x - y) / y))%R with (x - y)%R by now field.
 now rewrite Rmult_comm.
 (* . *)
-intros (eps, (H1, (H2, H3))).
+intros (eps, (H1, H2)).
 repeat split.
 destruct (Rle_or_lt 0 b) as [H|H] ; try exact H.
 apply Ropp_le_cancel.
@@ -547,8 +543,7 @@ apply Rle_trans with b.
 now apply Rle_trans with eps.
 apply Rlt_le.
 now rewrite Ropp_0.
-now apply Ropp_lt_cancel.
-rewrite H3.
+rewrite H2.
 replace (y * (1 + eps) - y)%R with (eps * y)%R by ring.
 rewrite Rabs_mult.
 apply Rmult_le_compat_r.
@@ -557,7 +552,7 @@ unfold Rabs.
 destruct (Rcase_abs eps) as [H|H].
 apply Ropp_le_cancel.
 now rewrite Ropp_involutive.
-apply H2.
+apply H1.
 Qed.
 
 Definition change_rel_pos_func a :=

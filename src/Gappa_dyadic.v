@@ -437,4 +437,16 @@ apply Rlt_le.
 apply power_radix_pos.
 Qed.
 
+Definition Flt2_m1 f :=
+  Flt2 (Float2 (-1) 0) f.
+
+Lemma Flt2_m1_correct :
+  forall f,
+  Flt2_m1 f = true ->
+  (-1 < f)%R.
+Proof.
+intros f Hb.
+exact (Flt2_correct _ _ Hb).
+Qed.
+
 End Gappa_dyadic.
