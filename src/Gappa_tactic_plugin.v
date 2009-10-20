@@ -431,6 +431,20 @@ destruct o ; try apply refl_equal.
 exact (Rmult_1_l _).
 Qed.
 
+Definition get_float2_bound b := transform_expr merge_float2_func (transform_expr clean_pow_func
+  (transform_expr gen_float_func (transform_expr remove_inv_func b))).
+
+Lemma get_float2_bound_correct :
+  stable_expr get_float2_bound.
+Proof.
+intros b.
+unfold get_float2_bound.
+rewrite (transform_expr_correct _ merge_float2_prop).
+rewrite (transform_expr_correct _ clean_pow_prop).
+rewrite (transform_expr_correct _ gen_float_prop).
+now rewrite (transform_expr_correct _ remove_inv_prop).
+Qed.
+
 Definition change_eq_pos_func a :=
   match a with
   | raEq u v => raBound (Some (reFloat2 0 0)) (reBinary boSub u v) (Some (reFloat2 0 0))
@@ -589,8 +603,7 @@ Definition change_rel_neg_func a :=
   match a with
   | raLe (reUnary uoAbs (reBinary boSub er ex)) (reBinary boMul b (reUnary uoAbs ex')) =>
     if RExpr_beq ex ex' then
-      match transform_expr merge_float2_func (transform_expr clean_pow_func
-        (transform_expr gen_float_func (transform_expr remove_inv_func b))) with
+      match get_float2_bound b with
       | reFloat2 (Zpos m) e => raRel er ex (reFloat2 (Zneg m) e) (reFloat2 (Zpos m) e) :: nil
       | _ => a :: nil
       end
@@ -612,14 +625,8 @@ destruct o ; try nothing.
 destruct v as [v|v|v w|v w|o v|o v w|v|v|v|f v] ; try nothing.
 destruct o ; try nothing.
 case_eq (RExpr_beq y v) ; intros Hb ; try nothing.
-set (w := transform_expr clean_pow_func (transform_expr gen_float_func (transform_expr remove_inv_func u))).
-generalize (transform_expr_correct _ merge_float2_prop w).
-unfold w at 2.
-rewrite (transform_expr_correct _ clean_pow_prop).
-rewrite (transform_expr_correct _ gen_float_prop).
-rewrite (transform_expr_correct _ remove_inv_prop).
-intros H1.
-destruct (transform_expr merge_float2_func w) as [u1|u1|m e|u1 u2|o u1|o u1 u2|u1|u1|u1|f u1] ; try nothing.
+assert (H1 := get_float2_bound_correct u).
+destruct (get_float2_bound u) as [u1|u1|m e|u1 u2|o u1|o u1 u2|u1|u1|u1|f u1] ; try nothing.
 destruct m as [|m|m] ; almost_nothing.
 simpl.
 change (F2R 2 (Zneg m) e) with (float2R (Gappa_dyadic.Fopp2 (Float2 (Zpos m) e))).
