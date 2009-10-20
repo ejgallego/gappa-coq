@@ -1,3 +1,6 @@
+Version 0.13:
+ - added support for REL properties as |r-e| <= b*|e| in the gappa tactic
+
 Version 0.12:
  - imported the OCaml code of the gappa tactic in the library
    (support requires Coq 8.2, OCaml 3.11, and Gappa 0.12.0)
