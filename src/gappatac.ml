@@ -29,7 +29,7 @@ module Constant = struct
   let create (b, m, e) =
     { mantissa = m; base = b; exp = e }
 
-  let of_int x = 
+  let of_int x =
     { mantissa = x; base = 1; exp = zero }
 
   let print fmt x = match x.base with
@@ -55,6 +55,7 @@ type term =
 
 type pred =
   | Pin of term * Constant.t * Constant.t
+  | Prel of term * term * Constant.t * Constant.t
 
 let rec print_term fmt = function
   | Tconst c -> Constant.print fmt c
@@ -80,6 +81,9 @@ let print_pred fmt = function
   | Pin (t, c1, c2) ->
       fprintf fmt "%a in [%a, %a]"
         print_term t Constant.print c1 Constant.print c2
+  | Prel (t1, t2, c1, c2) ->
+      fprintf fmt "%a -/ %a in [%a,%a]"
+        print_term t1 print_term t2 Constant.print c1 Constant.print c2
 
 let temp_file f = if !debug then f else Filename.temp_file f ""
 let remove_file f = if not !debug then try Sys.remove f with _ -> ()
@@ -91,7 +95,7 @@ let call_gappa c_of_s hl p bl =
   let gappa_in = temp_file "gappa_input" in
   let c = open_out gappa_in in
   let fmt = formatter_of_out_channel c in
-  fprintf fmt "@[{ "; 
+  fprintf fmt "@[{ ";
   List.iter (fun h -> fprintf fmt "%a ->@ " print_pred h) hl;
   fprintf fmt "%a }@]@." print_pred p;
   begin match bl, p with
@@ -176,6 +180,7 @@ let coq_rdAll = lazy (constant "rdAll")
 
 let coq_RAtom = lazy (constant "RAtom")
 let coq_raBound = lazy (constant "raBound")
+let coq_raRel = lazy (constant "raRel")
 let coq_raEq = lazy (constant "raEq")
 let coq_raLe = lazy (constant "raLe")
 let coq_raFalse = lazy (constant "raFalse")
@@ -418,7 +423,7 @@ let qt_hyps =
 
 (* translates a closed Coq term p:positive into a bigint *)
 let rec tr_bigpositive p = match kind_of_term p with
-  | Term.Construct _ when p = Lazy.force coq_xH -> 
+  | Term.Construct _ when p = Lazy.force coq_xH ->
       Bigint.one
   | Term.App (f, [|a|]) when f = Lazy.force coq_xI ->
       Bigint.add_1 (Bigint.mult_2 (tr_bigpositive a))
@@ -516,6 +521,8 @@ let tr_pred uv uf c =
               Pin (tr_term uv uf e, tr_const l, tr_const u)
           | _ -> raise NotGappa
         end
+    | c, [er;ex;l;u] when c = Lazy.force coq_raRel ->
+        Prel (tr_term uv uf er, tr_term uv uf ex, tr_const l, tr_const u)
     | c, [] when c = Lazy.force coq_raFalse ->
         let cr i = Constant.create (1, i, Bigint.zero) in
         let c0 = cr Bigint.zero in
@@ -593,7 +600,7 @@ let var_name = function
       let s = string_of_id id in
       let s = String.sub s 1 (String.length s - 1) in
       mkVar (id_of_string s)
-  | Anonymous -> 
+  | Anonymous ->
       assert false
 
 let build_proof_term c nb_hyp contra =
@@ -620,7 +627,7 @@ let gappa_internal gl =
       (Tacticals.tclTHEN
         (Tacticals.tclMAP (fun _ -> Tactics.introf) h)
         (Tacticals.tclTHEN (Tacmach.refine_no_check pf) Tactics.assumption)) gl
-  with 
+  with
     | NotGappa -> error "not a gappa goal"
     | GappaFailed -> error "gappa failed"
     | GappaProofFailed -> error "incorrect gappa proof term"

@@ -1,4 +1,4 @@
-AC_INIT([Coq support library for Gappa], [0.12],
+AC_INIT([Coq support library for Gappa], [0.13],
         [Guillaume Melquiond <guillaume.melquiond@inria.fr>],
         [gappalib-coq])
 AM_INIT_AUTOMAKE
@@ -122,5 +122,5 @@ echo "Module name              $module_name"
 echo "Gappa tactic            $tactic_mode (default: $tactic_default)"
 echo
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile testsuite/Makefile])
 AC_OUTPUT

@@ -16,7 +16,7 @@ Definition BND (x : R) (xi : FF) :=
 Definition ABS (x : R) (xi : FF) :=
  (0 <= lower xi)%R /\ (lower xi <= Rabs x <= upper xi)%R.
 Definition REL (x1 x2 : R) (xi : FF) :=
- exists x : R, (-1 < lower xi)%R /\ (lower xi <= x <= upper xi)%R /\ (x1 = x2 * (1 + x))%R.
+ exists x : R, (lower xi <= x <= upper xi)%R /\ (x1 = x2 * (1 + x))%R.
 Definition FIX (x : R) (n : Z) :=
  exists f : float2, float2R f = x /\ (n <= Fexp f)%Z.
 Definition FLT (x : R) (n : positive) :=

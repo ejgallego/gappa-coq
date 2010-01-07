@@ -250,31 +250,29 @@ exact (conj Hb Hc).
 Qed.
 
 Theorem mul_filq :
- forall a b c : R, forall zi : FF,
- REL b c zi ->
- REL (a * b) (a * c) zi.
-intros a b c zi (ze, (Hz1, (Hz2, Hz3))).
+  forall a b c : R, forall zi : FF,
+  REL b c zi ->
+  REL (a * b) (a * c) zi.
+Proof.
+intros a b c zi (ze, (Hz1, Hz2)).
 exists ze.
 split.
 exact Hz1.
-split.
-exact Hz2.
-rewrite Hz3.
+rewrite Hz2.
 apply sym_eq.
 apply Rmult_assoc.
 Qed.
 
 Theorem mul_firq :
- forall a b c : R, forall zi : FF,
- REL a c zi ->
- REL (a * b) (c * b) zi.
-intros a b c zi (ze, (Hz1, (Hz2, Hz3))).
+  forall a b c : R, forall zi : FF,
+  REL a c zi ->
+  REL (a * b) (c * b) zi.
+Proof.
+intros a b c zi (ze, (Hz1, Hz2)).
 exists ze.
 split.
 exact Hz1.
-split.
-exact Hz2.
-rewrite Hz3.
+rewrite Hz2.
 ring.
 Qed.
 
@@ -432,16 +430,15 @@ exact Hc.
 Qed.
 
 Theorem div_firq :
- forall a b c : R, forall zi : FF,
- REL a c zi ->
- REL (a / b) (c / b) zi.
-intros a b c zi (ze, (Hz1, (Hz2, Hz3))).
+  forall a b c : R, forall zi : FF,
+  REL a c zi ->
+  REL (a / b) (c / b) zi.
+Proof.
+intros a b c zi (ze, (Hz1, Hz2)).
 exists ze.
 split.
 exact Hz1.
-split.
-exact Hz2.
-rewrite Hz3.
+rewrite Hz2.
 unfold Rdiv.
 ring.
 Qed.

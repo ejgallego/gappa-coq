@@ -42,49 +42,50 @@ apply Rle_lt_trans with (1 := proj2 Hz) (2 := H).
 Qed.
 
 Theorem nzr_of_nzr_rel :
- forall z zr : R, forall zi : FF,
- NZR zr ->
- REL z zr zi ->
- NZR z.
-intros z zr zi Hn (ze,(Hz1,(Hz2,Hz3))).
-rewrite Hz3.
-unfold NZR.
+  forall z zr : R, forall zi : FF,
+  NZR zr ->
+  REL z zr zi ->
+  Flt2_m1 (lower zi) = true ->
+  NZR z.
+Proof.
+intros z zr zi Hn (ze,(Hz1,Hz2)) H1.
+apply Flt2_m1_correct in H1.
+rewrite Hz2.
 apply prod_neq_R0.
 exact Hn.
 apply Rgt_not_eq.
-unfold Rgt.
 apply Rlt_le_trans with (1 + lower zi)%R.
-replace R0 with (1 + -1)%R. 2: ring.
+rewrite <- (Rplus_opp_r 1).
 apply Rplus_lt_compat_l.
-exact Hz1.
+exact H1.
 apply Rplus_le_compat_l.
-exact (proj1 Hz2).
+apply Hz1.
 Qed.
 
 Theorem nzr_of_nzr_rel_rev :
- forall z zr : R, forall zi : FF,
- NZR z ->
- REL z zr zi ->
- NZR zr.
-intros z zr zi Hn (ze,(Hz1,(Hz2,Hz3))).
+  forall z zr : R, forall zi : FF,
+  NZR z ->
+  REL z zr zi ->
+  Flt2_m1 (lower zi) = true ->
+  NZR zr.
+Proof.
+intros z zr zi Hn (ze,(Hz1,Hz2)) H1.
 assert (1 + ze <> 0)%R.
 apply Rgt_not_eq.
 unfold Rgt.
 apply Rlt_le_trans with (1 + lower zi)%R.
 replace R0 with (1 + -1)%R. 2: ring.
 apply Rplus_lt_compat_l.
-exact Hz1.
+now apply Flt2_m1_correct.
 apply Rplus_le_compat_l.
-exact (proj1 Hz2).
+apply Hz1.
 replace zr with (z * /(1 + ze))%R.
 unfold NZR.
 apply prod_neq_R0.
 exact Hn.
-apply Rinv_neq_0_compat.
-exact H.
-rewrite Hz3.
-field.
-exact H.
+now apply Rinv_neq_0_compat.
+rewrite Hz2.
+now field.
 Qed.
 
 End Gappa_pred_nzr.
