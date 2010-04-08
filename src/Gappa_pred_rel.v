@@ -144,6 +144,36 @@ now apply Rle_trans with (2 := H3).
 exact Hx2.
 Qed.
 
+Definition intersect_rr0_helper (xf yf : float2) (zi : FF) :=
+  Flt2 xf yf &&
+  Fneg0 (lower zi) &&
+  Fpos0 (upper zi).
+
+Theorem intersect_rr0 :
+  forall z1 z2 : R, forall xi yi zi : FF,
+  REL z1 z2 xi -> REL z1 z2 yi ->
+  intersect_rr0_helper (upper xi) (lower yi) zi = true ->
+  BND z2 zi.
+Proof.
+intros z1 z2 xi yi zi (xe,(Hx1,Hx2)) (ye,(Hy1,Hy2)) Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+apply Flt2_correct in H1.
+apply Fneg0_correct in H2.
+apply Fpos0_correct in H3.
+destruct (Req_dec z2 0) as [Hz|Hz].
+rewrite Hz.
+now split.
+elim (Rle_not_lt xe ye).
+apply Req_le.
+apply Rplus_eq_reg_l with R1.
+apply Rmult_eq_reg_l with (2 := Hz).
+now rewrite <- Hy2.
+apply Rle_lt_trans with (1 := proj2 Hx1).
+apply Rlt_le_trans with (2 := proj1 Hy1).
+exact H1.
+Qed.
+
 Theorem absurd_intersect_rr :
   forall z1 z2 : R, forall xi yi : FF,
   REL z1 z2 xi -> REL z1 z2 yi -> NZR z2 ->
