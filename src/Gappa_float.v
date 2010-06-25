@@ -910,15 +910,12 @@ clear H2 H3 zi.
 apply float_relative_ne_whole.
 exact (Rle_trans _ _ _ H1 Hx).
 field.
-case (Rcase_abs x) ; intro.
-apply Rlt_not_eq with (1 := r).
-rewrite <- (Rabs_right x r).
-apply Rgt_not_eq.
-unfold Rgt.
-apply Rlt_le_trans with (2 := proj1 (proj2 Hx)).
-apply Rlt_le_trans with (2 := H1).
-apply float2_pos_compat.
-exact (refl_equal _).
+intros H.
+apply Rle_not_lt with (1 := H1).
+apply Rle_lt_trans with (Rabs x).
+apply Hx.
+rewrite H, Rabs_R0.
+now apply float2_pos_compat.
 Qed.
 
 Definition rel_of_fix_float_ne_helper (p : positive) (d xn : Z) (zi : FF) :=
