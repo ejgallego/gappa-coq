@@ -4,7 +4,24 @@ Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_integer.
 
+Require Fcore_defs.
+Require Import Fcore_float_prop.
+
 Section Gappa_round_aux.
+
+Definition radix2 := Build_radix 2 (refl_equal true).
+
+Lemma float2_float :
+  forall m e,
+  float2R (Float2 m e) = Fcore_defs.F2R (Fcore_defs.Float radix2 m e).
+Proof.
+intros m e.
+unfold float2R, Fcore_defs.F2R. simpl.
+rewrite F2R_split.
+apply f_equal.
+apply sym_eq.
+apply bpow_powerRZ.
+Qed.
 
 Lemma float2_shift_p1 :
  forall e : Z, forall m : Z,
@@ -29,43 +46,31 @@ apply float2_shift_p1.
 Qed.
 
 Lemma float2_binade_lt :
- forall m1 m2 : Z, forall e : Z,
- (m1 < m2)%Z -> (Float2 m1 e < Float2 m2 e)%R.
+  forall m1 m2 e,
+  (m1 < m2)%Z -> (Float2 m1 e < Float2 m2 e)%R.
+Proof.
 intros m1 m2 e H.
-apply Flt2_correct.
-unfold Flt2, Fcomp2, Fshift2.
-rewrite Zminus_diag.
-unfold Zlt in H.
-simpl.
-rewrite H.
-apply refl_equal.
+do 2 rewrite float2_float.
+now apply F2R_lt_compat.
 Qed.
 
 Lemma float2_binade_le :
- forall m1 m2 : Z, forall e : Z,
- (m1 <= m2)%Z -> (Float2 m1 e <= Float2 m2 e)%R.
+  forall m1 m2 e,
+  (m1 <= m2)%Z -> (Float2 m1 e <= Float2 m2 e)%R.
+Proof.
 intros m1 m2 e H.
-apply Fle2_correct.
-unfold Fle2, Fcomp2, Fshift2.
-rewrite Zminus_diag.
-unfold Zle in H.
-simpl.
-induction (m1 ?= m2)%Z ; try apply refl_equal.
-elim H.
-apply refl_equal.
+do 2 rewrite float2_float.
+now apply F2R_le_compat.
 Qed.
 
 Lemma float2_binade_eq_reg :
- forall m1 m2 : Z, forall e : Z,
- Float2 m1 e = Float2 m2 e :>R ->
- m1 = m2.
-intros.
-destruct (Ztrichotomy m1 m2) as [H0|[H0|H0]].
-2: exact H0.
-elim Rlt_not_eq with (2 := H).
-exact (float2_binade_lt _ _ _ H0).
-elim Rgt_not_eq with (2 := H).
-exact (float2_binade_lt _ _ _ (Zgt_lt _ _ H0)).
+  forall m1 m2 e,
+  Float2 m1 e = Float2 m2 e :>R ->
+  m1 = m2.
+Proof.
+intros m1 m2 e H.
+apply F2R_eq_reg with radix2 e.
+now do 2 rewrite <- float2_float.
 Qed.
 
 Fixpoint digits (m : positive) : positive :=
