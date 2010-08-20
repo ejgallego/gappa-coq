@@ -102,8 +102,7 @@ intros d H.
 simpl in H.
 replace (Z_of_nat (S d) - 1)%Z with (Z_of_nat d).
 rewrite <- abs_Z2R.
-rewrite <- 2!Z2R_Zpower, 2!Zpower_Zpower_nat ; try apply Zle_0_nat.
-rewrite 2!Zabs_nat_Z_of_nat.
+rewrite <- 2!Z2R_Zpower_nat.
 split.
 now apply Z2R_le.
 now apply Z2R_lt.
