@@ -5,6 +5,7 @@ Require Import Gappa_dyadic.
 Require Import Gappa_integer.
 
 Require Fcore_defs.
+Require Fcalc_digits.
 Require Import Fcore_float_prop.
 
 Section Gappa_round_aux.
@@ -79,6 +80,36 @@ Fixpoint digits (m : positive) : positive :=
  | xI p => Psucc (digits p)
  | xO p => Psucc (digits p)
  end.
+
+Lemma digits2_digits :
+  forall m : positive,
+  Zpos (digits m) = Fcalc_digits.digits radix2 (Zpos m).
+Proof.
+intros m.
+apply trans_eq with (Z_of_nat (S (Fcalc_digits.digits2_Pnat m))).
+(* *)
+induction m ; simpl.
+now rewrite 2!Zpos_succ_morphism, IHm.
+now rewrite 2!Zpos_succ_morphism, IHm.
+easy.
+(* *)
+rewrite Fcalc_digits.digits_ln_beta. 2: easy.
+apply sym_eq.
+apply ln_beta_unique.
+generalize (Fcalc_digits.digits2_Pnat_correct m).
+generalize (Fcalc_digits.digits2_Pnat m).
+intros d H.
+simpl in H.
+replace (Z_of_nat (S d) - 1)%Z with (Z_of_nat d).
+rewrite <- abs_Z2R.
+rewrite <- 2!Z2R_Zpower, 2!Zpower_Zpower_nat ; try apply Zle_0_nat.
+rewrite 2!Zabs_nat_Z_of_nat.
+split.
+now apply Z2R_le.
+now apply Z2R_lt.
+rewrite inj_S.
+apply Zpred_succ.
+Qed.
 
 Lemma digits_correct :
  forall m : positive,
