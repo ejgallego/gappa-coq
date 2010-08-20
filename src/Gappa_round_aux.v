@@ -112,68 +112,18 @@ apply Zpred_succ.
 Qed.
 
 Lemma digits_correct :
- forall m : positive,
- (powerRZ 2 (Zpos (digits m) - 1)%Z <= Z2R (Zpos m) < powerRZ 2 (Zpos (digits m)))%R.
+  forall m : positive,
+  (powerRZ 2 (Zpos (digits m) - 1)%Z <= Z2R (Zpos m) < powerRZ 2 (Zpos (digits m)))%R.
+Proof.
 intros m.
-induction m.
-simpl (digits (xI m)).
-rewrite Zpos_succ_morphism.
-unfold Zsucc, Zminus.
-rewrite <- Zplus_assoc. rewrite (Zplus_comm 1). rewrite Zplus_assoc.
-rewrite Zpos_xI.
-split ; (rewrite powerRZ_add ; [
-  rewrite Rmult_comm ;
-  simpl (powerRZ 2 1) ;
-  rewrite Rmult_1_r | discrR ]).
-apply Rle_trans with (Z2R 2 * Z2R (Zpos m))%R.
-apply Rmult_le_compat_l.
-apply (Z2R_le 0).
-discriminate.
-exact (proj1 IHm).
-rewrite <- mult_Z2R.
-apply Z2R_le.
-exact (Zle_succ _).
-apply Rlt_le_trans with (Z2R 2 * (Z2R (Zpos m) + Z2R 1))%R.
-rewrite <- plus_Z2R.
-rewrite <- mult_Z2R.
-apply Z2R_lt.
-omega.
-apply Rmult_le_compat_l.
-apply (Z2R_le 0 2).
-discriminate.
-rewrite <- plus_Z2R.
-rewrite (Zpos_eq_Z_of_nat_o_nat_of_P (digits m)).
-change 2%R with (INR 2).
-rewrite <- Zpower_nat_powerRZ.
-rewrite Z2R_IZR.
-apply IZR_le.
-apply (Zlt_le_succ (Zpos m)).
-apply lt_IZR.
-rewrite Zpower_nat_powerRZ.
-rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
-rewrite <- Z2R_IZR.
-exact (proj2 IHm).
-simpl (digits (xO m)).
-rewrite Zpos_succ_morphism.
-unfold Zsucc, Zminus.
-rewrite <- Zplus_assoc. rewrite (Zplus_comm 1). rewrite Zplus_assoc.
-rewrite Zpos_xO.
-split ; (rewrite powerRZ_add ; [
-  rewrite Rmult_comm ;
-  simpl (powerRZ 2 1) ;
-  rewrite Rmult_1_r | discrR ]).
-rewrite mult_Z2R.
-apply Rmult_le_compat_l.
-apply (Z2R_le 0).
-discriminate.
-exact (proj1 IHm).
-rewrite mult_Z2R.
-apply Rmult_lt_compat_l.
-exact (Z2R_lt 0 2 (refl_equal _)).
-exact (proj2 IHm).
+rewrite digits2_digits.
+rewrite <- 2!(bpow_powerRZ radix2).
+rewrite Fcalc_digits.digits_ln_beta. 2: easy.
+destruct (ln_beta radix2 (Z2R (Zpos m))) as (e, H).
 simpl.
-rewrite Rmult_1_r.
-auto with real.
+rewrite <- abs_Z2R in H.
+apply H.
+now apply (Z2R_neq _ 0).
 Qed.
 
 Lemma digits_pow2 :
