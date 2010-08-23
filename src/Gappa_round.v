@@ -7,6 +7,7 @@ Require Import Gappa_dyadic.
 Require Import Gappa_integer.
 Require Import Gappa_round_def.
 Require Import Gappa_round_aux.
+Require Import Fcalc_bracket.
 
 Section Gappa_round.
 
@@ -201,6 +202,235 @@ Qed.
 Definition tofloat p := match p with
  | (m,e) => Float2 (Z_of_N m) e
  end.
+
+Section ZrndG.
+
+Section rndG.
+
+Variable rdir : rnd_record -> Z -> bool.
+Variable good_rdir : good_rdir rdir.
+
+Definition hrndG_aux mx x :=
+  match inbetween_loc (Z2R mx) (Z2R mx + 1) x with
+  | loc_Exact => (false, false)
+  | loc_Inexact Lt => (false, true)
+  | loc_Inexact Eq => (true, false)
+  | loc_Inexact Gt => (true, true)
+  end.
+
+Definition hrndG x e :=
+  let mx := Zfloor x in
+  let m := ZtoN mx in
+  let l := inbetween_loc (Z2R mx) (Z2R mx + 1) x in
+  let r := let (r, s) := hrndG_aux mx x in rnd_record_mk m r s in
+  if rdir r e then Zceil x else Zfloor x.
+
+Lemma hrndG_DN :
+  forall x e,
+  rdir (rnd_record_mk (ZtoN (Zfloor x)) true true) e = false ->
+  hrndG x e = Zfloor x.
+Proof.
+intros x e Hx1.
+destruct (good_rdir (ZtoN (Zfloor x)) e) as (Hx2, (Hx3, Hx4)).
+rewrite Hx1 in Hx4.
+destruct Hx4 as [Hx4|Hx4] ; try easy.
+rewrite Hx4 in Hx3.
+destruct Hx3 as [Hx3|Hx3] ; try easy.
+unfold hrndG.
+destruct (hrndG_aux (Zfloor x) x) as ([|],[|]) ;
+  now rewrite ?Hx1, ?Hx2, ?Hx3, ?Hx4.
+Qed.
+
+Lemma hrndG_UP :
+  forall x e,
+  rdir (rnd_record_mk (ZtoN (Zfloor x)) false true) e = true ->
+  hrndG x e = Zceil x.
+Proof.
+intros x e Hx1.
+destruct (good_rdir (ZtoN (Zfloor x)) e) as (Hx2, (Hx3, Hx4)).
+rewrite Hx1 in Hx3.
+destruct Hx3 as [Hx3|Hx3] ; try easy.
+rewrite Hx3 in Hx4.
+destruct Hx4 as [Hx4|Hx4] ; try easy.
+unfold hrndG, hrndG_aux.
+assert (Hx5: (Z2R (Zfloor x) <= x < Z2R (Zfloor x) + 1)%R).
+split.
+apply Zfloor_lb.
+apply Zfloor_ub.
+destruct (inbetween_spec (Z2R (Zfloor x)) (Z2R (Zfloor x) + 1) x Hx5) as [H|l H1 H2].
+rewrite Hx2.
+rewrite H at 2.
+now rewrite Zceil_Z2R.
+now case l ; rewrite ?Hx1, ?Hx3, ?Hx4.
+Qed.
+
+Lemma hrndG_N :
+  forall x e,
+  ( forall b, rdir (rnd_record_mk (ZtoN (Zfloor x)) b true) e = b ) ->
+  hrndG x e = Fcore_generic_fmt.Znearest (fun x => rdir (rnd_record_mk (ZtoN (Zfloor x)) true false) e) x.
+Proof.
+intros x e Hx1.
+destruct (good_rdir (ZtoN (Zfloor x)) e) as (Hx2, _).
+unfold hrndG, hrndG_aux.
+assert (Hx3: (Z2R (Zfloor x) <= x < Z2R (Zfloor x) + 1)%R).
+split.
+apply Zfloor_lb.
+apply Zfloor_ub.
+destruct (inbetween_spec (Z2R (Zfloor x)) (Z2R (Zfloor x) + 1) x Hx3) as [Hx4|l Hx4 Hx5].
+rewrite Hx2.
+rewrite Hx4 at 2.
+now rewrite Fcore_generic_fmt.Znearest_Z2R.
+unfold Fcore_generic_fmt.Znearest.
+rewrite Fcore_generic_fmt.Rcompare_floor_ceil_mid with (1 := Rlt_not_eq _ _ (proj1 Hx4)).
+rewrite Rcompare_middle.
+rewrite Zceil_floor_neq with (1 := Rlt_not_eq _ _ (proj1 Hx4)).
+rewrite plus_Z2R. simpl Z2R.
+rewrite Hx5.
+now case l ; rewrite ?Hx1, ?Hx2.
+Qed.
+
+Lemma hrndG_monotone :
+  forall x y e, (x <= y)%R -> (hrndG x e <= hrndG y e)%Z.
+Proof.
+intros x y e Hxy.
+destruct (Z_eq_dec (Zfloor x) (Zfloor y)) as [H|H].
+(* *)
+case_eq (rdir (rnd_record_mk (ZtoN (Zfloor x)) true true) e) ; intros Hb1.
+case_eq (rdir (rnd_record_mk (ZtoN (Zfloor x)) false true) e) ; intros Hb2.
+(* . *)
+rewrite hrndG_UP with (1 := Hb2).
+rewrite H in Hb2.
+rewrite hrndG_UP with (1 := Hb2).
+now apply Zceil_le.
+(* . *)
+assert (Hb3: forall b, rdir (rnd_record_mk (ZtoN (Zfloor x)) b true) e = b).
+now intros [|].
+rewrite hrndG_N with (1 := Hb3).
+rewrite H in Hb3.
+rewrite hrndG_N with (1 := Hb3).
+now apply Fcore_generic_fmt.Znearest_monotone.
+(* . *)
+rewrite hrndG_DN with (1 := Hb1).
+rewrite H in Hb1.
+rewrite hrndG_DN with (1 := Hb1).
+now apply Zfloor_le.
+(* *)
+apply Zle_trans with (Zceil x).
+unfold hrndG.
+case rdir.
+apply Zle_refl.
+apply le_Z2R.
+exact (Rle_trans _ _ _ (Zfloor_lb x) (Zceil_ub x)).
+apply Zle_trans with (Zfloor y).
+apply Zle_trans with (Zfloor x + 1)%Z.
+apply Zceil_glb.
+rewrite plus_Z2R.
+apply Rlt_le.
+apply Zfloor_ub.
+generalize (Zfloor_le x y Hxy).
+omega.
+unfold hrndG.
+case rdir.
+apply le_Z2R.
+exact (Rle_trans _ _ _ (Zfloor_lb y) (Zceil_ub y)).
+apply Zle_refl.
+Qed.
+
+Lemma hrndG_Z2R :
+  forall n e, hrndG (Z2R n) e = n.
+Proof.
+intros n e.
+unfold hrndG.
+case rdir.
+apply Zceil_Z2R.
+apply Zfloor_Z2R.
+Qed.
+
+Lemma hrndG_pos :
+  forall x e, (0 <= x)%R -> (0 <= hrndG x e)%Z.
+Proof.
+intros x e Hx.
+rewrite <- (hrndG_Z2R 0 e).
+now apply hrndG_monotone.
+Qed.
+
+End rndG.
+
+Variable rdir : round_dir.
+
+Definition rndG x e:=
+  match Rcompare x 0 with
+  | Gt => hrndG (rpos rdir) x e
+  | Lt => Zopp (hrndG (rneg rdir) (-x) e)
+  | _ => Z0
+  end.
+
+Lemma rndG_monotone :
+  forall x y e, (x <= y)%R -> (rndG x e <= rndG y e)%Z.
+Proof.
+intros x y e Hxy.
+unfold rndG.
+destruct (Rcompare_spec x 0) as [Hx|Hx|Hx].
+(* *)
+destruct (Rcompare_spec y 0) as [Hy|Hy|Hy].
+(* . *)
+apply Zopp_le_cancel.
+rewrite 2!Zopp_involutive.
+apply hrndG_monotone.
+apply rneg_good.
+now apply Ropp_le_contravar.
+(* . *)
+apply Zopp_le_cancel.
+rewrite Zopp_involutive.
+apply hrndG_pos.
+apply rneg_good.
+rewrite <- Ropp_0.
+apply Ropp_le_contravar.
+now apply Rlt_le.
+(* . *)
+apply Zle_trans with Z0.
+apply Zopp_le_cancel.
+rewrite Zopp_involutive.
+apply hrndG_pos.
+apply rneg_good.
+rewrite <- Ropp_0.
+apply Ropp_le_contravar.
+now apply Rlt_le.
+apply hrndG_pos.
+apply rpos_good.
+now apply Rlt_le.
+(* *)
+destruct (Rcompare_spec y 0) as [Hy|Hy|Hy].
+elim Rle_not_lt with (1 := Hxy).
+now rewrite Hx.
+apply Zle_refl.
+apply hrndG_pos.
+apply rpos_good.
+now apply Rlt_le.
+(* *)
+rewrite Rcompare_Gt.
+apply hrndG_monotone.
+apply rpos_good.
+exact Hxy.
+now apply Rlt_le_trans with x.
+Qed.
+
+Lemma rndG_Z2R :
+  forall n e, rndG (Z2R n) e = n.
+Proof.
+intros n e.
+unfold rndG.
+change R0 with (Z2R 0).
+rewrite Rcompare_Z2R.
+rewrite <- opp_Z2R.
+rewrite 2!hrndG_Z2R.
+rewrite Zopp_involutive.
+now case n.
+Qed.
+
+Definition ZrndG := Fcore_generic_fmt.mkZrounding rndG rndG_monotone rndG_Z2R.
+
+End ZrndG.
 
 Lemma tofloat_pair :
  forall p : N * Z,
