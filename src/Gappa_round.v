@@ -2475,6 +2475,53 @@ case (round_pos (rneg rdir) rexp p (Fexp f)) ; intros.
 case n ; intros ; apply refl_equal.
 Qed.
 
+Lemma round_extension_conversion :
+  forall rdir rexp (Hexp : good_rexp rexp) x,
+  float2R (round_extension rdir rexp Hexp x) = rounding radix2 rexp (ZrndG rdir) x :>R.
+Proof.
+intros rdir rexp Hexp x.
+unfold round_extension.
+destruct (total_order_T 0 x) as [[Hx|Hx]|Hx].
+(* *)
+case round_density.
+intros m1 (m2, (e1, (e2, (H1, (H2, H3))))).
+replace (rounding radix2 rexp (ZrndG rdir) x) with (float2R (round rdir rexp (Float2 (Zpos m1) e1))).
+apply refl_equal.
+apply Rle_antisym.
+rewrite rndG_conversion.
+now apply rounding_monotone.
+unfold round. simpl.
+rewrite H2.
+change (let (n, e) := round_pos (rpos rdir) rexp m2 e2 in match n with 0%N => Float2 0 0 | Npos q => Float2 (Zpos q) e end)
+  with (round rdir rexp (Float2 (Zpos m2) e2)).
+rewrite rndG_conversion.
+now apply rounding_monotone.
+(* *)
+rewrite <- Hx.
+rewrite rounding_0.
+apply float2_zero.
+(* *)
+case round_density.
+intros m1 (m2, (e1, (e2, (H1, (H2, H3))))).
+replace (rounding radix2 rexp (ZrndG rdir) x) with (float2R (round rdir rexp (Float2 (- Zpos m1) e1))).
+apply refl_equal.
+apply Rle_antisym.
+unfold round. simpl.
+rewrite H2.
+change (let (n, e) := round_pos (rneg rdir) rexp m2 e2 in match n with 0%N => Float2 0 0 | Npos q => Float2 (Zneg q) e end)
+  with (round rdir rexp (Float2 (- Zpos m2) e2)).
+rewrite rndG_conversion.
+apply rounding_monotone.
+exact Hexp.
+apply Ropp_le_cancel.
+now rewrite <- Fopp2_correct.
+rewrite rndG_conversion.
+apply rounding_monotone.
+exact Hexp.
+apply Ropp_le_cancel.
+now rewrite <- Fopp2_correct.
+Qed.
+
 Lemma round_extension_zero :
  forall rdir : round_dir, forall rexp : Z -> Z,
  forall Hge : good_rexp rexp,
