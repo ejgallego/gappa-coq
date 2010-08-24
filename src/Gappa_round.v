@@ -813,63 +813,6 @@ rewrite H0 in H.
 discriminate H.
 Qed.
 
-Lemma round_unicity_aux :
- forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
- forall m1 m2 : positive, forall e1 e2 : Z,
- good_rdir rdir -> (e1 < e2)%Z ->
- Float2 (Zpos m1) e1 = Float2 (Zpos m2) e2 :>R ->
- tofloat (round_pos rdir rexp m1 e1) = tofloat (round_pos rdir rexp m2 e2) :>R.
-intros rdir rexp m1 m2 e1 e2 Hdir He Heq.
-assert (exists n : nat, e1 = e2 - Z_of_nat n)%Z.
-assert (exists n : nat, e2 - e1 = Z_of_nat n)%Z.
-apply IZN.
-omega.
-generalize H. clear H. intros (n, H).
-exists n.
-rewrite <- H.
-ring.
-generalize H. clear H. intros (n, H).
-generalize Heq. rewrite H. clear He Heq H e1.
-generalize m1. clear m1.
-induction n.
-intros m1.
-simpl.
-rewrite Zminus_0_r.
-intros H.
-generalize (float2_binade_eq_reg _ _ _ H).
-intro H0. injection H0. intro H1. rewrite H1.
-exact (refl_equal _).
-intros m1 Heq.
-cut (exists p, m1 = xO p).
-intros (p, H). rewrite H in Heq. rewrite H. clear H m1.
-assert (e2 - Z_of_nat (S n) = e2 - Z_of_nat n - 1)%Z.
-rewrite inj_S.
-unfold Zsucc.
-ring.
-rewrite H in Heq.
-rewrite H.
-clear H.
-rewrite <- round_constant_xO.
-2: exact Hdir.
-apply (IHn p).
-rewrite <- Heq.
-cutrewrite (Zpos (xO p) = Zpos p * 2)%Z.
-apply float2_shift_m1.
-rewrite Zmult_comm.
-apply refl_equal.
-clear IHn Hdir rexp rdir.
-rewrite <- nat_of_P_o_P_of_succ_nat_eq_succ in Heq.
-rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P in Heq.
-rewrite <- (float2_shl_correct (Zpos m2) e2 (P_of_succ_nat n)) in Heq.
-simpl in Heq.
-generalize (float2_binade_eq_reg _ _ _ Heq).
-intro H0. injection H0. intro H1. rewrite H1.
-rewrite shift_pos_nat.
-rewrite nat_of_P_o_P_of_succ_nat_eq_succ.
-exists (shift_nat n m2).
-exact (refl_equal _).
-Qed.
-
 Lemma round_unicity :
   forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
   forall m1 m2 : positive, forall e1 e2 : Z,
