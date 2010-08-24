@@ -183,6 +183,21 @@ Definition round_pos (rdir : rnd_record -> Z -> bool)
  | _ => (Npos m, e)
  end.
 
+Definition round (rdirs : round_dir) (rexp : Z -> Z) (f : float2) :=
+ match (Fnum f) with
+ | Z0 => Float2 Z0 Z0
+ | Zpos p =>
+   match (round_pos (rpos rdirs) rexp p (Fexp f)) with
+   | (N0, _) => Float2 Z0 Z0
+   | (Npos q, e) => Float2 (Zpos q) e
+   end
+ | Zneg p =>
+   match (round_pos (rneg rdirs) rexp p (Fexp f)) with
+   | (N0, _) => Float2 Z0 Z0
+   | (Npos q, e) => Float2 (Zneg q) e
+   end
+ end.
+
 Lemma round_rexp_exact :
  forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  forall m : positive, forall e : Z,
@@ -654,6 +669,56 @@ now case n.
 Qed.
 
 Definition ZrndG := mkZrounding rndG rndG_monotone rndG_Z2R.
+
+Theorem rndG_conversion :
+  forall rexp, valid_exp rexp ->
+  forall f,
+  float2R (round rdir rexp f) = rounding radix2 rexp ZrndG (float2R f).
+Proof.
+intros rexp Hexp (m, e).
+rewrite float2_float.
+destruct m as [|m|m].
+now rewrite Fcore_float_prop.F2R_0, rounding_0.
+(* *)
+unfold round. simpl.
+generalize (hrndG_conversion (rpos rdir) (rpos_good _) rexp Hexp m e).
+unfold rounding, ZrndG, rndG. simpl.
+rewrite Rcompare_Gt.
+intros H.
+rewrite <- H.
+case round_pos.
+intros [|n] z ; simpl.
+now rewrite 2!float2_zero.
+apply refl_equal.
+unfold scaled_mantissa.
+apply Rmult_lt_0_compat.
+now apply Fcore_float_prop.F2R_gt_0_compat.
+apply bpow_gt_0.
+(* *)
+unfold round. simpl.
+change (Zneg m) with (- Zpos m)%Z.
+rewrite <- Fcore_float_prop.opp_F2R.
+generalize (hrndG_conversion (rneg rdir) (rneg_good _) rexp Hexp m e).
+unfold rounding, ZrndG, rndG. simpl.
+rewrite Rcompare_Lt.
+rewrite canonic_exponent_opp.
+rewrite scaled_mantissa_opp.
+rewrite Ropp_involutive.
+rewrite <- Fcore_float_prop.opp_F2R.
+intros H.
+rewrite <- H.
+case round_pos.
+intros [|n] z ; simpl.
+rewrite 2!float2_zero.
+now rewrite Ropp_0.
+now rewrite <- Fopp2_correct.
+rewrite scaled_mantissa_opp.
+apply Ropp_lt_gt_0_contravar.
+unfold scaled_mantissa.
+apply Rmult_lt_0_compat.
+now apply Fcore_float_prop.F2R_gt_0_compat.
+apply bpow_gt_0.
+Qed.
 
 End ZrndG.
 
@@ -2264,21 +2329,6 @@ clear H2 H3 H4.
 exact (round_monotone_local _ _ Hgd Hge _ _ H2b _ _ _ _
   (conj (proj1 H1c) (Rlt_le _ _ (proj2 H1c))) (conj (proj1 H2c) (Rlt_le _ _ (proj2 H2c))) Hf).
 Qed.
-
-Definition round (rdirs : round_dir) (rexp : Z -> Z) (f : float2) :=
- match (Fnum f) with
- | Z0 => Float2 Z0 Z0
- | Zpos p =>
-   match (round_pos (rpos rdirs) rexp p (Fexp f)) with
-   | (N0, _) => Float2 Z0 Z0
-   | (Npos q, e) => Float2 (Zpos q) e
-   end
- | Zneg p =>
-   match (round_pos (rneg rdirs) rexp p (Fexp f)) with
-   | (N0, _) => Float2 Z0 Z0
-   | (Npos q, e) => Float2 (Zneg q) e
-   end
- end.
 
 Lemma log2 :
   forall x : R, (0 < x)%R ->
