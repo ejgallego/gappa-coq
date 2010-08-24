@@ -2172,35 +2172,6 @@ apply float2_binade_le.
 exact (Zle_succ _).
 Qed.
 
-Lemma round_bound_underflow :
- forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
- good_rexp rexp ->
- forall k : Z, rexp k = k ->
- forall m : positive, forall e : Z,
- (Float2 (Zpos m) e < Float2 1 k)%R ->
- (tofloat (round_pos rdir rexp m e) <= Float2 1 k)%R.
-intros rdir rexp Hg k Hk m e Hb.
-assert (H0: forall b1 b2 : bool, (tofloat
-  (if rdir (rnd_record_mk 0 b1 b2) k then 1%N
-  else 0%N, k) <= Float2 1 k)%R).
-intros b1 b2.
-case (rdir (rnd_record_mk 0 b1 b2) k).
-apply Rle_refl.
-simpl.
-apply float2_binade_le.
-auto with zarith.
-generalize (round_constant_underflow rdir rexp Hg k Hk m e).
-intros (Hc1,(Hc2,Hc3)).
-generalize (bracket_case_underflow m e k Hb).
-intros [H|[H|H]].
-rewrite (Hc1 H).
-apply H0.
-rewrite (Hc2 H).
-apply H0.
-rewrite (Hc3 H).
-apply H0.
-Qed.
-
 Lemma round_monotone :
   forall rdir : rnd_record -> Z -> bool,
   forall rexp : Z -> Z,
