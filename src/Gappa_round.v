@@ -1858,72 +1858,14 @@ Lemma log2 :
   { k : Z | (powerRZ 2 (k - 1) <= x < powerRZ 2 k)%R }.
 Proof.
 intros x Hx.
-(* . *)
-assert (Hr: (0 < ln 2)%R).
-apply exp_lt_inv.
-rewrite exp_0.
-rewrite exp_ln.
-now apply (Z2R_lt 1 2).
-now apply (Z2R_lt 0 2).
-(* . *)
-assert (He: forall e, powerRZ 2 e = exp (Z2R e * ln 2)).
-clear -Hr.
-(* .. *)
-assert (forall e, powerRZ 2 (Zpos e) = exp (Z2R (Zpos e) * ln 2)).
-intros e.
-rewrite Zpos_eq_Z_of_nat_o_nat_of_P.
-change 2%R with (INR 2).
-rewrite <- Zpower_nat_powerRZ.
-rewrite Z2R_IZR.
-induction (nat_of_P e).
-rewrite Rmult_0_l.
-unfold Zpower_nat, iter_nat.
-now rewrite exp_0.
-change (S n) with (1 + n)%nat.
-rewrite Zpower_nat_is_exp.
-rewrite mult_IZR, IHn.
-rewrite <- 2!INR_IZR_INZ, plus_INR.
-rewrite Rmult_plus_distr_r.
-rewrite Rmult_1_l.
-rewrite exp_plus.
-rewrite exp_ln.
-apply refl_equal.
-now apply (Z2R_lt 0 2).
-(* .. *)
-intros [|e|e].
-rewrite Rmult_0_l.
-now rewrite exp_0.
-apply H.
-change (Z2R (Zneg e)) with (-Z2R (Zpos e))%R.
-rewrite Ropp_mult_distr_l_reverse.
-rewrite exp_Ropp.
-now rewrite <- H.
-(* . *)
-exists (up (ln x / ln 2)).
-rewrite 2!He.
-pattern x at 2 3 ; replace x with (exp (ln x * / ln 2 * ln 2)).
-split.
-rewrite minus_Z2R.
-cut ((Z2R (up (ln x * / ln 2)) - Z2R 1) * ln 2 <= ln x * / ln 2 * ln 2)%R.
-intros [H|H].
-left. now apply exp_increasing.
-right. now apply f_equal.
-apply Rmult_le_compat_r.
+destruct (ln_beta radix2 x) as (e, H).
+exists e.
+specialize (H (Rgt_not_eq _ _ Hx)).
+rewrite Rabs_right in H.
+change 2%R with (Z2R (radix_val radix2)).
+now rewrite <- 2!bpow_powerRZ.
+apply Rle_ge.
 now apply Rlt_le.
-apply Rplus_le_reg_l with (1 - ln x * / ln 2)%R.
-simpl (Z2R 1).
-replace (1 - ln x * / ln 2 + ln x * / ln 2)%R with R1 by ring.
-replace (1 - ln x * / ln 2 + (Z2R (up (ln x * / ln 2)) - 1))%R with (Z2R (up (ln x * / ln 2)) - ln x * / ln 2)%R by ring.
-rewrite Z2R_IZR.
-exact (proj2 (archimed _)).
-apply exp_increasing.
-apply Rmult_lt_compat_r.
-exact Hr.
-rewrite Z2R_IZR.
-exact (proj1 (archimed _)).
-rewrite Rmult_assoc, Rinv_l, Rmult_1_r.
-now apply exp_ln.
-now apply Rgt_not_eq.
 Qed.
 
 Lemma rexp_case_real_aux :
