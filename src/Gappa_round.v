@@ -871,24 +871,16 @@ exact (refl_equal _).
 Qed.
 
 Lemma round_unicity :
- forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
- forall m1 m2 : positive, forall e1 e2 : Z,
- good_rdir rdir ->
- Float2 (Zpos m1) e1 = Float2 (Zpos m2) e2 :>R ->
- tofloat (round_pos rdir rexp m1 e1) = tofloat (round_pos rdir rexp m2 e2) :>R.
+  forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
+  forall m1 m2 : positive, forall e1 e2 : Z,
+  good_rdir rdir ->
+  Float2 (Zpos m1) e1 = Float2 (Zpos m2) e2 :>R ->
+  tofloat (round_pos rdir rexp m1 e1) = tofloat (round_pos rdir rexp m2 e2) :>R.
+Proof.
 intros rdir rexp m1 m2 e1 e2 Hdir Heq.
-case (Ztrichotomy e1 e2) ; [ intros H | intros [H|H] ].
-apply round_unicity_aux with (1 := Hdir) (2 := H) (3 := Heq).
-rewrite H in Heq.
-generalize (float2_binade_eq_reg _ _ _ Heq).
-intro H0. injection H0. intro H1. rewrite H1.
-rewrite H.
-exact (refl_equal _).
-apply sym_eq.
-apply round_unicity_aux with (1 := Hdir).
-auto with zarith.
-rewrite Heq.
-exact (refl_equal _).
+rewrite 2!(hrndG_conversion _ Hdir).
+rewrite <- 2!float2_float.
+now apply f_equal.
 Qed.
 
 Definition good_rexp (rexp : Z -> Z) :=
