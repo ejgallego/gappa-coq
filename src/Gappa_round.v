@@ -2041,40 +2041,6 @@ apply Rlt_le_trans with (1 := proj2 (float2_digits_correct m1 e1)).
 apply float2_Rle_pow2 with (1 := He1').
 Qed.
 
-Lemma rexp_exclusive :
- forall rexp : Z -> Z,
- forall m1 m2 : positive, forall e1 e2 : Z,
- rexp (e1 + (Zpos (digits m1)))%Z = e1 ->
- rexp (e2 + (Zpos (digits m2)))%Z = e2 ->
- (Float2 (Zpos m1) e1 <= Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R ->
- Float2 (Zpos m2) e2 = Float2 (Zpos m1) e1.
-intros rexp m1 m2 e1 e2 He1 He2 ([Hf1|Hf1],Hf2).
-generalize (float2_repartition _ _ _ _ (conj Hf1 Hf2)).
-intros (He3,He4).
-elim Zlt_not_eq with (1 := He3).
-rewrite <- He2.
-rewrite <- He4.
-exact He1.
-clear Hf2.
-cutrewrite (e2 + Zpos (digits m2) = e1 + Zpos (digits m1))%Z in He2.
-rewrite He1 in He2.
-rewrite He2 in Hf1.
-rewrite He2.
-rewrite (float2_binade_eq_reg _ _ _ Hf1).
-exact (refl_equal _).
-apply Zle_antisym ; apply Znot_gt_le ; intro.
-apply Rlt_not_eq with (2 := Hf1).
-apply Rlt_le_trans with (1 := proj2 (float2_digits_correct m1 e1)).
-apply Rle_trans with (2 := proj1 (float2_digits_correct m2 e2)).
-apply float2_Rle_pow2.
-omega.
-apply Rlt_not_eq with (2 := sym_eq Hf1).
-apply Rlt_le_trans with (1 := proj2 (float2_digits_correct m2 e2)).
-apply Rle_trans with (2 := proj1 (float2_digits_correct m1 e1)).
-apply float2_Rle_pow2.
-omega.
-Qed.
-
 Lemma round_bound_local_strict :
  forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  forall m1 : positive, forall e1 : Z,
