@@ -2,12 +2,13 @@ Require Import Decidable.
 Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
+Require Import Fcore_generic_fmt.
+Require Import Fcalc_bracket.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_integer.
 Require Import Gappa_round_def.
 Require Import Gappa_round_aux.
-Require Import Fcalc_bracket.
 
 Section Gappa_round.
 
@@ -207,6 +208,15 @@ Section ZrndG.
 
 Section rndG.
 
+Lemma bracket_aux :
+  forall x,
+  (Z2R (Zfloor x) <= x < Z2R (Zfloor x) + 1)%R.
+Proof.
+split.
+apply Zfloor_lb.
+apply Zfloor_ub.
+Qed.
+
 Variable rdir : rnd_record -> Z -> bool.
 Variable good_rdir : good_rdir rdir.
 
@@ -253,11 +263,7 @@ destruct Hx3 as [Hx3|Hx3] ; try easy.
 rewrite Hx3 in Hx4.
 destruct Hx4 as [Hx4|Hx4] ; try easy.
 unfold hrndG, hrndG_aux.
-assert (Hx5: (Z2R (Zfloor x) <= x < Z2R (Zfloor x) + 1)%R).
-split.
-apply Zfloor_lb.
-apply Zfloor_ub.
-destruct (inbetween_spec (Z2R (Zfloor x)) (Z2R (Zfloor x) + 1) x Hx5) as [H|l H1 H2].
+destruct (inbetween_spec _ _ x (bracket_aux _)) as [H|l H1 H2].
 rewrite Hx2.
 rewrite H at 2.
 now rewrite Zceil_Z2R.
@@ -272,11 +278,7 @@ Proof.
 intros x e Hx1.
 destruct (good_rdir (ZtoN (Zfloor x)) e) as (Hx2, _).
 unfold hrndG, hrndG_aux.
-assert (Hx3: (Z2R (Zfloor x) <= x < Z2R (Zfloor x) + 1)%R).
-split.
-apply Zfloor_lb.
-apply Zfloor_ub.
-destruct (inbetween_spec (Z2R (Zfloor x)) (Z2R (Zfloor x) + 1) x Hx3) as [Hx4|l Hx4 Hx5].
+destruct (inbetween_spec _ _ x (bracket_aux _)) as [Hx4|l Hx4 Hx5].
 rewrite Hx2.
 rewrite Hx4 at 2.
 now rewrite Fcore_generic_fmt.Znearest_Z2R.
@@ -354,6 +356,229 @@ rewrite <- (hrndG_Z2R 0 e).
 now apply hrndG_monotone.
 Qed.
 
+Definition ZhrndG := mkZrounding hrndG hrndG_monotone hrndG_Z2R.
+
+Lemma shr_conversion :
+  forall m d,
+  shr m d = let (r, s) := hrndG_aux (Zfloor (Z2R (Zpos m) * bpow radix2 (- Zpos d))) (Z2R (Zpos m) * bpow radix2 (- Zpos d)) in
+    rnd_record_mk (ZtoN (Zfloor (Z2R (Zpos m) * bpow radix2 (- Zpos d)))) r s.
+Proof.
+intros m d.
+unfold shr.
+rewrite iter_nat_of_P.
+rewrite (Zpos_eq_Z_of_nat_o_nat_of_P d).
+induction (nat_of_P d).
+(* *)
+simpl.
+rewrite Rmult_1_r.
+change (P2R m) with (Z2R (Zpos m)).
+rewrite Zfloor_Z2R.
+unfold hrndG_aux, inbetween_loc.
+now rewrite Rcompare_Eq.
+(* *)
+simpl iter_nat.
+rewrite IHn. clear IHn.
+unfold hrndG_aux.
+set (ms := (Z2R (Zpos m) * bpow radix2 (- Z_of_nat (S n)))%R).
+replace (Z2R (Zpos m) * bpow radix2 (- Z_of_nat n))%R with (ms * 2)%R.
+assert (H0: (0 <= Zfloor ms)%Z).
+apply Zfloor_lub.
+unfold ms.
+apply Rmult_le_pos.
+now apply (Z2R_le 0).
+apply bpow_ge_0.
+clearbody ms. clear -H0.
+destruct (inbetween_spec _ _ ms (bracket_aux _)) as [H|l H1 H2].
+(* . *)
+replace (Zfloor (ms * 2)) with (Zfloor ms * 2)%Z.
+unfold inbetween_loc.
+rewrite mult_Z2R.
+rewrite Rcompare_Eq.
+destruct (Zfloor ms) as [|p|p] ; try easy.
+now rewrite Zmult_comm.
+now rewrite <- H.
+rewrite H at 2.
+change 2%R with (Z2R 2).
+rewrite <- mult_Z2R.
+now rewrite Zfloor_Z2R.
+(* . *)
+unfold inbetween_loc.
+assert (H3: Rcompare (ms * 2) (Z2R (Zfloor ms) * 2 + 1) = l).
+rewrite <- (Rcompare_mult_r 2) in H2.
+now replace (Z2R (Zfloor ms) * 2 + 1)%R with ((Z2R (Zfloor ms) + (Z2R (Zfloor ms) + 1)) / 2 * 2)%R by field.
+now apply (Z2R_lt 0 2).
+clear H2. rewrite <- H3. clear H3.
+case Rcompare_spec ; intros H4.
+elim Rlt_not_le with (1 := H4).
+apply Zfloor_lb.
+(* .. *)
+unfold shr_aux. simpl.
+rewrite H4.
+change (Z2R (Zfloor ms) * 2 + 1)%R with (Z2R (Zfloor ms) * Z2R 2 + Z2R 1)%R.
+rewrite <- mult_Z2R, <- plus_Z2R.
+rewrite Rcompare_Z2R.
+rewrite <- H4.
+replace (Zfloor (ms * 2)) with (1 + 2 * Zfloor ms)%Z.
+rewrite Zcompare_Eq.
+clear -H0.
+destruct (Zfloor ms) as [|p|p] ; try easy.
+now elim H0.
+now rewrite Zmult_comm, Zplus_comm.
+clear -H1 H4.
+assert (Zfloor ms * 2 < Zfloor (ms * 2) < (Zfloor ms + 1) * 2)%Z.
+split ; apply lt_Z2R ; rewrite <- H4 ; rewrite mult_Z2R ; apply Rmult_lt_compat_r.
+now apply (Z2R_lt 0 2).
+apply H1.
+now apply (Z2R_lt 0 2).
+now rewrite plus_Z2R.
+omega.
+(* .. *)
+set (rs := match Rcompare (ms * 2) ((Z2R (Zfloor (ms * 2)) + (Z2R (Zfloor (ms * 2)) + 1)) / 2) with
+  Eq => (true, false) | Lt => (false, true) | Gt => (true, true) end).
+rewrite (surjective_pairing rs).
+unfold shr_aux. simpl.
+replace (fst rs || snd rs) with true.
+clear rs.
+case Rcompare_spec ; intros H2.
+(* ... *)
+replace (Zfloor (ms * 2)) with (2 * Zfloor ms)%Z.
+now case (Zfloor ms).
+apply sym_eq.
+rewrite Zmult_comm.
+apply Zfloor_imp.
+rewrite plus_Z2R, mult_Z2R.
+refine (conj _ H2).
+apply Rmult_le_compat_r.
+now apply (Z2R_le 0 2).
+apply Zfloor_lb.
+(* ... *)
+elim Rlt_not_le with (1 := H4).
+rewrite H2.
+change (Z2R (Zfloor ms) * 2 + 1)%R with (Z2R (Zfloor ms) * Z2R 2 + Z2R 1)%R.
+rewrite <- mult_Z2R, <- plus_Z2R.
+rewrite Zfloor_Z2R.
+apply Rle_refl.
+(* ... *)
+replace (Zfloor (ms * 2)) with (1 + 2 * Zfloor ms)%Z.
+revert H0.
+case (Zfloor ms) ; try easy.
+intros p H. now elim H.
+apply sym_eq.
+apply Zfloor_imp.
+rewrite plus_Z2R, mult_Z2R.
+split.
+rewrite Rplus_comm, Rmult_comm.
+now apply Rlt_le.
+rewrite 2!plus_Z2R, mult_Z2R.
+simpl.
+replace (1 + 2 * Z2R (Zfloor ms) + 1)%R with ((Z2R (Zfloor ms) + 1) * 2)%R by ring.
+apply Rmult_lt_compat_r.
+now apply (Z2R_lt 0 2).
+apply H1.
+(* ... *)
+unfold rs.
+now case Rcompare.
+unfold ms.
+rewrite Rmult_assoc.
+change 2%R with (bpow radix2 1).
+rewrite <- bpow_add.
+apply (f_equal (fun e => _ * bpow radix2 e)%R).
+rewrite inj_S.
+unfold Zsucc.
+ring.
+Qed.
+
+Lemma Z_of_N_ZtoN :
+  forall n, (0 <= n)%Z -> Z_of_N (ZtoN n) = n.
+Proof.
+intros [|p|p] H ; try easy.
+now elim H.
+Qed.
+
+Theorem hrndG_conversion :
+  forall rexp, valid_exp rexp ->
+  forall m e,
+  float2R (tofloat (round_pos rdir rexp m e)) =
+    rounding radix2 rexp ZhrndG (Fcore_defs.F2R (Fcore_defs.Float radix2 (Zpos m) e)).
+Proof.
+intros rexp Hexp m e.
+assert (He: canonic_exponent radix2 rexp (Fcore_defs.F2R (Fcore_defs.Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
+rewrite digits2_digits.
+rewrite Fcalc_digits.digits_ln_beta. 2: easy.
+unfold canonic_exponent.
+rewrite Fcore_float_prop.ln_beta_F2R. 2: easy.
+now rewrite Zplus_comm.
+unfold round_pos.
+case_eq (rexp (e + Zpos (digits m)) - e)%Z.
+(* *)
+intros H.
+rewrite rounding_generic.
+unfold Fcore_defs.F2R, float2R.
+simpl.
+rewrite F2R_split.
+now rewrite bpow_powerRZ.
+apply generic_format_canonic_exponent.
+rewrite He.
+rewrite Zminus_eq with (1 := H).
+apply Zle_refl.
+(* *)
+intros p H.
+unfold rounding, scaled_mantissa.
+rewrite He.
+unfold Fcore_defs.F2R, float2R.
+rewrite Rmult_assoc, <- bpow_add.
+simpl.
+assert (rexp (e + Zpos (digits m)) = e + Zpos p)%Z.
+omega.
+rewrite H0.
+ring_simplify (e + -(e + Zpos p))%Z.
+rewrite F2R_split.
+rewrite (bpow_powerRZ radix2 (e + Zpos p)).
+apply (f_equal (fun m => Z2R m * _)%R).
+unfold hrndG.
+rewrite (shr_conversion m p).
+simpl.
+set (rs := hrndG_aux (Zfloor (P2R m * / Z2R (Zpower_pos 2 p))) (P2R m * / Z2R (Zpower_pos 2 p))).
+rewrite (surjective_pairing rs).
+simpl.
+assert (H1: rdir(rnd_record_mk (ZtoN (Zfloor (P2R m * / Z2R (Zpower_pos 2 p)))) (fst rs) (snd rs)) (e + Zpos p) = true ->
+  (Z2R (Zfloor (P2R m * / Z2R (Zpower_pos 2 p))) <> P2R m * / Z2R (Zpower_pos 2 p))%R).
+unfold rs, hrndG_aux.
+destruct (inbetween_spec _ _ (P2R m * / Z2R (Zpower_pos 2 p)) (bracket_aux _)) as [H1|l H1 H2].
+simpl.
+intros H2 _.
+destruct (good_rdir (ZtoN (Zfloor (P2R m * / Z2R (Zpower_pos 2 p)))) (e + Zpos p)%Z) as (H3, _).
+now rewrite H2 in H3.
+intros _.
+now apply Rlt_not_eq.
+revert H1.
+case rdir.
+intros H1.
+rewrite Nnat.Z_of_N_succ.
+rewrite Z_of_N_ZtoN.
+apply sym_eq.
+apply Zceil_floor_neq.
+now apply H1.
+apply Zfloor_lub.
+now apply (Fcore_float_prop.F2R_ge_0_compat radix2 (Fcore_defs.Float radix2 (Zpos m) (- (Zpos p)))).
+intros _.
+rewrite Z_of_N_ZtoN.
+apply refl_equal.
+apply Zfloor_lub.
+now apply (Fcore_float_prop.F2R_ge_0_compat radix2 (Fcore_defs.Float radix2 (Zpos m) (- (Zpos p)))).
+(* *)
+intros p H.
+rewrite rounding_generic.
+unfold Fcore_defs.F2R, float2R.
+simpl.
+rewrite F2R_split.
+now rewrite bpow_powerRZ.
+apply generic_format_canonic_exponent.
+rewrite He.
+generalize (Zlt_neg_0 p).
+omega.
+Qed.
+
 End rndG.
 
 Variable rdir : round_dir.
@@ -428,7 +653,7 @@ rewrite Zopp_involutive.
 now case n.
 Qed.
 
-Definition ZrndG := Fcore_generic_fmt.mkZrounding rndG rndG_monotone rndG_Z2R.
+Definition ZrndG := mkZrounding rndG rndG_monotone rndG_Z2R.
 
 End ZrndG.
 
