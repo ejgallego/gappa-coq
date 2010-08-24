@@ -2075,44 +2075,6 @@ apply float2_Rle_pow2.
 omega.
 Qed.
 
-Lemma round_canonic :
- forall rexp : Z -> Z,
- forall m1 : positive, forall e1 : Z,
- (rexp (e1 + Zpos (digits m1)) <= e1)%Z ->
- exists m2 : positive, exists e2 : Z,
- Float2 (Zpos m1) e1 = Float2 (Zpos m2) e2 :>R /\
- rexp (e2 + Zpos (digits m2))%Z = e2.
-intros rexp m1 e1 He.
-induction (Zle_lt_or_eq _ _ He) ; clear He ; rename H into He.
-rewrite <- (float2_shl_correct (Zpos m1) e1 (pos_of_Z (e1 - rexp (e1 + Zpos (digits m1)))%Z)).
-simpl.
-rewrite (Zpos_pos_of_Z_minus _ _ He).
-cutrewrite (e1 - (e1 - rexp (e1 + Zpos (digits m1))) = rexp (e1 + Zpos (digits m1)))%Z. 2: ring.
-exists (shift_pos (pos_of_Z (e1 - rexp (e1 + Zpos (digits m1))%Z)) m1).
-exists (rexp (e1 + Zpos (digits m1))%Z).
-split. apply refl_equal.
-apply (f_equal rexp).
-cutrewrite (Zpos (digits (shift_pos (pos_of_Z (e1 - rexp (e1 + Zpos (digits m1)))) m1)) = Zpos (digits m1) + Zpos (pos_of_Z (e1 - rexp (e1 + Zpos (digits m1)))))%Z.
-rewrite (Zpos_pos_of_Z_minus _ _ He).
-ring.
-rewrite shift_pos_nat.
-set (d := pos_of_Z (e1 - rexp (e1 + Zpos (digits m1))%Z)).
-rewrite (Zpos_eq_Z_of_nat_o_nat_of_P d).
-induction (nat_of_P d).
-rewrite Zplus_0_r.
-apply refl_equal.
-rewrite inj_S.
-simpl (digits (shift_nat (S n) m1)).
-rewrite Zpos_succ_morphism.
-fold (shift_nat n m1).
-rewrite IHn.
-unfold Zsucc.
-ring.
-exists m1. exists e1.
-rewrite He.
-split ; apply refl_equal.
-Qed.
-
 Lemma round_bound_local_strict :
  forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
  forall m1 : positive, forall e1 : Z,
