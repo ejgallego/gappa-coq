@@ -511,12 +511,11 @@ now elim H.
 Qed.
 
 Theorem hrndG_conversion :
-  forall rexp, valid_exp rexp ->
-  forall m e,
+  forall rexp m e,
   float2R (tofloat (round_pos rdir rexp m e)) =
     rounding radix2 rexp ZhrndG (Fcore_defs.F2R (Fcore_defs.Float radix2 (Zpos m) e)).
 Proof.
-intros rexp Hexp m e.
+intros rexp m e.
 assert (He: canonic_exponent radix2 rexp (Fcore_defs.F2R (Fcore_defs.Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
 rewrite digits2_digits.
 rewrite Fcalc_digits.digits_ln_beta. 2: easy.
@@ -671,17 +670,16 @@ Qed.
 Definition ZrndG := mkZrounding rndG rndG_monotone rndG_Z2R.
 
 Theorem rndG_conversion :
-  forall rexp, valid_exp rexp ->
-  forall f,
+  forall rexp f,
   float2R (round rdir rexp f) = rounding radix2 rexp ZrndG (float2R f).
 Proof.
-intros rexp Hexp (m, e).
+intros rexp (m, e).
 rewrite float2_float.
 destruct m as [|m|m].
 now rewrite Fcore_float_prop.F2R_0, rounding_0.
 (* *)
 unfold round. simpl.
-generalize (hrndG_conversion (rpos rdir) (rpos_good _) rexp Hexp m e).
+generalize (hrndG_conversion (rpos rdir) (rpos_good _) rexp m e).
 unfold rounding, ZrndG, rndG. simpl.
 rewrite Rcompare_Gt.
 intros H.
@@ -698,7 +696,7 @@ apply bpow_gt_0.
 unfold round. simpl.
 change (Zneg m) with (- Zpos m)%Z.
 rewrite <- Fcore_float_prop.opp_F2R.
-generalize (hrndG_conversion (rneg rdir) (rneg_good _) rexp Hexp m e).
+generalize (hrndG_conversion (rneg rdir) (rneg_good _) rexp m e).
 unfold rounding, ZrndG, rndG. simpl.
 rewrite Rcompare_Lt.
 rewrite canonic_exponent_opp.
@@ -2213,7 +2211,7 @@ Lemma round_monotone :
   (tofloat (round_pos rdir rexp m1 e1) <= tofloat (round_pos rdir rexp m2 e2))%R.
 Proof.
 intros rdir rexp Hdir Hexp m1 m2 e1 e2 H12.
-rewrite 2!(hrndG_conversion _ Hdir _ Hexp).
+rewrite 2!(hrndG_conversion _ Hdir).
 apply rounding_monotone.
 exact Hexp.
 now rewrite <- 2!float2_float.
