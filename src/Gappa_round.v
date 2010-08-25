@@ -2284,12 +2284,12 @@ apply rndG_conversion.
 Qed.
 
 Lemma round_extension_zero :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- round_extension rdir rexp Hge 0 = R0 :>R.
-intros rdir rexp Hge.
-rewrite round_extension_prop_zero.
-apply refl_equal.
+  forall rdir rexp (Hexp : good_rexp rexp),
+  round_extension rdir rexp Hexp 0 = R0 :>R.
+Proof.
+intros rdir rexp Hexp.
+rewrite round_extension_conversion.
+apply rounding_0.
 Qed.
 
 Lemma round_extension_positive :
