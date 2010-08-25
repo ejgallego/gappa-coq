@@ -2483,57 +2483,48 @@ apply H.
 Qed.
 
 Lemma representable_round_extension :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- forall x : R,
- exists m : Z, exists e : Z,
- round_extension rdir rexp Hge x = Float2 m e :>R /\
- rexp_representable rexp m e.
-intros rdir rexp Hge x.
-destruct (total_order_T 0 x) as [[Hx|Hx]|Hx].
-generalize (round_extension_prop_pos rdir _ Hge _ Hx).
-intros (m1,(m2,(e1,(e2,(_,(H2,_)))))).
-rewrite H2.
-clear H2.
-unfold round.
-simpl.
-generalize (representable_round_pos _ (rpos_good rdir) _ Hge m1 e1).
-case (round_pos (rpos rdir) rexp m1 e1) ; intros n ; case n.
-intros.
-exists Z0. exists Z0.
-split.
-exact (refl_equal _).
-exact I.
-intros p z (r,(s,(H1,H2))).
-exists (Zpos r). exists s.
-exact (conj H1 H2).
-exists Z0. exists Z0.
+  forall rdir rexp (Hexp : good_rexp rexp) x,
+  exists m : Z, exists e : Z,
+  round_extension rdir rexp Hexp x = Float2 m e :>R /\ rexp_representable rexp m e.
+Proof.
+intros rdir rexp Hexp x.
+rewrite round_extension_conversion.
+rewrite generic_format_rounding with (1 := Hexp).
+rewrite <- float2_float.
+set (r := rounding radix2 rexp (ZrndG rdir) x).
+eexists ; eexists ; repeat split.
+unfold rexp_representable.
+(* *)
+assert (forall r p, generic_format radix2 rexp r -> Ztrunc (scaled_mantissa radix2 rexp r) = Zpos p ->
+  (rexp (canonic_exponent radix2 rexp r + Zpos (digits p)) <= canonic_exponent radix2 rexp r)%Z).
+clear r x.
+intros x p Hx Hp.
+rewrite digits2_digits.
+rewrite Fcalc_digits.digits_ln_beta. 2: easy.
+rewrite Zplus_comm.
+rewrite <- Fcore_float_prop.ln_beta_F2R. 2: easy.
+rewrite <- Hp.
 rewrite <- Hx.
-rewrite round_extension_zero.
-split.
-rewrite float2_zero.
-exact (refl_equal _).
-exact I.
-generalize (round_extension_prop_neg rdir _ Hge _ Hx).
-intros (m1,(m2,(e1,(e2,(_,(H2,_)))))).
-rewrite H2.
-clear H2.
-unfold round.
-simpl.
-generalize (representable_round_pos _ (rneg_good rdir) _ Hge m1 e1).
-case (round_pos (rneg rdir) rexp m1 e1) ; intros n ; case n.
-intros.
-exists Z0. exists Z0.
-split.
-exact (refl_equal _).
-exact I.
-intros p z (r,(s,(H1,H2))).
-exists (Zneg r). exists s.
-split. 2: exact H2.
-rewrite Fopp2_correct.
-rewrite H1.
-rewrite <- Fopp2_correct.
-apply refl_equal.
+apply Zeq_le.
+apply sym_eq.
+destruct (ln_beta radix2 x) as (ex, He).
+apply canonic_exponent_fexp.
+apply He.
+rewrite Hx.
+apply Rgt_not_eq.
+apply Fcore_float_prop.F2R_gt_0_compat.
+now rewrite Hp.
+(* *)
+case_eq (Ztrunc (scaled_mantissa radix2 rexp r)) ; trivial ; intros p Hp.
+apply H with (2 := Hp).
+now apply generic_format_rounding.
+rewrite <- canonic_exponent_opp.
+apply H.
+apply generic_format_opp.
+now apply generic_format_rounding.
+rewrite scaled_mantissa_opp.
+rewrite Ztrunc_opp.
+now rewrite Hp.
 Qed.
 
 End Gappa_round.
