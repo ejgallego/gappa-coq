@@ -720,6 +720,27 @@ Qed.
 
 End ZrndG.
 
+Lemma roundDN_DN :
+  forall x e,
+  Zrnd (ZrndG roundDN) x e = Zfloor x.
+Proof.
+intros x e.
+simpl.
+unfold rndG.
+case Rcompare_spec ; intros H.
+rewrite hrndG_UP.
+unfold Zceil.
+rewrite Ropp_involutive.
+apply Zopp_involutive.
+apply roundDN.
+apply refl_equal.
+rewrite H.
+apply sym_eq.
+exact (Zfloor_Z2R 0).
+rewrite hrndG_DN ; try easy.
+apply roundDN.
+Qed.
+
 Lemma tofloat_pair :
  forall p : N * Z,
  tofloat p = Float2 (Z_of_N (fst p)) (snd p).
