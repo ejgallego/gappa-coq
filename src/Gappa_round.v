@@ -2414,67 +2414,6 @@ case n ; intros ; apply refl_equal.
 exact H3.
 Qed.
 
-Lemma round_extension_float2 :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- forall f : float2,
- round_extension rdir rexp Hge f = round rdir rexp f :>R.
-intros rdir rexp Hge f.
-cutrewrite (f = Float2 (Fnum f) (Fexp f)).
-2: induction f ; apply refl_equal.
-case (Fnum f) ; intros.
-rewrite float2_zero.
-rewrite round_extension_prop_zero.
-apply refl_equal.
-assert (0 < Float2 (Zpos p) (Fexp f))%R.
-apply float2_pos_compat.
-split.
-generalize (round_extension_prop_pos rdir rexp Hge _ H).
-intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,_))))))).
-apply Rle_antisym.
-rewrite H2.
-unfold round. simpl.
-repeat rewrite tofloat_0.
-apply (round_monotone _ _ (rpos_good rdir) Hge).
-exact (proj1 H1).
-rewrite H3.
-unfold round. simpl.
-repeat rewrite tofloat_0.
-apply (round_monotone _ _ (rpos_good rdir) Hge).
-exact (proj2 H1).
-assert (0 > Float2 (Zneg p) (Fexp f))%R.
-change (0 > Fopp2 (Float2 (Zpos p) (Fexp f)))%R.
-rewrite Fopp2_correct.
-apply Ropp_0_lt_gt_contravar.
-apply float2_pos_compat.
-split.
-generalize (round_extension_prop_neg rdir rexp Hge _ H).
-intros (m1,(m2,(e1,(e2,(H1,(H2,(H3,_))))))).
-cutrewrite (round rdir rexp (Float2 (Zneg p) (Fexp f)) = -round
-  (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir)) rexp (Float2 (Zpos p) (Fexp f)) :>R)%R.
-rewrite <- Fopp2_correct in H1.
-unfold Fopp2 in H1. simpl in H1.
-apply Rle_antisym.
-rewrite H3.
-rewrite Fopp2_correct.
-apply Ropp_le_contravar.
-unfold round. simpl.
-repeat rewrite tofloat_0.
-apply (round_monotone _ _ (rneg_good rdir) Hge).
-exact (proj2 H1).
-rewrite H2.
-rewrite Fopp2_correct.
-apply Ropp_le_contravar.
-unfold round. simpl.
-repeat rewrite tofloat_0.
-apply (round_monotone _ _ (rneg_good rdir) Hge).
-exact (proj1 H1).
-rewrite <- Fopp2_correct.
-unfold round. simpl.
-case (round_pos (rneg rdir) rexp p (Fexp f)) ; intros.
-case n ; intros ; apply refl_equal.
-Qed.
-
 Lemma round_extension_conversion :
   forall rdir rexp (Hexp : good_rexp rexp) x,
   float2R (round_extension rdir rexp Hexp x) = rounding radix2 rexp (ZrndG rdir) x :>R.
@@ -2520,6 +2459,16 @@ apply rounding_monotone.
 exact Hexp.
 apply Ropp_le_cancel.
 now rewrite <- Fopp2_correct.
+Qed.
+
+Lemma round_extension_float2 :
+  forall rdir rexp (Hexp : good_rexp rexp) f,
+  round_extension rdir rexp Hexp (float2R f) = round rdir rexp f :>R.
+Proof.
+intros rdir rexp Hexp f.
+rewrite round_extension_conversion.
+apply sym_eq.
+apply rndG_conversion.
 Qed.
 
 Lemma round_extension_zero :
