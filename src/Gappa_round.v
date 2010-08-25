@@ -2346,63 +2346,13 @@ split.
 Qed.
 
 Lemma round_extension_monotone :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- forall x y : R, (x <= y)%R ->
- (round_extension rdir rexp Hge x <= round_extension rdir rexp Hge y)%R.
-intros rdir rexp Hge x y H.
-generalize (total_order_T 0 x).
-intros [[Hx|Hx]|Hx].
-generalize (total_order_T 0 y).
-intros [[Hy|Hy]|Hy].
-generalize (round_extension_prop_pos rdir rexp Hge _ Hx).
-intros (mx1,(mx2,(ex1,(ex2,(Hx1,(Hx2,(Hx3,_))))))).
-generalize (round_extension_prop_pos rdir rexp Hge _ Hy).
-intros (my1,(my2,(ey1,(ey2,(Hy1,(Hy2,(Hy3,_))))))).
-rewrite Hx2. rewrite Hy3.
-unfold round. simpl.
-repeat rewrite tofloat_0.
-apply (round_monotone _ _ (rpos_good rdir) Hge).
-apply Rle_trans with (1 := proj1 Hx1).
-exact (Rle_trans _ _ _ H (proj2 Hy1)).
-rewrite <- Hy in H.
-elim (Rlt_irrefl _ (Rlt_le_trans _ _ _ Hx H)).
-elim (Rlt_not_le _ _ (Rlt_trans _ _ _ Hy Hx) H).
-rewrite <- Hx.
-rewrite round_extension_zero.
-rewrite <- Hx in H.
-unfold Rle in H.
-decompose [or] H.
-apply round_extension_positive.
-exact H0.
-rewrite <- H0.
-rewrite round_extension_zero.
-apply Rle_refl.
-generalize (total_order_T 0 y).
-intros [[Hy|Hy]|Hy].
-apply Rle_trans with R0.
-apply round_extension_negative.
-exact Hx.
-apply round_extension_positive.
-exact Hy.
-rewrite <- Hy.
-rewrite round_extension_zero.
-apply round_extension_negative.
-exact Hx.
-generalize (round_extension_prop_neg rdir rexp Hge _ Hx).
-intros (mx1,(mx2,(ex1,(ex2,(Hx1,(Hx2,(Hx3,_))))))).
-generalize (round_extension_prop_neg rdir rexp Hge _ Hy).
-intros (my1,(my2,(ey1,(ey2,(Hy1,(Hy2,(Hy3,_))))))).
-rewrite Hx3. rewrite Hy2.
-unfold round. simpl.
-repeat rewrite Fopp2_correct.
-apply Ropp_le_contravar.
-repeat rewrite tofloat_0.
-apply (round_monotone _ _ (rneg_good rdir) Hge).
-apply Rle_trans with (1 := proj1 Hy1).
-apply Rle_trans with (2 := proj2 Hx1).
-apply Ropp_le_contravar.
-exact H.
+  forall rdir rexp (Hexp : good_rexp rexp) x y,
+  (x <= y)%R ->
+  (round_extension rdir rexp Hexp x <= round_extension rdir rexp Hexp y)%R.
+Proof.
+intros rdir rexp Hexp x y Hxy.
+rewrite 2!round_extension_conversion.
+now apply rounding_monotone.
 Qed.
 
 Lemma round_extension_opp :
