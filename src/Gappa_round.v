@@ -2130,20 +2130,6 @@ simpl.
 apply float2_zero.
 Qed.
 
-Lemma round_neg :
- forall rdir : round_dir,
- forall rexp : Z -> Z,
- forall m : positive, forall e : Z,
- round rdir rexp (Float2 (Zneg m) e) = Fopp2 (round
-   (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir))
-   rexp (Fopp2 (Float2 (Zneg m) e))).
-intros rdir rexp m e.
-unfold round, Fopp2.
-simpl.
-case (round_pos (rneg rdir) rexp m e) ; intros.
-case n ; trivial.
-Qed.
-
 Lemma round_extension :
  forall rdir : round_dir, forall rexp : Z -> Z,
  good_rexp rexp ->
