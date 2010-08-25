@@ -1,6 +1,7 @@
 Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
+Require Import Fcore.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_pred_bnd.
@@ -27,33 +28,19 @@ Definition rounding_fixed (rdir : round_dir) (e : Z) :=
  round_extension rdir (fixed_shift e) (good_shift e).
 
 Theorem fix_of_fixed :
- forall rdir : round_dir,
- forall x : R, forall k1 k2 : Z,
- Zle_bool k2 k1 = true ->
- FIX (rounding_fixed rdir k1 x) k2.
+  forall rdir : round_dir,
+  forall x : R, forall k1 k2 : Z,
+  Zle_bool k2 k1 = true ->
+  FIX (rounding_fixed rdir k1 x) k2.
+Proof.
 intros rdir x k1 k2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX, rounding_fixed.
-destruct (representable_round_extension rdir _ (good_shift k1) x) as (m,(e,(H1,H2))).
-induction m.
-exists (Float2 0 k2).
-split.
-rewrite H1.
-do 2 rewrite float2_zero.
-apply refl_equal.
-exact (Zle_refl _).
-exists (Float2 (Zpos p) e).
-split.
-exact (sym_eq H1).
-apply Zle_trans with (1 := H).
-unfold rexp_representable, fixed_shift in H2.
-exact H2.
-exists (Float2 (Zneg p) e).
-split.
-exact (sym_eq H1).
-apply Zle_trans with (1 := H).
-unfold rexp_representable, fixed_shift in H2.
-exact H2.
+rewrite round_extension_conversion.
+unfold rounding.
+rewrite <- float2_float.
+eexists ; repeat split.
+exact H.
 Qed.
 
 Theorem fixed_of_fix :
