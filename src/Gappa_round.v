@@ -2356,80 +2356,28 @@ now apply rounding_monotone.
 Qed.
 
 Lemma round_extension_opp :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp, forall x : R,
- (round_extension rdir rexp Hge (-x) = - round_extension
-  (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir))
-  rexp Hge x :>R)%R.
-intros rdir rexp Hge x.
-destruct (total_order_T 0 x) as [[H|H]|H9] ; simpl.
-(* *)
-destruct (round_extension_prop_pos (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir)) _ Hge _ H) as (m1,(m2,(e1,(e2,(H1,(H2,(H3,_))))))).
-apply Rle_antisym.
-assert (-x <= Float2 (Zneg m1) e1)%R.
-rewrite <- (Ropp_involutive (Float2 (Zneg m1) e1)).
-rewrite <- Fopp2_correct.
-unfold Fopp2. simpl.
-apply Ropp_le_contravar with (1 := proj1 H1).
-apply Rle_trans with (1 := round_extension_monotone rdir _ Hge _ _ H0).
-rewrite round_extension_float2.
-rewrite round_neg.
-rewrite Fopp2_correct.
-apply Ropp_le_contravar.
-rewrite H2.
-apply Rle_refl.
-assert (Float2 (Zneg m2) e2 <= -x)%R.
-rewrite <- (Ropp_involutive (Float2 (Zneg m2) e2)).
-rewrite <- Fopp2_correct.
-unfold Fopp2. simpl.
-apply Ropp_le_contravar with (1 := proj2 H1).
-apply Rle_trans with (2 := round_extension_monotone rdir _ Hge _ _ H0).
-rewrite round_extension_float2.
-rewrite round_neg.
-rewrite Fopp2_correct.
-apply Ropp_le_contravar.
-rewrite H3.
-apply Rle_refl.
-(* *)
-rewrite <- H.
-rewrite Ropp_0.
-repeat rewrite round_extension_zero.
-exact (sym_eq Ropp_0).
-(* *)
-assert (0 < -x)%R.
-apply Ropp_0_gt_lt_contravar with (1 := H9).
-destruct (round_extension_prop_pos rdir _ Hge _ H) as (m1,(m2,(e1,(e2,(H1,(H2,(H3,_))))))).
-simpl in H2, H3.
-rewrite <- (Ropp_involutive (round_extension rdir rexp Hge (-x))).
-apply Rle_antisym.
-assert (x <= Float2 (Zneg m1) e1)%R.
-rewrite <- (Ropp_involutive (Float2 (Zneg m1) e1)).
-rewrite <- Fopp2_correct.
-unfold Fopp2. simpl.
-rewrite <- (Ropp_involutive x).
-apply Ropp_le_contravar with (1 := proj1 H1).
-apply Ropp_le_contravar.
-apply Rle_trans with (1 := round_extension_monotone (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir)) _ Hge _ _ H0).
-rewrite round_extension_float2.
-rewrite round_neg. simpl.
-rewrite Fopp2_correct.
-apply Ropp_le_contravar.
-rewrite H2.
-apply Rle_refl.
-assert (Float2 (Zneg m2) e2 <= x)%R.
-rewrite <- (Ropp_involutive (Float2 (Zneg m2) e2)).
-rewrite <- Fopp2_correct.
-unfold Fopp2. simpl.
-rewrite <- (Ropp_involutive x).
-apply Ropp_le_contravar with (1 := proj2 H1).
-apply Ropp_le_contravar.
-apply Rle_trans with (2 := round_extension_monotone (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir)) _ Hge _ _ H0).
-rewrite round_extension_float2.
-rewrite round_neg. simpl.
-rewrite Fopp2_correct.
-apply Ropp_le_contravar.
-rewrite H3.
-apply Rle_refl.
+  forall rdir rexp (Hexp : good_rexp rexp) x,
+  (round_extension rdir rexp Hexp (-x) = - round_extension
+    (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir)) rexp Hexp x :>R)%R.
+Proof.
+intros rdir rexp Hexp x.
+rewrite 2!round_extension_conversion.
+rewrite rounding_opp.
+apply f_equal.
+apply rounding_ext.
+clear x. intros x e.
+unfold Zrounding_opp, Zrnd_opp, ZrndG, rndG. simpl.
+destruct (Rcompare_spec x 0) as [H|H|H].
+rewrite Rcompare_Gt.
+apply refl_equal.
+now apply Ropp_gt_lt_0_contravar.
+rewrite H, Rcompare_Eq.
+apply refl_equal.
+apply Ropp_0.
+rewrite Rcompare_Lt.
+rewrite Ropp_involutive.
+apply Zopp_involutive.
+now apply Ropp_lt_gt_0_contravar.
 Qed.
 
 Definition rexp_representable (rexp : Z -> Z) (m e : Z) :=
