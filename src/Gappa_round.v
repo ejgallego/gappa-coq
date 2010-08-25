@@ -2374,23 +2374,32 @@ Definition rexp_representable (rexp : Z -> Z) (m e : Z) :=
  end.
 
 Lemma round_extension_representable :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- forall f : float2,
- rexp_representable rexp (Fnum f) (Fexp f) ->
- round_extension rdir rexp Hge f = f :>R.
-intros rdir rexp Hge f Hr.
-rewrite round_extension_float2.
-cutrewrite (f = Float2 (Fnum f) (Fexp f)).
-unfold round.
-induction (Fnum f) ; intros ; simpl.
-repeat rewrite float2_zero.
-exact (refl_equal _).
-rewrite (round_rexp_exact (rpos rdir) _ _ _ Hr).
-apply refl_equal.
-rewrite (round_rexp_exact (rneg rdir) _ _ _ Hr).
-apply refl_equal.
-induction f ; apply refl_equal.
+  forall rdir rexp (Hexp : good_rexp rexp) f,
+  rexp_representable rexp (Fnum f) (Fexp f) ->
+  round_extension rdir rexp Hexp f = f :>R.
+Proof.
+intros rdir rexp Hexp (m, e) H.
+rewrite round_extension_conversion.
+apply rounding_generic.
+rewrite float2_float.
+destruct m as [|m|m] ; simpl in H.
+rewrite Fcore_float_prop.F2R_0.
+apply generic_format_0.
+apply generic_format_canonic_exponent.
+unfold canonic_exponent.
+rewrite Fcore_float_prop.ln_beta_F2R. 2: easy.
+rewrite Zplus_comm.
+rewrite <- Fcalc_digits.digits_ln_beta. 2: easy.
+now rewrite <- digits2_digits.
+change (Zneg m) with (- Zpos m)%Z.
+rewrite <- Fcore_float_prop.opp_F2R.
+apply generic_format_opp.
+apply generic_format_canonic_exponent.
+unfold canonic_exponent.
+rewrite Fcore_float_prop.ln_beta_F2R. 2: easy.
+rewrite Zplus_comm.
+rewrite <- Fcalc_digits.digits_ln_beta. 2: easy.
+now rewrite <- digits2_digits.
 Qed.
 
 Lemma representable_round_extension :
