@@ -2,8 +2,9 @@ Require Import Decidable.
 Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
-Require Import Fcore_generic_fmt.
+Require Import Fcore.
 Require Import Fcalc_bracket.
+Require Import Fcalc_digits.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_integer.
@@ -288,7 +289,7 @@ Qed.
 Lemma hrndG_N :
   forall x e,
   ( forall b, rdir (rnd_record_mk (ZtoN (Zfloor x)) b true) e = b ) ->
-  hrndG x e = Fcore_generic_fmt.Znearest (fun x => rdir (rnd_record_mk (ZtoN (Zfloor x)) true false) e) x.
+  hrndG x e = Znearest (fun x => rdir (rnd_record_mk (ZtoN (Zfloor x)) true false) e) x.
 Proof.
 intros x e Hx1.
 destruct (good_rdir (ZtoN (Zfloor x)) e) as (Hx2, _).
@@ -296,9 +297,9 @@ unfold hrndG, hrndG_aux.
 destruct (inbetween_spec _ _ x (bracket_aux _)) as [Hx4|l Hx4 Hx5].
 rewrite Hx2.
 rewrite Hx4 at 2.
-now rewrite Fcore_generic_fmt.Znearest_Z2R.
-unfold Fcore_generic_fmt.Znearest.
-rewrite Fcore_generic_fmt.Rcompare_floor_ceil_mid with (1 := Rlt_not_eq _ _ (proj1 Hx4)).
+now rewrite Znearest_Z2R.
+unfold Znearest.
+rewrite Rcompare_floor_ceil_mid with (1 := Rlt_not_eq _ _ (proj1 Hx4)).
 rewrite Rcompare_middle.
 rewrite Zceil_floor_neq with (1 := Rlt_not_eq _ _ (proj1 Hx4)).
 rewrite plus_Z2R. simpl Z2R.
@@ -325,7 +326,7 @@ now intros [|].
 rewrite hrndG_N with (1 := Hb3).
 rewrite H in Hb3.
 rewrite hrndG_N with (1 := Hb3).
-now apply Fcore_generic_fmt.Znearest_monotone.
+now apply Znearest_monotone.
 (* . *)
 rewrite hrndG_DN with (1 := Hb1).
 rewrite H in Hb1.
@@ -513,14 +514,14 @@ Qed.
 Theorem hrndG_conversion :
   forall rexp m e,
   float2R (tofloat (round_pos rdir rexp m e)) =
-    rounding radix2 rexp ZhrndG (Fcore_defs.F2R (Fcore_defs.Float radix2 (Zpos m) e)).
+    rounding radix2 rexp ZhrndG (Fcore_defs.F2R (Float radix2 (Zpos m) e)).
 Proof.
 intros rexp m e.
-assert (He: canonic_exponent radix2 rexp (Fcore_defs.F2R (Fcore_defs.Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
+assert (He: canonic_exponent radix2 rexp (Fcore_defs.F2R (Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
 rewrite digits2_digits.
-rewrite Fcalc_digits.digits_ln_beta. 2: easy.
+rewrite digits_ln_beta. 2: easy.
 unfold canonic_exponent.
-rewrite Fcore_float_prop.ln_beta_F2R. 2: easy.
+rewrite ln_beta_F2R. 2: easy.
 now rewrite Zplus_comm.
 unfold round_pos.
 case_eq (rexp (e + Zpos (digits m)) - e)%Z.
@@ -574,12 +575,12 @@ apply sym_eq.
 apply Zceil_floor_neq.
 now apply H1.
 apply Zfloor_lub.
-now apply (Fcore_float_prop.F2R_ge_0_compat radix2 (Fcore_defs.Float radix2 (Zpos m) (- (Zpos p)))).
+now apply (F2R_ge_0_compat radix2 (Float radix2 (Zpos m) (- (Zpos p)))).
 intros _.
 rewrite Z_of_N_ZtoN.
 apply refl_equal.
 apply Zfloor_lub.
-now apply (Fcore_float_prop.F2R_ge_0_compat radix2 (Fcore_defs.Float radix2 (Zpos m) (- (Zpos p)))).
+now apply (F2R_ge_0_compat radix2 (Float radix2 (Zpos m) (- (Zpos p)))).
 (* *)
 intros p H.
 rewrite rounding_generic.
@@ -676,7 +677,7 @@ Proof.
 intros rexp (m, e).
 rewrite float2_float.
 destruct m as [|m|m].
-now rewrite Fcore_float_prop.F2R_0, rounding_0.
+now rewrite F2R_0, rounding_0.
 (* *)
 unfold round. simpl.
 generalize (hrndG_conversion (rpos rdir) (rpos_good _) rexp m e).
@@ -690,19 +691,19 @@ now rewrite 2!float2_zero.
 apply refl_equal.
 unfold scaled_mantissa.
 apply Rmult_lt_0_compat.
-now apply Fcore_float_prop.F2R_gt_0_compat.
+now apply F2R_gt_0_compat.
 apply bpow_gt_0.
 (* *)
 unfold round. simpl.
 change (Zneg m) with (- Zpos m)%Z.
-rewrite <- Fcore_float_prop.opp_F2R.
+rewrite <- opp_F2R.
 generalize (hrndG_conversion (rneg rdir) (rneg_good _) rexp m e).
 unfold rounding, ZrndG, rndG. simpl.
 rewrite Rcompare_Lt.
 rewrite canonic_exponent_opp.
 rewrite scaled_mantissa_opp.
 rewrite Ropp_involutive.
-rewrite <- Fcore_float_prop.opp_F2R.
+rewrite <- opp_F2R.
 intros H.
 rewrite <- H.
 case round_pos.
@@ -714,7 +715,7 @@ rewrite scaled_mantissa_opp.
 apply Ropp_lt_gt_0_contravar.
 unfold scaled_mantissa.
 apply Rmult_lt_0_compat.
-now apply Fcore_float_prop.F2R_gt_0_compat.
+now apply F2R_gt_0_compat.
 apply bpow_gt_0.
 Qed.
 
@@ -2186,22 +2187,22 @@ rewrite round_extension_conversion.
 apply rounding_generic.
 rewrite float2_float.
 destruct m as [|m|m] ; simpl in H.
-rewrite Fcore_float_prop.F2R_0.
+rewrite F2R_0.
 apply generic_format_0.
 apply generic_format_canonic_exponent.
 unfold canonic_exponent.
-rewrite Fcore_float_prop.ln_beta_F2R. 2: easy.
+rewrite ln_beta_F2R. 2: easy.
 rewrite Zplus_comm.
-rewrite <- Fcalc_digits.digits_ln_beta. 2: easy.
+rewrite <- digits_ln_beta. 2: easy.
 now rewrite <- digits2_digits.
 change (Zneg m) with (- Zpos m)%Z.
-rewrite <- Fcore_float_prop.opp_F2R.
+rewrite <- opp_F2R.
 apply generic_format_opp.
 apply generic_format_canonic_exponent.
 unfold canonic_exponent.
-rewrite Fcore_float_prop.ln_beta_F2R. 2: easy.
+rewrite ln_beta_F2R. 2: easy.
 rewrite Zplus_comm.
-rewrite <- Fcalc_digits.digits_ln_beta. 2: easy.
+rewrite <- digits_ln_beta. 2: easy.
 now rewrite <- digits2_digits.
 Qed.
 
@@ -2223,9 +2224,9 @@ assert (forall r p, generic_format radix2 rexp r -> Ztrunc (scaled_mantissa radi
 clear r x.
 intros x p Hx Hp.
 rewrite digits2_digits.
-rewrite Fcalc_digits.digits_ln_beta. 2: easy.
+rewrite digits_ln_beta. 2: easy.
 rewrite Zplus_comm.
-rewrite <- Fcore_float_prop.ln_beta_F2R. 2: easy.
+rewrite <- ln_beta_F2R. 2: easy.
 rewrite <- Hp.
 rewrite <- Hx.
 apply Zeq_le.
@@ -2235,7 +2236,7 @@ apply canonic_exponent_fexp.
 apply He.
 rewrite Hx.
 apply Rgt_not_eq.
-apply Fcore_float_prop.F2R_gt_0_compat.
+apply F2R_gt_0_compat.
 now rewrite Hp.
 (* *)
 case_eq (Ztrunc (scaled_mantissa radix2 rexp r)) ; trivial ; intros p Hp.
