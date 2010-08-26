@@ -228,12 +228,13 @@ exact H0.
 Qed.
 
 Theorem float_of_fix_flt :
- forall rdir : round_dir,
- forall x : R, forall xi : FF,
- forall d1 d2 : Z, forall p1 p2 : positive,
- FIX x d1 -> FLT x p1 ->
- Zle_bool (-d2) d1 && Zle_bool (Zpos p1) (Zpos p2) && contains_zero_helper xi = true ->
- BND (rounding_float rdir p2 d2 x - x) xi.
+  forall rdir : round_dir,
+  forall x : R, forall xi : FF,
+  forall d1 d2 : Z, forall p1 p2 : positive,
+  FIX x d1 -> FLT x p1 ->
+  Zle_bool (-d2) d1 && Zle_bool (Zpos p1) (Zpos p2) && contains_zero_helper xi = true ->
+  BND (rounding_float rdir p2 d2 x - x) xi.
+Proof.
 intros rdir x xi d1 d2 p1 p2 (f1,(Hx1,Hx2)) (f2,(Hx3,Hx4)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -243,84 +244,46 @@ cutrewrite (rounding_float rdir p2 d2 x = x :>R).
 unfold Rminus.
 rewrite (Rplus_opp_r x).
 apply contains_zero with (1 := H3).
-cut (exists f : float2, x = f /\ (d1 <= Fexp f)%Z /\ (Zabs (Fnum f) < Zpower_pos 2 p1)%Z).
-intros (f,(Hx5,(Hx6,Hx7))).
-rewrite Hx5.
 unfold rounding_float.
-rewrite round_extension_float2.
-induction f.
-induction Fnum.
-rewrite float2_zero.
-apply round_zero.
-unfold round. simpl.
-rewrite round_rexp_exact.
-apply refl_equal.
-unfold float_shift, Zmax.
-simpl in Hx6, Hx7.
-cut (Zpos (digits p) <= Zpos p2)%Z. intro H.
-case (Fexp + Zpos (digits p) - Zpos p2 ?= - d2)%Z.
-omega.
-exact (Zle_trans _ _ _ H1 Hx6).
-omega.
-apply Zle_trans with (2 := H2).
-exact (digits_pow2 _ _ Hx7).
-unfold round. simpl.
-rewrite round_rexp_exact.
-apply refl_equal.
-unfold float_shift, Zmax.
-simpl in Hx6, Hx7.
-cut (Zpos (digits p) <= Zpos p2)%Z. intro H.
-case (Fexp + Zpos (digits p) - Zpos p2 ?= - d2)%Z.
-omega.
-exact (Zle_trans _ _ _ H1 Hx6).
-omega.
-apply Zle_trans with (2 := H2).
-exact (digits_pow2 _ _ Hx7).
-destruct (Zle_or_lt d1 (Fexp f2)).
-exists f2.
-exact (conj (sym_eq Hx3) (conj  H Hx4)).
-exists f1.
-split.
-exact (sym_eq Hx1).
-split.
-exact Hx2.
-apply Zle_lt_trans with (2 := Hx4).
-cutrewrite (Fnum f2 = shl (Fnum f1) (pos_of_Z (Fexp f1 - Fexp f2))).
-unfold shl.
-case (Fnum f1) ; intros.
-apply Zle_refl.
-rewrite shift_pos_nat.
-induction (nat_of_P (pos_of_Z (Fexp f1 - Fexp f2))).
-apply Zle_refl.
-apply Zle_trans with (1 := IHn).
-unfold shift_nat.
-simpl.
-rewrite Zpos_xO.
-generalize (Zgt_pos_0 (iter_nat n positive xO p)).
-omega.
-rewrite shift_pos_nat.
-induction (nat_of_P (pos_of_Z (Fexp f1 - Fexp f2))).
-apply Zle_refl.
-apply Zle_trans with (1 := IHn).
-unfold shift_nat.
-simpl.
-rewrite Zpos_xO.
-generalize (Zgt_pos_0 (iter_nat n positive xO p)).
-omega.
-generalize (float2_shl_correct (Fnum f1) (Fexp f1) (pos_of_Z (Fexp f1 - Fexp f2))).
-rewrite Zpos_pos_of_Z_minus.
-2: omega.
-cutrewrite (Fexp f1 - (Fexp f1 - Fexp f2) = Fexp f2)%Z. 2: ring.
-induction f1.
-simpl.
-rewrite Hx1.
+rewrite round_extension_conversion.
+apply rounding_generic.
+destruct f1 as (m1, e1).
+destruct f2 as (m2, e2).
+destruct (Z_eq_dec m2 0) as [Hm|Hm].
 rewrite <- Hx3.
-clear H H2 H1 H3 Hx4 Hx3 Hx2 Hx1 p2 p1 d2 d1 xi x rdir.
-induction f2.
+rewrite float2_float.
+rewrite Hm, F2R_0.
+apply generic_format_0.
+assert (projT1 (ln_beta radix2 (Fcore_defs.F2R (Float radix2 m2 e2))) <= Zpos p2 + e2)%Z.
+rewrite ln_beta_F2R with (1 := Hm).
+apply Zplus_le_compat_r.
+apply Zle_trans with (2 := H2).
+apply bpow_lt_bpow with radix2.
+destruct (ln_beta radix2 (Z2R m2)) as (n2, Hn).
 simpl.
-intro H.
-apply sym_eq.
-exact (float2_binade_eq_reg _ _ _ H).
+specialize (Hn (Z2R_neq _ _ Hm)).
+apply Rle_lt_trans with (1 := proj1 Hn).
+rewrite <- abs_Z2R.
+now apply Z2R_lt.
+destruct (Zle_or_lt e1 e2) as [He|He].
+(* *)
+rewrite <- Hx3.
+rewrite float2_float.
+apply generic_format_canonic_exponent.
+apply Zmax_lub.
+omega.
+apply Zle_trans with (1 := H1).
+now apply Zle_trans with e1.
+(* *)
+rewrite <- Hx1.
+rewrite float2_float.
+apply generic_format_canonic_exponent.
+apply Zmax_lub.
+rewrite <- float2_float.
+rewrite Hx1, <- Hx3.
+rewrite float2_float.
+omega.
+now apply Zle_trans with d1.
 Qed.
 
 Definition round_helper (rnd : float2 -> float2) (xi zi : FF) :=
