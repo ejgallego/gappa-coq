@@ -315,28 +315,31 @@ Definition enforce_helper (p : positive) (d : Z) (xi zi : FF) :=
  Fle2 (round roundDN (float_shift p d) (upper xi)) (upper zi).
 
 Theorem float_enforce :
- forall rdir : round_dir, forall p : positive, forall d : Z,
- forall x : R, forall xi zi : FF,
- BND (rounding_float rdir p d x) xi ->
- enforce_helper p d xi zi = true ->
- BND (rounding_float rdir p d x) zi.
+  forall rdir : round_dir, forall p : positive, forall d : Z,
+  forall x : R, forall xi zi : FF,
+  BND (rounding_float rdir p d x) xi ->
+  enforce_helper p d xi zi = true ->
+  BND (rounding_float rdir p d x) zi.
+Proof.
 intros rdir p d x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fle2_correct _ _ H1). rewrite <- (round_extension_float2 roundUP _ (good_shift p d)). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). rewrite <- (round_extension_float2 roundDN _ (good_shift p d)). clear H2. intro H2.
-destruct (representable_round_extension rdir _ (good_shift p d) x) as (m,(e,(H3,H4))).
-unfold rounding_float in *.
-rewrite H3.
-rewrite H3 in Hx.
+generalize (Fle2_correct _ _ H1). rewrite rndG_conversion. clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
+revert Hx.
+unfold rounding_float.
+rewrite round_extension_conversion.
+intros (Hx1, Hx2).
 split.
 apply Rle_trans with (1 := H1).
-rewrite <- (round_extension_representable roundUP _ (good_shift p d) (Float2 m e) H4).
-apply round_extension_monotone.
-exact (proj1 Hx).
+rewrite <- (rounding_generic _ _ (ZrndG roundUP) _ (generic_format_rounding radix2 _ (good_shift p d) (ZrndG rdir) x)).
+apply rounding_monotone.
+apply good_shift.
+exact Hx1.
 apply Rle_trans with (2 := H2).
-rewrite <- (round_extension_representable roundDN _ (good_shift p d) (Float2 m e) H4).
-apply round_extension_monotone.
-exact (proj2 Hx).
+rewrite <- (rounding_generic _ _ (ZrndG roundDN) _ (generic_format_rounding radix2 _ (good_shift p d) (ZrndG rdir) x)).
+apply rounding_monotone.
+apply good_shift.
+exact Hx2.
 Qed.
 
 Definition float_absolute_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
