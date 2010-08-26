@@ -32,237 +32,6 @@ Definition float_ulp (p : positive) (d m e : Z) :=
  | Z0 => (-d)%Z
  end.
 
-Lemma float_absolute_ne_binade :
- forall p : positive, forall d k : Z, forall x : R,
- (Float2 1 (k - 1) <= x < Float2 1 k)%R ->
- (Rabs (rounding_float roundNE p d x - x) <= Float2 1 (float_shift p d k - 1))%R.
-intros p d k x Hx.
-assert (0 < x)%R.
-apply Rlt_le_trans with (2 := proj1 Hx).
-apply float2_pos_compat.
-exact (refl_equal _).
-unfold rounding_float.
-destruct (rexp_case_real _ (good_shift p d) _ H) as [(k0,(H0,H1))|(e,(m,(H0,H1)))].
-(* *)
-assert (k0 = -d)%Z.
-unfold float_shift in H0.
-destruct (Zmax_irreducible_inf (k0 - Zpos p) (-d)) as [H2|H2].
-generalize (Zgt_pos_0 p).
-omega.
-rewrite H0 in H2.
-exact H2.
-rewrite H2 in H1.
-rewrite H2 in H0.
-clear H2 k0.
-cutrewrite (float_shift p d k = -d)%Z.
-destruct (Rle_or_lt x (Float2 1 (-d - 1))).
-cutrewrite (round_extension roundNE (float_shift p d) (good_shift p d) x = 0 :>R)%R.
-rewrite Rminus_0_l.
-rewrite Rabs_Ropp.
-rewrite Rabs_right.
-2: left ; exact H.
-exact H2.
-apply Rle_antisym.
-2: apply round_extension_positive with (1 := H).
-cutrewrite (R0 = round_extension roundNE (float_shift p d) (good_shift p d) (Float2 1 (-d - 1))).
-apply round_extension_monotone.
-exact H2.
-rewrite round_extension_float2.
-unfold round, round_pos. simpl.
-cutrewrite (-d - 1 + 1 = -d)%Z. 2: ring.
-rewrite H0.
-cutrewrite (-d - (-d - 1) = 1)%Z. 2: ring.
-simpl.
-rewrite float2_zero.
-exact (refl_equal _).
-cutrewrite (round_extension roundNE (float_shift p d) (good_shift p d) x = Float2 1 (-d) :>R).
-rewrite Rabs_right.
-apply Rle_trans with (Float2 1 (-d) - Float2 1 (-d - 1))%R.
-unfold Rminus.
-apply Rplus_le_compat_l.
-apply Ropp_le_contravar.
-exact (Rlt_le _ _ H2).
-rewrite <- Fminus2_correct.
-unfold Fminus2, Fshift2.
-simpl.
-cutrewrite (-d - (-d - 1) = 1)%Z. 2: ring.
-apply Rle_refl.
-apply Rgt_ge.
-apply Rgt_minus.
-exact H1.
-destruct (round_extension_prop_pos roundNE _ (good_shift p d) _ H) as (m1,(m2,(e1,(e2,(H4,(H5,(H6,(H7,H8)))))))).
-destruct (Rle_or_lt (Float2 1 (-d)) (Float2 (Zpos m2) e2)).
-rewrite <- (round_extension_representable roundNE _ (good_shift p d) (Float2 1 (-d))).
-apply Rle_antisym.
-apply round_extension_monotone.
-exact (Rlt_le _ _ H1).
-rewrite H6.
-rewrite <- (round_extension_float2 roundNE _ (good_shift p d)).
-apply round_extension_monotone.
-exact H3.
-simpl.
-unfold float_shift.
-apply Zmax_lub.
-2: apply Zle_refl.
-generalize (Zgt_pos_0 p).
-omega.
-rewrite H6.
-unfold round. simpl.
-rewrite (proj2 (proj2 (round_constant_underflow rndNE _ (good_shift p d) _ H0 m2 e2)) (conj (Rlt_le_trans _ _ _ H2 (proj2 H4)) H3)).
-simpl.
-exact (refl_equal _).
-unfold float_shift.
-apply Zle_antisym.
-2: apply Zmax2.
-assert (k - 1 < -d)%Z.
-apply float2_pow2_lt.
-exact (Rle_lt_trans _ _ _ (proj1 Hx) H1).
-assert (k - Zpos p < -d)%Z.
-generalize (Zgt_pos_0 p).
-omega.
-unfold Zmax.
-rewrite H3.
-apply Zle_refl.
-(* *)
-cutrewrite (float_shift p d k = e).
-destruct (round_extension_prop_pos roundNE _ (good_shift p d) _ H) as (m1,(m2,(e1,(e2,(H4,(H5,(H6,(H7,H8)))))))).
-destruct (total_order_T (Float2 (Zpos m * 2 + 1) (e - 1)) x) as [[H2|H2]|H2].
-cutrewrite (round_extension roundNE (float_shift p d) (good_shift p d) x = Float2 (Zpos m + 1) e :>R).
-rewrite Rabs_right.
-apply Rle_trans with (Float2 (Zpos m + 1) e - Float2 (Zpos m * 2 + 1) (e - 1))%R.
-unfold Rminus.
-apply Rplus_le_compat_l.
-apply Ropp_le_contravar.
-exact (Rlt_le _ _ H2).
-rewrite (float2_shift_m1 e).
-rewrite <- Fminus2_correct.
-unfold Fminus2, Fshift2.
-rewrite Zminus_diag.
-unfold Fnum, Fexp.
-cutrewrite ((Zpos m + 1) * 2 - (Zpos m * 2 + 1) = 1)%Z. 2: ring.
-apply Rle_refl.
-apply Rgt_ge.
-apply Rgt_minus.
-exact (proj2 H1).
-destruct (Rle_or_lt (Float2 (Zpos m + 1) e) (Float2 (Zpos m2) e2)).
-destruct (rexp_succ _ (good_shift p d) _ _ (Zeq_le _ _ H0)) as (m3,(e3,(HA,HB))).
-rewrite <- HA.
-rewrite <- (round_extension_representable roundNE _ (good_shift p d) (Float2 (Zpos m3) e3) HB).
-apply Rle_antisym.
-apply round_extension_monotone.
-rewrite HA.
-exact (Rlt_le _ _ (proj2 H1)).
-rewrite H6.
-rewrite <- (round_extension_float2 roundNE _ (good_shift p d)).
-apply round_extension_monotone.
-rewrite HA.
-exact H3.
-rewrite H6.
-unfold round. simpl.
-rewrite (proj2 (proj2 (round_constant rndNE _ _ _ H0 m2 e2)) (conj (Rlt_le_trans _ _ _ H2 (proj2 H4)) H3)).
-simpl.
-rewrite Pplus_one_succ_r.
-exact (refl_equal _).
-rewrite <- H2.
-rewrite round_extension_float2.
-unfold round. simpl.
-rewrite tofloat_0.
-rewrite <- H2 in H1.
-assert (H9 := round_bound_local _ _ rndNE_good _ _ H0 _ _ H1).
-destruct (Rle_or_lt R0 (tofloat (round_pos rndNE (float_shift p d) (m * 2 + 1) (e - 1)) - Float2 (Zpos m * 2 + 1) (e - 1))) as [HA|HA].
-rewrite Rabs_right.
-2: exact (Rle_ge _ _ HA).
-apply Rle_trans with (Float2 (Zpos m + 1) e - Float2 (Zpos (m * 2 + 1)) (e - 1))%R.
-unfold Rminus.
-apply Rplus_le_compat_r.
-exact (proj2 H9).
-rewrite (float2_shift_m1 e).
-rewrite <- Fminus2_correct.
-unfold Fminus2, Fshift2.
-rewrite Zminus_diag.
-unfold Fnum, Fexp.
-change (Zpos (m * 2 + 1)) with (Zpos m * 2 + 1)%Z.
-cutrewrite ((Zpos m + 1) * 2 - (Zpos m * 2 + 1) = 1)%Z. 2: ring.
-apply Rle_refl.
-rewrite Rabs_left.
-2: exact HA.
-rewrite Ropp_minus_distr.
-apply Rle_trans with (Float2 (Zpos (m * 2 + 1)) (e - 1) - Float2 (Zpos m) e)%R.
-unfold Rminus.
-apply Rplus_le_compat_l.
-apply Ropp_le_contravar.
-exact (proj1 H9).
-rewrite (float2_shift_m1 e).
-rewrite <- Fminus2_correct.
-unfold Fminus2, Fshift2.
-rewrite Zminus_diag.
-unfold Fnum, Fexp.
-change (Zpos (m * 2 + 1)) with (Zpos m * 2 + 1)%Z.
-cutrewrite (Zpos m * 2 + 1 - Zpos m * 2 = 1)%Z. 2: ring.
-apply Rle_refl.
-destruct (Rle_or_lt x (Float2 (Zpos m) e)) as [H9|H9].
-rewrite (Rle_antisym _ _ H9 (proj1 H1)).
-rewrite round_extension_representable.
-rewrite Rminus_diag_eq. 2: apply refl_equal.
-rewrite Rabs_R0.
-apply Rlt_le.
-apply float2_pos_compat.
-exact (refl_equal _).
-exact (Zeq_le _ _ H0).
-cutrewrite (round_extension roundNE (float_shift p d) (good_shift p d) x = Float2 (Zpos m) e :>R).
-rewrite Rabs_left.
-rewrite Ropp_minus_distr.
-apply Rle_trans with (Float2 (Zpos m * 2 + 1) (e - 1) - Float2 (Zpos m) e)%R.
-unfold Rminus.
-apply Rplus_le_compat_r.
-exact (Rlt_le _ _ H2).
-rewrite (float2_shift_m1 e).
-rewrite <- Fminus2_correct.
-unfold Fminus2, Fshift2.
-rewrite Zminus_diag.
-unfold Fnum, Fexp.
-cutrewrite (Zpos m * 2 + 1 - Zpos m * 2 = 1)%Z. 2: ring.
-apply Rle_refl.
-apply Rlt_minus.
-exact H9.
-destruct (Rle_or_lt (Float2 (Zpos m1) e1) (Float2 (Zpos m) e)).
-rewrite <- (round_extension_representable roundNE _ (good_shift p d) (Float2 (Zpos m) e)).
-apply Rle_antisym.
-rewrite H5.
-rewrite <- (round_extension_float2 roundNE _ (good_shift p d)).
-apply round_extension_monotone.
-exact H3.
-apply round_extension_monotone.
-exact (proj1 H1).
-exact (Zeq_le _ _ H0).
-rewrite H5.
-unfold round. simpl.
-rewrite ((proj1 (round_constant rndNE _ _ _ H0 m1 e1)) (conj H3 (Rle_lt_trans _ _ _ (proj1 H4) H2))).
-exact (refl_equal _).
-cutrewrite (k = e + Zpos (digits m))%Z.
-exact H0.
-assert (H2 := float2_digits_correct m e).
-apply Zle_antisym.
-assert (k - 1 < e + Zpos (digits m))%Z. 2: omega.
-apply float2_pow2_lt.
-apply Rle_lt_trans with (1 := proj1 Hx).
-apply Rlt_le_trans with (1 := proj2 H1).
-fold (Zsucc (Zpos m)).
-rewrite <- Zpos_succ_morphism.
-destruct (digits_succ m) as [H3|(H3,H4)].
-rewrite <- H3.
-apply Rlt_le.
-exact (proj2 (float2_digits_correct (Psucc m) e)).
-rewrite H4.
-rewrite <- (float2_shl_correct 1 (e + Zpos (digits m)) (digits m)).
-simpl.
-cutrewrite (e + Zpos (digits m) - Zpos (digits m) = e)%Z. 2: ring.
-unfold shift_pos.
-apply Rle_refl.
-apply float2_repartition_underflow.
-exact (Rle_lt_trans _ _ _ (proj1 H1) (proj2 Hx)).
-Qed.
-
 Lemma float_absolute_ne_sym :
  forall p : positive, forall d : Z, forall x : R,
  (Rabs (rounding_float roundNE p d x - x) = Rabs (rounding_float roundNE p d (Rabs x) - Rabs x))%R.
@@ -282,40 +51,38 @@ exact (refl_equal _).
 Qed.
 
 Lemma float_absolute_ne_whole :
- forall p : positive, forall d k : Z, forall x : R,
- (Rabs x < Float2 1 k)%R ->
- (Rabs (rounding_float roundNE p d x - x) <= Float2 1 (float_shift p d k - 1))%R.
-intros p d k x H.
-rewrite float_absolute_ne_sym.
-destruct (Rabs_pos x).
-destruct (log2 _ H0) as (k0,Hk).
-apply Rle_trans with (Float2 1 (float_shift p d k0 - 1)).
-apply float_absolute_ne_binade.
-do 2 rewrite float2_pow2.
-exact Hk.
-apply float2_Rle_pow2.
-unfold Zminus.
-apply Zplus_le_compat_r.
-unfold float_shift.
-apply Zmax_lub.
-2: apply Zmax2.
-apply Zle_trans with (2 := Zmax1 (k - Zpos p) (- d)).
-unfold Zminus.
-apply Zplus_le_compat_r.
-assert (k0 - 1 < k)%Z. 2: omega.
-apply float2_pow2_lt.
-rewrite float2_pow2.
-apply Rle_lt_trans with (Rabs x).
-exact (proj1 Hk).
-exact H.
-rewrite <- H0.
+  forall p d k x,
+  (Rabs x < Float2 1 k)%R ->
+  (Rabs (rounding_float roundNE p d x - x) <= Float2 1 (float_shift p d k - 1))%R.
+Proof.
+intros p d k x Hx.
 unfold rounding_float.
-rewrite round_extension_zero.
-rewrite Rminus_0_r.
-rewrite Rabs_R0.
-left.
-apply float2_pos_compat.
-exact (refl_equal _).
+rewrite round_extension_conversion.
+rewrite float2_float.
+rewrite F2R_bpow.
+destruct (Req_dec x 0) as [Hx0|Hx0].
+rewrite Hx0, rounding_0, Rminus_0_r, Rabs_R0.
+apply bpow_ge_0.
+rewrite float2_float, F2R_bpow in Hx.
+rewrite (rounding_ext _ _ _ ZrndNE) with (1 := roundNE_NE).
+apply Rle_trans with (/2 * ulp radix2 (float_shift p d) x)%R.
+apply ulp_half_error.
+apply good_shift.
+unfold ulp.
+rewrite <- (bpow_add radix2 (-1)).
+apply -> bpow_le.
+unfold Zminus.
+rewrite (Zplus_comm _ (-1)).
+apply Zplus_le_compat_l.
+unfold canonic_exponent, float_shift.
+cut (projT1 (ln_beta radix2 x) <= k)%Z.
+generalize (Zmax_spec (projT1 (ln_beta radix2 x) - Zpos p) (-d)) (Zmax_spec (k - Zpos p) (-d)).
+omega.
+destruct (ln_beta radix2 x) as (e, He).
+simpl.
+specialize (He Hx0).
+apply bpow_lt_bpow with radix2.
+now apply Rle_lt_trans with (Rabs x).
 Qed.
 
 Lemma Zmax_inf_l :
