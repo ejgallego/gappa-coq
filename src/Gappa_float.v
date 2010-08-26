@@ -1,6 +1,7 @@
 Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
+Require Import Fcore.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_integer.
@@ -15,32 +16,10 @@ Definition float_shift (p : positive) (d b : Z) :=
  Zmax (b - Zpos p) (-d).
 
 Lemma good_shift :
- forall p : positive, forall m : Z,
- good_rexp (float_shift p m).
-unfold float_shift. split.
-assert (k - Zpos p < k -> -m < k -> k + 1 - Zpos p <= k /\ -m <= k)%Z.
-omega.
-intro H0.
-generalize (Zle_lt_trans _ _ _ (Zmax1 (k - Zpos p) (-m)) H0).
-generalize (Zle_lt_trans _ _ _ (Zmax2 (k - Zpos p) (-m)) H0).
-intros H1 H2.
-generalize (H H2 H1).
-clear H H0 H1 H2. intros (H1,H2).
-unfold Zmax.
-case (k + 1 - Zpos p ?= - m)%Z ; assumption.
-intro H.
-generalize (Zgt_pos_0 p). intro H0.
-cutrewrite (Zmax (k - Zpos p) (-m) = (-m))%Z.
-clear H. unfold Zmax.
-split.
-case (-m + 1 - Zpos p ?= -m)%Z ; omega.
-intros.
-assert (l - Zpos p < -m)%Z. omega.
-rewrite H1.
-apply refl_equal.
-generalize H. clear H.
-unfold Zmax.
-case (k - Zpos p ?= - m)%Z ; intros ; omega.
+  forall p m, good_rexp (float_shift p m).
+Proof.
+intros p m.
+now apply FLT_exp_correct.
 Qed.
 
 Definition rounding_float (rdir : round_dir) (p : positive) (d : Z) :=
