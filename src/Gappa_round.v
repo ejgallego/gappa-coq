@@ -742,6 +742,65 @@ rewrite hrndG_DN ; try easy.
 apply roundDN.
 Qed.
 
+Lemma roundNE_NE :
+  forall x e,
+  Zrnd (ZrndG roundNE) x e = Znearest (fun m => negb (Zeven (Zfloor x))) x.
+Proof.
+intros x e.
+simpl.
+destruct (Req_dec (Z2R (Zfloor x)) x) as [H1|H1].
+rewrite <- H1.
+now rewrite rndG_Z2R, Znearest_Z2R.
+unfold rndG.
+case Rcompare_spec ; intros H2.
+(* *)
+rewrite hrndG_N.
+unfold Znearest. simpl.
+replace (-x - Z2R (Zfloor (-x)))%R with (Z2R (Zceil x) - x)%R.
+rewrite Rcompare_floor_ceil_mid with (1 := H1).
+rewrite Rcompare_ceil_floor_mid with (1 := H1).
+rewrite Rcompare_sym.
+case Rcompare ; simpl.
+unfold rndNE. simpl.
+rewrite <- (Zopp_involutive (Zfloor (-x))).
+fold (Zceil x).
+rewrite Zceil_floor_neq with (1 := H1).
+unfold Zceil.
+rewrite Ropp_involutive.
+assert (H3: (Zfloor x < 0)%Z).
+generalize (Zceil_floor_neq _ H1).
+generalize (Zceil_glb 0 _ (Rlt_le _ _ H2)).
+omega.
+clear -H3.
+now destruct (Zfloor x) as [|p|[p|[p|p|]|]].
+unfold Zceil.
+rewrite Ropp_involutive.
+apply Zopp_involutive.
+apply refl_equal.
+unfold Zceil.
+rewrite opp_Z2R.
+apply Rplus_comm.
+apply roundNE.
+exact andb_true_r.
+(* *)
+rewrite H2.
+apply sym_eq.
+exact (Znearest_Z2R _ 0).
+(* *)
+rewrite hrndG_N.
+unfold Znearest. simpl.
+case Rcompare ; try apply refl_equal.
+unfold rndNE. simpl.
+assert (H3: (0 <= Zfloor x)%Z).
+apply Zfloor_lub.
+now apply Rlt_le.
+clear -H3.
+destruct (Zfloor x) as [|p|p] ; try easy.
+now elim H3.
+apply roundNE.
+exact andb_true_r.
+Qed.
+
 Lemma tofloat_pair :
  forall p : N * Z,
  tofloat p = Float2 (Z_of_N (fst p)) (snd p).
