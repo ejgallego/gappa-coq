@@ -119,35 +119,21 @@ now rewrite (Zplus_comm (- Zpos p)), Zplus_assoc.
 Qed.
 
 Theorem fix_of_float :
- forall rdir : round_dir,
- forall x : R, forall p : positive, forall k1 k2 : Z,
- Zle_bool k2 (-k1) = true ->
- FIX (rounding_float rdir p k1 x) k2.
+  forall rdir x p k1 k2,
+  Zle_bool k2 (-k1) = true ->
+  FIX (rounding_float rdir p k1 x) k2.
+Proof.
 intros rdir x p k1 k2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX, rounding_float.
-destruct (representable_round_extension rdir _ (good_shift p k1) x) as (m,(e,(H1,H2))).
-induction m.
-exists (Float2 0 k2).
-split.
-rewrite H1.
-repeat rewrite float2_zero.
-exact (refl_equal _).
-exact (Zle_refl _).
-exists (Float2 (Zpos p0) e).
-split.
-exact (sym_eq H1).
+rewrite round_extension_conversion.
+unfold rounding.
+rewrite <- float2_float.
+eexists ; repeat split.
+simpl.
+unfold canonic_exponent, float_shift.
 apply Zle_trans with (1 := H).
-unfold rexp_representable, float_shift in H2.
-apply Zle_trans with (2 := H2).
-exact (Zmax2 _ _).
-exists (Float2 (Zneg p0) e).
-split.
-exact (sym_eq H1).
-apply Zle_trans with (1 := H).
-unfold rexp_representable, float_shift in H2.
-apply Zle_trans with (2 := H2).
-exact (Zmax2 _ _).
+apply Zle_max_r.
 Qed.
 
 Theorem flt_of_float :
