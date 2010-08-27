@@ -17,15 +17,8 @@ Section Gappa_float.
 Definition float_shift (p : positive) (d b : Z) :=
  Zmax (b - Zpos p) (-d).
 
-Lemma good_shift :
-  forall p m, good_rexp (float_shift p m).
-Proof.
-intros p m.
-now apply FLT_exp_correct.
-Qed.
-
 Definition rounding_float (rdir : round_dir) (p : positive) (d : Z) :=
- round_extension rdir (float_shift p d) (good_shift p d).
+  rounding radix2 (FLT_exp (-d) (Zpos p)) (ZrndG rdir).
 
 Definition float_ulp (p : positive) (d m e : Z) :=
  match m with
@@ -35,21 +28,20 @@ Definition float_ulp (p : positive) (d m e : Z) :=
  end.
 
 Lemma float_absolute_ne_sym :
- forall p : positive, forall d : Z, forall x : R,
- (Rabs (rounding_float roundNE p d x - x) = Rabs (rounding_float roundNE p d (Rabs x) - Rabs x))%R.
+  forall p d x,
+  (Rabs (rounding_float roundNE p d x - x) = Rabs (rounding_float roundNE p d (Rabs x) - Rabs x))%R.
+Proof.
 intros p d x.
 unfold rounding_float.
 destruct (Rle_or_lt 0 x) as [H|H].
 rewrite (Rabs_right _ (Rle_ge _ _ H)).
 exact (refl_equal _).
 rewrite (Rabs_left _ H).
-rewrite round_extension_opp.
-simpl.
-fold roundNE.
+rewrite 2!(rounding_ext _ _ _ ZrndNE) with (1 := roundNE_NE).
+rewrite rounding_NE_opp.
 unfold Rminus.
 rewrite <- Ropp_plus_distr.
-rewrite Rabs_Ropp.
-exact (refl_equal _).
+now rewrite Rabs_Ropp.
 Qed.
 
 Lemma float_absolute_ne_whole :
@@ -59,14 +51,13 @@ Lemma float_absolute_ne_whole :
 Proof.
 intros p d k x Hx.
 unfold rounding_float.
-rewrite round_extension_conversion.
 destruct (Req_dec x 0) as [Hx0|Hx0].
 rewrite Hx0, rounding_0, Rminus_0_r, Rabs_R0.
 apply bpow_ge_0.
 rewrite (rounding_ext _ _ _ ZrndNE) with (1 := roundNE_NE).
 apply Rle_trans with (/2 * ulp radix2 (float_shift p d) x)%R.
 apply ulp_half_error.
-apply good_shift.
+now apply FLT_exp_correct.
 unfold ulp.
 rewrite <- (bpow_add radix2 (-1)).
 apply -> bpow_le.
@@ -106,7 +97,6 @@ apply Rle_not_lt with (1 := Hx).
 rewrite Hx0, Rabs_R0.
 apply bpow_gt_0.
 unfold rounding_float.
-rewrite round_extension_conversion.
 destruct (relative_error_N_FLT_ex radix2 (-d) (Zpos p) (refl_equal _) (fun m => negb (Zeven (Zfloor m))) x Hx) as (eps, (Hr1, Hr2)).
 change (float_shift p d) with (FLT_exp (-d) (Zpos p)).
 rewrite (rounding_ext _ _ _ ZrndNE) with (1 := roundNE_NE).
@@ -126,7 +116,6 @@ Proof.
 intros rdir x p k1 k2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX, rounding_float.
-rewrite round_extension_conversion.
 unfold rounding.
 rewrite <- float2_float.
 eexists ; repeat split.
@@ -144,8 +133,7 @@ Proof.
 intros rdir x p1 p2 k H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FLT, rounding_float.
-rewrite round_extension_conversion.
-destruct (proj2 (FLT_format_generic radix2 (-k) (Zpos p1) (refl_equal _) (rounding radix2 (float_shift p1 k) (ZrndG rdir) x)))
+destruct (proj2 (FLT_format_generic radix2 (-k) (Zpos p1) (refl_equal _) (rounding radix2 (FLT_exp (-k) (Zpos p1)) (ZrndG rdir) x)))
   as ((m, e), (H1, (H2, _))).
 apply generic_format_rounding.
 now apply FLT_exp_correct.
@@ -177,7 +165,6 @@ unfold Rminus.
 rewrite (Rplus_opp_r x).
 apply contains_zero with (1 := H3).
 unfold rounding_float.
-rewrite round_extension_conversion.
 apply rounding_generic.
 destruct f1 as (m1, e1).
 destruct f2 as (m2, e2).
@@ -233,7 +220,6 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite rndG_conversion. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
 unfold rounding_float.
-rewrite round_extension_conversion.
 split.
 apply Rle_trans with (1 := H1).
 apply rounding_monotone.
@@ -262,18 +248,17 @@ generalize (Fle2_correct _ _ H1). rewrite rndG_conversion. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
 revert Hx.
 unfold rounding_float.
-rewrite round_extension_conversion.
 intros (Hx1, Hx2).
 split.
 apply Rle_trans with (1 := H1).
-rewrite <- (rounding_generic _ _ (ZrndG roundUP) _ (generic_format_rounding radix2 _ (good_shift p d) (ZrndG rdir) x)).
+rewrite <- (rounding_generic _ _ (ZrndG roundUP) _ (generic_format_rounding radix2 _ (FLT_exp_correct (-d) (Zpos p) (refl_equal _)) (ZrndG rdir) x)).
 apply rounding_monotone.
-apply good_shift.
+now apply FLT_exp_correct.
 exact Hx1.
 apply Rle_trans with (2 := H2).
-rewrite <- (rounding_generic _ _ (ZrndG roundDN) _ (generic_format_rounding radix2 _ (good_shift p d) (ZrndG rdir) x)).
+rewrite <- (rounding_generic _ _ (ZrndG roundDN) _ (generic_format_rounding radix2 _ (FLT_exp_correct (-d) (Zpos p) (refl_equal _)) (ZrndG rdir) x)).
 apply rounding_monotone.
-apply good_shift.
+now apply FLT_exp_correct.
 exact Hx2.
 Qed.
 
@@ -293,7 +278,6 @@ intros p d x xi zi Hx Hb.
 assert (H: (Rabs (rounding_float roundNE p d x - x) <= bpow radix2 (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1))%R).
 (* *)
 unfold rounding_float.
-rewrite round_extension_conversion.
 destruct (Req_dec x 0) as [Hx0|Hx0].
 rewrite Hx0, rounding_0, Rminus_0_r, Rabs_R0.
 apply bpow_ge_0.
@@ -302,7 +286,7 @@ replace (bpow radix2 (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1)) wi
 (* . *)
 apply Rle_trans with (/2 * ulp radix2 (float_shift p d) x)%R.
 apply ulp_half_error.
-apply good_shift.
+now apply FLT_exp_correct.
 apply Rmult_le_compat_l.
 apply Rlt_le.
 apply Rinv_0_lt_compat.
@@ -409,7 +393,7 @@ induction (upper xi).
 induction Fnum ; simpl.
 cutrewrite (x = R0).
 unfold rounding_float.
-rewrite round_extension_zero.
+rewrite rounding_0.
 rewrite Rminus_0_r.
 rewrite Rabs_R0.
 left.
@@ -465,7 +449,8 @@ exact (refl_equal _).
 unfold rounding_float.
 apply Rle_antisym.
 cutrewrite (Float2 1 (Fexp + Zpos (digits p0) - 1) =
-  round_extension roundNE (float_shift p d) (good_shift p d) (Float2 (Zpos (xI (shift_pos p 1))) e) :>R).
+  round_extension roundNE (float_shift p d) (FLT_exp_correct (-d) (Zpos p) (refl_equal _)) (Float2 (Zpos (xI (shift_pos p 1))) e) :>R).
+rewrite <- round_extension_conversion with (Hexp := FLT_exp_correct (-d) (Zpos p) (refl_equal _)).
 apply round_extension_monotone.
 exact (Rle_trans _ _ _ Hx H2).
 rewrite round_extension_float2.
@@ -523,11 +508,12 @@ exact (refl_equal _).
 simpl.
 rewrite IHn.
 exact (refl_equal _).
-rewrite <- (round_extension_representable roundNE _ (good_shift p d) (Float2 1 (Fexp + Zpos (digits p0) - 1))).
+rewrite <- (round_extension_representable roundNE _ (FLT_exp_correct (-d) (Zpos p) (refl_equal _)) (Float2 1 (Fexp + Zpos (digits p0) - 1))).
+rewrite <- round_extension_conversion with (Hexp := FLT_exp_correct (-d) (Zpos p) (refl_equal _)).
 apply round_extension_monotone.
 exact H.
 simpl.
-unfold float_shift.
+unfold FLT_exp.
 rewrite Zmax_inf_l.
 generalize (Zgt_pos_0 p).
 omega.
@@ -610,7 +596,6 @@ generalize (Fle2_correct _ _ H3). rewrite float2_float, F2R_bpow. clear H3. intr
 destruct (Rle_or_lt (Rabs x) (bpow radix2 (- d + Zpos p))) as [He|He].
 (* *)
 unfold rounding_float.
-rewrite round_extension_conversion.
 rewrite rounding_generic.
 exists R0.
 repeat split.
