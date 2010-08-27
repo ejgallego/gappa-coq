@@ -99,23 +99,26 @@ Definition round_helper (rnd : float2 -> float2) (xi zi : FF) :=
  Fle2 (rnd (upper xi)) (upper zi).
 
 Theorem fixed_round :
- forall rdir : round_dir, forall e : Z,
- forall x : R, forall xi zi : FF,
- BND x xi ->
- round_helper (round rdir (fixed_shift e)) xi zi = true ->
- BND (rounding_fixed rdir e x) zi.
+  forall rdir e x xi zi,
+  BND x xi ->
+  round_helper (round rdir (fixed_shift e)) xi zi = true ->
+  BND (rounding_fixed rdir e x) zi.
+Proof.
 intros rdir e x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fle2_correct _ _ H1). rewrite <- (round_extension_float2 rdir _ (good_shift e)). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). rewrite <- (round_extension_float2 rdir _ (good_shift e)). clear H2. intro H2.
+generalize (Fle2_correct _ _ H1). rewrite rndG_conversion. clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
 unfold rounding_fixed.
+rewrite round_extension_conversion.
 split.
 apply Rle_trans with (1 := H1).
-apply round_extension_monotone.
-exact (proj1 Hx).
+apply rounding_monotone.
+apply FIX_exp_correct.
+apply Hx.
 apply Rle_trans with (2 := H2).
-apply round_extension_monotone.
-exact (proj2 Hx).
+apply rounding_monotone.
+apply FIX_exp_correct.
+apply Hx.
 Qed.
 
 Definition fixed_error_dn_helper (e : Z) (zi : FF) :=
