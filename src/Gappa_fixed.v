@@ -12,7 +12,7 @@ Require Import Gappa_round.
 Section Gappa_fixed.
 
 Definition rounding_fixed (rdir : round_dir) (e : Z) :=
-  round_extension rdir (FIX_exp e) (FIX_exp_correct e).
+  rounding radix2 (FIX_exp e) (ZrndG rdir).
 
 Theorem fix_of_fixed :
   forall rdir : round_dir,
@@ -23,7 +23,6 @@ Proof.
 intros rdir x k1 k2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX, rounding_fixed.
-rewrite round_extension_conversion.
 unfold rounding.
 rewrite <- float2_float.
 eexists ; repeat split.
@@ -40,7 +39,6 @@ intros rdir x e1 e2 xi ((m,e),(Hx1,Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
 unfold rounding_fixed.
-rewrite round_extension_conversion.
 rewrite rounding_generic.
 now apply sub_refl.
 rewrite <- Hx1.
@@ -96,7 +94,6 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite rndG_conversion. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
 unfold rounding_fixed.
-rewrite round_extension_conversion.
 split.
 apply Rle_trans with (1 := H1).
 apply rounding_monotone.
@@ -122,7 +119,6 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fpos0_correct _ H2). clear H2. intro H2.
 unfold rounding_fixed.
-rewrite round_extension_conversion.
 split.
 (* *)
 apply Rle_trans with (1 := H1).
