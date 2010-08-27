@@ -199,23 +199,6 @@ Definition round (rdirs : round_dir) (rexp : Z -> Z) (f : float2) :=
    end
  end.
 
-Lemma round_rexp_exact :
- forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
- forall m : positive, forall e : Z,
- (rexp (e + Zpos (digits m)) <= e)%Z ->
- round_pos rdir rexp m e = (Npos m, e).
-intros rdir rexp m e H.
-unfold round_pos.
-caseEq (rexp (e + Zpos (digits m)) - e)%Z ; intros ; try apply refl_equal.
-elim H.
-rewrite <- (Zcompare_plus_compat (rexp (e + Zpos (digits m))%Z) e (-e)).
-rewrite Zplus_opp_l.
-rewrite Zplus_comm.
-unfold Zminus in H0.
-rewrite H0.
-apply refl_equal.
-Qed.
-
 Definition tofloat p := match p with
  | (m,e) => Float2 (Z_of_N m) e
  end.
