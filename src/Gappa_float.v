@@ -2,6 +2,7 @@ Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
 Require Import Fcore.
+Require Import Fcalc_digits.
 Require Import Fprop_relative.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
@@ -319,59 +320,86 @@ Definition float_absolute_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :
  Fle2 (Float2 1 e) (upper zi).
 
 Theorem float_absolute_ne :
- forall p : positive, forall d : Z, forall x : R, forall xi zi : FF,
- ABS x xi ->
- float_absolute_ne_helper p d xi zi = true ->
- BND (rounding_float roundNE p d x - x) zi.
+  forall p d x xi zi,
+  ABS x xi ->
+  float_absolute_ne_helper p d xi zi = true ->
+  BND (rounding_float roundNE p d x - x) zi.
+Proof.
 intros p d x xi zi Hx Hb.
+assert (H: (Rabs (rounding_float roundNE p d x - x) <= bpow radix2 (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1))%R).
+(* *)
+unfold rounding_float.
+rewrite round_extension_conversion.
+destruct (Req_dec x 0) as [Hx0|Hx0].
+rewrite Hx0, rounding_0, Rminus_0_r, Rabs_R0.
+apply bpow_ge_0.
+rewrite (rounding_ext _ _ _ ZrndNE) with (1 := roundNE_NE).
+replace (bpow radix2 (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1)) with (/2 * ulp radix2 (float_shift p d) (upper xi))%R.
+(* . *)
+apply Rle_trans with (/2 * ulp radix2 (float_shift p d) x)%R.
+apply ulp_half_error.
+apply good_shift.
+apply Rmult_le_compat_l.
+apply Rlt_le.
+apply Rinv_0_lt_compat.
+now apply (Z2R_lt 0 2).
+rewrite <- ulp_abs.
+apply ulp_monotone.
+clear.
+intros m n H.
+unfold float_shift.
+generalize (Zmax_spec (m - Zpos p) (- d)) (Zmax_spec (n - Zpos p) (- d)).
+omega.
+now apply Rabs_pos_lt.
+apply Hx.
+(* . *)
+unfold ulp.
+rewrite <- (bpow_add radix2 (-1)).
+unfold Zminus.
+rewrite (Zplus_comm _ (-1)).
+apply (f_equal (fun e => bpow radix2 (-1 + e))).
+assert (Hm0: (Fnum (upper xi)) <> Z0).
+assert (Hx1 := Rabs_no_R0 _ Hx0).
+contradict Hx1.
+apply Rle_antisym.
+replace R0 with (float2R (upper xi)).
+apply Hx.
+clear -Hx1.
+destruct (upper xi).
+simpl in Hx1.
+rewrite Hx1.
+apply float2_zero.
+apply Rabs_pos.
+clear -Hm0.
+destruct (upper xi) as (m, e).
+rewrite float2_float.
+unfold canonic_exponent.
+rewrite ln_beta_F2R with (1 := Hm0).
+rewrite <- digits_ln_beta with (1 := Hm0).
+simpl.
+rewrite <- digits_abs.
+rewrite Zplus_comm.
+destruct m as [|m|m] ; unfold Zabs.
+now elim Hm0.
+now rewrite <- digits2_digits.
+now rewrite <- digits2_digits.
+(* *)
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-set (e := (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1)%Z) in H1, H2.
-cutrewrite (Float2 (-1) e = -Float2 1 e:>R)%R in H1.
-2: intros ; rewrite <- Fopp2_correct ; apply refl_equal.
-cut (Rabs (rounding_float roundNE p d x - x) <= Float2 1 e)%R.
 split.
 apply Rle_trans with (1 := H1).
-rewrite <- (Ropp_involutive (rounding_float roundNE p d x - x)%R).
-apply Ropp_le_contravar.
-apply Rle_trans with (Rabs (- (rounding_float roundNE p d x - x))%R).
-apply RRle_abs.
-rewrite Rabs_Ropp.
-exact H.
+rewrite float2_float.
+rewrite <- (opp_F2R _ 1%Z).
+rewrite F2R_bpow.
+apply Ropp_le_cancel.
+rewrite Ropp_involutive.
+apply (Rle_trans _ _ _ (Rabs_idem _)).
+now rewrite Rabs_Ropp.
 apply Rle_trans with (2 := H2).
-apply Rle_trans with (Rabs (rounding_float roundNE p d x - x)%R).
-apply RRle_abs.
-exact H.
-destruct Hx as (_,(_,Hx)).
-unfold e.
-clear H1 H2 zi e.
-induction (upper xi).
-induction Fnum ; simpl.
-cutrewrite (x = R0).
-unfold rounding_float.
-rewrite round_extension_zero.
-rewrite Rminus_0_r.
-rewrite Rabs_R0.
-left.
-apply float2_pos_compat.
-exact (refl_equal _).
-elim (Req_dec x 0) ; intro H.
-exact H.
-elim Rlt_not_le with (2 := Hx).
-rewrite float2_zero.
-apply Rabs_pos_lt with (1 := H).
-rewrite float2_float, F2R_bpow.
-apply float_absolute_ne_whole.
-apply Rle_lt_trans with (1 := Hx).
-rewrite <- F2R_bpow, <- float2_float.
-exact (proj2 (float2_digits_correct _ _)).
-elim Rlt_not_le with (2 := Hx).
-apply Rlt_le_trans with (Float2 0 Fexp).
-apply float2_binade_lt.
-apply Zlt_neg_0.
-rewrite float2_zero.
-apply Rabs_pos.
+rewrite float2_float.
+rewrite F2R_bpow.
+now apply (Rle_trans _ _ _ (Rabs_idem _)).
 Qed.
 
 Definition float_absolute_wide_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
