@@ -67,29 +67,31 @@ Definition bnd_of_bnd_fix_helper (xi zi : FF) (e : Z) :=
  Fle2 (round roundDN (fixed_shift e) (upper xi)) (upper zi).
 
 Theorem bnd_of_bnd_fix :
- forall x : R, forall xn : Z, forall xi zi : FF,
- BND x xi -> FIX x xn ->
- bnd_of_bnd_fix_helper xi zi xn = true ->
- BND x zi.
-intros x xn xi zi Hxb (fx,(Hx1,Hx2)) Hb.
+  forall x xn xi zi,
+  BND x xi -> FIX x xn ->
+  bnd_of_bnd_fix_helper xi zi xn = true ->
+  BND x zi.
+Proof.
+intros x xn xi zi Hxb ((m,e),(Hx1,Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fle2_correct _ _ H1). rewrite <- (round_extension_float2 roundUP _ (good_shift xn)). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). rewrite <- (round_extension_float2 roundDN _ (good_shift xn)). clear H2. intro H2.
+generalize (Fle2_correct _ _ H1). rewrite rndG_conversion. clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
+rewrite float2_float in Hx1.
 rewrite <- Hx1.
 rewrite <- Hx1 in Hxb.
 split.
 apply Rle_trans with (1 := H1).
-rewrite <- (round_extension_representable roundUP _ (good_shift xn) fx).
-apply round_extension_monotone.
-exact (proj1 Hxb).
-unfold rexp_representable, fixed_shift.
-case (Fnum fx) ; trivial.
+rewrite <- (rounding_generic radix2 (fixed_shift xn) (ZrndG roundUP) (F2R (Float radix2 m e))).
+apply rounding_monotone.
+apply FIX_exp_correct.
+apply Hxb.
+now apply generic_format_canonic_exponent.
 apply Rle_trans with (2 := H2).
-rewrite <- (round_extension_representable roundDN _ (good_shift xn) fx).
-apply round_extension_monotone.
-exact (proj2 Hxb).
-unfold rexp_representable, fixed_shift.
-case (Fnum fx) ; trivial.
+rewrite <- (rounding_generic radix2 (fixed_shift xn) (ZrndG roundDN) (F2R (Float radix2 m e))).
+apply rounding_monotone.
+apply FIX_exp_correct.
+apply Hxb.
+now apply generic_format_canonic_exponent.
 Qed.
 
 Definition round_helper (rnd : float2 -> float2) (xi zi : FF) :=
