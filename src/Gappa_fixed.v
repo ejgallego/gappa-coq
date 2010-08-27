@@ -44,33 +44,22 @@ exact H.
 Qed.
 
 Theorem fixed_of_fix :
- forall rdir : round_dir,
- forall x : R, forall e1 e2 : Z, forall xi : FF,
- FIX x e1 ->
- Zle_bool e2 e1 && contains_zero_helper xi = true ->
- BND (rounding_fixed rdir e2 x - x) xi.
-intros rdir x e1 e2 xi (f,(Hx1,Hx2)) Hb.
+  forall rdir x e1 e2 xi,
+  FIX x e1 ->
+  Zle_bool e2 e1 && contains_zero_helper xi = true ->
+  BND (rounding_fixed rdir e2 x - x) xi.
+Proof.
+intros rdir x e1 e2 xi ((m,e),(Hx1,Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
-cutrewrite (rounding_fixed rdir e2 x = x :>R).
-unfold Rminus.
-rewrite (Rplus_opp_r x).
-apply contains_zero with (1 := H2).
-rewrite <- Hx1.
 unfold rounding_fixed.
-rewrite round_extension_float2.
-induction f.
-induction Fnum.
-rewrite float2_zero.
-apply round_zero.
-unfold round. simpl.
-rewrite round_rexp_exact.
-apply refl_equal.
-exact (Zle_trans _ _ _ H1 Hx2).
-unfold round. simpl.
-rewrite round_rexp_exact.
-apply refl_equal.
-exact (Zle_trans _ _ _ H1 Hx2).
+rewrite round_extension_conversion.
+rewrite rounding_generic.
+now apply sub_refl.
+rewrite <- Hx1.
+rewrite float2_float.
+apply generic_format_canonic_exponent.
+now apply Zle_trans with e1.
 Qed.
 
 Definition bnd_of_bnd_fix_helper (xi zi : FF) (e : Z) :=
