@@ -137,51 +137,26 @@ apply Zle_max_r.
 Qed.
 
 Theorem flt_of_float :
- forall rdir : round_dir,
- forall x : R, forall p1 p2 : positive, forall k : Z,
- Zle_bool (Zpos p1) (Zpos p2) = true ->
- FLT (rounding_float rdir p1 k x) p2.
+  forall rdir x p1 p2 k,
+  Zle_bool (Zpos p1) (Zpos p2) = true ->
+  FLT (rounding_float rdir p1 k x) p2.
+Proof.
 intros rdir x p1 p2 k H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FLT, rounding_float.
-destruct (representable_round_extension rdir _ (good_shift p1 k) x) as (m,(e,(H1,H2))).
-exists (Float2 m e).
-split.
-exact (sym_eq H1).
-unfold rexp_representable, float_shift in H2.
-clear H1.
-induction m.
-apply Gappa_decimal.Zpower_pos_pos.
-simpl.
-apply lt_IZR.
-rewrite Zpower_pos_nat.
-change 2%Z with (Z_of_nat 2).
-rewrite Zpower_nat_powerRZ.
-rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
-rewrite <- Z2R_IZR.
-apply Rlt_le_trans with (1 := proj2 (digits_correct p)).
-assert (Float2 1 (Zpos (digits p)) <= Float2 1 (Zpos p2))%R.
-apply Rle_trans with (2 := float2_Rle_pow2 _ _ H).
-apply float2_Rle_pow2.
-generalize (Zmax1 (e + Zpos (digits p) - Zpos p1) (- k)).
-omega.
-do 2 rewrite <- float2_pow2.
-exact H0.
-simpl.
-apply lt_IZR.
-rewrite Zpower_pos_nat.
-change 2%Z with (Z_of_nat 2).
-rewrite Zpower_nat_powerRZ.
-rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
-rewrite <- Z2R_IZR.
-apply Rlt_le_trans with (1 := proj2 (digits_correct p)).
-assert (Float2 1 (Zpos (digits p)) <= Float2 1 (Zpos p2))%R.
-apply Rle_trans with (2 := float2_Rle_pow2 _ _ H).
-apply float2_Rle_pow2.
-generalize (Zmax1 (e + Zpos (digits p) - Zpos p1) (- k)).
-omega.
-do 2 rewrite <- float2_pow2.
-exact H0.
+rewrite round_extension_conversion.
+destruct (proj2 (FLT_format_generic radix2 (-k) (Zpos p1) (refl_equal _) (rounding radix2 (float_shift p1 k) (ZrndG rdir) x)))
+  as ((m, e), (H1, (H2, _))).
+apply generic_format_rounding.
+now apply FLT_exp_correct.
+rewrite H1.
+rewrite <- float2_float.
+eexists ; repeat split.
+apply Zlt_le_trans with (1 := H2).
+change (Zpower_pos 2 p2) with (Zpower (radix_val radix2) (Zpos p2)).
+apply le_Z2R.
+rewrite 2!Z2R_Zpower ; try easy.
+now apply -> bpow_le.
 Qed.
 
 Theorem float_of_fix_flt :
