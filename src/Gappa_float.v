@@ -53,18 +53,15 @@ Qed.
 
 Lemma float_absolute_ne_whole :
   forall p d k x,
-  (Rabs x < Float2 1 k)%R ->
-  (Rabs (rounding_float roundNE p d x - x) <= Float2 1 (float_shift p d k - 1))%R.
+  (Rabs x < bpow radix2 k)%R ->
+  (Rabs (rounding_float roundNE p d x - x) <= bpow radix2 (float_shift p d k - 1))%R.
 Proof.
 intros p d k x Hx.
 unfold rounding_float.
 rewrite round_extension_conversion.
-rewrite float2_float.
-rewrite F2R_bpow.
 destruct (Req_dec x 0) as [Hx0|Hx0].
 rewrite Hx0, rounding_0, Rminus_0_r, Rabs_R0.
 apply bpow_ge_0.
-rewrite float2_float, F2R_bpow in Hx.
 rewrite (rounding_ext _ _ _ ZrndNE) with (1 := roundNE_NE).
 apply Rle_trans with (/2 * ulp radix2 (float_shift p d) x)%R.
 apply ulp_half_error.
@@ -364,8 +361,10 @@ exact H.
 elim Rlt_not_le with (2 := Hx).
 rewrite float2_zero.
 apply Rabs_pos_lt with (1 := H).
+rewrite float2_float, F2R_bpow.
 apply float_absolute_ne_whole.
 apply Rle_lt_trans with (1 := Hx).
+rewrite <- F2R_bpow, <- float2_float.
 exact (proj2 (float2_digits_correct _ _)).
 elim Rlt_not_le with (2 := Hx).
 apply Rlt_le_trans with (Float2 0 Fexp).
@@ -543,8 +542,9 @@ omega.
 generalize (Zgt_pos_0 (digits p0)).
 omega.
 cutrewrite (e = float_shift p d (Fexp + Zpos (digits p0) - 1) - 1)%Z.
+rewrite float2_float, F2R_bpow.
 apply float_absolute_ne_whole.
-exact H.
+now rewrite <- F2R_bpow, <- float2_float.
 unfold e, float_shift.
 assert (H3 := Zgt_pos_0 (digits p0)).
 assert (H4 := Zgt_pos_0 p).
