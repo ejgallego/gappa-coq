@@ -11,21 +11,8 @@ Require Import Gappa_round.
 
 Section Gappa_fixed.
 
-Definition fixed_shift (e : Z) (_ : Z) := e.
-
-Lemma good_shift :
- forall e : Z,
- good_rexp (fixed_shift e).
-unfold fixed_shift. split.
-omega.
-split.
-apply Zle_refl.
-intros l _. clear l.
-apply refl_equal.
-Qed.
-
 Definition rounding_fixed (rdir : round_dir) (e : Z) :=
- round_extension rdir (fixed_shift e) (good_shift e).
+  round_extension rdir (FIX_exp e) (FIX_exp_correct e).
 
 Theorem fix_of_fixed :
   forall rdir : round_dir,
@@ -63,8 +50,8 @@ now apply Zle_trans with e1.
 Qed.
 
 Definition bnd_of_bnd_fix_helper (xi zi : FF) (e : Z) :=
- Fle2 (lower zi) (round roundUP (fixed_shift e) (lower xi)) &&
- Fle2 (round roundDN (fixed_shift e) (upper xi)) (upper zi).
+  Fle2 (lower zi) (round roundUP (FIX_exp e) (lower xi)) &&
+  Fle2 (round roundDN (FIX_exp e) (upper xi)) (upper zi).
 
 Theorem bnd_of_bnd_fix :
   forall x xn xi zi,
@@ -81,13 +68,13 @@ rewrite <- Hx1.
 rewrite <- Hx1 in Hxb.
 split.
 apply Rle_trans with (1 := H1).
-rewrite <- (rounding_generic radix2 (fixed_shift xn) (ZrndG roundUP) (F2R (Float radix2 m e))).
+rewrite <- (rounding_generic radix2 (FIX_exp xn) (ZrndG roundUP) (F2R (Float radix2 m e))).
 apply rounding_monotone.
 apply FIX_exp_correct.
 apply Hxb.
 now apply generic_format_canonic_exponent.
 apply Rle_trans with (2 := H2).
-rewrite <- (rounding_generic radix2 (fixed_shift xn) (ZrndG roundDN) (F2R (Float radix2 m e))).
+rewrite <- (rounding_generic radix2 (FIX_exp xn) (ZrndG roundDN) (F2R (Float radix2 m e))).
 apply rounding_monotone.
 apply FIX_exp_correct.
 apply Hxb.
@@ -101,7 +88,7 @@ Definition round_helper (rnd : float2 -> float2) (xi zi : FF) :=
 Theorem fixed_round :
   forall rdir e x xi zi,
   BND x xi ->
-  round_helper (round rdir (fixed_shift e)) xi zi = true ->
+  round_helper (round rdir (FIX_exp e)) xi zi = true ->
   BND (rounding_fixed rdir e x) zi.
 Proof.
 intros rdir e x xi zi Hx Hb.
@@ -139,7 +126,7 @@ rewrite round_extension_conversion.
 split.
 (* *)
 apply Rle_trans with (1 := H1).
-destruct (Rabs_def2 _ _ (ulp_error radix2 _ (good_shift e) (ZrndG roundDN) x)) as (_, H).
+destruct (Rabs_def2 _ _ (ulp_error radix2 _ (FIX_exp_correct e) (ZrndG roundDN) x)) as (_, H).
 apply Rlt_le.
 rewrite float2_float.
 rewrite <- (opp_F2R _ 1%Z).
@@ -149,7 +136,7 @@ apply Rle_trans with (2 := H2).
 apply Rle_minus.
 rewrite (rounding_ext _ _ _ ZrndDN) with (1 := roundDN_DN).
 eapply generic_DN_pt.
-apply good_shift.
+apply FIX_exp_correct.
 Qed.
 
 End Gappa_fixed.
