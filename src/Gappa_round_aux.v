@@ -38,14 +38,6 @@ apply Rgt_not_eq.
 exact (Z2R_lt 0 2 (refl_equal _)).
 Qed.
 
-Lemma float2_shift_m1 :
- forall e : Z, forall m : Z,
- Float2 m e = Float2 (m * 2) (e - 1) :>R.
-intros e m.
-pattern e at 1 ; replace e with (e - 1 + 1)%Z. 2: ring.
-apply float2_shift_p1.
-Qed.
-
 Lemma float2_binade_lt :
   forall m1 m2 e,
   (m1 < m2)%Z -> (Float2 m1 e < Float2 m2 e)%R.
@@ -178,29 +170,24 @@ apply refl_equal.
 Qed.
 
 Lemma float2_digits_correct :
- forall m : positive, forall e: Z,
- (Float2 1 (e + Zpos (digits m) - 1)%Z <= Float2 (Zpos m) e < Float2 1 (e + Zpos (digits m))%Z)%R.
+  forall m e,
+  (Float2 1 (e + Zpos (digits m) - 1)%Z <= Float2 (Zpos m) e < Float2 1 (e + Zpos (digits m))%Z)%R.
+Proof.
 intros m e.
-generalize (digits_correct m). intros (H1,H2).
-do 2 rewrite float2_pow2.
-unfold float2R.
-rewrite F2R_split.
-simpl.
-split.
+rewrite digits2_digits.
+rewrite Fcalc_digits.digits_ln_beta. 2: easy.
+rewrite 3!float2_float, 2!F2R_bpow.
 unfold Zminus.
-rewrite <- Zplus_assoc.
-rewrite powerRZ_add.
-rewrite Rmult_comm.
-apply Rmult_le_compat_r.
-auto with real.
-exact H1.
-discrR.
-rewrite powerRZ_add.
-rewrite Rmult_comm.
-apply Rmult_lt_compat_l.
-auto with real.
-exact H2.
-discrR.
+rewrite bpow_add.
+rewrite Zplus_comm.
+rewrite <- ln_beta_F2R. 2: easy.
+rewrite <- bpow_add.
+destruct (ln_beta radix2 (Fcore_defs.F2R (Fcore_defs.Float radix2 (Zpos m) e))) as (e', He).
+simpl. change (Zpos m) with (Zabs (Zpos m)).
+rewrite <- abs_F2R.
+apply He.
+intros H.
+discriminate (F2R_eq_0_reg _ _ _ H).
 Qed.
 
 Lemma float2_Rlt_pow2 :
