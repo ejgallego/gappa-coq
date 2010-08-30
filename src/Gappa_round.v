@@ -895,37 +895,4 @@ right.
 apply refl_equal.
 Qed.
 
-Lemma shr_constant_m :
- forall m1 m2 : positive, forall e1 e2 : Z,
- (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R ->
- rnd_m (shr m2 (pos_of_Z (e1 - e2))) = (Npos m1).
-intros m1 m2 e1 e2 H.
-generalize (float2_repartition _ _ _ _ H).
-intros (H1,H2).
-cut (Z_of_N (rnd_m (shr m2 (pos_of_Z (e1 - e2)))) = Zpos m1).
-intro H0.
-unfold Z_of_N in H0.
-destruct (rnd_m (shr m2 (pos_of_Z (e1 - e2)))).
-discriminate H0.
-injection H0. clear H0. intro H0. rewrite H0.
-apply refl_equal.
-apply dec_not_not.
-apply dec_eq.
-intro H0.
-generalize (not_Zeq _ _ H0).
-clear H0.
-generalize (shr_bracket_weak (pos_of_Z (e1 - e2)) m2 e2).
-rewrite (Zpos_pos_of_Z_minus _ _ H1).
-cutrewrite (e2 + (e1 - e2) = e1)%Z. 2: ring.
-simpl.
-generalize (Z_of_N (rnd_m (shr m2 (pos_of_Z (e1 - e2))))).
-intros m HH [H0|H0].
-generalize (float2_binade_le _ _ e1 (Zlt_le_succ _ _ H0)).
-apply Rlt_not_le.
-apply Rlt_trans with (1 := proj1 H) (2 := proj2 HH).
-generalize (float2_binade_le _ _ e1 (Zlt_le_succ _ _ H0)).
-apply Rlt_not_le.
-apply Rle_lt_trans with (1 := proj1 HH) (2 := proj2 H).
-Qed.
-
 End Gappa_round.
