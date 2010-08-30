@@ -816,10 +816,4 @@ rewrite <- 2!float2_float.
 now apply f_equal.
 Qed.
 
-Definition good_rexp (rexp : Z -> Z) :=
- forall k : Z,
- ((rexp k < k)%Z -> (rexp (k + 1) <= k)%Z) /\
- ((k <= rexp k)%Z -> (rexp (rexp k + 1) <= rexp k)%Z /\
-                     forall l : Z, (l <= rexp k)%Z -> rexp l = rexp k).
-
 End Gappa_round.
