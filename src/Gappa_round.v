@@ -109,30 +109,6 @@ Qed.
 Definition shr (m : positive) (d : positive) :=
  iter_pos d _ shr_aux (rnd_record_mk (Npos m) false false).
 
-Lemma shr_bracket :
- forall d : positive,
- forall m : positive, forall e : Z,
- bracket (Float2 (Zpos m) e) (shr m d) (e + Zpos d).
-intros d m e.
-assert (bracket (Float2 (Zpos m) e) (rnd_record_mk (Npos m) false false) e).
-unfold bracket.
-simpl.
-rewrite float2_shift_m1.
-change (Zpos m * 2)%Z with (Zpos (m * 2)).
-apply refl_equal.
-unfold shr.
-rewrite (Zpos_eq_Z_of_nat_o_nat_of_P d).
-rewrite iter_nat_of_P.
-induction (nat_of_P d).
-simpl.
-rewrite Zplus_0_r.
-exact H.
-rewrite inj_S.
-simpl.
-unfold Zsucc. rewrite Zplus_assoc.
-apply shr_aux_bracket with (1 := IHn).
-Qed.
-
 Definition round_pos (rdir : rnd_record -> Z -> bool)
   (rexp : Z -> Z) (m : positive) (e : Z) :=
  let e' := rexp (e + Zpos (digits m))%Z in
