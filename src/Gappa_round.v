@@ -46,8 +46,6 @@ Definition bracket (r : R) (p : rnd_record) (e : Z) :=
  else
   if (rnd_s p) then (f0 < r < f1)%R else (r = f0)%R.
 
-Ltac caseEq f := generalize (refl_equal f) ; pattern f at -1 ; case f.
-
 Definition shr (m : positive) (d : positive) :=
  iter_pos d _ shr_aux (rnd_record_mk (Npos m) false false).
 
