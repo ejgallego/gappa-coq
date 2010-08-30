@@ -2161,35 +2161,6 @@ Definition rexp_representable (rexp : Z -> Z) (m e : Z) :=
  | Zneg p => (rexp (e + Zpos (digits p)) <= e)%Z
  end.
 
-Lemma round_extension_representable :
-  forall rdir rexp (Hexp : good_rexp rexp) f,
-  rexp_representable rexp (Fnum f) (Fexp f) ->
-  round_extension rdir rexp Hexp f = f :>R.
-Proof.
-intros rdir rexp Hexp (m, e) H.
-rewrite round_extension_conversion.
-apply rounding_generic.
-rewrite float2_float.
-destruct m as [|m|m] ; simpl in H.
-rewrite F2R_0.
-apply generic_format_0.
-apply generic_format_canonic_exponent.
-unfold canonic_exponent.
-rewrite ln_beta_F2R. 2: easy.
-rewrite Zplus_comm.
-rewrite <- digits_ln_beta. 2: easy.
-now rewrite <- digits2_digits.
-change (Zneg m) with (- Zpos m)%Z.
-rewrite <- opp_F2R.
-apply generic_format_opp.
-apply generic_format_canonic_exponent.
-unfold canonic_exponent.
-rewrite ln_beta_F2R. 2: easy.
-rewrite Zplus_comm.
-rewrite <- digits_ln_beta. 2: easy.
-now rewrite <- digits2_digits.
-Qed.
-
 Lemma representable_round_extension :
   forall rdir rexp (Hexp : good_rexp rexp) x,
   exists m : Z, exists e : Z,
