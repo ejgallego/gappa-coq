@@ -1538,19 +1538,4 @@ exact Hexp.
 now rewrite <- 2!float2_float.
 Qed.
 
-Lemma log2 :
-  forall x : R, (0 < x)%R ->
-  { k : Z | (powerRZ 2 (k - 1) <= x < powerRZ 2 k)%R }.
-Proof.
-intros x Hx.
-destruct (ln_beta radix2 x) as (e, H).
-exists e.
-specialize (H (Rgt_not_eq _ _ Hx)).
-rewrite Rabs_right in H.
-change 2%R with (Z2R (radix_val radix2)).
-now rewrite <- 2!bpow_powerRZ.
-apply Rle_ge.
-now apply Rlt_le.
-Qed.
-
 End Gappa_round.
