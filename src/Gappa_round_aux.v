@@ -331,15 +331,6 @@ induction a ; intros ; compute in H ; try discriminate H.
 exact (refl_equal _).
 Qed.
 
-Lemma Zpos_pos_of_Z_minus :
- forall a b : Z, (a < b)%Z ->
- (Zpos (pos_of_Z (b - a)) = b - a)%Z.
-intros a b H.
-assert (0 < b - a)%Z. omega.
-destruct (b - a)%Z ; compute in H0 ; try discriminate H0.
-apply refl_equal.
-Qed.
-
 Lemma Zneg_pos_of_Z_minus :
  forall a b : Z, (a < b)%Z ->
  (Zneg (pos_of_Z (b - a)) = a - b)%Z.
