@@ -36,16 +36,6 @@ Definition shr_aux (p : rnd_record) : rnd_record :=
   end
  end.
 
-Definition bracket (r : R) (p : rnd_record) (e : Z) :=
- let m := (Z_of_N (rnd_m p) * 2)%Z in
- let f0 := Float2 m (e - 1) in
- let f1 := Float2 (m + 1) (e - 1) in
- let f2 := Float2 (m + 2) (e - 1) in
- if (rnd_r p) then
-  if (rnd_s p) then (f1 < r < f2)%R else (r = f1)%R
- else
-  if (rnd_s p) then (f0 < r < f1)%R else (r = f0)%R.
-
 Definition shr (m : positive) (d : positive) :=
  iter_pos d _ shr_aux (rnd_record_mk (Npos m) false false).
 
