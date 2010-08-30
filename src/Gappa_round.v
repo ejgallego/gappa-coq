@@ -1094,11 +1094,4 @@ apply Rgt_not_eq.
 exact H.
 Qed.
 
-Lemma rnd_record_eq :
- forall r : rnd_record,
- r = rnd_record_mk (rnd_m r) (rnd_r r) (rnd_s r).
-induction r.
-apply refl_equal.
-Qed.
-
 End Gappa_round.
