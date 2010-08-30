@@ -1427,40 +1427,4 @@ rewrite Hb1.
 apply refl_equal.
 Qed.
 
-Lemma bracket_case_underflow :
- forall m : positive, forall e k : Z,
- (Float2 (Zpos m) e < Float2 1 k)%R ->
- (Float2 (Zpos m) e < Float2 1 (k - 1))%R \/
- Float2 (Zpos m) e = Float2 1 (k - 1) :>R \/
- (Float2 1 (k - 1) < Float2 (Zpos m) e < Float2 1 k)%R.
-intros m e k Hb.
-generalize (shr_bracket (pos_of_Z (k - e)) m e).
-assert (e + Zpos (pos_of_Z (k - e)) = k)%Z.
-rewrite Zpos_pos_of_Z_minus. ring.
-generalize (float2_repartition_underflow _ _ _ Hb).
-generalize (Zgt_pos_0 (digits m)).
-omega.
-rewrite H. clear H.
-unfold bracket.
-cutrewrite (rnd_m (shr m (pos_of_Z (k - e))) = N0 :>N).
-simpl.
-case (rnd_r (shr m (pos_of_Z (k - e)))) ;
-case (rnd_s (shr m (pos_of_Z (k - e)))) ; intros H.
-right. right.
-split.
-exact (proj1 H).
-rewrite (float2_shift_m1 k).
-exact (proj2 H).
-right.  left.
-exact H.
-left.
-exact (proj2 H).
-left.
-rewrite H.
-apply float2_binade_lt.
-exact (refl_equal Lt).
-apply shr_constant_m_underflow.
-exact Hb.
-Qed.
-
 End Gappa_round.
