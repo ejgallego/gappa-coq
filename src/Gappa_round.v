@@ -2138,24 +2138,6 @@ rewrite round_extension_conversion.
 apply rounding_0.
 Qed.
 
-Lemma round_extension_positive :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- forall x : R, (0 < x)%R ->
- (0 <= round_extension rdir rexp Hge x)%R.
-intros rdir rexp Hge x Hx.
-generalize (round_extension_prop_pos rdir rexp Hge _ Hx).
-intros (mx1,(mx2,(ex1,(ex2,(_,(Hx2,_)))))).
-rewrite Hx2.
-unfold round. simpl.
-case (round_pos (rpos rdir) rexp mx1 ex1) ; intros.
-case n ; intros.
-apply Rle_refl.
-apply Rlt_le.
-apply float2_pos_compat.
-split.
-Qed.
-
 Lemma round_extension_opp :
   forall rdir rexp (Hexp : good_rexp rexp) x,
   (round_extension rdir rexp Hexp (-x) = - round_extension
