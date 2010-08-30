@@ -1013,29 +1013,4 @@ elim (proj1 H).
 exact Hb.
 Qed.
 
-Lemma shr_constant_r :
- forall d : positive,
- forall m1 : positive, forall e1 : Z,
- let m2 := (Z_of_N (rnd_m (shr m1 d)) * 2)%Z in
- let e2 := (e1 + Zpos d - 1)%Z in
- ((Float2 m2 e2 <= Float2 (Zpos m1) e1 < Float2 (m2 + 1) e2)%R -> rnd_r (shr m1 d) = false) /\
- ((Float2 (m2 + 1) e2 <= Float2 (Zpos m1) e1 < Float2 (m2 + 2) e2)%R -> rnd_r (shr m1 d) = true).
-intros d m1 e1 m2 e2.
-generalize (shr_bracket d m1 e1).
-unfold bracket.
-fold m2 e2.
-caseEq (rnd_r (shr m1 d)) ; case (rnd_s (shr m1 d)) ;
-intros Hr Hb ; split ; intros H ; try apply refl_equal.
-elim Rlt_not_le with (1 := proj2 H).
-apply Rlt_le with (1 := proj1 Hb).
-elim Rlt_not_eq with (1 := proj2 H).
-exact Hb.
-elim Rle_not_lt with (1 := proj1 H).
-exact (proj2 Hb).
-elim Rle_not_lt with (1 := proj1 H).
-rewrite Hb.
-apply float2_binade_lt.
-auto with zarith.
-Qed.
-
 End Gappa_round.
