@@ -48,64 +48,6 @@ Definition bracket (r : R) (p : rnd_record) (e : Z) :=
 
 Ltac caseEq f := generalize (refl_equal f) ; pattern f at -1 ; case f.
 
-Lemma shr_aux_bracket :
- forall r : R, forall p : rnd_record, forall e : Z,
- bracket r p e -> bracket r (shr_aux p) (e + 1).
-intros r p e H.
-unfold bracket.
-assert (H0: rnd_s (shr_aux p) = rnd_r p || rnd_s p).
-unfold shr_aux.
-destruct (rnd_m p) ; try destruct p0 ; trivial.
-rewrite H0. clear H0.
-assert (HH: if rnd_r p || rnd_s p then
-              (Float2 (Z_of_N (rnd_m p)) (e + 1 - 1) < r < Float2 ((Z_of_N (rnd_m p) + 1)) (e + 1 - 1))%R
-            else r = Float2 (Z_of_N (rnd_m p)) (e + 1 - 1)).
-cutrewrite (e + 1 - 1 = e - 1 + 1)%Z. 2: ring.
-repeat rewrite (float2_shift_p1).
-cutrewrite ((Z_of_N (rnd_m p) + 1) * 2 = Z_of_N (rnd_m p) * 2 + 2)%Z.
-2: ring.
-unfold bracket in H.
-destruct (rnd_r p) ; destruct (rnd_s p) ; simpl.
-split. 2: apply (proj2 H).
-apply Rlt_trans with (2 := proj1 H).
-apply float2_binade_lt.
-auto with zarith.
-rewrite H.
-split.
-apply float2_binade_lt.
-auto with zarith.
-apply float2_binade_lt.
-auto with zarith.
-split. apply (proj1 H).
-apply Rlt_trans with (1 := proj2 H).
-apply float2_binade_lt.
-auto with zarith.
-exact H.
-cutrewrite (Z_of_N (rnd_m (shr_aux p)) * 2 + 2 = Z_of_N (rnd_m (shr_aux p)) * 2 + 1 + 1)%Z.
-2: ring.
-caseEq (rnd_r (shr_aux p)) ; intro H0.
-assert (Z_of_N (rnd_m (shr_aux p)) * 2 + 1 = Z_of_N (rnd_m p))%Z.
-generalize H0. unfold shr_aux.
-destruct (rnd_m p).
-intros H1. discriminate H1.
-destruct p0.
-intros _. simpl. rewrite Pmult_comm. apply refl_equal.
-intros H1. discriminate H1.
-intros _. apply refl_equal.
-rewrite H1.
-exact HH.
-assert (Z_of_N (rnd_m (shr_aux p)) * 2 = Z_of_N (rnd_m p))%Z.
-generalize H0. unfold shr_aux.
-destruct (rnd_m p).
-intros _. apply refl_equal.
-destruct p0.
-intros H1. discriminate H1.
-intros _. simpl. rewrite Pmult_comm. apply refl_equal.
-intros H1. discriminate H1.
-rewrite H1.
-exact HH.
-Qed.
-
 Definition shr (m : positive) (d : positive) :=
  iter_pos d _ shr_aux (rnd_record_mk (Npos m) false false).
 
