@@ -92,21 +92,6 @@ rewrite inj_S.
 apply Zpred_succ.
 Qed.
 
-Lemma digits_correct :
-  forall m : positive,
-  (powerRZ 2 (Zpos (digits m) - 1)%Z <= Z2R (Zpos m) < powerRZ 2 (Zpos (digits m)))%R.
-Proof.
-intros m.
-rewrite digits2_digits.
-rewrite <- 2!(bpow_powerRZ radix2).
-rewrite Fcalc_digits.digits_ln_beta. 2: easy.
-destruct (ln_beta radix2 (Z2R (Zpos m))) as (e, H).
-simpl.
-rewrite <- abs_Z2R in H.
-apply H.
-now apply (Z2R_neq _ 0).
-Qed.
-
 Lemma digits_pow2 :
  forall m p : positive,
  (Zpos m < Zpower_pos 2 p)%Z ->
