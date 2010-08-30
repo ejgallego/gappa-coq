@@ -283,18 +283,6 @@ apply Zge_le.
 exact H0.
 Qed.
 
-Lemma float2_pow2_le :
- forall k l : Z, (Float2 1 k <= Float2 1 l)%R ->
- (k <= l)%Z.
-intros k l H.
-apply Znot_gt_le.
-intro H0.
-elim Rle_not_lt with (1 := H).
-apply float2_Rlt_pow2.
-apply Zgt_lt.
-exact H0.
-Qed.
-
 Lemma float2_pos_reg :
  forall m e : Z,
  (0 < Float2 m e)%R ->
