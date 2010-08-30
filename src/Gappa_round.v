@@ -1177,18 +1177,4 @@ rewrite (proj2 (Hrs (proj1 Hf2))).
 apply refl_equal.
 Qed.
 
-Lemma rexp_underflow :
- forall rexp : Z -> Z,
- good_rexp rexp ->
- forall k : Z,
- rexp k = k ->
- forall l : Z, (l <= k)%Z ->
- rexp l = k.
-intros rexp Hg k Hk l Hl.
-generalize (proj2 (Hg k)).
-rewrite Hk.
-intro H.
-exact (proj2 (H (Zle_refl k)) l Hl).
-Qed.
-
 End Gappa_round.
