@@ -982,35 +982,4 @@ rewrite IHn.
 apply refl_equal.
 Qed.
 
-Lemma shr_constant_s :
- forall d : positive,
- forall m1 : positive, forall e1 : Z,
- let m2 := (Z_of_N (rnd_m (shr m1 d)) * 2)%Z in
- let e2 := (e1 + Zpos d - 1)%Z in
- (Float2 (Zpos m1) e1 = Float2 m2 e2 :>R -> rnd_s (shr m1 d) = false) /\
- (Float2 (Zpos m1) e1 = Float2 (m2 + 1) e2 :>R -> rnd_s (shr m1 d) = false) /\
- (Float2 (Zpos m1) e1 <> Float2 m2 e2 :>R /\
-  Float2 (Zpos m1) e1 <> Float2 (m2 + 1) e2 :>R -> rnd_s (shr m1 d) = true).
-intros d m1 e1 m2 e2.
-generalize (shr_bracket d m1 e1).
-unfold bracket.
-fold m2 e2.
-caseEq (rnd_s (shr m1 d)) ; case (rnd_r (shr m1 d)) ;
-intros Hs Hb ; split ; try split ; intros H ; try apply refl_equal.
-elim Rlt_not_le with (1 := proj1 Hb).
-rewrite H.
-apply float2_binade_le.
-auto with zarith.
-elim Rlt_not_eq with (1 := proj1 Hb).
-apply sym_eq with (1 := H).
-elim Rlt_not_eq with (1 := proj1 Hb).
-apply sym_eq with (1 := H).
-elim Rlt_not_eq with (1 := proj2 Hb).
-exact H.
-elim (proj2 H).
-exact Hb.
-elim (proj1 H).
-exact Hb.
-Qed.
-
 End Gappa_round.
