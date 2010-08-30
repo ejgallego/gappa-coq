@@ -2035,43 +2035,6 @@ elim (Rlt_irrefl _ Hx).
 elim (Rlt_irrefl _ (Rlt_trans _ _ _ Hx H)).
 Qed.
 
-Lemma round_extension_prop_neg :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge :good_rexp rexp,
- forall x : R, (0 > x)%R ->
- { m1 : positive & { m2 : positive &
- { e1 : Z & { e2 : Z |
- let f1 := (Float2 (Zpos m1) e1) in
- let f2 := (Float2 (Zpos m2) e2) in
- (f1 <= -x <= f2)%R /\
- let rdir' := round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir) in
- round_extension rdir rexp Hge x = Fopp2 (round rdir' rexp f1) /\
- round_extension rdir rexp Hge x = Fopp2 (round rdir' rexp f2) /\
- rexp (e1 + Zpos (digits m1))%Z = snd (round_pos (rneg rdir) rexp m1 e1) /\
- rexp (e2 + Zpos (digits m2))%Z = snd (round_pos (rneg rdir) rexp m2 e2) }}}}.
-intros rdir rexp Hge x Hx.
-unfold round_extension.
-generalize (total_order_T 0 x).
-intros [[H|H]|H].
-elim (Rlt_irrefl _ (Rlt_trans _ _ _ Hx H)).
-rewrite H in Hx.
-elim (Rlt_irrefl _ Hx).
-generalize (round_density (rneg rdir) rexp Hge (-x) (Ropp_0_gt_lt_contravar x H)).
-intros (m1,(m2,(e1,(e2,(H1,(H2,H3)))))).
-exists m1. exists m2. exists e1. exists e2.
-split. exact H1.
-split.
-unfold round. simpl.
-case (round_pos (rneg rdir) rexp m1 e1) ; intros.
-case n ; intros ; apply refl_equal.
-split.
-unfold round. simpl.
-rewrite H2.
-case (round_pos (rneg rdir) rexp m2 e2) ; intros.
-case n ; intros ; apply refl_equal.
-exact H3.
-Qed.
-
 Lemma round_extension_conversion :
   forall rdir rexp (Hexp : good_rexp rexp) x,
   float2R (round_extension rdir rexp Hexp x) = rounding radix2 rexp (ZrndG rdir) x :>R.
@@ -2117,16 +2080,6 @@ apply rounding_monotone.
 exact Hexp.
 apply Ropp_le_cancel.
 now rewrite <- Fopp2_correct.
-Qed.
-
-Lemma round_extension_float2 :
-  forall rdir rexp (Hexp : good_rexp rexp) f,
-  round_extension rdir rexp Hexp (float2R f) = round rdir rexp f :>R.
-Proof.
-intros rdir rexp Hexp f.
-rewrite round_extension_conversion.
-apply sym_eq.
-apply rndG_conversion.
 Qed.
 
 End Gappa_round.
