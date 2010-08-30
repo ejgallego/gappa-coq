@@ -1978,15 +1978,4 @@ rewrite Zminus_diag.
 split ; apply refl_equal.
 Qed.
 
-Lemma round_zero :
- forall rdir : round_dir,
- forall rexp : Z -> Z,
- forall e : Z,
- (round rdir rexp (Float2 Z0 e) = 0 :>R)%R.
-intros rdir rexp e.
-unfold round.
-simpl.
-apply float2_zero.
-Qed.
-
 End Gappa_round.
