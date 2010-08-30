@@ -1989,21 +1989,4 @@ simpl.
 apply float2_zero.
 Qed.
 
-Lemma round_extension :
- forall rdir : round_dir, forall rexp : Z -> Z,
- good_rexp rexp ->
- forall x : R, float2.
-intros rdir rexp Hge x.
-generalize (total_order_T 0 x).
-intros [[Hx|Hx]|Hx].
-generalize (round_density (rpos rdir) rexp Hge x Hx).
-intros (m1,(m2,(e1,(e2,H)))).
-exact (match round_pos (rpos rdir) rexp m1 e1 with (N0,_) => Float2 0 0 | (Npos m,e) => Float2 (Zpos m) e end).
-exact (Float2 0 0).
-assert (Hx': (0 < -x)%R). auto with real.
-generalize (round_density (rneg rdir) rexp Hge (-x) Hx').
-intros (m1,(m2,(e1,(e2,H)))).
-exact (match round_pos (rneg rdir) rexp m1 e1 with (N0,_) => Float2 0 0 | (Npos m,e) => Float2 (Zneg m) e end).
-Defined.
-
 End Gappa_round.

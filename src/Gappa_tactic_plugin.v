@@ -6,7 +6,7 @@ Require Import Gappa_integer.
 Definition gappa_rounding (f : R -> float2) (x : R) : R := f x.
 Strategy 1000 [rounding_fixed rounding_float]
          1001 [gappa_rounding]
-         1002 [Gappa_round.round_extension].
+         1002 [Fcore_generic_fmt.rounding].
 
 (* factor an integer into odd*2^e *)
 Definition float2_of_pos x :=
