@@ -784,23 +784,4 @@ apply roundNE.
 exact andb_true_r.
 Qed.
 
-Lemma tofloat_pair :
- forall p : N * Z,
- tofloat p = Float2 (Z_of_N (fst p)) (snd p).
-intros (n,e).
-exact (refl_equal _).
-Qed.
-
-Lemma tofloat_0 :
- forall p,
- float2R (match p with (N0,_) => Float2 0 0 | (Npos p, e) => Float2 (Zpos p) e end) = tofloat p.
-intros (n,e).
-case n.
-unfold tofloat.
-repeat rewrite float2_zero.
-exact (refl_equal _).
-intros.
-exact (refl_equal _).
-Qed.
-
 End Gappa_round.
