@@ -803,17 +803,4 @@ intros.
 exact (refl_equal _).
 Qed.
 
-Lemma round_unicity :
-  forall rdir : rnd_record -> Z -> bool, forall rexp : Z -> Z,
-  forall m1 m2 : positive, forall e1 e2 : Z,
-  good_rdir rdir ->
-  Float2 (Zpos m1) e1 = Float2 (Zpos m2) e2 :>R ->
-  tofloat (round_pos rdir rexp m1 e1) = tofloat (round_pos rdir rexp m2 e2) :>R.
-Proof.
-intros rdir rexp m1 m2 e1 e2 Hdir Heq.
-rewrite 2!(hrndG_conversion _ Hdir).
-rewrite <- 2!float2_float.
-now apply f_equal.
-Qed.
-
 End Gappa_round.
