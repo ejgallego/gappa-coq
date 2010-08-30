@@ -64,16 +64,6 @@ do 2 rewrite float2_float.
 now apply F2R_le_compat.
 Qed.
 
-Lemma float2_binade_eq_reg :
-  forall m1 m2 e,
-  Float2 m1 e = Float2 m2 e :>R ->
-  m1 = m2.
-Proof.
-intros m1 m2 e H.
-apply F2R_eq_reg with radix2 e.
-now do 2 rewrite <- float2_float.
-Qed.
-
 Fixpoint digits (m : positive) : positive :=
  match m with
  | xH => xH
