@@ -432,18 +432,4 @@ omega.
 apply Zle_refl.
 Qed.
 
-Lemma float2_repartition_underflow :
- forall m2 : positive, forall e1 e2 : Z,
- (Float2 (Zpos m2) e2 < Float2 1 e1)%R ->
- (e2 + Zpos (digits m2) <= e1)%Z.
-intros m2 e1 e2 Hf.
-generalize (proj1 (float2_digits_correct m2 e2)).
-intros H1.
-apply Znot_gt_le.
-intro H.
-apply (Rlt_not_le _ _ (Rle_lt_trans _ _ _ H1 Hf)).
-apply float2_Rle_pow2.
-omega.
-Qed.
-
 End Gappa_round_aux.
