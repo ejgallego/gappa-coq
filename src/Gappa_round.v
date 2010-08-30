@@ -2129,29 +2129,4 @@ apply sym_eq.
 apply rndG_conversion.
 Qed.
 
-Lemma round_extension_opp :
-  forall rdir rexp (Hexp : good_rexp rexp) x,
-  (round_extension rdir rexp Hexp (-x) = - round_extension
-    (round_dir_mk (rneg rdir) (rpos rdir) (rneg_good rdir) (rpos_good rdir)) rexp Hexp x :>R)%R.
-Proof.
-intros rdir rexp Hexp x.
-rewrite 2!round_extension_conversion.
-rewrite rounding_opp.
-apply f_equal.
-apply rounding_ext.
-clear x. intros x e.
-unfold Zrounding_opp, Zrnd_opp, ZrndG, rndG. simpl.
-destruct (Rcompare_spec x 0) as [H|H|H].
-rewrite Rcompare_Gt.
-apply refl_equal.
-now apply Ropp_gt_lt_0_contravar.
-rewrite H, Rcompare_Eq.
-apply refl_equal.
-apply Ropp_0.
-rewrite Rcompare_Lt.
-rewrite Ropp_involutive.
-apply Zopp_involutive.
-now apply Ropp_lt_gt_0_contravar.
-Qed.
-
 End Gappa_round.
