@@ -1522,20 +1522,4 @@ apply float2_binade_le.
 exact (Zle_succ _).
 Qed.
 
-Lemma round_monotone :
-  forall rdir : rnd_record -> Z -> bool,
-  forall rexp : Z -> Z,
-  good_rdir rdir ->
-  good_rexp rexp ->
-  forall m1 m2 : positive, forall e1 e2 : Z,
-  (Float2 (Zpos m1) e1 <= Float2 (Zpos m2) e2)%R ->
-  (tofloat (round_pos rdir rexp m1 e1) <= tofloat (round_pos rdir rexp m2 e2))%R.
-Proof.
-intros rdir rexp Hdir Hexp m1 m2 e1 e2 H12.
-rewrite 2!(hrndG_conversion _ Hdir).
-apply rounding_monotone.
-exact Hexp.
-now rewrite <- 2!float2_float.
-Qed.
-
 End Gappa_round.
