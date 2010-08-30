@@ -1388,43 +1388,4 @@ unfold Zsucc.
 ring.
 Qed.
 
-Lemma bracket_case :
- forall m1 m2 : positive, forall e1 e2 : Z,
- (Float2 (Zpos m1) e1 <= Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R ->
- Float2 (Zpos m2) e2 = Float2 (Zpos m1) e1 :>R \/
- (Float2 (Zpos m1) e1 < Float2 (Zpos m2) e2 < Float2 (Zpos m1 * 2 + 1) (e1 - 1))%R \/
- Float2 (Zpos m2) e2 = Float2 (Zpos m1 * 2 + 1) (e1 - 1) :>R \/
- (Float2 (Zpos m1 * 2 + 1) (e1 - 1) < Float2 (Zpos m2) e2 < Float2 (Zpos m1 + 1) e1)%R.
-intros m1 m2 e1 e2 ([Hb1|Hb1],Hb2).
-generalize (conj Hb1 Hb2).
-clear Hb1 Hb2. intros Hb.
-generalize (shr_bracket (pos_of_Z (e1 - e2)) m2 e2).
-assert (e2 + Zpos (pos_of_Z (e1 - e2)) = e1)%Z.
-rewrite Zpos_pos_of_Z_minus. ring.
-exact (proj1 (float2_repartition _ _ _ _ Hb)).
-rewrite H. clear H.
-unfold bracket.
-rewrite (shr_constant_m _ _ _ _ Hb).
-unfold Z_of_N.
-case (rnd_r (shr m2 (pos_of_Z (e1 - e2)))) ;
-case (rnd_s (shr m2 (pos_of_Z (e1 - e2)))) ; intros H.
-right. right. right.
-split.
-exact (proj1 H).
-rewrite (float2_shift_m1 e1).
-cutrewrite ((Zpos m1 + 1) * 2 = Zpos m1 * 2 + 2)%Z. 2 :ring.
-exact (proj2 H).
-right. right. left.
-exact H.
-right. left.
-rewrite (float2_shift_m1 e1).
-exact H.
-left.
-rewrite (float2_shift_m1 e1).
-exact H.
-left.
-rewrite Hb1.
-apply refl_equal.
-Qed.
-
 End Gappa_round.
