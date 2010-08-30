@@ -2156,27 +2156,6 @@ apply float2_pos_compat.
 split.
 Qed.
 
-Lemma round_extension_negative :
- forall rdir : round_dir, forall rexp : Z -> Z,
- forall Hge : good_rexp rexp,
- forall x : R, (0 > x)%R ->
- (round_extension rdir rexp Hge x <= 0)%R.
-intros rdir rexp Hge x Hx.
-generalize (round_extension_prop_neg rdir rexp Hge _ Hx).
-intros (mx1,(mx2,(ex1,(ex2,(_,(Hx2,_)))))).
-rewrite Hx2.
-unfold round. simpl.
-case (round_pos (rneg rdir) rexp mx1 ex1) ; intros.
-destruct n.
-apply Rle_refl.
-apply Rge_le.
-rewrite Fopp2_correct.
-apply Ropp_0_le_ge_contravar.
-apply Rlt_le.
-apply float2_pos_compat.
-split.
-Qed.
-
 Lemma round_extension_opp :
   forall rdir rexp (Hexp : good_rexp rexp) x,
   (round_extension rdir rexp Hexp (-x) = - round_extension
