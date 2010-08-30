@@ -133,47 +133,6 @@ unfold Zsucc. rewrite Zplus_assoc.
 apply shr_aux_bracket with (1 := IHn).
 Qed.
 
-Lemma shr_bracket_weak :
- forall d : positive,
- forall m1 : positive, forall e1 : Z,
- let m2 := Z_of_N (rnd_m (shr m1 d)) in
- let e2 := (e1 + Zpos d)%Z in
- (Float2 m2 e2 <= Float2 (Zpos m1) e1 < Float2 (m2 + 1) e2)%R.
-intros d m1 e1 m2 e2.
-repeat rewrite (float2_shift_m1 e2).
-generalize (shr_bracket d m1 e1).
-unfold bracket.
-case (rnd_r (shr m1 d)) ; case (rnd_s (shr m1 d)) ;
-fold m2 ; fold e2 ; intro H.
-split.
-apply Rlt_le.
-apply Rlt_trans with (2 := proj1 H).
-apply float2_binade_lt.
-auto with zarith.
-apply Rlt_le_trans with (1 := proj2 H).
-auto with zarith.
-cutrewrite (m2 * 2 + 2 = (m2 + 1) * 2)%Z. 2: ring.
-auto with real.
-rewrite H.
-split.
-apply Rlt_le.
-apply float2_binade_lt.
-auto with zarith.
-apply float2_binade_lt.
-auto with zarith.
-split.
-apply Rlt_le.
-apply (proj1 H).
-apply Rlt_trans with (1 := proj2 H).
-apply float2_binade_lt.
-auto with zarith.
-rewrite H.
-split.
-auto with real.
-apply float2_binade_lt.
-auto with zarith.
-Qed.
-
 Definition round_pos (rdir : rnd_record -> Z -> bool)
   (rexp : Z -> Z) (m : positive) (e : Z) :=
  let e' := rexp (e + Zpos (digits m))%Z in
