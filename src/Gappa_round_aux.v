@@ -331,14 +331,4 @@ induction a ; intros ; compute in H ; try discriminate H.
 exact (refl_equal _).
 Qed.
 
-Lemma Zneg_pos_of_Z_minus :
- forall a b : Z, (a < b)%Z ->
- (Zneg (pos_of_Z (b - a)) = a - b)%Z.
-intros a b H.
-assert (0 < b - a)%Z. omega.
-cutrewrite (a - b = -(b - a))%Z. 2: ring.
-destruct (b - a)%Z ; compute in H0 ; try discriminate H0.
-apply refl_equal.
-Qed.
-
 End Gappa_round_aux.
