@@ -2129,15 +2129,6 @@ apply sym_eq.
 apply rndG_conversion.
 Qed.
 
-Lemma round_extension_zero :
-  forall rdir rexp (Hexp : good_rexp rexp),
-  round_extension rdir rexp Hexp 0 = R0 :>R.
-Proof.
-intros rdir rexp Hexp.
-rewrite round_extension_conversion.
-apply rounding_0.
-Qed.
-
 Lemma round_extension_opp :
   forall rdir rexp (Hexp : good_rexp rexp) x,
   (round_extension rdir rexp Hexp (-x) = - round_extension
