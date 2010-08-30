@@ -2177,16 +2177,6 @@ apply float2_pos_compat.
 split.
 Qed.
 
-Lemma round_extension_monotone :
-  forall rdir rexp (Hexp : good_rexp rexp) x y,
-  (x <= y)%R ->
-  (round_extension rdir rexp Hexp x <= round_extension rdir rexp Hexp y)%R.
-Proof.
-intros rdir rexp Hexp x y Hxy.
-rewrite 2!round_extension_conversion.
-now apply rounding_monotone.
-Qed.
-
 Lemma round_extension_opp :
   forall rdir rexp (Hexp : good_rexp rexp) x,
   (round_extension rdir rexp Hexp (-x) = - round_extension
