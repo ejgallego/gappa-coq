@@ -177,31 +177,6 @@ generalize (Zgt_pos_0 p).
 omega.
 Qed.
 
-Lemma digits_succ :
- forall m : positive,
- digits (Psucc m) = digits m \/
- (digits (Psucc m) = Psucc (digits m) /\ Psucc m = iter_pos (digits m) _ xO xH).
-intros m.
-rewrite iter_nat_of_P.
-induction m.
-simpl.
-destruct IHm.
-left.
-rewrite H.
-exact (refl_equal _).
-right.
-split.
-rewrite (proj1 H).
-exact (refl_equal _).
-rewrite (proj2 H).
-rewrite nat_of_P_succ_morphism.
-exact (refl_equal _).
-left.
-exact (refl_equal _).
-right.
-split ; exact (refl_equal _).
-Qed.
-
 Lemma float2_pow2 :
   forall e,
   Float2 1 e = powerRZ 2 e :>R.
