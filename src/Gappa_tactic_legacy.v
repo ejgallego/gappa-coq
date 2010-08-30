@@ -3,7 +3,7 @@ Require Import List.
 Require Export Gappa_library.
 Require Import Gappa_integer.
 
-Definition gappa_rounding (f : R -> float2) (x : R) : R := f x.
+Definition gappa_rounding (f : R -> R) (x : R) : R := f x.
 
 Inductive UnaryOp : Set :=
   | uoNeg | uoSqrt | uoAbs | uoInv.

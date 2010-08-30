@@ -3,7 +3,7 @@ Require Import List.
 Require Export Gappa_library.
 Require Import Gappa_integer.
 
-Definition gappa_rounding (f : R -> float2) (x : R) : R := f x.
+Definition gappa_rounding (f : R -> R) (x : R) : R := f x.
 Strategy 1000 [rounding_fixed rounding_float]
          1001 [gappa_rounding]
          1002 [Fcore_generic_fmt.rounding].
