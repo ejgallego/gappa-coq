@@ -1,5 +1,5 @@
+Require Import Fcore_defs.
 Require Import Gappa_common.
-Require Import Gappa_integer.
 
 Section Gappa_decimal.
 
@@ -10,8 +10,6 @@ Definition Dcompare (x : float2) (y : float10) :=
  | Zneg p => Fcomp2 (Float2 (Fnum x * Zpower_pos 5 p) (Fexp x)) (Float2 m e)
  | Z0 => Fcomp2 x (Float2 m 0)
  end.
-
-Ltac caseEq f := generalize (refl_equal f) ; pattern f at -1 ; case f.
 
 Lemma pow_exp :
  forall x y : R, forall e : nat,
@@ -37,93 +35,46 @@ exact (refl_equal Lt).
 Qed.
 
 Lemma Dcompare_correct :
- forall x : float2, forall y : float10,
- match (Dcompare x y) with
- | Lt => (x < y)%R
- | Eq => (float2R x = y)%R
- | Gt => (x > y)%R
- end.
-intros x (ym, ye).
-unfold Dcompare, float10R.
-simpl.
-induction ye.
-(* ye = 0 *)
-simpl.
-change (Z2R ym) with (float2R (Float2 ym 0)).
-case_eq (Fcomp2 x (Float2 ym 0)) ; intro H.
-apply Fcomp2_Eq with (1 := H).
-apply Fcomp2_Lt with (1 := H).
-apply Fcomp2_Gt with (1 := H).
-(* ye > 0 *)
-assert (H0: (Float2 (ym * Zpower_pos 5 p) (Zpos p) = (Z2R ym * 10 ^ nat_of_P p)%R :>R)).
-unfold float2R.
-simpl.
-do 2 rewrite mult_Z2R.
-rewrite (Z2R_IZR (Zpower_pos 5 p)).
-rewrite Zpower_pos_nat.
-change 5%Z with (Z_of_nat 5).
-rewrite Zpower_nat_powerRZ.
-rewrite Zpower_pos_powerRZ.
-rewrite Rmult_assoc.
-unfold powerRZ.
-rewrite <- Zpos_eq_Z_of_nat_o_nat_of_P.
-rewrite pow_exp.
-replace (INR 5 * Z2R 2)%R with 10%R by (simpl ; ring).
+  forall x : float2, forall y : float10,
+  Dcompare x y = Rcompare x y.
+Proof.
+assert (forall e, Zpower_pos 5 e * Zpower_pos 2 e = Zpower_pos 10 e)%Z.
+intros e.
+rewrite 3!Zpower_pos_nat.
+induction (nat_of_P e).
 apply refl_equal.
-rewrite F2R_split.
-case_eq (Fcomp2 x (Float2 (ym * Zpower_pos 5 p) (Zpos p))) ;
- intro H ;
- [ generalize (Fcomp2_Eq _ _ H) |
-   generalize (Fcomp2_Lt _ _ H) |
-   generalize (Fcomp2_Gt _ _ H) ] ;
- clear H ; rewrite H0 ; intro H ; exact H.
-(* ye < 0 *)
-rewrite F2R_split.
-replace (P2R 10) with (IZR 5 * 2)%R by (simpl ; ring).
-unfold powerRZ.
-rewrite <- pow_exp.
-rewrite Rinv_mult_distr ; try apply pow_nonzero.
-2: apply not_O_IZR ; discriminate.
-2: apply Rgt_not_eq ; exact (Z2R_lt 0 2 (refl_equal _)).
-rewrite Rmult_comm.
-rewrite Rmult_assoc.
-cutrewrite (float2R x = (/ IZR 5 ^ nat_of_P p) * (x * (IZR 5 ^ nat_of_P p)))%R.
-2: field ; apply pow_nonzero ; apply not_O_IZR ; discriminate.
-cutrewrite (IZR 5 ^ nat_of_P p = IZR (Zpower_pos 5 p))%R.
-rewrite <- (Rmult_comm (Z2R ym)).
-assert (Hd: (0 < / Z2R (Zpower_pos 5 p))%R).
-apply Rinv_0_lt_compat.
-apply (Z2R_lt 0).
-apply Zpower_pos_pos.
-assert (He: (Z2R (Fnum x) * powerRZ 2 (Fexp x) * IZR (Zpower_pos 5 p)
- = Z2R (Fnum x) * IZR (Zpower_pos 5 p) * powerRZ 2 (Fexp x))%R) by ring.
-unfold float2R.
-rewrite F2R_split.
-simpl (P2R 2).
-rewrite He.
-clear He.
-rewrite <- Z2R_IZR.
-rewrite <- mult_Z2R.
-case_eq (Fcomp2 (Float2 (Fnum x * Zpower_pos 5 p) (Fexp x)) (Float2 ym (Zneg p))) ;
- intro H ;
- [ generalize (Fcomp2_Eq _ _ H) |
-   generalize (Fcomp2_Lt _ _ H) |
-   generalize (Fcomp2_Gt _ _ H) ] ;
- clear H ; intro H ; unfold float2R in * ;
- do 2 rewrite F2R_split in H ;
- simpl in H.
-rewrite <- H.
-apply refl_equal.
-apply Rmult_lt_compat_l with (1 := Hd) (2 := H).
-unfold Rgt.
-apply Rmult_lt_compat_l with (1 := Hd) (2 := H).
-rewrite Zpower_pos_nat.
-induction (nat_of_P p).
-apply refl_equal.
-change (Zpower_nat 5 (S n)) with (5 * Zpower_nat 5 n)%Z.
-rewrite mult_IZR.
+change ((5 * Zpower_nat 5 n) * (2 * Zpower_nat 2 n) = 10 * Zpower_nat 10 n)%Z.
 rewrite <- IHn.
+ring.
+(* *)
+intros x (ym, ye).
+unfold Dcompare, float10R. simpl.
+destruct ye as [|ye|ye] ; rewrite Fcomp2_correct.
 apply refl_equal.
+(* . *)
+apply f_equal.
+unfold float2R, Fcore_defs.F2R. simpl.
+rewrite mult_Z2R, Rmult_assoc, <- mult_Z2R.
+now apply (f_equal (fun v => Z2R ym * Z2R v)%R).
+(* . *)
+unfold float2R at 1, F2R at 1. simpl.
+replace (Z2R (Fnum x * Zpower_pos 5 ye) * bpow radix2 (Fexp x))%R with (x * Z2R (Zpower_pos 5 ye))%R.
+rewrite <- (Rcompare_mult_r (Z2R (Zpower_pos 2 ye))).
+rewrite Rmult_assoc, <- mult_Z2R, H.
+rewrite <- (Rcompare_mult_r (Z2R (Zpower_pos 10 ye)) x).
+apply f_equal.
+unfold float2R, F2R. simpl.
+rewrite 2!Rmult_assoc, 2!Rinv_l.
+apply refl_equal.
+apply Rgt_not_eq.
+exact (bpow_gt_0 radix10 (Zpos ye)).
+apply Rgt_not_eq.
+exact (bpow_gt_0 radix2 (Zpos ye)).
+exact (bpow_gt_0 radix10 (Zpos ye)).
+exact (bpow_gt_0 radix2 (Zpos ye)).
+unfold float2R, F2R. simpl.
+rewrite mult_Z2R.
+ring.
 Qed.
 
 Definition Dle_fd (x : float2) (y : float10) :=
@@ -133,14 +84,16 @@ Definition Dle_fd (x : float2) (y : float10) :=
  end.
 
 Lemma Dle_fd_correct :
- forall x : float2, forall y : float10,
- Dle_fd x y = true ->
- (x <= y)%R.
-intros x y.
+  forall x : float2, forall y : float10,
+  Dle_fd x y = true ->
+  (x <= y)%R.
+Proof.
+intros x y H.
+apply Rcompare_not_Gt_inv.
+revert H.
 unfold Dle_fd.
-generalize (Dcompare_correct x y).
-caseEq (Dcompare x y) ; intros ; auto with real.
-discriminate.
+rewrite Dcompare_correct.
+now case Rcompare.
 Qed.
 
 Definition Dle_df (x : float10) (y : float2) :=
@@ -150,14 +103,16 @@ Definition Dle_df (x : float10) (y : float2) :=
  end.
 
 Lemma Dle_df_correct :
- forall x : float10, forall y : float2,
- Dle_df x y = true ->
- (x <= y)%R.
-intros x y.
+  forall x : float10, forall y : float2,
+  Dle_df x y = true ->
+  (x <= y)%R.
+Proof.
+intros x y H.
+apply Rcompare_not_Lt_inv.
+revert H.
 unfold Dle_df.
-generalize (Dcompare_correct y x).
-caseEq (Dcompare y x) ; intros ; auto with real.
-discriminate.
+rewrite Dcompare_correct.
+now case Rcompare.
 Qed.
 
 End Gappa_decimal.

@@ -1,59 +1,24 @@
 Require Import ZArith.
 Require Import Reals.
-Require Import Gappa_definitions.
-Require Import Gappa_dyadic.
-Require Import Gappa_integer.
-
-Require Fcore_defs.
+Require Import Fcore_Raux.
+Require Import Fcore_defs.
 Require Fcalc_digits.
 Require Import Fcore_float_prop.
+Require Import Gappa_definitions.
+Require Import Gappa_dyadic.
 
 Section Gappa_round_aux.
 
-Definition radix2 := Build_radix 2 (refl_equal true).
-
-Lemma float2_float :
-  forall m e,
-  float2R (Float2 m e) = Fcore_defs.F2R (Fcore_defs.Float radix2 m e).
-Proof.
-intros m e.
-unfold float2R, Fcore_defs.F2R. simpl.
-rewrite F2R_split.
-apply f_equal.
-apply sym_eq.
-apply bpow_powerRZ.
-Qed.
-
 Lemma float2_shift_p1 :
- forall e : Z, forall m : Z,
- Float2 m (e + 1) = Float2 (m * 2) e :>R.
+  forall e m : Z,
+  Float2 m (e + 1) = Float2 (m * 2) e :>R.
+Proof.
 intros e m.
-unfold float2R. simpl.
-do 2 rewrite F2R_split.
-rewrite powerRZ_add.
+unfold float2R, F2R. simpl.
+rewrite bpow_add.
 rewrite mult_Z2R.
 simpl.
 ring.
-apply Rgt_not_eq.
-exact (Z2R_lt 0 2 (refl_equal _)).
-Qed.
-
-Lemma float2_binade_lt :
-  forall m1 m2 e,
-  (m1 < m2)%Z -> (Float2 m1 e < Float2 m2 e)%R.
-Proof.
-intros m1 m2 e H.
-do 2 rewrite float2_float.
-now apply F2R_lt_compat.
-Qed.
-
-Lemma float2_binade_le :
-  forall m1 m2 e,
-  (m1 <= m2)%Z -> (Float2 m1 e <= Float2 m2 e)%R.
-Proof.
-intros m1 m2 e H.
-do 2 rewrite float2_float.
-now apply F2R_le_compat.
 Qed.
 
 Fixpoint digits (m : positive) : positive :=
@@ -144,16 +109,6 @@ generalize (Zgt_pos_0 p).
 omega.
 Qed.
 
-Lemma float2_pow2 :
-  forall e,
-  Float2 1 e = powerRZ 2 e :>R.
-intros.
-unfold float2R.
-rewrite F2R_split.
-rewrite Rmult_1_l.
-apply refl_equal.
-Qed.
-
 Lemma float2_digits_correct :
   forall m e,
   (Float2 1 (e + Zpos (digits m) - 1)%Z <= Float2 (Zpos m) e < Float2 1 (e + Zpos (digits m))%Z)%R.
@@ -161,86 +116,19 @@ Proof.
 intros m e.
 rewrite digits2_digits.
 rewrite Fcalc_digits.digits_ln_beta. 2: easy.
-rewrite 3!float2_float, 2!F2R_bpow.
+unfold float2R, Fnum, Fexp.
+rewrite 2!F2R_bpow.
 unfold Zminus.
 rewrite bpow_add.
 rewrite Zplus_comm.
 rewrite <- ln_beta_F2R. 2: easy.
 rewrite <- bpow_add.
-destruct (ln_beta radix2 (Fcore_defs.F2R (Fcore_defs.Float radix2 (Zpos m) e))) as (e', He).
+destruct (ln_beta radix2 (F2R (Fcore_defs.Float radix2 (Zpos m) e))) as (e', He).
 simpl. change (Zpos m) with (Zabs (Zpos m)).
 rewrite <- abs_F2R.
 apply He.
 intros H.
 discriminate (F2R_eq_0_reg _ _ _ H).
-Qed.
-
-Lemma float2_Rlt_pow2 :
- forall k l : Z, (k < l)%Z ->
- (Float2 1 k < Float2 1 l)%R.
-intros k l H.
-do 2 rewrite float2_pow2.
-replace l with (l - k + k)%Z by ring.
-rewrite powerRZ_add. 2: discrR.
-pattern (powerRZ 2 k) at 1 ; (rewrite <- Rmult_1_l).
-apply Rmult_lt_compat_r.
-auto with real.
-unfold powerRZ.
-assert (0 < l - k)%Z by omega.
-clear H.
-induction (l - k)%Z.
-discriminate H0.
-apply Rlt_pow_R1.
-auto with real.
-apply lt_O_nat_of_P.
-discriminate H0.
-Qed.
-
-Lemma float2_Rle_pow2 :
- forall k l : Z, (k <= l)%Z ->
- (Float2 1 k <= Float2 1 l)%R.
-intros k l H.
-destruct (Zle_lt_or_eq _ _ H).
-apply Rlt_le.
-apply float2_Rlt_pow2.
-exact H0.
-rewrite H0.
-apply Rle_refl.
-Qed.
-
-Lemma float2_pow2_lt :
- forall k l : Z, (Float2 1 k < Float2 1 l)%R ->
- (k < l)%Z.
-intros k l H.
-apply Znot_ge_lt.
-intro H0.
-elim Rlt_not_le with (1 := H).
-apply float2_Rle_pow2.
-apply Zge_le.
-exact H0.
-Qed.
-
-Lemma float2_pos_reg :
- forall m e : Z,
- (0 < Float2 m e)%R ->
- (0 < m)%Z.
-intros m e H.
-apply lt_Z2R.
-apply Rmult_lt_reg_l with (powerRZ (P2R 2) e).
-apply power_radix_pos.
-rewrite Rmult_0_r.
-rewrite Rmult_comm.
-rewrite <- F2R_split.
-exact H.
-Qed.
-
-Lemma float2_pos_compat :
- forall m e : Z,
- (0 < m)%Z ->
- (0 < Float2 m e)%R.
-intros m e H.
-rewrite <- (float2_zero e).
-exact (float2_binade_lt _ _ _ H).
 Qed.
 
 Definition pos_of_Z (n : Z) :=

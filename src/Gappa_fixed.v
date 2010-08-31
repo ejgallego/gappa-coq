@@ -23,9 +23,7 @@ Proof.
 intros rdir x k1 k2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX, rounding_fixed.
-unfold rounding.
-rewrite <- float2_float.
-eexists ; repeat split.
+eexists (Float2 _ _) ; repeat split.
 exact H.
 Qed.
 
@@ -42,7 +40,6 @@ unfold rounding_fixed.
 rewrite rounding_generic.
 now apply sub_refl.
 rewrite <- Hx1.
-rewrite float2_float.
 apply generic_format_canonic_exponent.
 now apply Zle_trans with e1.
 Qed.
@@ -61,17 +58,18 @@ intros x xn xi zi Hxb ((m,e),(Hx1,Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite rndG_conversion. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
-rewrite float2_float in Hx1.
 rewrite <- Hx1.
 rewrite <- Hx1 in Hxb.
 split.
 apply Rle_trans with (1 := H1).
+unfold float2R at 2. simpl.
 rewrite <- (rounding_generic radix2 (FIX_exp xn) (ZrndG roundUP) (F2R (Float radix2 m e))).
 apply rounding_monotone.
 apply FIX_exp_correct.
 apply Hxb.
 now apply generic_format_canonic_exponent.
 apply Rle_trans with (2 := H2).
+unfold float2R at 1. simpl.
 rewrite <- (rounding_generic radix2 (FIX_exp xn) (ZrndG roundDN) (F2R (Float radix2 m e))).
 apply rounding_monotone.
 apply FIX_exp_correct.
@@ -124,7 +122,7 @@ split.
 apply Rle_trans with (1 := H1).
 destruct (Rabs_def2 _ _ (ulp_error radix2 _ (FIX_exp_correct e) (ZrndG roundDN) x)) as (_, H).
 apply Rlt_le.
-rewrite float2_float.
+unfold float2R.
 rewrite <- (opp_F2R _ 1%Z).
 now rewrite F2R_bpow.
 (* *)

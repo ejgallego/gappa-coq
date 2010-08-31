@@ -1,6 +1,5 @@
 Require Import Gappa_common.
 Require Import Gappa_decimal.
-Require Import Gappa_integer.
 
 Section Gappa_pred_bnd.
 
@@ -28,7 +27,8 @@ intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-change (Float1 x) with (float2R (Float2 x 0)).
+rewrite <- (Rmult_1_r (Float1 x)).
+change (Float1 x * 1)%R with (float2R (Float2 x 0)).
 split ; assumption.
 Qed.
 
@@ -292,7 +292,7 @@ Lemma div_refl :
 intros x zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 assert (Float2 1 0 = 1 :>R)%R.
-unfold float2R. auto with real.
+apply Rmult_1_r.
 generalize (Fle2_correct _ _ H1). clear H1. rewrite H. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. rewrite H. intro H2.
 unfold Rdiv.

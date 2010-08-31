@@ -1,6 +1,7 @@
 Require Export Bool.
 Require Export ZArith.
 Require Export Reals.
+Require Export Fcore_Raux.
 Require Export Gappa_real.
 Require Export Gappa_definitions.
 Require Export Gappa_dyadic.

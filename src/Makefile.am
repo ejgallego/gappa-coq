@@ -5,7 +5,6 @@ FILES = \
 	Gappa_dyadic.v \
 	Gappa_fixed.v \
 	Gappa_float.v \
-	Gappa_integer.v \
 	Gappa_library.v \
 	Gappa_obfuscate.v \
 	Gappa_pred_abs.v \

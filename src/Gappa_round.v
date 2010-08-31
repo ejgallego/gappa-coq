@@ -7,7 +7,6 @@ Require Import Fcalc_bracket.
 Require Import Fcalc_digits.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
-Require Import Gappa_integer.
 Require Import Gappa_round_def.
 Require Import Gappa_round_aux.
 
@@ -375,12 +374,10 @@ unfold round_pos.
 case_eq (rexp (e + Zpos (digits m)) - e)%Z.
 (* *)
 intros H.
-rewrite rounding_generic.
-unfold Fcore_defs.F2R, float2R.
-simpl.
-rewrite F2R_split.
-now rewrite bpow_powerRZ.
+apply sym_eq.
+apply rounding_generic.
 apply generic_format_canonic_exponent.
+simpl.
 rewrite He.
 rewrite Zminus_eq with (1 := H).
 apply Zle_refl.
@@ -395,8 +392,6 @@ assert (rexp (e + Zpos (digits m)) = e + Zpos p)%Z.
 omega.
 rewrite H0.
 ring_simplify (e + -(e + Zpos p))%Z.
-rewrite F2R_split.
-rewrite (bpow_powerRZ radix2 (e + Zpos p)).
 apply (f_equal (fun m => Z2R m * _)%R).
 unfold hrndG.
 rewrite (shr_conversion m p).
@@ -431,12 +426,10 @@ apply Zfloor_lub.
 now apply (F2R_ge_0_compat radix2 (Float radix2 (Zpos m) (- (Zpos p)))).
 (* *)
 intros p H.
-rewrite rounding_generic.
-unfold Fcore_defs.F2R, float2R.
-simpl.
-rewrite F2R_split.
-now rewrite bpow_powerRZ.
+apply sym_eq.
+apply rounding_generic.
 apply generic_format_canonic_exponent.
+simpl.
 rewrite He.
 generalize (Zlt_neg_0 p).
 omega.
@@ -523,9 +516,9 @@ Theorem rndG_conversion :
   float2R (round rdir rexp f) = rounding radix2 rexp ZrndG (float2R f).
 Proof.
 intros rexp (m, e).
-rewrite float2_float.
+unfold float2R. simpl.
 destruct m as [|m|m].
-now rewrite F2R_0, rounding_0.
+now rewrite 2!F2R_0, rounding_0.
 (* *)
 unfold round. simpl.
 generalize (hrndG_conversion (rpos rdir) (rpos_good _) rexp m e).
@@ -535,7 +528,8 @@ intros H.
 rewrite <- H.
 case round_pos.
 intros [|n] z ; simpl.
-now rewrite 2!float2_zero.
+unfold float2R.
+now rewrite 2!F2R_0.
 apply refl_equal.
 unfold scaled_mantissa.
 apply Rmult_lt_0_compat.
@@ -556,7 +550,8 @@ intros H.
 rewrite <- H.
 case round_pos.
 intros [|n] z ; simpl.
-rewrite 2!float2_zero.
+unfold float2R.
+rewrite 2!F2R_0.
 now rewrite Ropp_0.
 now rewrite <- Fopp2_correct.
 rewrite scaled_mantissa_opp.

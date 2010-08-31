@@ -1,7 +1,8 @@
 Require Import Reals.
 Require Import List.
+Require Import Fcore_Raux.
+Require Import Fcore_float_prop.
 Require Export Gappa_library.
-Require Import Gappa_integer.
 
 Definition gappa_rounding (f : R -> R) (x : R) : R := f x.
 
@@ -255,8 +256,9 @@ Lemma float2_of_pos_correct :
   forall x, float2R (float2_of_pos x) = Z2R (Zpos x).
 Proof.
 intros x.
+rewrite <- (Rmult_1_r (Z2R (Zpos x))).
+change (Z2R (Zpos x) * 1)%R with (float2R (Float2 (Zpos x) 0%Z)).
 unfold float2_of_pos.
-change (Z2R (Zpos x)) with (float2R (Float2 (Zpos x) 0%Z)).
 generalize 0%Z.
 induction x ; intros e ; try apply refl_equal.
 rewrite IHx.
@@ -284,33 +286,22 @@ Definition compact_float2 m e :=
 Lemma compact_float2_correct :
   forall m e, float2R (compact_float2 m e) = float2R (Float2 m e).
 Proof.
+unfold float2R, Fcore_defs.F2R. simpl.
 intros [|m|m] e ; simpl.
-rewrite (Gappa_dyadic.float2_zero e).
-apply refl_equal.
-generalize (float2_of_pos_correct m).
+now rewrite 2!Rmult_0_l.
+change (P2R m) with (Z2R (Zpos m)).
+rewrite <- (float2_of_pos_correct m).
 destruct (float2_of_pos m) as (m1, e1).
-intros H.
+simpl.
 rewrite Zplus_comm.
-rewrite <- (Zmult_1_r m1).
-change (Gappa_dyadic.Fmult2 (Float2 m1 e1) (Float2 1 e) = Float2 (Zpos m) e :>R).
-rewrite Gappa_dyadic.Fmult2_correct.
-rewrite Gappa_round_aux.float2_pow2.
-rewrite H.
-apply sym_eq.
-exact (F2R_split _ (Zpos m) e).
-generalize (float2_of_pos_correct m).
+now rewrite bpow_add, <- Rmult_assoc.
+change (- P2R m)%R with (- (Z2R (Zpos m)))%R.
+rewrite <- (float2_of_pos_correct m).
 destruct (float2_of_pos m) as (m1, e1).
-intros H.
+simpl.
 rewrite Zplus_comm.
-rewrite <- (Zmult_1_r m1).
-change (Gappa_dyadic.Fopp2 (Gappa_dyadic.Fmult2 (Float2 m1 e1) (Float2 1 e)) = Float2 (Zneg m) e :>R).
-rewrite Gappa_dyadic.Fopp2_correct.
-rewrite Gappa_dyadic.Fmult2_correct.
-rewrite Gappa_round_aux.float2_pow2.
-rewrite H.
-rewrite <- Ropp_mult_distr_l_reverse.
-apply sym_eq.
-exact (F2R_split _ (Zneg m) e).
+rewrite bpow_add, <- Rmult_assoc.
+now rewrite opp_Z2R, Ropp_mult_distr_l_reverse.
 Qed.
 
 (* transform INR and IZR into real integers, change a/b and a*2^b into floats *)
@@ -346,14 +337,10 @@ destruct o ; try apply refl_equal ;
   destruct y ; try apply refl_equal.
 (* . x * 2^y *)
 simpl.
-unfold float2R.
-rewrite F2R_split.
-apply refl_equal.
+now rewrite <- (bpow_powerRZ radix2).
 (* . x * 10^y *)
 simpl.
-unfold float10R.
-rewrite F2R_split.
-apply refl_equal.
+now rewrite <- (bpow_powerRZ radix10).
 (* . x / 2*2*2*2 *)
 destruct z0 ; try apply refl_equal.
 generalize (float2_of_pos_correct p).
@@ -361,11 +348,8 @@ simpl.
 destruct (float2_of_pos p) as ([|[m|m|]|m], [|e|e]) ; intros H ; try apply refl_equal.
 rewrite <- H.
 simpl.
-unfold float2R.
-do 2 rewrite F2R_split.
-simpl.
-rewrite Rmult_1_l.
-apply refl_equal.
+unfold float2R, Fcore_defs.F2R at 2. simpl.
+now rewrite Rmult_1_l.
 (* INR *)
 exact (P2R_INR _).
 Qed.
@@ -385,12 +369,13 @@ Lemma clean_pow_prop :
 Proof.
 intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
 simpl.
-apply Gappa_round_aux.float2_pow2.
+unfold float2R.
+rewrite F2R_bpow.
+apply bpow_powerRZ.
 simpl.
 unfold float10R.
-rewrite F2R_split.
-rewrite Rmult_1_l.
-apply refl_equal.
+rewrite F2R_bpow.
+apply bpow_powerRZ.
 Qed.
 
 Definition clean_pow := mkTF clean_pow_func clean_pow_prop.
@@ -422,6 +407,12 @@ intro H.
 exact H.
 (* . *)
 intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal ; try exact (H x _).
+(* integer *)
+simpl.
+unfold merge_float2_aux.
+generalize (compact_float2_correct x 0).
+rewrite <- (Rmult_1_r (Float1 x)).
+now destruct (compact_float2 x 0).
 (* unary ops *)
 destruct o ; try apply refl_equal.
 destruct x ; try apply refl_equal.
