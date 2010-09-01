@@ -57,28 +57,6 @@ rewrite inj_S.
 apply Zpred_succ.
 Qed.
 
-Lemma float2_digits_correct :
-  forall m e,
-  (Float2 1 (e + Zpos (digits m) - 1)%Z <= Float2 (Zpos m) e < Float2 1 (e + Zpos (digits m))%Z)%R.
-Proof.
-intros m e.
-rewrite digits2_digits.
-rewrite Fcalc_digits.digits_ln_beta. 2: easy.
-unfold float2R, Fnum, Fexp.
-rewrite 2!F2R_bpow.
-unfold Zminus.
-rewrite bpow_add.
-rewrite Zplus_comm.
-rewrite <- ln_beta_F2R. 2: easy.
-rewrite <- bpow_add.
-destruct (ln_beta radix2 (F2R (Fcore_defs.Float radix2 (Zpos m) e))) as (e', He).
-simpl. change (Zpos m) with (Zabs (Zpos m)).
-rewrite <- abs_F2R.
-apply He.
-intros H.
-discriminate (F2R_eq_0_reg _ _ _ H).
-Qed.
-
 Definition pos_of_Z (n : Z) :=
  match n with
  | Zpos p => p
