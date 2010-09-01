@@ -51,10 +51,19 @@ AC_CACHE_CHECK([for ocamlopt >= 3.11], [gappa_cv_ocamlopt], [
       ocamlopt_version=`"$ocamlopt_path" -version`
       AX_VERSION_GE([$ocamlopt_version], [3.11], [gappa_cv_ocamlopt="$ocamlopt_path"])
     fi
-  fi])
+  fi ])
 OCAMLOPT="$gappa_cv_ocamlopt"
 
 if test -z "$OCAMLOPT"; then native_tactic=no; fi
+
+AC_MSG_CHECKING([for Flocq])
+AS_IF(
+  [ echo "Require Fcore Fcalc_digits." > conftest.v
+    "$COQC" conftest.v > conftest.err ],
+  [ AC_MSG_RESULT([yes]) ],
+  [ AC_MSG_RESULT([no])
+    AC_MSG_ERROR([ *** Unable to find the Flocq library (http://flocq.gforge.inria.fr/)])])
+rm -f conftest.v conftest.vo conftest.err
 
 AC_SUBST(COQLIBS)
 COQLIBS=`$COQC -where`
