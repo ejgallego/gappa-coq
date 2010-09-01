@@ -57,58 +57,6 @@ rewrite inj_S.
 apply Zpred_succ.
 Qed.
 
-Lemma digits_pow2 :
- forall m p : positive,
- (Zpos m < Zpower_pos 2 p)%Z ->
- (Zpos (digits m) <= Zpos p)%Z.
-induction m ; intros.
-destruct (Psucc_pred p) as [H0|H0].
-elim Zle_not_lt with (2 := H).
-rewrite H0.
-unfold Zpower_pos. simpl.
-rewrite Zpos_xI.
-generalize (Zgt_pos_0 m).
-omega.
-rewrite <- H0.
-simpl.
-repeat rewrite Zpos_succ_morphism.
-unfold Zsucc.
-apply Zplus_le_compat_r.
-apply IHm.
-cut (2 * Zpos m + 1 < 2 * Zpower_pos 2 (Ppred p))%Z.
-omega.
-cutrewrite (2 * Zpower_pos 2 (Ppred p) = Zpower_pos 2 p)%Z.
-exact H.
-pattern p at 2 ; rewrite <- H0.
-repeat rewrite Zpower_pos_nat.
-rewrite nat_of_P_succ_morphism.
-exact (refl_equal _).
-destruct (Psucc_pred p) as [H0|H0].
-elim Zle_not_lt with (2 := H).
-rewrite H0.
-unfold Zpower_pos. simpl.
-rewrite (Zpos_xO m).
-generalize (Zgt_pos_0 m).
-omega.
-rewrite <- H0.
-simpl.
-repeat rewrite Zpos_succ_morphism.
-unfold Zsucc.
-apply Zplus_le_compat_r.
-apply IHm.
-cut (2 * Zpos m < 2 * Zpower_pos 2 (Ppred p))%Z.
-omega.
-cutrewrite (2 * Zpower_pos 2 (Ppred p) = Zpower_pos 2 p)%Z.
-exact H.
-pattern p at 2 ; rewrite <- H0.
-repeat rewrite Zpower_pos_nat.
-rewrite nat_of_P_succ_morphism.
-exact (refl_equal _).
-simpl.
-generalize (Zgt_pos_0 p).
-omega.
-Qed.
-
 Lemma float2_digits_correct :
   forall m e,
   (Float2 1 (e + Zpos (digits m) - 1)%Z <= Float2 (Zpos m) e < Float2 1 (e + Zpos (digits m))%Z)%R.
