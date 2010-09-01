@@ -350,10 +350,10 @@ Qed.
 Theorem hrndG_conversion :
   forall rexp m e,
   float2R (tofloat (round_pos rdir rexp m e)) =
-    rounding radix2 rexp ZhrndG (Fcore_defs.F2R (Float radix2 (Zpos m) e)).
+    rounding radix2 rexp ZhrndG (F2R (Float radix2 (Zpos m) e)).
 Proof.
 intros rexp m e.
-assert (He: canonic_exponent radix2 rexp (Fcore_defs.F2R (Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
+assert (He: canonic_exponent radix2 rexp (F2R (Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
 rewrite digits2_digits.
 rewrite digits_ln_beta. 2: easy.
 unfold canonic_exponent.
@@ -374,9 +374,8 @@ apply Zle_refl.
 intros p H.
 unfold rounding, scaled_mantissa.
 rewrite He.
-unfold Fcore_defs.F2R, float2R.
+unfold F2R, float2R. simpl.
 rewrite Rmult_assoc, <- bpow_add.
-simpl.
 assert (rexp (e + Zpos (digits m)) = e + Zpos p)%Z.
 omega.
 rewrite H0.
