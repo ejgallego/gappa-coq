@@ -12,17 +12,6 @@ Require Import Gappa_round_aux.
 
 Section Gappa_round.
 
-Lemma iter_nat_simpl :
- forall n : nat, forall A : Set, forall f : A -> A, forall a : A,
- iter_nat (S n) A f a = iter_nat n A f (f a).
-intros.
-replace (S n) with (n + 1).
-rewrite iter_nat_plus.
-apply refl_equal.
-rewrite plus_comm.
-apply refl_equal.
-Qed.
-
 Definition shr_aux (p : rnd_record) : rnd_record :=
  let s := rnd_r p || rnd_s p in
  match (rnd_m p) with
