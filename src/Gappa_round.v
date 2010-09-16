@@ -27,13 +27,13 @@ Definition shr_aux (p : rnd_record) : rnd_record :=
 Definition shr (m : positive) (d : positive) :=
  iter_pos d _ shr_aux (rnd_record_mk (Npos m) false false).
 
-Definition round_pos (rdir : rnd_record -> Z -> bool)
+Definition round_pos (rdir : rnd_record -> bool)
   (rexp : Z -> Z) (m : positive) (e : Z) :=
  let e' := rexp (e + Zpos (digits m))%Z in
  match (e' - e)%Z with
  | Zpos d =>
    let r := shr m d in
-   ((if rdir r e' then Nsucc (rnd_m r) else rnd_m r), e')
+   ((if rdir r then Nsucc (rnd_m r) else rnd_m r), e')
  | _ => (Npos m, e)
  end.
 
@@ -69,7 +69,7 @@ apply Zfloor_lb.
 apply Zfloor_ub.
 Qed.
 
-Variable rdir : rnd_record -> Z -> bool.
+Variable rdir : rnd_record -> bool.
 Variable good_rdir : good_rdir rdir.
 
 Definition hrndG_aux mx x :=
@@ -80,20 +80,20 @@ Definition hrndG_aux mx x :=
   | loc_Inexact Gt => (true, true)
   end.
 
-Definition hrndG x e :=
+Definition hrndG x :=
   let mx := Zfloor x in
   let m := ZtoN mx in
   let l := inbetween_loc (Z2R mx) (Z2R mx + 1) x in
   let r := let (r, s) := hrndG_aux mx x in rnd_record_mk m r s in
-  if rdir r e then Zceil x else Zfloor x.
+  if rdir r then Zceil x else Zfloor x.
 
 Lemma hrndG_DN :
-  forall x e,
-  rdir (rnd_record_mk (ZtoN (Zfloor x)) true true) e = false ->
-  hrndG x e = Zfloor x.
+  forall x,
+  rdir (rnd_record_mk (ZtoN (Zfloor x)) true true) = false ->
+  hrndG x = Zfloor x.
 Proof.
-intros x e Hx1.
-destruct (good_rdir (ZtoN (Zfloor x)) e) as (Hx2, (Hx3, Hx4)).
+intros x Hx1.
+destruct (good_rdir (ZtoN (Zfloor x))) as (Hx2, (Hx3, Hx4)).
 rewrite Hx1 in Hx4.
 destruct Hx4 as [Hx4|Hx4] ; try easy.
 rewrite Hx4 in Hx3.
@@ -104,12 +104,12 @@ destruct (hrndG_aux (Zfloor x) x) as ([|],[|]) ;
 Qed.
 
 Lemma hrndG_UP :
-  forall x e,
-  rdir (rnd_record_mk (ZtoN (Zfloor x)) false true) e = true ->
-  hrndG x e = Zceil x.
+  forall x,
+  rdir (rnd_record_mk (ZtoN (Zfloor x)) false true) = true ->
+  hrndG x = Zceil x.
 Proof.
-intros x e Hx1.
-destruct (good_rdir (ZtoN (Zfloor x)) e) as (Hx2, (Hx3, Hx4)).
+intros x Hx1.
+destruct (good_rdir (ZtoN (Zfloor x))) as (Hx2, (Hx3, Hx4)).
 rewrite Hx1 in Hx3.
 destruct Hx3 as [Hx3|Hx3] ; try easy.
 rewrite Hx3 in Hx4.
@@ -123,12 +123,12 @@ now case l ; rewrite ?Hx1, ?Hx3, ?Hx4.
 Qed.
 
 Lemma hrndG_N :
-  forall x e,
-  ( forall b, rdir (rnd_record_mk (ZtoN (Zfloor x)) b true) e = b ) ->
-  hrndG x e = Znearest (fun x => rdir (rnd_record_mk (ZtoN (Zfloor x)) true false) e) x.
+  forall x,
+  ( forall b, rdir (rnd_record_mk (ZtoN (Zfloor x)) b true) = b ) ->
+  hrndG x = Znearest (fun x => rdir (rnd_record_mk (ZtoN (Zfloor x)) true false)) x.
 Proof.
-intros x e Hx1.
-destruct (good_rdir (ZtoN (Zfloor x)) e) as (Hx2, _).
+intros x Hx1.
+destruct (good_rdir (ZtoN (Zfloor x))) as (Hx2, _).
 unfold hrndG, hrndG_aux.
 destruct (inbetween_spec _ _ x (bracket_aux _)) as [Hx4|l Hx4 Hx5].
 rewrite Hx2.
@@ -144,20 +144,20 @@ now case l ; rewrite ?Hx1, ?Hx2.
 Qed.
 
 Lemma hrndG_monotone :
-  forall x y e, (x <= y)%R -> (hrndG x e <= hrndG y e)%Z.
+  forall x y, (x <= y)%R -> (hrndG x <= hrndG y)%Z.
 Proof.
-intros x y e Hxy.
+intros x y Hxy.
 destruct (Z_eq_dec (Zfloor x) (Zfloor y)) as [H|H].
 (* *)
-case_eq (rdir (rnd_record_mk (ZtoN (Zfloor x)) true true) e) ; intros Hb1.
-case_eq (rdir (rnd_record_mk (ZtoN (Zfloor x)) false true) e) ; intros Hb2.
+case_eq (rdir (rnd_record_mk (ZtoN (Zfloor x)) true true)) ; intros Hb1.
+case_eq (rdir (rnd_record_mk (ZtoN (Zfloor x)) false true)) ; intros Hb2.
 (* . *)
 rewrite hrndG_UP with (1 := Hb2).
 rewrite H in Hb2.
 rewrite hrndG_UP with (1 := Hb2).
 now apply Zceil_le.
 (* . *)
-assert (Hb3: forall b, rdir (rnd_record_mk (ZtoN (Zfloor x)) b true) e = b).
+assert (Hb3: forall b, rdir (rnd_record_mk (ZtoN (Zfloor x)) b true) = b).
 now intros [|].
 rewrite hrndG_N with (1 := Hb3).
 rewrite H in Hb3.
@@ -191,9 +191,9 @@ apply Zle_refl.
 Qed.
 
 Lemma hrndG_Z2R :
-  forall n e, hrndG (Z2R n) e = n.
+  forall n, hrndG (Z2R n) = n.
 Proof.
-intros n e.
+intros n.
 unfold hrndG.
 case rdir.
 apply Zceil_Z2R.
@@ -201,10 +201,10 @@ apply Zfloor_Z2R.
 Qed.
 
 Lemma hrndG_pos :
-  forall x e, (0 <= x)%R -> (0 <= hrndG x e)%Z.
+  forall x, (0 <= x)%R -> (0 <= hrndG x)%Z.
 Proof.
-intros x e Hx.
-rewrite <- (hrndG_Z2R 0 e).
+intros x Hx.
+rewrite <- (hrndG_Z2R 0).
 now apply hrndG_monotone.
 Qed.
 
@@ -387,13 +387,13 @@ simpl.
 set (rs := hrndG_aux (Zfloor (P2R m * / Z2R (Zpower_pos 2 p))) (P2R m * / Z2R (Zpower_pos 2 p))).
 rewrite (surjective_pairing rs).
 simpl.
-assert (H1: rdir(rnd_record_mk (ZtoN (Zfloor (P2R m * / Z2R (Zpower_pos 2 p)))) (fst rs) (snd rs)) (e + Zpos p) = true ->
+assert (H1: rdir (rnd_record_mk (ZtoN (Zfloor (P2R m * / Z2R (Zpower_pos 2 p)))) (fst rs) (snd rs)) = true ->
   (Z2R (Zfloor (P2R m * / Z2R (Zpower_pos 2 p))) <> P2R m * / Z2R (Zpower_pos 2 p))%R).
 unfold rs, hrndG_aux.
 destruct (inbetween_spec _ _ (P2R m * / Z2R (Zpower_pos 2 p)) (bracket_aux _)) as [H1|l H1 H2].
 simpl.
 intros H2 _.
-destruct (good_rdir (ZtoN (Zfloor (P2R m * / Z2R (Zpower_pos 2 p)))) (e + Zpos p)%Z) as (H3, _).
+destruct (good_rdir (ZtoN (Zfloor (P2R m * / Z2R (Zpower_pos 2 p))))) as (H3, _).
 now rewrite H2 in H3.
 intros _.
 now apply Rlt_not_eq.
@@ -427,17 +427,17 @@ End rndG.
 
 Variable rdir : round_dir.
 
-Definition rndG x e:=
+Definition rndG x :=
   match Rcompare x 0 with
-  | Gt => hrndG (rpos rdir) x e
-  | Lt => Zopp (hrndG (rneg rdir) (-x) e)
+  | Gt => hrndG (rpos rdir) x
+  | Lt => Zopp (hrndG (rneg rdir) (-x))
   | _ => Z0
   end.
 
 Lemma rndG_monotone :
-  forall x y e, (x <= y)%R -> (rndG x e <= rndG y e)%Z.
+  forall x y, (x <= y)%R -> (rndG x <= rndG y)%Z.
 Proof.
-intros x y e Hxy.
+intros x y Hxy.
 unfold rndG.
 destruct (Rcompare_spec x 0) as [Hx|Hx|Hx].
 (* *)
@@ -485,9 +485,9 @@ now apply Rlt_le_trans with x.
 Qed.
 
 Lemma rndG_Z2R :
-  forall n e, rndG (Z2R n) e = n.
+  forall n, rndG (Z2R n) = n.
 Proof.
-intros n e.
+intros n.
 unfold rndG.
 change R0 with (Z2R 0).
 rewrite Rcompare_Z2R.
@@ -553,10 +553,10 @@ Qed.
 End ZrndG.
 
 Lemma roundDN_DN :
-  forall x e,
-  Zrnd (ZrndG roundDN) x e = Zfloor x.
+  forall x,
+  Zrnd (ZrndG roundDN) x = Zfloor x.
 Proof.
-intros x e.
+intros x.
 simpl.
 unfold rndG.
 case Rcompare_spec ; intros H.
@@ -574,10 +574,10 @@ apply roundDN.
 Qed.
 
 Lemma roundNE_NE :
-  forall x e,
-  Zrnd (ZrndG roundNE) x e = Znearest (fun m => negb (Zeven (Zfloor x))) x.
+  forall x,
+  Zrnd (ZrndG roundNE) x = Znearest (fun m => negb (Zeven (Zfloor x))) x.
 Proof.
-intros x e.
+intros x.
 simpl.
 destruct (Req_dec (Z2R (Zfloor x)) x) as [H1|H1].
 rewrite <- H1.
