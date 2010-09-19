@@ -144,7 +144,7 @@ let coq_modules =
 let constant = gen_constant_in_modules "gappa" coq_modules
 
 let coq_False = lazy (constant "False")
-let coq_eq = lazy (constant "eq")
+let coq_eq = lazy (build_coq_eq ())
 let coq_refl_equal = lazy (constant "refl_equal")
 
 let coq_and = lazy (constant "and")
