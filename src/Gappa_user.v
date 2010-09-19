@@ -1,3 +1,4 @@
+Require Import Fcore_defs.
 Require Import Gappa_common.
 Require Import Gappa_pred_bnd.
 
@@ -7,10 +8,14 @@ Definition rewrite_ne_helper (xi : FF) (n : Z) :=
  Flt2 (upper xi) (Float2 n 0) || Flt2 (Float2 n 0) (lower xi).
 
 Lemma rewrite_ne :
- forall x : R, forall xi : FF, forall n : Z, BND x xi ->
- rewrite_ne_helper xi n = true ->
- (x <> Float1 n)%R.
+  forall x xi n, BND x xi ->
+  rewrite_ne_helper xi n = true ->
+  (x <> Float1 n)%R.
+Proof.
 intros x xi n Hx Hb.
+rewrite <- (Rmult_1_r (Float1 n)).
+change (x <> F2R (Float radix2 n 0)).
+unfold Float1.
 destruct (orb_prop _ _ Hb) as [H|H] ; clear Hb.
 generalize (Flt2_correct _ _ H). clear H. intro H.
 apply Rlt_not_eq.
@@ -27,10 +32,12 @@ Definition rewrite_lt_helper (xi : FF) (n : Z) :=
  Flt2 (upper xi) (Float2 n 0).
 
 Lemma rewrite_lt :
- forall x : R, forall xi : FF, forall n : Z, BND x xi ->
- rewrite_lt_helper xi n = true ->
- (x < Float1 n)%R.
+  forall x xi n, BND x xi ->
+  rewrite_lt_helper xi n = true ->
+  (x < Float1 n)%R.
+Proof.
 intros x xi n Hx Hb.
+rewrite <- (Rmult_1_r (Float1 n)).
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 apply Rle_lt_trans with (1 := proj2 Hx).
 exact H.
@@ -40,10 +47,12 @@ Definition rewrite_le_helper (xi : FF) (n : Z) :=
  Fle2 (upper xi) (Float2 n 0).
 
 Lemma rewrite_le :
- forall x : R, forall xi : FF, forall n : Z, BND x xi ->
- rewrite_le_helper xi n = true ->
- (x <= Float1 n)%R.
+  forall x xi n, BND x xi ->
+  rewrite_le_helper xi n = true ->
+  (x <= Float1 n)%R.
+Proof.
 intros x xi n Hx Hb.
+rewrite <- (Rmult_1_r (Float1 n)).
 generalize (Fle2_correct _ _ Hb). clear Hb. intro H.
 apply Rle_trans with (1 := proj2 Hx).
 exact H.
@@ -53,10 +62,12 @@ Definition rewrite_gt_helper (xi : FF) (n : Z) :=
  Flt2 (Float2 n 0) (lower xi).
 
 Lemma rewrite_gt :
- forall x : R, forall xi : FF, forall n : Z, BND x xi ->
- rewrite_gt_helper xi n = true ->
- (x > Float1 n)%R.
+  forall x xi n, BND x xi ->
+  rewrite_gt_helper xi n = true ->
+  (x > Float1 n)%R.
+Proof.
 intros x xi n Hx Hb.
+rewrite <- (Rmult_1_r (Float1 n)).
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 unfold Rgt.
 apply Rlt_le_trans with (2 := proj1 Hx).
@@ -67,10 +78,12 @@ Definition rewrite_ge_helper (xi : FF) (n : Z) :=
  Fle2 (Float2 n 0) (lower xi).
 
 Lemma rewrite_ge :
- forall x : R, forall xi : FF, forall n : Z, BND x xi ->
- rewrite_ge_helper xi n = true ->
- (x >= Float1 n)%R.
+  forall x xi n, BND x xi ->
+  rewrite_ge_helper xi n = true ->
+  (x >= Float1 n)%R.
+Proof.
 intros x xi n Hx Hb.
+rewrite <- (Rmult_1_r (Float1 n)).
 generalize (Fle2_correct _ _ Hb). clear Hb. intro H.
 apply Rle_ge.
 apply Rle_trans with (2 := proj1 Hx).

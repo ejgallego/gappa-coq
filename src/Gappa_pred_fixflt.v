@@ -1,5 +1,6 @@
+Require Import Fcore_defs.
+Require Import Fcore_float_prop.
 Require Import Gappa_common.
-Require Import Gappa_integer.
 Require Import Gappa_round_aux.
 
 Section Gappa_pred_fixflt.
@@ -29,10 +30,8 @@ split.
 exact Hx1.
 apply Zlt_le_trans with (1 := Hx2).
 apply le_Z2R.
-do 2 rewrite Zpower_pos_powerRZ.
-do 2 rewrite <- float2_pow2.
-apply float2_Rle_pow2.
-exact H.
+change (Z2R (Zpower (radix_val radix2) (Zpos xn)) <= Z2R (Zpower (radix_val radix2) (Zpos zn)))%R.
+rewrite 2!Z2R_Zpower ; try apply -> bpow_le ; easy.
 Qed.
 
 Definition fix_of_singleton_bnd_helper (xi : FF) (n : Z) :=
@@ -227,131 +226,93 @@ Theorem fix_of_flt_bnd :
  Zle_bool (n + Zpos p) (Zpos (digits (pos_of_Z (Fnum (lower xi)))) + Fexp (lower xi))
  && Fpos (lower xi) = true ->
  FIX x n.
-intros x xi n p (f,(Hx1,Hx2)) Hxi Hb.
+Proof.
+intros x ((ml,el),xu) n p ((mx,ex),(Hx1,Hx2)) (_,(Hxi,_)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
-generalize (Fpos_correct _ H2). clear H2. intro H2.
-exists f.
+generalize (Zle_bool_imp_le _ _ H1). simpl Fnum. simpl Fexp. clear H1. intro H1.
+generalize (Fpos_correct _ H2). simpl. clear H2. intro H2.
+exists (Float2 mx ex).
 split.
 exact Hx1.
-apply Znot_gt_le.
-intro H0.
-apply Zle_not_gt with (1 := H1).
-clear H1.
-apply Zlt_gt.
-cut (Fexp (lower xi) + Zpos (digits (pos_of_Z (Fnum (lower xi)))) - 1 <
-  Fexp f + Zpos p)%Z.
-omega.
-clear H0.
-assert (He1: (Float2 (Zabs (Fnum f)) (Fexp f) = Rabs x :>R)).
-rewrite <- Hx1.
-unfold float2R. simpl.
-do 2 rewrite F2R_split.
-rewrite Rabs_mult.
-rewrite (Rabs_right (powerRZ (P2R 2) (Fexp f))).
-do 2 rewrite <- (Rmult_comm (powerRZ 2 (Fexp f))).
-apply Rmult_eq_compat_l.
-do 2 rewrite Z2R_IZR.
-apply sym_eq.
-apply Rabs_Zabs.
-apply Rle_ge.
-apply Rlt_le.
-apply power_radix_pos.
-assert (He2: (Zpos (pos_of_Z (Zabs (Fnum f))) = Zabs (Fnum f))%Z).
-apply Zpos_pos_of_Z.
-apply float2_pos_reg with (Fexp f).
-apply Rlt_le_trans with (1 := H2).
-rewrite He1.
-exact (proj1 (proj2 Hxi)).
-apply Zlt_le_trans with (Fexp f + Zpos (digits (pos_of_Z (Zabs (Fnum f)))))%Z.
-apply float2_pow2_lt.
-apply Rle_lt_trans with (2 := proj2 (float2_digits_correct (pos_of_Z (Zabs (Fnum f))) (Fexp f))).
-apply Rle_trans with (1 := proj1 (float2_digits_correct (pos_of_Z (Fnum (lower xi))) (Fexp (lower xi)))).
-cutrewrite (Float2 (Zpos (pos_of_Z (Fnum (lower xi)))) (Fexp (lower xi)) = lower xi).
-cutrewrite (Float2 (Zpos (pos_of_Z (Zabs (Fnum f)))) (Fexp f) = Rabs x :>R).
-exact (proj1 (proj2 Hxi)).
-rewrite He2.
-exact He1.
-cutrewrite (Zpos (pos_of_Z (Fnum (lower xi))) = Fnum (lower xi)).
-case (lower xi). intros. exact (refl_equal _).
-apply Zpos_pos_of_Z.
-apply float2_pos_reg with (Fexp (lower xi)).
-exact H2.
-apply Zplus_le_compat_l.
-apply digits_pow2.
-rewrite He2.
-exact Hx2.
+apply Zplus_le_reg_l with (Zpos p).
+rewrite Zplus_comm.
+apply Zle_trans with (1 := H1). clear H1.
+rewrite digits2_digits.
+assert (H0: (0 < ml)%Z).
+apply F2R_gt_0_reg with (1 := H2).
+rewrite Zpos_pos_of_Z with (1 := H0).
+assert (H0': ml <> Z0).
+intros H.
+now rewrite H in H0.
+rewrite Fcalc_digits.digits_ln_beta with (1 := H0').
+rewrite <- ln_beta_F2R with (1 := H0').
+apply Zle_trans with (projT1 (ln_beta radix2 (Rabs (Float2 mx ex)))).
+apply ln_beta_monotone.
+now apply F2R_gt_0_compat.
+now rewrite Hx1.
+rewrite ln_beta_abs.
+unfold float2R.
+assert (Hx0: mx <> Z0).
+intros H.
+apply Rle_not_lt with (1 := Hxi).
+rewrite <- Hx1, H.
+unfold float2R.
+rewrite F2R_0, Rabs_R0.
+now apply F2R_gt_0_compat.
+rewrite ln_beta_F2R with (1 := Hx0).
+apply Zplus_le_compat_r.
+destruct (ln_beta radix2 (Z2R mx)) as (e, He).
+simpl.
+apply bpow_lt_bpow with radix2.
+apply Rle_lt_trans with (Rabs (Z2R mx)).
+apply He.
+now apply (Z2R_neq _ 0).
+rewrite <- abs_Z2R.
+rewrite <- Z2R_Zpower. 2: easy.
+now apply Z2R_lt.
 Qed.
 
 Theorem flt_of_fix_bnd :
- forall x : R, forall xi : FF, forall n : Z, forall p : positive,
- FIX x n -> ABS x xi ->
- Zle_bool (Zpos (digits (pos_of_Z (Fnum (upper xi)))) + Fexp (upper xi)) (n + Zpos p) = true ->
- FLT x p.
-intros x xi n p (f,(Hx1,Hx2)) Hxi H.
+  forall x xi n p,
+  FIX x n -> ABS x xi ->
+  Zle_bool (Zpos (digits (pos_of_Z (Fnum (upper xi)))) + Fexp (upper xi)) (n + Zpos p) = true ->
+  FLT x p.
+Proof.
+intros x (xl,(mu,eu)) n p ((m,e),(Hx1,Hx2)) Hxi H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
-exists f.
+exists (Float2 m e).
 split.
 exact Hx1.
-apply Znot_ge_lt.
-intro H0.
-apply Zle_not_gt with (1 := H).
-clear H.
-assert (Float2 1 (n + Zpos p) <= upper xi)%R.
-apply Rle_trans with (2 := proj2 (proj2 Hxi)).
-rewrite <- Hx1.
-apply Rle_trans with (float2R (Float2 (Zabs (Fnum f)) n)).
-cutrewrite (Float2 1 (n + Zpos p) = Float2 (Zpower_pos 2 p) n :>R)%R.
-exact (float2_binade_le _ _ _ (Zge_le _ _ H0)).
-unfold float2R. simpl.
-do 2 rewrite F2R_split.
-rewrite Rmult_1_l.
-rewrite powerRZ_add.
-apply sym_eq.
-rewrite Rmult_comm.
-apply Rmult_eq_compat_l.
-exact (Zpower_pos_powerRZ _ _).
+unfold float2R in Hx1. simpl in Hx1.
+simpl Fnum in H. simpl Fexp in H.
+apply (F2R_lt_reg radix2 e).
+rewrite <- abs_F2R.
+apply Rle_lt_trans with (F2R (Float radix2 mu eu)).
+simpl. rewrite Hx1.
+apply Hxi.
+apply Rlt_le_trans with (bpow radix2 (n + Zpos p)).
+destruct (Zle_or_lt mu 0) as [Hu|Hu].
+apply Rle_lt_trans with R0.
+now apply F2R_le_0_compat.
+apply bpow_gt_0.
+apply Rlt_le_trans with (bpow radix2 (Fcalc_digits.digits radix2 mu + eu)).
+rewrite Fcalc_digits.digits_ln_beta. 2: intros Hu' ; now rewrite Hu' in Hu.
+rewrite <- ln_beta_F2R. 2: intros Hu' ; now rewrite Hu' in Hu.
+destruct (ln_beta radix2 (F2R (Float radix2 mu eu))) as (e', He).
+apply (Rle_lt_trans _ _ _ (RRle_abs _)).
+apply He.
 apply Rgt_not_eq.
-exact (Z2R_lt 0 2 (refl_equal _)).
-unfold float2R. simpl.
-do 2 rewrite F2R_split.
-rewrite Rabs_mult.
-rewrite (Rabs_right (powerRZ (P2R 2) (Fexp f))).
-do 2 rewrite Z2R_IZR.
-rewrite Rabs_Zabs.
-apply Rmult_le_compat_l.
-apply (IZR_le 0).
-apply Zabs_pos.
-assert (Float2 1 n <= Float2 1 (Fexp f))%R.
-apply float2_Rle_pow2.
-exact Hx2.
-unfold float2R in H.
-simpl in H.
-do 2 rewrite F2R_split in H.
-apply Rmult_le_reg_l with (2 := H).
-exact (Z2R_lt 0 1 (refl_equal _)).
-apply Rle_ge.
-apply Rlt_le.
-apply power_radix_pos.
-apply Zlt_gt.
-apply float2_pow2_lt.
-apply Rle_lt_trans with (1 := H).
-assert (0 <= upper xi)%R.
-apply Rle_trans with (1 := proj1 Hxi).
-apply Rle_trans with (1 := proj1 (proj2 Hxi)).
-exact (proj2 (proj2 Hxi)).
-destruct H1.
-assert (upper xi = Float2 (Zpos (pos_of_Z (Fnum (upper xi)))) (Fexp (upper xi))).
-rewrite Zpos_pos_of_Z.
-case (upper xi). intros. exact (refl_equal _).
-apply float2_pos_reg with (Fexp (upper xi)).
-exact H1.
-pattern (upper xi) at 1 ; rewrite H2.
+now apply F2R_gt_0_compat.
+rewrite <- (Zpos_pos_of_Z _ Hu).
+rewrite <- digits2_digits.
+now apply -> bpow_le.
+unfold F2R. simpl.
+change (Zpower_pos 2 p) with (Zpower (radix_val radix2) (Zpos p)).
+rewrite Z2R_Zpower. 2: easy.
+rewrite <- bpow_add.
+apply -> bpow_le.
 rewrite Zplus_comm.
-exact (proj2 (float2_digits_correct _ _)).
-rewrite <- H1.
-apply float2_pos_compat.
-split.
+now apply Zplus_le_compat_l.
 Qed.
 
 End Gappa_pred_fixflt.
