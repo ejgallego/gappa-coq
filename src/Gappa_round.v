@@ -554,7 +554,7 @@ End ZrndG.
 
 Lemma roundDN_DN :
   forall x,
-  Zrnd (ZrndG roundDN) x = Zfloor x.
+  Zrnd (ZrndG roundDN) x = Zrnd rndDN x.
 Proof.
 intros x.
 simpl.
@@ -575,7 +575,7 @@ Qed.
 
 Lemma roundNE_NE :
   forall x,
-  Zrnd (ZrndG roundNE) x = Znearest (fun m => negb (Zeven (Zfloor x))) x.
+  Zrnd (ZrndG roundNE) x = Zrnd Fcore_rnd_ne.rndNE x.
 Proof.
 intros x.
 simpl.
