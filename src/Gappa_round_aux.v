@@ -15,8 +15,8 @@ Lemma float2_shift_p1 :
 Proof.
 intros e m.
 unfold float2R, F2R. simpl.
-rewrite bpow_add.
-rewrite mult_Z2R.
+rewrite bpow_plus.
+rewrite Z2R_mult.
 simpl.
 ring.
 Qed.
@@ -48,7 +48,7 @@ generalize (Fcalc_digits.digits2_Pnat m).
 intros d H.
 simpl in H.
 replace (Z_of_nat (S d) - 1)%Z with (Z_of_nat d).
-rewrite <- abs_Z2R.
+rewrite <- Z2R_abs.
 rewrite <- 2!Z2R_Zpower_nat.
 split.
 now apply Z2R_le.

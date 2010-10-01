@@ -54,13 +54,13 @@ apply refl_equal.
 (* . *)
 apply f_equal.
 unfold float2R, Fcore_defs.F2R. simpl.
-rewrite mult_Z2R, Rmult_assoc, <- mult_Z2R.
+rewrite Z2R_mult, Rmult_assoc, <- Z2R_mult.
 now apply (f_equal (fun v => Z2R ym * Z2R v)%R).
 (* . *)
 unfold float2R at 1, F2R at 1. simpl.
 replace (Z2R (Fnum x * Zpower_pos 5 ye) * bpow radix2 (Fexp x))%R with (x * Z2R (Zpower_pos 5 ye))%R.
 rewrite <- (Rcompare_mult_r (Z2R (Zpower_pos 2 ye))).
-rewrite Rmult_assoc, <- mult_Z2R, H.
+rewrite Rmult_assoc, <- Z2R_mult, H.
 rewrite <- (Rcompare_mult_r (Z2R (Zpower_pos 10 ye)) x).
 apply f_equal.
 unfold float2R, F2R. simpl.
@@ -73,7 +73,7 @@ exact (bpow_gt_0 radix2 (Zpos ye)).
 exact (bpow_gt_0 radix10 (Zpos ye)).
 exact (bpow_gt_0 radix2 (Zpos ye)).
 unfold float2R, F2R. simpl.
-rewrite mult_Z2R.
+rewrite Z2R_mult.
 ring.
 Qed.
 

@@ -6,7 +6,7 @@ Require Import Fcore_float_prop.
 Require Export Gappa_library.
 
 Strategy 1000 [rounding_fixed rounding_float]
-         1001 [Fcore_generic_fmt.rounding].
+         1001 [Fcore_generic_fmt.round].
 
 (* factor an integer into odd*2^e *)
 Definition float2_of_pos x :=
@@ -58,14 +58,14 @@ rewrite <- (float2_of_pos_correct m).
 destruct (float2_of_pos m) as (m1, e1).
 simpl.
 rewrite Zplus_comm.
-now rewrite bpow_add, <- Rmult_assoc.
+now rewrite bpow_plus, <- Rmult_assoc.
 change (- P2R m)%R with (- (Z2R (Zpos m)))%R.
 rewrite <- (float2_of_pos_correct m).
 destruct (float2_of_pos m) as (m1, e1).
 simpl.
 rewrite Zplus_comm.
-rewrite bpow_add, <- Rmult_assoc.
-now rewrite opp_Z2R, Ropp_mult_distr_l_reverse.
+rewrite bpow_plus, <- Rmult_assoc.
+now rewrite Z2R_opp, Ropp_mult_distr_l_reverse.
 Qed.
 
 Section ListProp.

@@ -12,7 +12,7 @@ Require Import Gappa_round.
 Section Gappa_fixed.
 
 Definition rounding_fixed (rdir : round_dir) (e : Z) :=
-  rounding radix2 (FIX_exp e) (ZrndG rdir).
+  Fcore_generic_fmt.round radix2 (FIX_exp e) (ZrndG rdir).
 
 Theorem fix_of_fixed :
   forall rdir : round_dir,
@@ -37,7 +37,7 @@ intros rdir x e1 e2 xi ((m,e),(Hx1,Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
 unfold rounding_fixed.
-rewrite rounding_generic.
+rewrite round_generic.
 now apply sub_refl.
 rewrite <- Hx1.
 apply generic_format_canonic_exponent.
@@ -63,15 +63,15 @@ rewrite <- Hx1 in Hxb.
 split.
 apply Rle_trans with (1 := H1).
 unfold float2R at 2. simpl.
-rewrite <- (rounding_generic radix2 (FIX_exp xn) (ZrndG roundUP) (F2R (Float radix2 m e))).
-apply rounding_monotone.
+rewrite <- (round_generic radix2 (FIX_exp xn) (ZrndG roundUP) (F2R (Float radix2 m e))).
+apply round_monotone.
 apply FIX_exp_correct.
 apply Hxb.
 now apply generic_format_canonic_exponent.
 apply Rle_trans with (2 := H2).
 unfold float2R at 1. simpl.
-rewrite <- (rounding_generic radix2 (FIX_exp xn) (ZrndG roundDN) (F2R (Float radix2 m e))).
-apply rounding_monotone.
+rewrite <- (round_generic radix2 (FIX_exp xn) (ZrndG roundDN) (F2R (Float radix2 m e))).
+apply round_monotone.
 apply FIX_exp_correct.
 apply Hxb.
 now apply generic_format_canonic_exponent.
@@ -94,11 +94,11 @@ generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
 unfold rounding_fixed.
 split.
 apply Rle_trans with (1 := H1).
-apply rounding_monotone.
+apply round_monotone.
 apply FIX_exp_correct.
 apply Hx.
 apply Rle_trans with (2 := H2).
-apply rounding_monotone.
+apply round_monotone.
 apply FIX_exp_correct.
 apply Hx.
 Qed.
@@ -128,7 +128,7 @@ now rewrite F2R_bpow.
 (* *)
 apply Rle_trans with (2 := H2).
 apply Rle_minus.
-rewrite (rounding_ext _ _ _ ZrndDN) with (1 := roundDN_DN).
+rewrite (round_ext _ _ _ rndDN) with (1 := roundDN_DN).
 eapply generic_DN_pt.
 apply FIX_exp_correct.
 Qed.

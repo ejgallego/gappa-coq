@@ -30,7 +30,7 @@ split.
 exact Hx1.
 apply Zlt_le_trans with (1 := Hx2).
 apply le_Z2R.
-change (Z2R (Zpower (radix_val radix2) (Zpos xn)) <= Z2R (Zpower (radix_val radix2) (Zpos zn)))%R.
+change (Z2R (Zpower radix2 (Zpos xn)) <= Z2R (Zpower radix2 (Zpos zn)))%R.
 rewrite 2!Z2R_Zpower ; try apply -> bpow_le ; easy.
 Qed.
 
@@ -246,7 +246,7 @@ intros H.
 now rewrite H in H0.
 rewrite Fcalc_digits.digits_ln_beta with (1 := H0').
 rewrite <- ln_beta_F2R with (1 := H0').
-apply Zle_trans with (projT1 (ln_beta radix2 (Rabs (Float2 mx ex)))).
+apply Zle_trans with (ln_beta radix2 (Rabs (Float2 mx ex))).
 apply ln_beta_monotone.
 now apply F2R_gt_0_compat.
 now rewrite Hx1.
@@ -267,7 +267,7 @@ apply bpow_lt_bpow with radix2.
 apply Rle_lt_trans with (Rabs (Z2R mx)).
 apply He.
 now apply (Z2R_neq _ 0).
-rewrite <- abs_Z2R.
+rewrite <- Z2R_abs.
 rewrite <- Z2R_Zpower. 2: easy.
 now apply Z2R_lt.
 Qed.
@@ -307,9 +307,9 @@ rewrite <- (Zpos_pos_of_Z _ Hu).
 rewrite <- digits2_digits.
 now apply -> bpow_le.
 unfold F2R. simpl.
-change (Zpower_pos 2 p) with (Zpower (radix_val radix2) (Zpos p)).
+change (Zpower_pos 2 p) with (Zpower radix2 (Zpos p)).
 rewrite Z2R_Zpower. 2: easy.
-rewrite <- bpow_add.
+rewrite <- bpow_plus.
 apply -> bpow_le.
 rewrite Zplus_comm.
 now apply Zplus_le_compat_l.

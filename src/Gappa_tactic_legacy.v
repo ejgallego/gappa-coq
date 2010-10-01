@@ -4,7 +4,7 @@ Require Import Fcore_Raux.
 Require Import Fcore_float_prop.
 Require Export Gappa_library.
 
-Definition gappa_rounding (f : R -> R) (x : R) : R := f x.
+Definition gappa_round (f : R -> R) (x : R) : R := f x.
 
 Inductive UnaryOp : Set :=
   | uoNeg | uoSqrt | uoAbs | uoInv.
@@ -53,7 +53,7 @@ Fixpoint convert t : R :=
   | reINR x =>
     INR (nat_of_P x)
   | reRound f x =>
-    gappa_rounding f (convert x)
+    gappa_round f (convert x)
   end.
 
 Definition is_stable f :=
@@ -215,7 +215,7 @@ Ltac get_inductive_term t :=
       | true => constr:(rePow10 y)
       end
     end
-  | gappa_rounding ?f ?x =>
+  | gappa_round ?f ?x =>
      let x' := get_inductive_term x in
      constr:(reRound f x')
   | ?f ?x ?y =>
@@ -294,14 +294,14 @@ rewrite <- (float2_of_pos_correct m).
 destruct (float2_of_pos m) as (m1, e1).
 simpl.
 rewrite Zplus_comm.
-now rewrite bpow_add, <- Rmult_assoc.
+now rewrite bpow_plus, <- Rmult_assoc.
 change (- P2R m)%R with (- (Z2R (Zpos m)))%R.
 rewrite <- (float2_of_pos_correct m).
 destruct (float2_of_pos m) as (m1, e1).
 simpl.
 rewrite Zplus_comm.
-rewrite bpow_add, <- Rmult_assoc.
-now rewrite opp_Z2R, Ropp_mult_distr_l_reverse.
+rewrite bpow_plus, <- Rmult_assoc.
+now rewrite Z2R_opp, Ropp_mult_distr_l_reverse.
 Qed.
 
 (* transform INR and IZR into real integers, change a/b and a*2^b into floats *)
