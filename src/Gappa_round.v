@@ -610,6 +610,28 @@ Qed.
 
 Canonical Structure roundUP_cs := Build_rndG_prop _ _ roundUP_eq.
 
+Lemma roundZR_eq :
+  forall x,
+  Zrnd (ZrndG roundZR) x = Zrnd rndZR x.
+Proof.
+intros x.
+simpl.
+unfold rndG, Ztrunc.
+destruct (Rlt_le_dec x 0) as [Hx|[Hx|Hx]].
+rewrite Rcompare_Lt with (1 := Hx).
+rewrite hrndG_DN ; try easy.
+apply roundZR.
+rewrite Rcompare_Gt with (1 := Hx).
+rewrite hrndG_DN ; try easy.
+apply roundZR.
+rewrite <- Hx.
+rewrite Rcompare_Eq with (1 := refl_equal _).
+apply sym_eq.
+exact (Zfloor_Z2R 0).
+Qed.
+
+Canonical Structure roundZR_cs := Build_rndG_prop _ _ roundZR_eq.
+
 Lemma roundNE_eq :
   forall x,
   Zrnd (ZrndG roundNE) x = Zrnd rndNE x.
