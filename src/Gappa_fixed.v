@@ -101,6 +101,11 @@ apply FIX_exp_correct.
 apply Hx.
 Qed.
 
+Definition fixed_round_dn := fixed_round roundDN_cs.
+Definition fixed_round_up := fixed_round roundUP_cs.
+Definition fixed_round_zr := fixed_round roundZR_cs.
+Definition fixed_round_ne := fixed_round roundNE_cs.
+
 Definition fixed_error_dn_helper (e : Z) (zi : FF) :=
  Fle2 (lower zi) (Float2 (-1) e) &&
  Fpos0 (upper zi).

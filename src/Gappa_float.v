@@ -218,6 +218,11 @@ now apply FLT_exp_correct.
 apply Hx.
 Qed.
 
+Definition float_round_dn := float_round roundDN_cs.
+Definition float_round_up := float_round roundUP_cs.
+Definition float_round_zr := float_round roundZR_cs.
+Definition float_round_ne := float_round roundNE_cs.
+
 Definition enforce_helper (p : positive) (d : Z) (xi zi : FF) :=
  Fle2 (lower zi) (round roundUP (FLT_exp d (Zpos p)) (lower xi)) &&
  Fle2 (round roundDN (FLT_exp d (Zpos p)) (upper xi)) (upper zi).
