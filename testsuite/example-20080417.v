@@ -1,4 +1,5 @@
 Require Import Reals.
+Require Import Fcore.
 Require Import Gappa_tactic.
 Open Scope R_scope.
 
@@ -10,7 +11,7 @@ Proof.
   gappa.
 Qed.
 
-Definition rnd := rounding_float roundZR 53 1074.
+Definition rnd := rounding_float rndNE 53 (-1074).
 
 Goal
   forall a_ b_ a b : R,

@@ -5,8 +5,7 @@ Require Import Fcore_defs.
 Require Import Fcore_float_prop.
 Require Export Gappa_library.
 
-Strategy 1000 [rounding_fixed rounding_float]
-         1001 [Fcore_generic_fmt.round].
+Strategy 1000 [Fcore_generic_fmt.round].
 
 (* factor an integer into odd*2^e *)
 Definition float2_of_pos x :=

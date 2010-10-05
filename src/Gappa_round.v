@@ -499,7 +499,7 @@ Qed.
 
 Definition ZrndG := mkZround rndG rndG_monotone rndG_Z2R.
 
-Theorem rndG_conversion :
+Lemma rndG_conversion_aux :
   forall rexp f,
   float2R (round rdir rexp f) = Fcore_generic_fmt.round radix2 rexp ZrndG (float2R f).
 Proof.
@@ -552,7 +552,23 @@ Qed.
 
 End ZrndG.
 
-Lemma roundDN_DN :
+Record rndG_prop := {
+  rndG_g : round_dir;
+  rndG_f : Zround;
+  rndG_eq : forall x, Zrnd (ZrndG rndG_g) x = Zrnd rndG_f x
+}.
+
+Theorem rndG_conversion :
+  forall rdir rexp f,
+  float2R (round (rndG_g rdir) rexp f) = Fcore_generic_fmt.round radix2 rexp (rndG_f rdir) (float2R f).
+Proof.
+intros (rf, rg, req) rexp f.
+simpl.
+rewrite rndG_conversion_aux.
+now apply round_ext.
+Qed.
+
+Lemma roundDN_eq :
   forall x,
   Zrnd (ZrndG roundDN) x = Zrnd rndDN x.
 Proof.
@@ -573,9 +589,30 @@ rewrite hrndG_DN ; try easy.
 apply roundDN.
 Qed.
 
-Lemma roundNE_NE :
+Canonical Structure roundDN_cs := Build_rndG_prop _ _ roundDN_eq.
+
+Lemma roundUP_eq :
   forall x,
-  Zrnd (ZrndG roundNE) x = Zrnd Fcore_rnd_ne.rndNE x.
+  Zrnd (ZrndG roundUP) x = Zrnd rndUP x.
+Proof.
+intros x.
+simpl.
+unfold rndG.
+case Rcompare_spec ; intros H.
+rewrite hrndG_DN ; try easy.
+apply roundUP.
+rewrite H.
+apply sym_eq.
+exact (Zceil_Z2R 0).
+rewrite hrndG_UP ; try easy.
+apply roundUP.
+Qed.
+
+Canonical Structure roundUP_cs := Build_rndG_prop _ _ roundUP_eq.
+
+Lemma roundNE_eq :
+  forall x,
+  Zrnd (ZrndG roundNE) x = Zrnd rndNE x.
 Proof.
 intros x.
 simpl.
@@ -631,5 +668,7 @@ now elim H3.
 apply roundNE.
 exact andb_true_r.
 Qed.
+
+Canonical Structure roundNE_cs := Build_rndG_prop _ _ roundNE_eq.
 
 End Gappa_round.
