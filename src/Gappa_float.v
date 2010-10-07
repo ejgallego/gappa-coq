@@ -53,7 +53,7 @@ apply ulp_half_error.
 now apply FLT_exp_correct.
 unfold ulp.
 rewrite <- (bpow_plus radix2 (-1)).
-apply -> bpow_le.
+apply bpow_le.
 unfold Zminus.
 rewrite (Zplus_comm _ (-1)).
 apply Zplus_le_compat_l.
@@ -133,7 +133,7 @@ apply Zlt_le_trans with (1 := H2).
 change (Zpower_pos 2 p2) with (Zpower radix2 (Zpos p2)).
 apply le_Z2R.
 rewrite 2!Z2R_Zpower ; try easy.
-now apply -> bpow_le.
+now apply bpow_le.
 Qed.
 
 Theorem float_of_fix_flt :
@@ -604,7 +604,7 @@ assert (Rabs ((rounding_float rndNE p d x - x) / x) <= bpow radix2 (- Zpos p))%R
 apply float_relative_ne_whole.
 apply Rlt_le.
 apply Rlt_trans with (2 := He).
-apply -> bpow_lt.
+apply bpow_lt.
 pattern (d + Zpos p)%Z at 2 ; rewrite <- Zplus_0_r.
 now apply Zplus_lt_compat_l.
 repeat split.
