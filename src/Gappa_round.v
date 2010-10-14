@@ -693,4 +693,53 @@ Qed.
 
 Canonical Structure roundNE_cs := Build_rndG_prop _ _ roundNE_eq.
 
+Lemma roundNA_eq :
+  forall x,
+  Zrnd (ZrndG roundNA) x = Zrnd rndNA x.
+Proof.
+intros x.
+simpl.
+destruct (Req_dec (Z2R (Zfloor x)) x) as [H1|H1].
+rewrite <- H1.
+now rewrite rndG_Z2R, Znearest_Z2R.
+unfold rndG.
+case Rcompare_spec ; intros H2.
+(* *)
+rewrite hrndG_N.
+unfold Znearest. simpl.
+replace (-x - Z2R (Zfloor (-x)))%R with (Z2R (Zceil x) - x)%R.
+rewrite Rcompare_floor_ceil_mid with (1 := H1).
+rewrite Rcompare_ceil_floor_mid with (1 := H1).
+rewrite Rcompare_sym.
+case Rcompare ; simpl.
+rewrite Rle_bool_false with (1 := H2).
+unfold Zceil.
+rewrite Ropp_involutive.
+apply Zopp_involutive.
+unfold Zceil.
+rewrite Ropp_involutive.
+apply Zopp_involutive.
+apply refl_equal.
+unfold Zceil.
+rewrite Z2R_opp.
+apply Rplus_comm.
+apply roundNA.
+apply refl_equal.
+(* *)
+rewrite H2.
+apply sym_eq.
+exact (Znearest_Z2R _ 0).
+(* *)
+rewrite hrndG_N.
+unfold Znearest. simpl.
+case Rcompare ; try apply refl_equal.
+rewrite Rle_bool_true.
+apply refl_equal.
+now apply Rlt_le.
+apply roundNA.
+apply refl_equal.
+Qed.
+
+Canonical Structure roundNA_cs := Build_rndG_prop _ _ roundNA_eq.
+
 End Gappa_round.
