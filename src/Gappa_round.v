@@ -632,11 +632,16 @@ Qed.
 
 Canonical Structure roundZR_cs := Build_rndG_prop _ _ roundZR_eq.
 
-Lemma roundNE_eq :
+Lemma roundN_eq :
+  forall r f,
+  ( forall x, (x < 0)%R -> (x - Z2R (Zfloor x) = /2)%R -> negb (rneg r (rnd_record_mk (ZtoN (Zfloor (- x))) true false)) = f x ) ->
+  ( forall x, (x < 0)%R -> forall b, rneg r (rnd_record_mk (ZtoN (Zfloor (- x))) b true) = b ) ->
+  ( forall x, (0 < x)%R -> (x - Z2R (Zfloor x) = /2)%R -> rpos r (rnd_record_mk (ZtoN (Zfloor x)) true false) = f x ) ->
+  ( forall x, (0 < x)%R -> forall b, rpos r (rnd_record_mk (ZtoN (Zfloor x)) b true) = b ) ->
   forall x,
-  Zrnd (ZrndG roundNE) x = Zrnd rndNE x.
+  Zrnd (ZrndG r) x = Zrnd (rndN f) x.
 Proof.
-intros x.
+intros r f Hn1 Hn2 Hp1 Hp2 x.
 simpl.
 destruct (Req_dec (Z2R (Zfloor x)) x) as [H1|H1].
 rewrite <- H1.
@@ -644,50 +649,56 @@ now rewrite rndG_Z2R, Znearest_Z2R.
 unfold rndG.
 case Rcompare_spec ; intros H2.
 (* *)
-rewrite hrndG_N.
-unfold Znearest. simpl.
-replace (-x - Z2R (Zfloor (-x)))%R with (Z2R (Zceil x) - x)%R.
-rewrite Rcompare_floor_ceil_mid with (1 := H1).
-rewrite Rcompare_ceil_floor_mid with (1 := H1).
-rewrite Rcompare_sym.
-case Rcompare ; simpl.
-unfold rndNE. simpl.
-rewrite <- (Zopp_involutive (Zfloor (-x))).
-fold (Zceil x).
-rewrite Zceil_floor_neq with (1 := H1).
-unfold Zceil.
-rewrite Ropp_involutive.
-assert (H3: (Zfloor x < 0)%Z).
-generalize (Zceil_floor_neq _ H1).
-generalize (Zceil_glb 0 _ (Rlt_le _ _ H2)).
-omega.
-clear -H3.
-now destruct (Zfloor x) as [|p|[p|[p|p|]|]].
-unfold Zceil.
-rewrite Ropp_involutive.
-apply Zopp_involutive.
-apply refl_equal.
-unfold Zceil.
-rewrite Z2R_opp.
-apply Rplus_comm.
-apply roundNE.
-exact andb_true_r.
+rewrite hrndG_N. 2: apply rneg_good.
+rewrite Znearest_opp, Zopp_involutive.
+unfold Znearest.
+case Rcompare_spec ; intros H ; try apply refl_equal.
+now rewrite Hn1 with (1 := H2) (2 := H).
+now apply Hn2.
 (* *)
 rewrite H2.
 apply sym_eq.
 exact (Znearest_Z2R _ 0).
 (* *)
-rewrite hrndG_N.
-unfold Znearest. simpl.
-case Rcompare ; try apply refl_equal.
-unfold rndNE. simpl.
-assert (H3: (0 <= Zfloor x)%Z).
+rewrite hrndG_N. 2: apply rpos_good.
+unfold Znearest.
+case Rcompare_spec ; intros H ; try apply refl_equal.
+now rewrite Hp1 with (1 := H2) (2 := H).
+now apply Hp2.
+Qed.
+
+Lemma roundNE_eq :
+  forall x,
+  Zrnd (ZrndG roundNE) x = Zrnd rndNE x.
+Proof.
+apply roundN_eq ; intros x Hx.
+(* *)
+intros Hm.
+unfold roundNE, GrndNE. simpl.
+rewrite <- (Zopp_involutive (Zfloor (-x))).
+fold (Zceil x).
+assert (H1: Z2R (Zfloor x) <> x).
+intros H.
+apply (Rinv_neq_0_compat 2).
+now apply (Z2R_neq 2 0).
+rewrite <- Hm.
+now apply Rminus_diag_eq.
+rewrite Zceil_floor_neq with (1 := H1).
+assert (H2: (Zfloor x < 0)%Z).
+generalize (Zceil_floor_neq _ H1).
+generalize (Zceil_glb 0 _ (Rlt_le _ _ Hx)).
+omega.
+now destruct (Zfloor x) as [|p|[p|[p|p|]|]].
+(* *)
+exact andb_true_r.
+(* *)
+intros Hm.
+assert (H2: (0 <= Zfloor x)%Z).
 apply Zfloor_lub.
 now apply Rlt_le.
-clear -H3.
 destruct (Zfloor x) as [|p|p] ; try easy.
-now elim H3.
-apply roundNE.
+now elim H2.
+(* *)
 exact andb_true_r.
 Qed.
 
@@ -697,46 +708,14 @@ Lemma roundNA_eq :
   forall x,
   Zrnd (ZrndG roundNA) x = Zrnd rndNA x.
 Proof.
-intros x.
-simpl.
-destruct (Req_dec (Z2R (Zfloor x)) x) as [H1|H1].
-rewrite <- H1.
-now rewrite rndG_Z2R, Znearest_Z2R.
-unfold rndG.
-case Rcompare_spec ; intros H2.
-(* *)
-rewrite hrndG_N.
-unfold Znearest. simpl.
-replace (-x - Z2R (Zfloor (-x)))%R with (Z2R (Zceil x) - x)%R.
-rewrite Rcompare_floor_ceil_mid with (1 := H1).
-rewrite Rcompare_ceil_floor_mid with (1 := H1).
-rewrite Rcompare_sym.
-case Rcompare ; simpl.
-rewrite Rle_bool_false with (1 := H2).
-unfold Zceil.
-rewrite Ropp_involutive.
-apply Zopp_involutive.
-unfold Zceil.
-rewrite Ropp_involutive.
-apply Zopp_involutive.
+apply roundN_eq ; intros x Hx.
+intros _.
+now rewrite Rle_bool_false.
 apply refl_equal.
-unfold Zceil.
-rewrite Z2R_opp.
-apply Rplus_comm.
-apply roundNA.
-apply refl_equal.
-(* *)
-rewrite H2.
-apply sym_eq.
-exact (Znearest_Z2R _ 0).
-(* *)
-rewrite hrndG_N.
-unfold Znearest. simpl.
-case Rcompare ; try apply refl_equal.
+intros _.
 rewrite Rle_bool_true.
 apply refl_equal.
 now apply Rlt_le.
-apply roundNA.
 apply refl_equal.
 Qed.
 
