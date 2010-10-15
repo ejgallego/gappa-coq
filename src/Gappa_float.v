@@ -39,12 +39,12 @@ rewrite <- Ropp_plus_distr.
 now rewrite Rabs_Ropp.
 Qed.
 
-Lemma float_absolute_ne_whole :
-  forall p d k x,
+Lemma float_absolute_n_whole :
+  forall c p d k x,
   (Rabs x < bpow radix2 k)%R ->
-  (Rabs (rounding_float rndNE p d x - x) <= bpow radix2 (FLT_exp d (Zpos p) k - 1))%R.
+  (Rabs (rounding_float (rndN c) p d x - x) <= bpow radix2 (FLT_exp d (Zpos p) k - 1))%R.
 Proof.
-intros p d k x Hx.
+intros c p d k x Hx.
 destruct (Req_dec x 0) as [Hx0|Hx0].
 rewrite Hx0, round_0, Rminus_0_r, Rabs_R0.
 apply bpow_ge_0.
@@ -79,20 +79,19 @@ elim H0.
 exact (refl_equal _).
 Qed.
 
-Lemma float_relative_ne_whole :
-  forall p d x,
+Lemma float_relative_n_whole :
+  forall c p d x,
   (bpow radix2 (d + Zpos p - 1) <= Rabs x)%R ->
-  (Rabs ((rounding_float rndNE p d x - x) / x) <= bpow radix2 (-Zpos p))%R.
+  (Rabs ((rounding_float (rndN c) p d x - x) / x) <= bpow radix2 (-Zpos p))%R.
 Proof.
-intros p d x Hx.
+intros c p d x Hx.
 assert (Hx0: x <> R0).
 intros Hx0.
 apply Rle_not_lt with (1 := Hx).
 rewrite Hx0, Rabs_R0.
 apply bpow_gt_0.
-destruct (relative_error_N_FLT_ex radix2 d (Zpos p) (refl_equal _) (fun m => negb (Zeven (Zfloor m))) x Hx) as (eps, (Hr1, Hr2)).
+destruct (relative_error_N_FLT_ex radix2 d (Zpos p) (refl_equal _) c x Hx) as (eps, (Hr1, Hr2)).
 change (FLT_exp d (Zpos p)) with (FLT_exp d (Zpos p)).
-unfold rndNE.
 rewrite Hr2.
 replace ((x * (1 + eps) - x) / x)%R with eps by now field.
 revert Hr1.
@@ -253,20 +252,20 @@ now apply FLT_exp_correct.
 exact Hx2.
 Qed.
 
-Definition float_absolute_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
+Definition float_absolute_n_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
  let u := upper xi in
  let e := (float_ulp p d (Fnum u) (Fexp u) - 1)%Z in
  Fle2 (lower zi) (Float2 (-1) e) &&
  Fle2 (Float2 1 e) (upper zi).
 
-Theorem float_absolute_ne :
-  forall p d x xi zi,
+Theorem float_absolute_n :
+  forall c p d x xi zi,
   ABS x xi ->
-  float_absolute_ne_helper p d xi zi = true ->
-  BND (rounding_float rndNE p d x - x) zi.
+  float_absolute_n_helper p d xi zi = true ->
+  BND (rounding_float (rndN c) p d x - x) zi.
 Proof.
-intros p d x xi zi Hx Hb.
-assert (H: (Rabs (rounding_float rndNE p d x - x) <= bpow radix2 (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1))%R).
+intros c p d x xi zi Hx Hb.
+assert (H: (Rabs (rounding_float (rndN c) p d x - x) <= bpow radix2 (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1))%R).
 (* *)
 destruct (Req_dec x 0) as [Hx0|Hx0].
 rewrite Hx0, round_0, Rminus_0_r, Rabs_R0.
@@ -337,6 +336,9 @@ unfold float2R.
 rewrite F2R_bpow.
 now apply (Rle_trans _ _ _ (Rabs_idem _)).
 Qed.
+
+Definition float_absolute_ne := float_absolute_n (fun x => negb (Zeven (Zfloor x))).
+Definition float_absoltue_na := float_absolute_n (Rle_bool 0).
 
 Definition float_absolute_wide_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
  let u := upper xi in
@@ -512,7 +514,7 @@ omega.
 generalize (Zgt_pos_0 (digits p0)).
 omega.
 cutrewrite (e = FLT_exp d (Zpos p) (Fexp + Zpos (digits p0) - 1) - 1)%Z.
-now apply float_absolute_ne_whole.
+now apply float_absolute_n_whole.
 unfold e, FLT_exp.
 assert (H3 := Zgt_pos_0 (digits p0)).
 assert (H4 := Zgt_pos_0 p).
@@ -525,27 +527,27 @@ rewrite F2R_0.
 apply Rabs_pos.
 Qed.
 
-Definition float_relative_ne_helper (p : positive) (d : Z) (xi zi : FF) :=
+Definition float_relative_n_helper (p : positive) (d : Z) (xi zi : FF) :=
  Fle2 (Float2 1 (d + Zpos p - 1)) (lower xi) &&
  Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
  Fle2 (Float2 1 (Zneg p)) (upper zi).
 
-Theorem float_relative_ne :
-  forall p d x xi zi,
+Theorem float_relative_n :
+  forall c p d x xi zi,
   ABS x xi ->
-  float_relative_ne_helper p d xi zi = true ->
-  REL (rounding_float rndNE p d x) x zi.
+  float_relative_n_helper p d xi zi = true ->
+  REL (rounding_float (rndN c) p d x) x zi.
 Proof.
-intros p d x xi zi Hx Hb.
+intros c p d x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). unfold float2R. simpl. rewrite F2R_bpow. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite <- (opp_F2R _ 1%Z), F2R_bpow. clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite F2R_bpow. clear H3. intro H3.
-exists ((rounding_float rndNE p d x - x) / x)%R.
+exists ((rounding_float (rndN c) p d x - x) / x)%R.
 split.
-assert (Rabs ((rounding_float rndNE p d x - x) / x) <= bpow radix2 (- Zpos p))%R.
-apply float_relative_ne_whole.
+assert (Rabs ((rounding_float (rndN c) p d x - x) / x) <= bpow radix2 (- Zpos p))%R.
+apply float_relative_n_whole.
 apply Rle_trans with (1 := H1).
 apply Hx.
 split.
@@ -566,18 +568,21 @@ rewrite H, Rabs_R0.
 apply bpow_gt_0.
 Qed.
 
-Definition rel_of_fix_float_ne_helper (p : positive) (d xn : Z) (zi : FF) :=
+Definition float_relative_ne := float_relative_n (fun x => negb (Zeven (Zfloor x))).
+Definition float_relative_na := float_relative_n (Rle_bool 0).
+
+Definition rel_of_fix_float_n_helper (p : positive) (d xn : Z) (zi : FF) :=
  Zle_bool d xn &&
  Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
  Fle2 (Float2 1 (Zneg p)) (upper zi).
 
-Theorem rel_of_fix_float_ne :
-  forall p d xn x zi,
+Theorem rel_of_fix_float_n :
+  forall c p d xn x zi,
   FIX x xn ->
-  rel_of_fix_float_ne_helper p d xn zi = true ->
-  REL (rounding_float rndNE p d x) x zi.
+  rel_of_fix_float_n_helper p d xn zi = true ->
+  REL (rounding_float (rndN c) p d x) x zi.
 Proof.
-intros p d xn x zi ((mx, ex), (Hx1, Hx2)) Hb.
+intros c p d xn x zi ((mx, ex), (Hx1, Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
@@ -600,9 +605,9 @@ rewrite <- Hx1.
 apply generic_format_canonic_exponent.
 now apply Zle_trans with xn.
 (* *)
-exists ((rounding_float rndNE p d x - x) / x)%R.
-assert (Rabs ((rounding_float rndNE p d x - x) / x) <= bpow radix2 (- Zpos p))%R.
-apply float_relative_ne_whole.
+exists ((rounding_float (rndN c) p d x - x) / x)%R.
+assert (Rabs ((rounding_float (rndN c) p d x - x) / x) <= bpow radix2 (- Zpos p))%R.
+apply float_relative_n_whole.
 apply Rlt_le.
 apply Rlt_trans with (2 := He).
 apply bpow_lt.
@@ -624,5 +629,8 @@ apply Rlt_not_le with (1 := He).
 rewrite H0, Rabs_R0.
 apply bpow_ge_0.
 Qed.
+
+Definition rel_of_fix_float_ne := rel_of_fix_float_n (fun x => negb (Zeven (Zfloor x))).
+Definition rel_of_fix_float_na := rel_of_fix_float_n (Rle_bool 0).
 
 End Gappa_float.
