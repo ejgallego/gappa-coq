@@ -337,8 +337,8 @@ rewrite F2R_bpow.
 now apply (Rle_trans _ _ _ (Rabs_idem _)).
 Qed.
 
-Definition float_absolute_ne := float_absolute_n (fun x => negb (Zeven (Zfloor x))).
-Definition float_absoltue_na := float_absolute_n (Rle_bool 0).
+Definition float_absolute_ne := float_absolute_n (fun x => negb (Zeven x)).
+Definition float_absolute_na := float_absolute_n (Zle_bool 0).
 
 Definition float_absolute_wide_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
  let u := upper xi in
@@ -568,8 +568,8 @@ rewrite H, Rabs_R0.
 apply bpow_gt_0.
 Qed.
 
-Definition float_relative_ne := float_relative_n (fun x => negb (Zeven (Zfloor x))).
-Definition float_relative_na := float_relative_n (Rle_bool 0).
+Definition float_relative_ne := float_relative_n (fun x => negb (Zeven x)).
+Definition float_relative_na := float_relative_n (Zle_bool 0).
 
 Definition rel_of_fix_float_n_helper (p : positive) (d xn : Z) (zi : FF) :=
  Zle_bool d xn &&
@@ -630,7 +630,7 @@ rewrite H0, Rabs_R0.
 apply bpow_ge_0.
 Qed.
 
-Definition rel_of_fix_float_ne := rel_of_fix_float_n (fun x => negb (Zeven (Zfloor x))).
-Definition rel_of_fix_float_na := rel_of_fix_float_n (Rle_bool 0).
+Definition rel_of_fix_float_ne := rel_of_fix_float_n (fun x => negb (Zeven x)).
+Definition rel_of_fix_float_na := rel_of_fix_float_n (Zle_bool 0).
 
 End Gappa_float.

@@ -125,7 +125,7 @@ Qed.
 Lemma hrndG_N :
   forall x,
   ( forall b, rdir (rnd_record_mk (ZtoN (Zfloor x)) b true) = b ) ->
-  hrndG x = Znearest (fun x => rdir (rnd_record_mk (ZtoN (Zfloor x)) true false)) x.
+  hrndG x = Znearest (fun x => rdir (rnd_record_mk (ZtoN x) true false)) x.
 Proof.
 intros x Hx1.
 destruct (good_rdir (ZtoN (Zfloor x))) as (Hx2, _).
@@ -634,14 +634,12 @@ Canonical Structure roundZR_cs := Build_rndG_prop _ _ roundZR_eq.
 
 Lemma roundN_eq :
   forall r f,
-  ( forall x, (x < 0)%R -> (x - Z2R (Zfloor x) = /2)%R -> negb (rneg r (rnd_record_mk (ZtoN (Zfloor (- x))) true false)) = f x ) ->
-  ( forall x, (x < 0)%R -> forall b, rneg r (rnd_record_mk (ZtoN (Zfloor (- x))) b true) = b ) ->
-  ( forall x, (0 < x)%R -> (x - Z2R (Zfloor x) = /2)%R -> rpos r (rnd_record_mk (ZtoN (Zfloor x)) true false) = f x ) ->
-  ( forall x, (0 < x)%R -> forall b, rpos r (rnd_record_mk (ZtoN (Zfloor x)) b true) = b ) ->
+  ( forall m, (0 <= m)%Z -> forall b c, rneg r (rnd_record_mk (ZtoN m) b c) = andb b (orb c (negb (f (- (m + 1))%Z))) ) ->
+  ( forall m, (0 <= m)%Z -> forall b c, rpos r (rnd_record_mk (ZtoN m) b c) = andb b (orb c (f m)) ) ->
   forall x,
   Zrnd (ZrndG r) x = Zrnd (rndN f) x.
 Proof.
-intros r f Hn1 Hn2 Hp1 Hp2 x.
+intros r f Hn Hp x.
 simpl.
 destruct (Req_dec (Z2R (Zfloor x)) x) as [H1|H1].
 rewrite <- H1.
@@ -652,9 +650,21 @@ case Rcompare_spec ; intros H2.
 rewrite hrndG_N. 2: apply rneg_good.
 rewrite Znearest_opp, Zopp_involutive.
 unfold Znearest.
-case Rcompare_spec ; intros H ; try apply refl_equal.
-now rewrite Hn1 with (1 := H2) (2 := H).
-now apply Hn2.
+case Rcompare ; trivial.
+rewrite Hn.
+simpl.
+replace (- (- (Zfloor x + 1) + 1))%Z with (Zfloor x) by ring.
+now rewrite negb_involutive.
+cut (Zfloor x < 0)%Z. omega.
+apply lt_Z2R.
+apply Rle_lt_trans with (2 := H2).
+apply Zfloor_lb.
+intros b.
+rewrite Hn.
+apply andb_true_r.
+apply Zfloor_lub.
+apply Rlt_le.
+now apply Ropp_0_gt_lt_contravar.
 (* *)
 rewrite H2.
 apply sym_eq.
@@ -662,44 +672,31 @@ exact (Znearest_Z2R _ 0).
 (* *)
 rewrite hrndG_N. 2: apply rpos_good.
 unfold Znearest.
-case Rcompare_spec ; intros H ; try apply refl_equal.
-now rewrite Hp1 with (1 := H2) (2 := H).
-now apply Hp2.
+case Rcompare ; trivial.
+rewrite Hp.
+apply refl_equal.
+apply Zfloor_lub.
+now apply Rlt_le.
+intros b.
+rewrite Hp.
+apply andb_true_r.
+apply Zfloor_lub.
+now apply Rlt_le.
 Qed.
 
 Lemma roundNE_eq :
   forall x,
   Zrnd (ZrndG roundNE) x = Zrnd rndNE x.
 Proof.
-apply roundN_eq ; intros x Hx.
-(* *)
-intros Hm.
-unfold roundNE, GrndNE. simpl.
-rewrite <- (Zopp_involutive (Zfloor (-x))).
-fold (Zceil x).
-assert (H1: Z2R (Zfloor x) <> x).
-intros H.
-apply (Rinv_neq_0_compat 2).
-now apply (Z2R_neq 2 0).
-rewrite <- Hm.
-now apply Rminus_diag_eq.
-rewrite Zceil_floor_neq with (1 := H1).
-assert (H2: (Zfloor x < 0)%Z).
-generalize (Zceil_floor_neq _ H1).
-generalize (Zceil_glb 0 _ (Rlt_le _ _ Hx)).
-omega.
-now destruct (Zfloor x) as [|p|[p|[p|p|]|]].
-(* *)
-exact andb_true_r.
-(* *)
-intros Hm.
-assert (H2: (0 <= Zfloor x)%Z).
-apply Zfloor_lub.
-now apply Rlt_le.
-destruct (Zfloor x) as [|p|p] ; try easy.
-now elim H2.
-(* *)
-exact andb_true_r.
+apply roundN_eq ;
+  intros m Hm r s ;
+  unfold roundNE, GrndNE ; simpl ;
+  apply (f_equal (fun v => r && (s || negb v))).
+rewrite Zeven_opp, Zeven_plus.
+destruct m as [|[m|m|]|] ; simpl ; trivial.
+now elim Hm.
+destruct m as [|m|m] ; simpl ; trivial.
+now elim Hm.
 Qed.
 
 Canonical Structure roundNE_cs := Build_rndG_prop _ _ roundNE_eq.
@@ -708,15 +705,13 @@ Lemma roundNA_eq :
   forall x,
   Zrnd (ZrndG roundNA) x = Zrnd rndNA x.
 Proof.
-apply roundN_eq ; intros x Hx.
-intros _.
-now rewrite Rle_bool_false.
-apply refl_equal.
-intros _.
-rewrite Rle_bool_true.
-apply refl_equal.
-now apply Rlt_le.
-apply refl_equal.
+apply roundN_eq ;
+  intros m Hm r s ; simpl.
+rewrite Zle_bool_false.
+now rewrite orb_comm, andb_comm.
+omega.
+rewrite Zle_bool_true with (1 := Hm).
+now rewrite orb_comm, andb_comm.
 Qed.
 
 Canonical Structure roundNA_cs := Build_rndG_prop _ _ roundNA_eq.
