@@ -130,7 +130,7 @@ now rewrite F2R_bpow.
 (* *)
 apply Rle_trans with (2 := H2).
 apply Rle_minus.
-eapply generic_DN_pt.
+eapply round_DN_pt.
 apply FIX_exp_correct.
 Qed.
 
