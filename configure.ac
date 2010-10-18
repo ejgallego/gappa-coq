@@ -91,11 +91,8 @@ AC_ARG_ENABLE([byte-tactic],
 if test "x$COQRFLAGS" = x; then module_name=Gappa; else module_name=none; fi
 
 AC_SUBST(TACTIC_TARGETS)
-TACTIC_TARGETS=""
 AC_SUBST(TACTIC_PARAM)
-TACTIC_PARAM=""
-AC_SUBST(TACTIC_DEFAULT)
-TACTIC_DEFAULT="Gappa_tactic_legacy.v"
+AC_SUBST(TACTIC_DEFAULT, [Gappa_tactic_legacy.v])
 
 tactic_mode=""
 if test "$native_tactic" = yes; then
