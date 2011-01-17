@@ -617,7 +617,7 @@ Proof.
 intros x.
 simpl.
 unfold rndG, Ztrunc.
-destruct (Rlt_le_dec x 0) as [Hx|[Hx|Hx]].
+destruct (Rlt_bool_spec x 0) as [Hx|[Hx|Hx]].
 rewrite Rcompare_Lt with (1 := Hx).
 rewrite hrndG_DN ; try easy.
 apply roundZR.
