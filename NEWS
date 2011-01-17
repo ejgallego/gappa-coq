@@ -1,3 +1,6 @@
+Version 0.14.1:
+ - fixed an incompatibility with Flocq 1.2
+
 Version 0.14:
  - added dependency on the Flocq library
  - removed support for the legacy gappa tactic
