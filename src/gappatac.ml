@@ -91,20 +91,13 @@ let remove_file f = if not !debug then try Sys.remove f with _ -> ()
 exception GappaFailed
 exception GappaProofFailed
 
-let call_gappa c_of_s hl p bl =
+let call_gappa c_of_s hl p =
   let gappa_in = temp_file "gappa_input" in
   let c = open_out gappa_in in
   let fmt = formatter_of_out_channel c in
   fprintf fmt "@[{ ";
   List.iter (fun h -> fprintf fmt "%a ->@ " print_pred h) hl;
   fprintf fmt "%a }@]@." print_pred p;
-  begin match bl, p with
-    | [], _ -> ()
-    | h :: tl, Pin (gt, _, _) ->
-        fprintf fmt "@[%a $ %a" print_term gt print_term h;
-        List.iter (fun t -> fprintf fmt ", %a" print_term t) tl;
-        fprintf fmt ";@]@."
-  end;
   close_out c;
   let gappa_out = temp_file "gappa_output" in
   let cmd = sprintf "gappa -Bcoq-lambda %s > %s 2> /dev/null" gappa_in gappa_out in
@@ -179,8 +172,6 @@ let coq_nil = lazy (constant "nil")
 
 let coq_convert_goal = lazy (constant "convert_goal")
 let coq_contradict_goal = lazy (constant "contradict_goal")
-
-let coq_rdAll = lazy (constant "rdAll")
 
 let coq_RAtom = lazy (constant "RAtom")
 let coq_raBound = lazy (constant "raBound")
@@ -561,7 +552,7 @@ let tr_goal c =
         let uv = Array.of_list (tr_list tr_var uv) in
         let uf = Array.of_list (tr_list tr_fun uf) in
         begin match decompose_app e with
-          | _, [h;g;rl] -> (tr_hyps uv uf h, tr_pred uv uf g, tr_list (tr_term uv uf) rl)
+          | _, [_;_;h;g] -> (tr_hyps uv uf h, tr_pred uv uf g)
           | _ -> raise NotGappa
         end
     | _ -> raise NotGappa
@@ -616,8 +607,8 @@ let build_proof_term c nb_hyp contra =
 
 let gappa_internal gl =
   try
-    let (h, g, rl) = tr_goal (pf_concl gl) in
-    let ((emap, pf), (nb_hyp, contra)) = call_gappa (constr_of_stream gl) h g rl in
+    let (h, g) = tr_goal (pf_concl gl) in
+    let ((emap, pf), (nb_hyp, contra)) = call_gappa (constr_of_stream gl) h g in
     let pf = evars_to_vmcast (project gl) (emap, pf) in
     let pf = build_proof_term pf nb_hyp contra in
     Tacticals.tclTHEN
@@ -633,24 +624,19 @@ let gappa_internal gl =
     | GappaFailed -> error "gappa failed"
     | GappaProofFailed -> error "incorrect gappa proof term"
 
-let gappa_prepare1 =
-  let id = Ident (dummy_loc, id_of_string "gappa_prepare1") in
+let gappa_prepare =
+  let id = Ident (dummy_loc, id_of_string "gappa_prepare") in
   lazy (Tacinterp.interp (Tacexpr.TacArg (Tacexpr.Reference id)))
 
-let gappa_prepare2 =
-  let id = Ident (dummy_loc, id_of_string "gappa_prepare2") in
-  lazy (Tacinterp.interp (Tacexpr.TacArg (Tacexpr.Reference id)))
-
-let gappa_quote rl gl =
+let gappa_quote gl =
   try
     let l = qt_hyps (pf_hyps_types gl) in
     let _R = Lazy.force coq_R in
     let _RAtom = Lazy.force coq_RAtom in
-    let _RExpr = Lazy.force coq_RExpr in
-    let g = mkLApp coq_rdAll
-      [|mkList _RAtom (List.map (fun (_, h) -> h) l);
-        qt_pred (pf_concl gl);
-        mkList _RExpr (List.rev_map qt_term rl)|] in
+    let g = mkLApp coq_pair
+      [|mkLApp coq_list [|_RAtom|]; _RAtom;
+        mkList _RAtom (List.map (fun (_, h) -> h) l);
+        qt_pred (pf_concl gl)|] in
     let uv = mkList _R !var_list in
     let uf = mkList (mkArrow _R _R) !fun_list in
     let e = mkLApp coq_convert_goal [|uv; uf; g|] in
@@ -672,16 +658,12 @@ let gappa_quote rl gl =
       fun_list := [];
       error "something wrong happened"
 
-let gappa rl gl =
+let gappa gl =
   Coqlib.check_required_library ["Gappa"; "Gappa_tactic"];
-  Tactics.tclABSTRACT None (Tacticals.tclTHEN
-    (Lazy.force gappa_prepare1) (Tacticals.tclTHEN
-    (gappa_quote rl) (Tacticals.tclTHEN
-    (Lazy.force gappa_prepare2) gappa_internal))) gl
+  Tactics.tclABSTRACT None (Tacticals.tclTHEN (Lazy.force gappa_prepare) gappa_internal) gl
 
 TACTIC EXTEND gappatac_gappa
-| [ "gappa" ] -> [ gappa [] ]
-| [ "gappa" "$" ne_constr_list(l) ] -> [ gappa l ]
+| [ "gappa" ] -> [ gappa ]
 END
 
 TACTIC EXTEND gappatac_gappa_internal
@@ -689,5 +671,5 @@ TACTIC EXTEND gappatac_gappa_internal
 END
 
 TACTIC EXTEND gappatac_gappa_quote
-| [ "gappa_quote" constr_list(l) ] -> [ gappa_quote l ]
+| [ "gappa_quote" ] -> [ gappa_quote ]
 END
