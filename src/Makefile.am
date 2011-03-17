@@ -18,15 +18,13 @@ FILES = \
 	Gappa_round_aux.v \
 	Gappa_round_def.v \
 	Gappa_round.v \
-	Gappa_tactic_legacy.v \
-	Gappa_tactic_plugin.v \
+	Gappa_tactic.v \
 	Gappa_user.v
 
-data_DATA = $(FILES:=o) $(TACTIC_TARGETS) Gappa_tactic.vo
+data_DATA = $(FILES:=o) $(TACTIC_TARGETS)
 EXTRA_DIST = $(FILES) gappatac.ml
 CLEANFILES = $(FILES:=o) $(FILES:=d) $(FILES:.v=.glob) \
-	gappatac.cmi gappatac.cmo gappatac.cmx gappatac.cmxs gappatac.o \
-	Gappa_tactic.v Gappa_tactic.vo Gappa_tactic.glob
+	gappatac.cmi gappatac.cmo gappatac.cmx gappatac.cmxs gappatac.o
 
 datadir = $(libdir)
 
@@ -44,23 +42,9 @@ COQSUBTREES = kernel lib interp parsing proofs pretyping tactics library topleve
 
 PP = -pp "$(CAMLP4)o $(COQLIBS)/parsing/grammar.cma"
 
-Gappa_tactic_plugin.vo: Gappa_tactic_plugin.v $(TACTIC_TARGETS)
+Gappa_tactic.vo: Gappa_tactic.v $(TACTIC_TARGETS)
 	@echo COQC $<
 	@$(COQC) $(TACTIC_PARAM) $(COQRFLAG) -dont-load-proofs $<
-
-Gappa_tactic.vo: Gappa_tactic.v
-	@echo COQC $<
-	@$(COQC) $(TACTIC_PARAM) $(COQRFLAG) -dont-load-proofs $<
-
-Gappa_tactic.vd: Gappa_tactic.v
-
-Gappa_tactic.v: $(TACTIC_DEFAULT)
-	@echo GENR $@
-	@if test "$(TACTIC_DEFAULT)" = "Gappa_tactic_plugin.v"; then \
-	  echo 'Require Export Gappa_tactic_plugin.' > $@; \
-	else \
-	  cp $< $@; \
-	fi
 
 gappatac.cmo: gappatac.ml
 	@echo OCAMLC $<

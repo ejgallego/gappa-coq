@@ -133,12 +133,16 @@ let coq_modules =
        ["Coq"; "Reals"; "R_sqrt"];
        ["Coq"; "Reals"; "Rfunctions"];
        ["Coq"; "Lists"; "List"];
-       ["Gappa"; "Gappa_tactic_plugin"];
+       ["Gappa"; "Gappa_tactic"];
        ["Gappa"; "Gappa_fixed"];
        ["Gappa"; "Gappa_float"];
        ["Gappa"; "Gappa_round_def"];
        ["Gappa"; "Gappa_pred_bnd"];
        ["Gappa"; "Gappa_definitions"];
+       ["Flocq"; "Core"; "Fcore_generic_fmt"];
+       ["Flocq"; "Core"; "Fcore_rnd_ne"];
+       ["Flocq"; "Core"; "Fcore_FLT"];
+       ["Flocq"; "Core"; "Fcore_FIX"];
   ]
 
 let constant = gen_constant_in_modules "gappa" coq_modules
@@ -196,12 +200,13 @@ let coq_reBinary = lazy (constant "reBinary")
 let coq_reUnary = lazy (constant "reUnary")
 let coq_reApply = lazy (constant "reApply")
 
-let coq_roundDN = lazy (constant "roundDN")
-let coq_roundUP = lazy (constant "roundUP")
-let coq_roundNE = lazy (constant "roundNE")
-let coq_roundZR = lazy (constant "roundZR")
-let coq_rounding_fixed = lazy (constant "rounding_fixed")
-let coq_rounding_float = lazy (constant "rounding_float")
+let coq_rndDN = lazy (constant "rndDN")
+let coq_rndUP = lazy (constant "rndUP")
+let coq_rndNE = lazy (constant "rndNE")
+let coq_rndZR = lazy (constant "rndZR")
+let coq_round = lazy (constant "round")
+let coq_FLT_exp = lazy (constant "FLT_exp")
+let coq_FIX_exp = lazy (constant "FIX_exp")
 
 let coq_boAdd = lazy (constant "boAdd")
 let coq_boSub = lazy (constant "boSub")
@@ -371,10 +376,8 @@ and qt_no_Rint t =
           with Not_found ->
             raise NotGappa
         end
-      | c, [u;v;b] when c = Lazy.force coq_rounding_fixed ->
-          qt_round (mkLApp coq_rounding_fixed [|u;v|]) (qt_term b)
-      | c, [u;v;w;b] when c = Lazy.force coq_rounding_float ->
-          qt_round (mkLApp coq_rounding_float [|u;v;w|]) (qt_term b)
+      | c, [u;v;w;b] when c = Lazy.force coq_round ->
+          qt_round (mkLApp coq_round [|u;v;w|]) (qt_term b)
       | c, [a;b] ->
           let gen_bin f = mkLApp coq_reBinary [|Lazy.force f; qt_term a; qt_term b|] in
           if c = Lazy.force coq_Rminus then gen_bin coq_boSub else
@@ -466,13 +469,6 @@ let tr_unop c = match decompose_app c with
   | c, [] when c = Lazy.force coq_uoAbs -> Uabs
   | _ -> raise NotGappa
 
-let tr_mode c = match decompose_app c with
-  | c, [] when c = Lazy.force coq_roundDN -> "dn"
-  | c, [] when c = Lazy.force coq_roundNE -> "ne"
-  | c, [] when c = Lazy.force coq_roundUP -> "up"
-  | c, [] when c = Lazy.force coq_roundZR -> "zr"
-  | _ -> raise NotGappa
-
 (* RExpr -> term *)
 let rec tr_term uv uf c =
   match decompose_app c with
@@ -530,15 +526,23 @@ let tr_var c = match kind_of_term c with
   | _ -> raise NotGappa
 
 let tr_fun c = match decompose_app c with
-  | c, [a;b] when c = Lazy.force coq_rounding_fixed ->
-      let a = tr_mode a in
-      let b = tr_arith_constant b in
-      sprintf "fixed<%d,%s>" b a
-  | c, [a;p;e] when c = Lazy.force coq_rounding_float ->
-      let a = tr_mode a in
-      let p = tr_positive p in
-      let e = tr_arith_constant e in
-      sprintf "float<%d,%d,%s>" p (-e) a
+  | c, [rdx;fmt;mode] when c = Lazy.force coq_round ->
+      let mode = match decompose_app mode with
+        | c, [] when c = Lazy.force coq_rndDN -> "dn"
+        | c, [] when c = Lazy.force coq_rndNE -> "ne"
+        | c, [] when c = Lazy.force coq_rndUP -> "up"
+        | c, [] when c = Lazy.force coq_rndZR -> "zr"
+        | _ -> raise NotGappa in
+      begin match decompose_app fmt with
+        | c, [e;p] when c = Lazy.force coq_FLT_exp ->
+            let e = tr_arith_constant e in
+            let p = tr_arith_constant p in
+            sprintf "float<%d,%d,%s>" p e mode
+        | c, [e] when c = Lazy.force coq_FIX_exp ->
+            let e = tr_arith_constant e in
+            sprintf "fixed<%d,%s>" e mode
+        | _ -> raise NotGappa
+      end
   | _ ->
       raise NotGappa
 
@@ -669,7 +673,7 @@ let gappa_quote rl gl =
       error "something wrong happened"
 
 let gappa rl gl =
-  Coqlib.check_required_library ["Gappa"; "Gappa_tactic_plugin"];
+  Coqlib.check_required_library ["Gappa"; "Gappa_tactic"];
   Tactics.tclABSTRACT None (Tacticals.tclTHEN
     (Lazy.force gappa_prepare1) (Tacticals.tclTHEN
     (gappa_quote rl) (Tacticals.tclTHEN

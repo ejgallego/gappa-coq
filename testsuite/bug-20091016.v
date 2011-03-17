@@ -1,7 +1,8 @@
 Require Import Reals.
+Require Import Fcore.
 Require Import Gappa_tactic.
 
-Definition rnd := rounding_float roundNE 53 1074.
+Definition rnd := rounding_float rndNE 53 (-1074).
 
 Goal
   forall a_ b_ a b : R,

@@ -6,30 +6,28 @@ Require Import Gappa_float.
 Section Gappa_proxy.
 
 Theorem fix_fixed_of_fix :
- forall rdir : round_dir, forall d xn zn : Z, forall x : R,
+ forall rdir d xn zn x,
  FIX x xn ->
  Zle_bool zn xn = true ->
  FIX (rounding_fixed rdir d x) zn.
 Admitted.
 
 Theorem flt_fixed_of_flt :
- forall rdir : round_dir, forall d : Z,
- forall xn zn : positive, forall x : R,
+ forall rdir d xn zn x,
  FLT x xn ->
  Zle_bool (Zpos xn) (Zpos zn) = true ->
  FLT (rounding_fixed rdir d x) zn.
 Admitted.
 
 Theorem fix_float_of_fix :
- forall rdir : round_dir, forall p : positive, forall d xn zn : Z, forall x : R,
+ forall rdir p d xn zn x,
  FIX x xn ->
  Zle_bool zn xn = true ->
  FIX (rounding_float rdir p d x) zn.
 Admitted.
 
 Theorem flt_float_of_flt :
- forall rdir : round_dir, forall p : positive, forall d : Z,
- forall xn zn : positive, forall x : R,
+ forall rdir p d xn zn x,
  FLT x xn ->
  Zle_bool (Zpos xn) (Zpos zn) = true ->
  FLT (rounding_float rdir p d x) zn.
@@ -55,9 +53,9 @@ Axiom bnd_div_of_rel_bnd_div :
 
 Axiom float_absolute_inv_ne :
  forall p : positive, forall d : Z, forall x : R, forall xi zi : FF,
- ABS (rounding_float roundNE p d x) xi ->
- float_absolute_ne_helper p d xi zi = true ->
- BND (rounding_float roundNE p d x - x) zi.
+ ABS (rounding_float Fcore_rnd_ne.rndNE p d x) xi ->
+ float_absolute_n_helper p d xi zi = true ->
+ BND (rounding_float Fcore_rnd_ne.rndNE p d x - x) zi.
 
 Axiom relative_add : forall (p : positive) (e : Z) (r1 r2 : R), R.
 Axiom relative_sub : forall (p : positive) (e : Z) (r1 r2 : R), R.

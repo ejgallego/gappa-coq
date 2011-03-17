@@ -107,7 +107,7 @@ destruct (Fshift2 x y) as ((mx, my), e).
 intros (Hx, Hy).
 rewrite <- Hx, <- Hy.
 unfold float2R, F2R. simpl.
-rewrite plus_Z2R.
+rewrite Z2R_plus.
 apply Rmult_plus_distr_r.
 Qed.
 
@@ -127,7 +127,7 @@ destruct (Fshift2 x y) as ((mx, my), e).
 intros (Hx, Hy).
 rewrite <- Hx, <- Hy.
 unfold float2R, F2R. simpl.
-rewrite minus_Z2R.
+rewrite Z2R_minus.
 apply Rmult_minus_distr_r.
 Qed.
 

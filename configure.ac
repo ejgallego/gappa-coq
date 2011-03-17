@@ -1,4 +1,4 @@
-AC_INIT([Coq support library for Gappa], [0.13],
+AC_INIT([Coq support library for Gappa], [0.14.1],
         [Guillaume Melquiond <guillaume.melquiond@inria.fr>],
         [gappalib-coq])
 AM_INIT_AUTOMAKE
@@ -94,11 +94,7 @@ AC_ARG_ENABLE([byte-tactic],
 if test "x$COQRFLAGS" = x; then module_name=Gappa; else module_name=none; fi
 
 AC_SUBST(TACTIC_TARGETS)
-TACTIC_TARGETS=""
 AC_SUBST(TACTIC_PARAM)
-TACTIC_PARAM=""
-AC_SUBST(TACTIC_DEFAULT)
-TACTIC_DEFAULT="Gappa_tactic_legacy.v"
 
 tactic_mode=""
 if test "$native_tactic" = yes; then
@@ -116,19 +112,13 @@ if test "$byte_tactic" = yes; then
   fi
 fi
 
-tactic_default="legacy"
-if test "$native_tactic" = yes -a "$byte_tactic" = yes; then
-  TACTIC_DEFAULT="Gappa_tactic_plugin.v"
-  tactic_default="plugin"
-fi
-
 if test -z "$tactic_mode"; then tactic_mode=" none"; fi
 
 echo
 echo "=== Summary ==="
 echo "Installation directory   $libdir"
 echo "Module name              $module_name"
-echo "Gappa tactic            $tactic_mode (default: $tactic_default)"
+echo "Gappa tactic            $tactic_mode"
 echo
 
 AC_CONFIG_FILES([Makefile src/Makefile testsuite/Makefile])
