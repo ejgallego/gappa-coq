@@ -1,4 +1,4 @@
-AC_INIT([Coq support library for Gappa], [0.14.1],
+AC_INIT([Coq support library for Gappa], [0.15.0],
         [Guillaume Melquiond <guillaume.melquiond@inria.fr>],
         [gappalib-coq])
 AM_INIT_AUTOMAKE
@@ -30,10 +30,13 @@ native_tactic=yes
 byte_tactic=yes
 
 AC_ARG_VAR(COQC, [Coq compiler command [coqc]])
-AC_PATH_TOOL(COQC, coqc)
-
-coq_version=`"$COQC" -v | sed -n -e 's/^.*version \([0-9.]\+\).*$/\1/p'`
-AX_VERSION_GE([$coq_version], [8.2], [native_tactic=no])
+AC_MSG_CHECKING([for coqc >= 8.3])
+if test ! "$COQC"; then COQC=`which coqc`; fi
+coqc_version=[`"$COQC" -v | sed -n -e 's/^.*version \([0-9.]\+\).*$/\1/p'`]
+AX_VERSION_GE([$coqc_version], [8.3],
+  [ AC_MSG_RESULT([$COQC]) ],
+  [ AC_MSG_RESULT([no])
+    AC_MSG_ERROR([ *** Unable to find Coq (http://coq.inria.fr/)]) ])
 
 AC_ARG_VAR(COQDEP, [Coq dependency analyzer command [coqdep]])
 AC_PATH_TOOL(COQDEP, coqdep)

@@ -1,3 +1,6 @@
+Version 0.15.0:
+ - moved to Coq 8.3
+
 Version 0.14.1:
  - fixed an incompatibility with Flocq 1.2
 
