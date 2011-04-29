@@ -411,4 +411,18 @@ apply Rle_trans with (1 := Hxy2).
 now rewrite <- (Rmult_1_r 1).
 Qed.
 
+Theorem sub_flt_rev :
+  forall x y xn yn xyi zn,
+  FLT x xn -> FLT y yn -> REL x y xyi ->
+  sub_flt_helper xn yn zn xyi = true ->
+  FLT (y - x) zn.
+Proof.
+intros x y xn yn xyi zn Hx Hy Hxy Hb.
+apply <- flt_format_aux.
+rewrite <- Ropp_minus_distr.
+apply generic_format_opp.
+apply -> flt_format_aux.
+eapply sub_flt ; eassumption.
+Qed.
+
 End Gappa_pred_fixflt.
