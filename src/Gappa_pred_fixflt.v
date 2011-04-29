@@ -1,5 +1,5 @@
-Require Import Fcore_defs.
-Require Import Fcore_float_prop.
+Require Import Fcore.
+Require Import Fprop_Sterbenz.
 Require Import Gappa_common.
 Require Import Gappa_round_aux.
 
@@ -313,6 +313,102 @@ rewrite <- bpow_plus.
 apply bpow_le.
 rewrite Zplus_comm.
 now apply Zplus_le_compat_l.
+Qed.
+
+Lemma flt_format_aux :
+  forall x xn,
+  FLT x xn <-> generic_format radix2 (FLX_exp (Zpos xn)) x.
+Proof.
+intros x xn.
+split.
+intros (xf,(H1,H2)).
+apply -> FLX_format_generic ; try easy.
+exists (Float radix2 (Fnum xf) (Fexp xf)).
+split ; trivial.
+now rewrite <- H1.
+intros H.
+apply <- FLX_format_generic in H ; try easy.
+destruct H as (xf,(H1,H2)).
+exists (Float2 (Fcore_defs.Fnum xf) (Fcore_defs.Fexp xf)).
+split ; trivial.
+now rewrite H1.
+Qed.
+
+Definition sub_flt_helper (xn yn zn : positive) (xyi : FF) :=
+  Zle_bool (Zpos xn) (Zpos zn) &&
+  Zle_bool (Zpos yn) (Zpos zn) &&
+  Fle2 (Float2 (-1) (-1)) (lower xyi) &&
+  Fle2 (upper xyi) (Float2 1 0).
+
+Theorem sub_flt :
+  forall x y xn yn xyi zn,
+  FLT x xn -> FLT y yn -> REL x y xyi ->
+  sub_flt_helper xn yn zn xyi = true ->
+  FLT (x - y) zn.
+Proof.
+intros x y xn yn xyi zn Hx Hy (eps,((Hxy1,Hxy2),Hxy3)) Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H3). clear H3. intro H3.
+generalize (Fle2_correct _ _ H4). clear H4. intro H4.
+destruct (total_order_T y 0) as [[Zy|Zy]|Zy].
+(* *)
+apply <- flt_format_aux.
+unfold Rminus.
+rewrite <- (Ropp_involutive x), Rplus_comm.
+apply sterbenz.
+apply FLX_exp_monotone.
+apply generic_format_opp.
+apply -> flt_format_aux.
+now apply flt_subset with yn.
+apply generic_format_opp.
+apply -> flt_format_aux.
+now apply flt_subset with xn.
+rewrite Hxy3, <- Ropp_mult_distr_l_reverse.
+unfold Rdiv.
+rewrite (Rmult_comm 2), 2!Rmult_assoc.
+pattern (-y)%R at 2 3 ; rewrite <- Rmult_1_r.
+assert (Zy': (0 <= -y)%R).
+apply Rlt_le.
+now apply Ropp_0_gt_lt_contravar.
+split ; apply Rmult_le_compat_l ; try easy.
+apply Rmult_le_reg_r with 2%R.
+now apply (Z2R_lt 0 2).
+rewrite Rmult_assoc, Rinv_l, Rmult_1_l, Rmult_1_r.
+apply Rplus_le_compat_l.
+apply Rle_trans with (1 := Hxy2).
+now rewrite <- (Rmult_1_r 1).
+apply Rgt_not_eq.
+now apply (Z2R_lt 0 2).
+pattern R1 at 1 ; replace R1 with ((1 + -1 / 2)*2)%R by field.
+apply Rmult_le_compat_r.
+now apply (Z2R_le 0 2).
+apply Rplus_le_compat_l.
+now apply Rle_trans with (2 := Hxy1).
+(* *)
+rewrite Zy, Rminus_0_r.
+now apply flt_subset with xn.
+(* *)
+apply <- flt_format_aux.
+apply sterbenz.
+apply FLX_exp_monotone.
+apply -> flt_format_aux.
+now apply flt_subset with xn.
+apply -> flt_format_aux.
+now apply flt_subset with yn.
+rewrite Hxy3.
+unfold Rdiv.
+rewrite (Rmult_comm 2).
+assert (Zy': (0 <= y)%R).
+now apply Rlt_le.
+split ; apply Rmult_le_compat_l ; try easy.
+replace (/2)%R with (1 + -1/2)%R by field.
+apply Rplus_le_compat_l.
+now apply Rle_trans with (2 := Hxy1).
+apply Rplus_le_compat_l.
+apply Rle_trans with (1 := Hxy2).
+now rewrite <- (Rmult_1_r 1).
 Qed.
 
 End Gappa_pred_fixflt.
