@@ -280,6 +280,18 @@ rewrite (Rplus_opp_r x).
 apply contains_zero with (1 := Hb).
 Qed.
 
+Lemma sub_of_eql :
+  forall x y : R, forall zi : FF,
+  x = y ->
+  contains_zero_helper zi = true ->
+  BND (x - y) zi.
+Proof.
+intros x y zi E Hb.
+unfold Rminus.
+rewrite E, Rplus_opp_r.
+apply contains_zero with (1 := Hb).
+Qed.
+
 Definition div_refl_helper (zi : FF) :=
  Fle2 (lower zi) (Float2 1 0) &&
  Fle2 (Float2 1 0) (upper zi).
