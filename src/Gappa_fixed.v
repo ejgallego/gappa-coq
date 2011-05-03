@@ -134,4 +134,33 @@ eapply round_DN_pt.
 apply FIX_exp_correct.
 Qed.
 
+Definition fixed_error_ne_helper (e : Z) (zi : FF) :=
+ Fle2 (lower zi) (Float2 (-1) (e - 1)) &&
+ Fle2 (Float2 1 (e - 1)) (upper zi).
+
+Theorem fixed_error_ne :
+  forall e x zi,
+  fixed_error_ne_helper e zi = true ->
+  BND (rounding_fixed rndNE e x - x) zi.
+Proof.
+intros e x zi Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+assert (H := ulp_half_error radix2 _ (FIX_exp_correct e) (fun x => negb (Zeven x)) x).
+replace (/2 * ulp radix2 (FIX_exp e) x)%R with (float2R (Float2 1 (e - 1))) in H.
+(* *)
+destruct (Rabs_le_inv _ _ H) as (H3,H4).
+split.
+apply Rle_trans with (1 := H1).
+unfold float2R.
+now rewrite <- (opp_F2R _ 1%Z).
+now apply Rle_trans with (2 := H2).
+(* *)
+unfold ulp, canonic_exponent, FIX_exp.
+unfold float2R, Zminus.
+rewrite F2R_bpow, Zplus_comm.
+apply bpow_plus.
+Qed.
+
 End Gappa_fixed.
