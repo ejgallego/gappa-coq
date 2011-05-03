@@ -21,6 +21,16 @@ apply Rle_trans with (2 := H).
 apply RRle_abs.
 Qed.
 
+Theorem neg_a :
+  forall x : R, forall zi : FF,
+  ABS x zi ->
+  ABS (-x) zi.
+Proof.
+intros x zi Hx.
+unfold ABS.
+now rewrite Rabs_Ropp.
+Qed.
+
 Definition bnd_of_abs_helper (xi zi : FF) :=
  Fle2 (lower zi) (Fopp2 (upper xi)) &&
  Fle2 (upper xi) (upper zi).
