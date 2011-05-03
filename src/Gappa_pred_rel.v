@@ -306,4 +306,17 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (_,H0).
 now apply Flt2_m1_correct.
 Qed.
 
+Theorem compose_swap :
+  forall x y r1 r2 : R, forall xi yi zi : FF,
+  REL x (y * r2) xi -> REL r1 (1 / r2) yi -> NZR r2 ->
+  mul_rr_helper xi yi zi = true ->
+  REL (x * r1) y zi.
+Proof.
+intros x y r1 r2 xi yi zi Hx Hy Hr Hb.
+generalize (mul_rr _ _ _ _ _ _ _ Hx Hy Hb).
+replace (y * r2 * (1 / r2))%R with y.
+easy.
+now field.
+Qed.
+
 End Gappa_pred_rel.
