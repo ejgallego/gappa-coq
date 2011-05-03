@@ -3,6 +3,62 @@ Require Import Gappa_common.
 
 Section Gappa_rewriting.
 
+Theorem bnd_rewrite :
+  forall a b : R, forall zi : FF,
+  a = b -> BND b zi -> BND a zi.
+Proof.
+intros a b zi E Hz.
+now rewrite E.
+Qed.
+
+Theorem abs_rewrite :
+  forall a b : R, forall zi : FF,
+  a = b -> ABS b zi -> ABS a zi.
+Proof.
+intros a b zi E Hz.
+now rewrite E.
+Qed.
+
+Theorem fix_rewrite :
+  forall a b : R, forall zn : Z,
+  a = b -> FIX b zn -> FIX a zn.
+Proof.
+intros a b zn E Hz.
+now rewrite E.
+Qed.
+
+Theorem flt_rewrite :
+  forall a b : R, forall zn : positive,
+  a = b -> FLT b zn -> FLT a zn.
+Proof.
+intros a b zn E Hz.
+now rewrite E.
+Qed.
+
+Theorem nzr_rewrite :
+  forall a b : R,
+  a = b -> NZR b -> NZR a.
+Proof.
+intros a b E Hz.
+now rewrite E.
+Qed.
+
+Theorem rel_rewrite_1 :
+  forall a b c : R, forall zi : FF,
+  a = b -> REL b c zi -> REL a c zi.
+Proof.
+intros a b c zi E Hz.
+now rewrite E.
+Qed.
+
+Theorem rel_rewrite_2 :
+  forall a b c : R, forall zi : FF,
+  a = b -> REL c b zi -> REL c a zi.
+Proof.
+intros a b c zi E Hz.
+now rewrite E.
+Qed.
+
 Theorem opp_mibs :
  forall a b : R, forall zi : FF,
  BND (-a - -b) zi ->
