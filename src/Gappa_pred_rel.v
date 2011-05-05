@@ -27,34 +27,16 @@ exact Hr.
 now field.
 Qed.
 
-Definition rel_of_equal_helper xi zi :=
-  Fneg0 (lower zi) &&
-  Fpos0 (upper zi) &&
-  Fis0 (lower xi) &&
-  Fis0 (upper xi).
-
-Theorem rel_of_equal :
-  forall a b : R, forall xi zi : FF,
-  BND (a - b) xi ->
-  rel_of_equal_helper xi zi = true ->
-  REL a b zi.
+Theorem rel_refl :
+  forall a : R, forall zi : FF,
+  contains_zero_helper zi = true ->
+  REL a a zi.
 Proof.
-intros a b xi zi Hx Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
-generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-apply Fneg0_correct in H1.
-apply Fpos0_correct in H2.
-apply Fis0_correct in H3.
-apply Fis0_correct in H4.
+intros a zi Hb.
 exists R0.
-repeat split ; trivial.
-rewrite Rplus_0_r, Rmult_1_r.
-apply Rminus_diag_uniq.
-unfold BND in Hx.
-apply Rle_antisym.
-now rewrite <- H4.
-now rewrite <- H3.
+split.
+now apply contains_zero.
+ring.
 Qed.
 
 Lemma error_of_rel_generic :
