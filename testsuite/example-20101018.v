@@ -16,7 +16,7 @@ Goal
   format (a - b).
 Proof.
   intros a b Ha Hb Ia Ib.
-  change (a - b = rnd (a - b)).
+  refine (sym_eq (_ : rnd (a - b) = a - b)).
   revert Ia Ib.
   replace a with (rnd a).
   replace b with (rnd b).

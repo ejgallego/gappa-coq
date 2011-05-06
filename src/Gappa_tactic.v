@@ -433,52 +433,8 @@ rewrite (transform_expr_correct _ gen_float_prop).
 now rewrite (transform_expr_correct _ remove_inv_prop).
 Qed.
 
-Definition change_eq_pos_func a :=
-  match a with
-  | raEq u v => raBound (Some (reFloat2 0 0)) (reBinary boSub u v) (Some (reFloat2 0 0))
-  | _ => a
-  end.
-
-Lemma change_eq_pos_prop :
-  stable_atom_pos change_eq_pos_func.
-Proof.
-intros [l v u|x y l u|x y|x y|] H ; try exact H.
-simpl in H.
-unfold float2R in H.
-rewrite F2R_0 in H.
-apply Rle_antisym.
-apply Rplus_le_reg_l with (- convert_expr y)%R.
-rewrite Rplus_opp_l.
-rewrite Rplus_comm.
-apply H.
-apply Ropp_le_cancel.
-apply Rplus_le_reg_l with (convert_expr x).
-rewrite Rplus_opp_r.
-apply H.
-Qed.
-
 Ltac nothing := apply Pcons ; try apply Pnil ; intros H ; exact H.
 Ltac almost_nothing := apply Pcons ; try apply Pnil ; intros H ; try exact H.
-
-Definition change_eq_neg_func a :=
-  match a with
-  | raEq u v => raBound (Some (reFloat2 0 0)) (reBinary boSub u v) (Some (reFloat2 0 0)) :: nil
-  | _ => a :: nil
-  end.
-
-Lemma change_eq_neg_prop :
-  stable_atom_neg change_eq_neg_func.
-Proof.
-unfold change_eq_neg_func.
-intros [l v u|x y l u|x y|x y|] ; almost_nothing.
-simpl.
-rewrite H.
-unfold Rminus.
-rewrite Rplus_opp_r.
-unfold float2R.
-rewrite F2R_0.
-split ; apply Rle_refl.
-Qed.
 
 Definition change_abs_pos_func a :=
   match a with
@@ -649,6 +605,7 @@ Definition remove_unknown_pos_func a :=
     | _ => raFalse
     end
   | raRel _ _ (reFloat2 _ _) (reFloat2 _ _) => a
+  | raEq _ _ => a
   | _ => raFalse
   end.
 
@@ -678,6 +635,7 @@ Definition remove_unknown_neg_func a :=
     end
   | raBound _ _ _ => a :: nil
   | raRel _ _ (reFloat2 _ _) (reFloat2 _ _) => a :: nil
+  | raEq _ _ => a :: nil
   | _ => nil
   end.
 
@@ -955,8 +913,6 @@ now apply transform_goal_once_correct in H.
 Qed.
 
 Definition trans :=
-  TGneg change_eq_neg_func change_eq_neg_prop ::
-  TGpos change_eq_pos_func change_eq_pos_prop ::
   TGneg change_rel_neg_func change_rel_neg_prop ::
   TGpos change_rel_pos_func change_rel_pos_prop ::
   TGneg change_abs_neg_func change_abs_neg_prop ::
