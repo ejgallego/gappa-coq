@@ -19,13 +19,6 @@ Theorem flt_fixed_of_flt :
  FLT (rounding_fixed rdir d x) zn.
 Admitted.
 
-Theorem fix_float_of_fix :
- forall rdir p d xn zn x,
- FIX x xn ->
- Zle_bool zn xn = true ->
- FIX (rounding_float rdir p d x) zn.
-Admitted.
-
 Theorem flt_float_of_flt :
  forall rdir p d xn zn x,
  FLT x xn ->

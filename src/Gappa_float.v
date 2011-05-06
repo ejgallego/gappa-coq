@@ -628,4 +628,27 @@ Qed.
 Definition rel_of_fix_float_ne := rel_of_fix_float_n (fun x => negb (Zeven x)).
 Definition rel_of_fix_float_na := rel_of_fix_float_n (Zle_bool 0).
 
+Theorem fix_float_of_fix :
+  forall rdir p d xn zn x,
+  FIX x xn ->
+  Zle_bool zn xn = true ->
+  FIX (rounding_float rdir p d x) zn.
+Proof.
+intros rdir p d xn zn x (fx,(Hx1,Hx2)) Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
+rewrite <- Hx1.
+destruct (Zle_or_lt (Fexp fx) (canonic_exponent radix2 (FLT_exp d (Zpos p)) fx)) as [Hx|Hx].
+(* *)
+eexists (Float2 _ _) ; repeat split.
+simpl.
+apply Zle_trans with (1 := H1).
+now apply Zle_trans with (Fexp fx).
+(* *)
+rewrite Fcore_generic_fmt.round_generic.
+eexists (Float2 _ _) ; repeat split.
+now apply Zle_trans with xn.
+apply Fcore_generic_fmt.generic_format_canonic_exponent.
+now apply Zlt_le_weak.
+Qed.
+
 End Gappa_float.
