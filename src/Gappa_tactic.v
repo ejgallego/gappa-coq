@@ -932,7 +932,7 @@ Definition trans :=
 Declare ML Module "gappatac".
 
 Ltac gappa_prepare :=
-  intros ; subst ;
+  intros ; subst ; fold rndNE rndNA in * ;
   gappa_quote ;
   let convert_apply t :=
     match goal with

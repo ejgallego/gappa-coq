@@ -1,5 +1,8 @@
 Require Import Bool.
 Require Import ZArith.
+Require Import Fcore_Raux.
+Require Import Fcore_generic_fmt.
+Require Import Fcore_rnd_ne.
 
 Section Gappa_round_def.
 
@@ -99,3 +102,7 @@ Definition roundNU := round_dir_mk GrndNA GrndNZ GrndNA_good GrndNZ_good.
 Definition roundND := round_dir_mk GrndNZ GrndNA GrndNZ_good GrndNA_good.
 
 End Gappa_round_def.
+
+Definition rndNE := ZnearestE.
+Definition rndNA := ZnearestA.
+Typeclasses Transparent rndNE rndNA.

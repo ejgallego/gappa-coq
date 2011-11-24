@@ -46,9 +46,9 @@ Axiom bnd_div_of_rel_bnd_div :
 
 Axiom float_absolute_inv_ne :
  forall p : positive, forall d : Z, forall x : R, forall xi zi : FF,
- ABS (rounding_float Fcore_rnd_ne.rndNE p d x) xi ->
+ ABS (rounding_float rndNE p d x) xi ->
  float_absolute_n_helper p d xi zi = true ->
- BND (rounding_float Fcore_rnd_ne.rndNE p d x - x) zi.
+ BND (rounding_float rndNE p d x - x) zi.
 
 Axiom relative_add : forall (p : positive) (e : Z) (r1 r2 : R), R.
 Axiom relative_sub : forall (p : positive) (e : Z) (r1 r2 : R), R.

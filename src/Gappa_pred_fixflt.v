@@ -322,12 +322,12 @@ Proof.
 intros x xn.
 split.
 intros (xf,(H1,H2)).
-apply -> FLX_format_generic ; try easy.
+apply generic_format_FLX.
 exists (Float radix2 (Fnum xf) (Fexp xf)).
 split ; trivial.
 now rewrite <- H1.
 intros H.
-apply <- FLX_format_generic in H ; try easy.
+apply FLX_format_generic in H ; try easy.
 destruct H as (xf,(H1,H2)).
 exists (Float2 (Fcore_defs.Fnum xf) (Fcore_defs.Fexp xf)).
 split ; trivial.

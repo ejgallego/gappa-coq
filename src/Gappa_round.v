@@ -126,14 +126,14 @@ Lemma hrndG_N :
   forall x,
   ( forall b, rdir (rnd_record_mk (ZtoN (Zfloor x)) b true) = b ) ->
   hrndG x = Znearest (fun x => rdir (rnd_record_mk (ZtoN x) true false)) x.
-Proof.
+Proof with auto with typeclass_instances.
 intros x Hx1.
 destruct (good_rdir (ZtoN (Zfloor x))) as (Hx2, _).
 unfold hrndG, hrndG_aux.
 destruct (inbetween_spec _ _ x (bracket_aux _)) as [Hx4|l Hx4 Hx5].
 rewrite Hx2.
 rewrite Hx4 at 2.
-now rewrite Znearest_Z2R.
+rewrite Zrnd_Z2R...
 unfold Znearest.
 rewrite Rcompare_floor_ceil_mid with (1 := Rlt_not_eq _ _ (proj1 Hx4)).
 rewrite Rcompare_middle.
@@ -143,9 +143,10 @@ rewrite Hx5.
 now case l ; rewrite ?Hx1, ?Hx2.
 Qed.
 
-Lemma hrndG_monotone :
-  forall x y, (x <= y)%R -> (hrndG x <= hrndG y)%Z.
-Proof.
+Instance valid_rnd_hG : Valid_rnd hrndG.
+Proof with auto with typeclass_instances.
+split.
+(* monotone *)
 intros x y Hxy.
 destruct (Z_eq_dec (Zfloor x) (Zfloor y)) as [H|H].
 (* *)
@@ -162,7 +163,7 @@ now intros [|].
 rewrite hrndG_N with (1 := Hb3).
 rewrite H in Hb3.
 rewrite hrndG_N with (1 := Hb3).
-now apply Znearest_monotone.
+apply Zrnd_monotone...
 (* . *)
 rewrite hrndG_DN with (1 := Hb1).
 rewrite H in Hb1.
@@ -188,11 +189,7 @@ case rdir.
 apply le_Z2R.
 exact (Rle_trans _ _ _ (Zfloor_lb y) (Zceil_ub y)).
 apply Zle_refl.
-Qed.
-
-Lemma hrndG_Z2R :
-  forall n, hrndG (Z2R n) = n.
-Proof.
+(* Z2R *)
 intros n.
 unfold hrndG.
 case rdir.
@@ -202,13 +199,11 @@ Qed.
 
 Lemma hrndG_pos :
   forall x, (0 <= x)%R -> (0 <= hrndG x)%Z.
-Proof.
+Proof with auto with typeclass_instances.
 intros x Hx.
-rewrite <- (hrndG_Z2R 0).
-now apply hrndG_monotone.
+rewrite <- (Zrnd_Z2R hrndG 0).
+apply Zrnd_monotone...
 Qed.
-
-Definition ZhrndG := mkZround hrndG hrndG_monotone hrndG_Z2R.
 
 Lemma shr_conversion :
   forall m d,
@@ -350,8 +345,8 @@ Qed.
 Theorem hrndG_conversion :
   forall rexp m e,
   float2R (tofloat (round_pos rdir rexp m e)) =
-    Fcore_generic_fmt.round radix2 rexp ZhrndG (F2R (Float radix2 (Zpos m) e)).
-Proof.
+    Fcore_generic_fmt.round radix2 rexp hrndG (F2R (Float radix2 (Zpos m) e)).
+Proof with auto with typeclass_instances.
 intros rexp m e.
 assert (He: canonic_exponent radix2 rexp (F2R (Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
 rewrite digits2_digits.
@@ -364,9 +359,9 @@ case_eq (rexp (e + Zpos (digits m)) - e)%Z.
 (* *)
 intros H.
 apply sym_eq.
-apply round_generic.
-apply generic_format_canonic_exponent.
-simpl.
+apply round_generic...
+apply generic_format_F2R.
+intros _ ; simpl.
 rewrite He.
 rewrite Zminus_eq with (1 := H).
 apply Zle_refl.
@@ -415,9 +410,9 @@ now apply (F2R_ge_0_compat radix2 (Float radix2 (Zpos m) (- (Zpos p)))).
 (* *)
 intros p H.
 apply sym_eq.
-apply round_generic.
-apply generic_format_canonic_exponent.
-simpl.
+apply round_generic...
+apply generic_format_F2R.
+intros _ ; simpl.
 rewrite He.
 generalize (Zlt_neg_0 p).
 omega.
@@ -434,9 +429,10 @@ Definition rndG x :=
   | _ => Z0
   end.
 
-Lemma rndG_monotone :
-  forall x y, (x <= y)%R -> (rndG x <= rndG y)%Z.
+Instance valid_rnd_G : Valid_rnd rndG.
 Proof.
+split.
+(* monotone *)
 intros x y Hxy.
 unfold rndG.
 destruct (Rcompare_spec x 0) as [Hx|Hx|Hx].
@@ -445,7 +441,8 @@ destruct (Rcompare_spec y 0) as [Hy|Hy|Hy].
 (* . *)
 apply Zopp_le_cancel.
 rewrite 2!Zopp_involutive.
-apply hrndG_monotone.
+apply Zrnd_monotone.
+apply valid_rnd_hG.
 apply rneg_good.
 now apply Ropp_le_contravar.
 (* . *)
@@ -478,39 +475,38 @@ apply rpos_good.
 now apply Rlt_le.
 (* *)
 rewrite Rcompare_Gt.
-apply hrndG_monotone.
+apply Zrnd_monotone.
+apply valid_rnd_hG.
 apply rpos_good.
 exact Hxy.
 now apply Rlt_le_trans with x.
-Qed.
-
-Lemma rndG_Z2R :
-  forall n, rndG (Z2R n) = n.
-Proof.
+(* Z2R *)
 intros n.
 unfold rndG.
 change R0 with (Z2R 0).
 rewrite Rcompare_Z2R.
 rewrite <- Z2R_opp.
-rewrite 2!hrndG_Z2R.
+rewrite 2!Zrnd_Z2R.
 rewrite Zopp_involutive.
 now case n.
+apply valid_rnd_hG.
+apply rpos_good.
+apply valid_rnd_hG.
+apply rneg_good.
 Qed.
-
-Definition ZrndG := mkZround rndG rndG_monotone rndG_Z2R.
 
 Lemma rndG_conversion_aux :
   forall rexp f,
-  float2R (round rdir rexp f) = Fcore_generic_fmt.round radix2 rexp ZrndG (float2R f).
-Proof.
+  float2R (round rdir rexp f) = Fcore_generic_fmt.round radix2 rexp rndG (float2R f).
+Proof with auto with typeclass_instances.
 intros rexp (m, e).
 unfold float2R. simpl.
 destruct m as [|m|m].
-now rewrite 2!F2R_0, round_0.
+rewrite 2!F2R_0, round_0...
 (* *)
 unfold round. simpl.
 generalize (hrndG_conversion (rpos rdir) (rpos_good _) rexp m e).
-unfold Fcore_generic_fmt.round, ZrndG, rndG. simpl.
+unfold Fcore_generic_fmt.round, rndG. simpl.
 rewrite Rcompare_Gt.
 intros H.
 rewrite <- H.
@@ -528,7 +524,7 @@ unfold round. simpl.
 change (Zneg m) with (- Zpos m)%Z.
 rewrite <- opp_F2R.
 generalize (hrndG_conversion (rneg rdir) (rneg_good _) rexp m e).
-unfold Fcore_generic_fmt.round, ZrndG, rndG. simpl.
+unfold Fcore_generic_fmt.round, rndG. simpl.
 rewrite Rcompare_Lt.
 rewrite canonic_exponent_opp.
 rewrite scaled_mantissa_opp.
@@ -552,10 +548,12 @@ Qed.
 
 End ZrndG.
 
+Existing Instance valid_rnd_G.
+
 Record rndG_prop := {
   rndG_g : round_dir;
-  rndG_f : Zround;
-  rndG_eq : forall x, Zrnd (ZrndG rndG_g) x = Zrnd rndG_f x
+  rndG_f : R -> Z;
+  rndG_eq : forall x, rndG rndG_g x = rndG_f x
 }.
 
 Theorem rndG_conversion :
@@ -568,9 +566,20 @@ rewrite rndG_conversion_aux.
 now apply round_ext.
 Qed.
 
+Instance valid_rnd_Gf : forall rdir, Valid_rnd (rndG_f rdir).
+Proof with auto with typeclass_instances.
+split.
+intros x y H.
+rewrite <- 2!rndG_eq.
+apply Zrnd_monotone...
+intros n.
+rewrite <- rndG_eq.
+apply Zrnd_Z2R...
+Qed.
+
 Lemma roundDN_eq :
   forall x,
-  Zrnd (ZrndG roundDN) x = Zrnd rndDN x.
+  rndG roundDN x = Zfloor x.
 Proof.
 intros x.
 simpl.
@@ -593,7 +602,7 @@ Canonical Structure roundDN_cs := Build_rndG_prop _ _ roundDN_eq.
 
 Lemma roundUP_eq :
   forall x,
-  Zrnd (ZrndG roundUP) x = Zrnd rndUP x.
+  rndG roundUP x = Zceil x.
 Proof.
 intros x.
 simpl.
@@ -612,7 +621,7 @@ Canonical Structure roundUP_cs := Build_rndG_prop _ _ roundUP_eq.
 
 Lemma roundZR_eq :
   forall x,
-  Zrnd (ZrndG roundZR) x = Zrnd rndZR x.
+  rndG roundZR x = Ztrunc x.
 Proof.
 intros x.
 simpl.
@@ -637,13 +646,13 @@ Lemma roundN_eq :
   ( forall m, (0 <= m)%Z -> forall b c, rneg r (rnd_record_mk (ZtoN m) b c) = andb b (orb c (negb (f (- (m + 1))%Z))) ) ->
   ( forall m, (0 <= m)%Z -> forall b c, rpos r (rnd_record_mk (ZtoN m) b c) = andb b (orb c (f m)) ) ->
   forall x,
-  Zrnd (ZrndG r) x = Zrnd (rndN f) x.
-Proof.
+  rndG r x = Znearest f x.
+Proof with auto with typeclass_instances.
 intros r f Hn Hp x.
 simpl.
 destruct (Req_dec (Z2R (Zfloor x)) x) as [H1|H1].
 rewrite <- H1.
-now rewrite rndG_Z2R, Znearest_Z2R.
+rewrite 2!Zrnd_Z2R...
 unfold rndG.
 case Rcompare_spec ; intros H2.
 (* *)
@@ -668,7 +677,7 @@ now apply Ropp_0_gt_lt_contravar.
 (* *)
 rewrite H2.
 apply sym_eq.
-exact (Znearest_Z2R _ 0).
+apply (Zrnd_Z2R _ 0).
 (* *)
 rewrite hrndG_N. 2: apply rpos_good.
 unfold Znearest.
@@ -686,7 +695,7 @@ Qed.
 
 Lemma roundNE_eq :
   forall x,
-  Zrnd (ZrndG roundNE) x = Zrnd rndNE x.
+  rndG roundNE x = rndNE x.
 Proof.
 apply roundN_eq ;
   intros m Hm r s ;
@@ -703,7 +712,7 @@ Canonical Structure roundNE_cs := Build_rndG_prop _ _ roundNE_eq.
 
 Lemma roundNA_eq :
   forall x,
-  Zrnd (ZrndG roundNA) x = Zrnd rndNA x.
+  rndG roundNA x = rndNA x.
 Proof.
 apply roundN_eq ;
   intros m Hm r s ; simpl.

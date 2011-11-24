@@ -135,8 +135,8 @@ let coq_modules =
        ["Gappa"; "Gappa_round_def"];
        ["Gappa"; "Gappa_pred_bnd"];
        ["Gappa"; "Gappa_definitions"];
+       ["Flocq"; "Core"; "Fcore_Raux"];
        ["Flocq"; "Core"; "Fcore_generic_fmt"];
-       ["Flocq"; "Core"; "Fcore_rnd_ne"];
        ["Flocq"; "Core"; "Fcore_FLT"];
        ["Flocq"; "Core"; "Fcore_FIX"];
   ]
@@ -194,11 +194,11 @@ let coq_reBinary = lazy (constant "reBinary")
 let coq_reUnary = lazy (constant "reUnary")
 let coq_reApply = lazy (constant "reApply")
 
-let coq_rndDN = lazy (constant "rndDN")
-let coq_rndUP = lazy (constant "rndUP")
+let coq_rndDN = lazy (constant "Zfloor")
+let coq_rndUP = lazy (constant "Zceil")
 let coq_rndNE = lazy (constant "rndNE")
 let coq_rndNA = lazy (constant "rndNA")
-let coq_rndZR = lazy (constant "rndZR")
+let coq_rndZR = lazy (constant "Ztrunc")
 let coq_round = lazy (constant "round")
 let coq_FLT_exp = lazy (constant "FLT_exp")
 let coq_FIX_exp = lazy (constant "FIX_exp")
