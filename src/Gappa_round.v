@@ -163,7 +163,7 @@ now intros [|].
 rewrite hrndG_N with (1 := Hb3).
 rewrite H in Hb3.
 rewrite hrndG_N with (1 := Hb3).
-apply Zrnd_monotone...
+apply Zrnd_le...
 (* . *)
 rewrite hrndG_DN with (1 := Hb1).
 rewrite H in Hb1.
@@ -202,7 +202,7 @@ Lemma hrndG_pos :
 Proof with auto with typeclass_instances.
 intros x Hx.
 rewrite <- (Zrnd_Z2R hrndG 0).
-apply Zrnd_monotone...
+apply Zrnd_le...
 Qed.
 
 Lemma shr_conversion :
@@ -441,7 +441,7 @@ destruct (Rcompare_spec y 0) as [Hy|Hy|Hy].
 (* . *)
 apply Zopp_le_cancel.
 rewrite 2!Zopp_involutive.
-apply Zrnd_monotone.
+apply Zrnd_le.
 apply valid_rnd_hG.
 apply rneg_good.
 now apply Ropp_le_contravar.
@@ -475,7 +475,7 @@ apply rpos_good.
 now apply Rlt_le.
 (* *)
 rewrite Rcompare_Gt.
-apply Zrnd_monotone.
+apply Zrnd_le.
 apply valid_rnd_hG.
 apply rpos_good.
 exact Hxy.
@@ -522,14 +522,14 @@ apply bpow_gt_0.
 (* *)
 unfold round. simpl.
 change (Zneg m) with (- Zpos m)%Z.
-rewrite <- opp_F2R.
+rewrite F2R_opp.
 generalize (hrndG_conversion (rneg rdir) (rneg_good _) rexp m e).
 unfold Fcore_generic_fmt.round, rndG. simpl.
 rewrite Rcompare_Lt.
 rewrite canonic_exponent_opp.
 rewrite scaled_mantissa_opp.
 rewrite Ropp_involutive.
-rewrite <- opp_F2R.
+rewrite F2R_opp.
 intros H.
 rewrite <- H.
 case round_pos.
@@ -571,7 +571,7 @@ Proof with auto with typeclass_instances.
 split.
 intros x y H.
 rewrite <- 2!rndG_eq.
-apply Zrnd_monotone...
+apply Zrnd_le...
 intros n.
 rewrite <- rndG_eq.
 apply Zrnd_Z2R...

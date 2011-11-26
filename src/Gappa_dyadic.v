@@ -24,8 +24,7 @@ Lemma Fopp2_correct :
 Proof.
 intros x.
 unfold float2R, Fopp2. simpl.
-apply sym_eq.
-apply opp_F2R.
+apply F2R_opp.
 Qed.
 
 Definition Fmult2 (x y : float2) :=

@@ -205,10 +205,10 @@ generalize (Fle2_correct _ _ H1). rewrite rndG_conversion. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
 split.
 apply Rle_trans with (1 := H1).
-apply round_monotone...
+apply round_le...
 apply Hx.
 apply Rle_trans with (2 := H2).
-apply round_monotone...
+apply round_le...
 apply Hx.
 Qed.
 
@@ -237,10 +237,10 @@ intros (Hx1, Hx2).
 split.
 apply Rle_trans with (1 := H1).
 rewrite <- (round_generic _ _ rndUP _ (generic_format_round radix2 (FLT_exp d (Zpos p)) rdir x)).
-apply round_monotone...
+apply round_le...
 apply Rle_trans with (2 := H2).
 rewrite <- (round_generic _ _ rndDN _ (generic_format_round radix2 (FLT_exp d (Zpos p)) rdir x)).
-apply round_monotone...
+apply round_le...
 Qed.
 
 Definition float_absolute_n_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
@@ -270,7 +270,7 @@ apply Rlt_le.
 apply Rinv_0_lt_compat.
 now apply (Z2R_lt 0 2).
 rewrite <- ulp_abs.
-apply ulp_monotone.
+apply ulp_le.
 clear.
 intros m n H.
 unfold FLT_exp.
@@ -315,7 +315,7 @@ generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 split.
 apply Rle_trans with (1 := H1).
 unfold float2R.
-rewrite <- (opp_F2R _ 1%Z).
+rewrite (F2R_opp _ 1%Z).
 rewrite F2R_bpow.
 apply Ropp_le_cancel.
 rewrite Ropp_involutive.
@@ -350,7 +350,7 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). unfold float2R. simpl. clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite <- (opp_F2R _ 1%Z), F2R_bpow. clear H3. intro H3.
+generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite (F2R_opp _ 1%Z), F2R_bpow. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). unfold float2R. simpl. rewrite F2R_bpow. clear H4. intro H4.
 set (e := (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 2)%Z) in H2, H3, H4.
 cut (Rabs (rounding_float rndNE p d x - x) <= bpow radix2 e)%R.
@@ -429,7 +429,7 @@ apply Rle_antisym.
 cutrewrite (bpow radix2 (Fexp + Zpos (digits p0) - 1) =
   Fcore_generic_fmt.round radix2 (FLT_exp d (Zpos p)) rndNE (F2R (Float radix2 (Zpos (xI (shift_pos p 1))) e)) :>R).
 (* .. *)
-apply round_monotone...
+apply round_le...
 exact (Rle_trans _ _ _ Hx H2).
 change (F2R (Float radix2 (Zpos (shift_pos p 1)~1) e)) with (float2R (Float2 (Zpos (shift_pos p 1)~1) e)).
 rewrite <- (rndG_conversion roundNE_cs).
@@ -491,7 +491,7 @@ rewrite IHn.
 exact (refl_equal _).
 (* .. *)
 rewrite <- (round_generic radix2 (FLT_exp d (Zpos p)) rndNE (bpow radix2 (Fexp + Zpos (digits p0) - 1))).
-apply round_monotone...
+apply round_le...
 (* . *)
 apply generic_format_bpow.
 unfold FLT_exp.
@@ -529,7 +529,7 @@ intros c p d x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). unfold float2R. simpl. rewrite F2R_bpow. clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite <- (opp_F2R _ 1%Z), F2R_bpow. clear H2. intro H2.
+generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite (F2R_opp _ 1%Z), F2R_bpow. clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite F2R_bpow. clear H3. intro H3.
 exists ((rounding_float (Znearest c) p d x - x) / x)%R.
 split.
@@ -573,7 +573,7 @@ intros c p d xn x zi ((mx, ex), (Hx1, Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite <- (opp_F2R _ 1%Z), F2R_bpow. clear H2. intro H2.
+generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite (F2R_opp _ 1%Z), F2R_bpow. clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite F2R_bpow. clear H3. intro H3.
 destruct (Rle_or_lt (Rabs x) (bpow radix2 (d + Zpos p))) as [He|He].
 (* *)
@@ -587,7 +587,7 @@ apply bpow_ge_0.
 apply Rle_trans with (2 := H3).
 apply bpow_ge_0.
 now rewrite Rplus_0_r, Rmult_1_r.
-apply FLT_generic_format_FIX...
+apply generic_format_FLT_FIX...
 rewrite <- Hx1.
 apply generic_format_F2R.
 intros _.

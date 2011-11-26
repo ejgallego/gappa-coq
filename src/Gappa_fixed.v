@@ -64,13 +64,13 @@ split.
 apply Rle_trans with (1 := H1).
 unfold float2R at 2. simpl.
 rewrite <- (round_generic radix2 (FIX_exp xn) Zceil (F2R (Float radix2 m e))).
-apply round_monotone...
+apply round_le...
 apply Hxb.
 now apply generic_format_F2R.
 apply Rle_trans with (2 := H2).
 unfold float2R at 1. simpl.
 rewrite <- (round_generic radix2 (FIX_exp xn) Zfloor (F2R (Float radix2 m e))).
-apply round_monotone...
+apply round_le...
 apply Hxb.
 now apply generic_format_F2R.
 Qed.
@@ -93,10 +93,10 @@ generalize (Fle2_correct _ _ H1). rewrite rndG_conversion. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
 split.
 apply Rle_trans with (1 := H1).
-apply round_monotone...
+apply round_le...
 apply Hx.
 apply Rle_trans with (2 := H2).
-apply round_monotone...
+apply round_le...
 apply Hx.
 Qed.
 
@@ -124,7 +124,7 @@ apply Rle_trans with (1 := H1).
 destruct (Rabs_def2 _ _ (ulp_error radix2 (FIX_exp e) Zfloor x)) as (_, H).
 apply Rlt_le.
 unfold float2R.
-rewrite <- (opp_F2R _ 1%Z).
+rewrite (F2R_opp _ 1%Z).
 now rewrite F2R_bpow.
 (* *)
 apply Rle_trans with (2 := H2).
@@ -152,7 +152,7 @@ destruct (Rabs_le_inv _ _ H) as (H3,H4).
 split.
 apply Rle_trans with (1 := H1).
 unfold float2R.
-now rewrite <- (opp_F2R _ 1%Z).
+now rewrite (F2R_opp _ 1%Z).
 now apply Rle_trans with (2 := H2).
 (* *)
 unfold ulp, canonic_exponent, FIX_exp.

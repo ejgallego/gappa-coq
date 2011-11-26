@@ -247,7 +247,7 @@ now rewrite H in H0.
 rewrite Fcalc_digits.digits_ln_beta with (1 := H0').
 rewrite <- ln_beta_F2R with (1 := H0').
 apply Zle_trans with (ln_beta radix2 (Rabs (Float2 mx ex))).
-apply ln_beta_monotone.
+apply ln_beta_le.
 now apply F2R_gt_0_compat.
 now rewrite Hx1.
 rewrite ln_beta_abs.
@@ -286,7 +286,7 @@ exact Hx1.
 unfold float2R in Hx1. simpl in Hx1.
 simpl Fnum in H. simpl Fexp in H.
 apply (F2R_lt_reg radix2 e).
-rewrite <- abs_F2R.
+rewrite F2R_abs.
 apply Rle_lt_trans with (F2R (Float radix2 mu eu)).
 simpl. rewrite Hx1.
 apply Hxi.
