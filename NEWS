@@ -1,3 +1,6 @@
+Version 0.17.0:
+ - moved to Flocq 2.0
+
 Version 0.16.0:
  - added support for Gappa 0.15.0
  - proved fix_float_of_fix, fixed_error_ne, neg_a
