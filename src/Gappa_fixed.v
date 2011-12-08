@@ -124,7 +124,7 @@ apply Rle_trans with (1 := H1).
 destruct (Rabs_def2 _ _ (ulp_error radix2 (FIX_exp e) Zfloor x)) as (_, H).
 apply Rlt_le.
 unfold float2R.
-rewrite (F2R_opp _ 1%Z).
+rewrite (F2R_Zopp _ 1%Z).
 now rewrite F2R_bpow.
 (* *)
 apply Rle_trans with (2 := H2).
@@ -152,10 +152,10 @@ destruct (Rabs_le_inv _ _ H) as (H3,H4).
 split.
 apply Rle_trans with (1 := H1).
 unfold float2R.
-now rewrite (F2R_opp _ 1%Z).
+now rewrite (F2R_Zopp _ 1%Z).
 now apply Rle_trans with (2 := H2).
 (* *)
-unfold ulp, canonic_exponent, FIX_exp.
+unfold ulp, canonic_exp, FIX_exp.
 unfold float2R, Zminus.
 rewrite F2R_bpow, Zplus_comm.
 apply bpow_plus.

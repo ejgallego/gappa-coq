@@ -60,7 +60,7 @@ apply bpow_le.
 unfold Zminus.
 rewrite (Zplus_comm _ (-1)).
 apply Zplus_le_compat_l.
-unfold canonic_exponent.
+unfold canonic_exp.
 cut (ln_beta radix2 x <= k)%Z.
 unfold FLT_exp.
 generalize (Zmax_spec (ln_beta radix2 x - Zpos p) d) (Zmax_spec (k - Zpos p) d).
@@ -112,7 +112,7 @@ generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX.
 eexists (Float2 _ _) ; repeat split.
 simpl.
-unfold canonic_exponent.
+unfold canonic_exp.
 apply Zle_trans with (1 := H).
 apply Zle_max_r.
 Qed.
@@ -298,11 +298,11 @@ apply float2_zero.
 apply Rabs_pos.
 clear -Hm0.
 destruct (upper xi) as (m, e).
-unfold canonic_exponent, float2R.
+unfold canonic_exp, float2R.
 rewrite ln_beta_F2R with (1 := Hm0).
-rewrite <- digits_ln_beta with (1 := Hm0).
+rewrite <- Zdigits_ln_beta with (1 := Hm0).
 simpl.
-rewrite <- digits_abs.
+rewrite <- Fcore_digits.Zdigits_abs.
 rewrite Zplus_comm.
 destruct m as [|m|m] ; unfold Zabs.
 now elim Hm0.
@@ -315,7 +315,7 @@ generalize (Fle2_correct _ _ H2). clear H2. intro H2.
 split.
 apply Rle_trans with (1 := H1).
 unfold float2R.
-rewrite (F2R_opp _ 1%Z).
+rewrite (F2R_Zopp _ 1%Z).
 rewrite F2R_bpow.
 apply Ropp_le_cancel.
 rewrite Ropp_involutive.
@@ -350,7 +350,7 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). unfold float2R. simpl. clear H2. intro H2.
-generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite (F2R_opp _ 1%Z), F2R_bpow. clear H3. intro H3.
+generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite (F2R_Zopp _ 1%Z), F2R_bpow. clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). unfold float2R. simpl. rewrite F2R_bpow. clear H4. intro H4.
 set (e := (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 2)%Z) in H2, H3, H4.
 cut (Rabs (rounding_float rndNE p d x - x) <= bpow radix2 e)%R.
@@ -529,7 +529,7 @@ intros c p d x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). unfold float2R. simpl. rewrite F2R_bpow. clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite (F2R_opp _ 1%Z), F2R_bpow. clear H2. intro H2.
+generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite (F2R_Zopp _ 1%Z), F2R_bpow. clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite F2R_bpow. clear H3. intro H3.
 exists ((rounding_float (Znearest c) p d x - x) / x)%R.
 split.
@@ -573,7 +573,7 @@ intros c p d xn x zi ((mx, ex), (Hx1, Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
-generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite (F2R_opp _ 1%Z), F2R_bpow. clear H2. intro H2.
+generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite (F2R_Zopp _ 1%Z), F2R_bpow. clear H2. intro H2.
 generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite F2R_bpow. clear H3. intro H3.
 destruct (Rle_or_lt (Rabs x) (bpow radix2 (d + Zpos p))) as [He|He].
 (* *)
@@ -630,7 +630,7 @@ Proof with trivial.
 intros rdir Hrnd p d xn zn x (fx,(Hx1,Hx2)) Hb.
 generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
 rewrite <- Hx1.
-destruct (Zle_or_lt (Fexp fx) (canonic_exponent radix2 (FLT_exp d (Zpos p)) fx)) as [Hx|Hx].
+destruct (Zle_or_lt (Fexp fx) (canonic_exp radix2 (FLT_exp d (Zpos p)) fx)) as [Hx|Hx].
 (* *)
 eexists (Float2 _ _) ; repeat split.
 simpl.

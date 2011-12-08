@@ -244,7 +244,7 @@ rewrite Zpos_pos_of_Z with (1 := H0).
 assert (H0': ml <> Z0).
 intros H.
 now rewrite H in H0.
-rewrite Fcalc_digits.digits_ln_beta with (1 := H0').
+rewrite Fcalc_digits.Zdigits_ln_beta with (1 := H0').
 rewrite <- ln_beta_F2R with (1 := H0').
 apply Zle_trans with (ln_beta radix2 (Rabs (Float2 mx ex))).
 apply ln_beta_le.
@@ -286,7 +286,7 @@ exact Hx1.
 unfold float2R in Hx1. simpl in Hx1.
 simpl Fnum in H. simpl Fexp in H.
 apply (F2R_lt_reg radix2 e).
-rewrite F2R_abs.
+rewrite F2R_Zabs.
 apply Rle_lt_trans with (F2R (Float radix2 mu eu)).
 simpl. rewrite Hx1.
 apply Hxi.
@@ -295,8 +295,8 @@ destruct (Zle_or_lt mu 0) as [Hu|Hu].
 apply Rle_lt_trans with R0.
 now apply F2R_le_0_compat.
 apply bpow_gt_0.
-apply Rlt_le_trans with (bpow radix2 (Fcalc_digits.digits radix2 mu + eu)).
-rewrite Fcalc_digits.digits_ln_beta. 2: intros Hu' ; now rewrite Hu' in Hu.
+apply Rlt_le_trans with (bpow radix2 (Fcore_digits.Zdigits radix2 mu + eu)).
+rewrite Fcalc_digits.Zdigits_ln_beta. 2: intros Hu' ; now rewrite Hu' in Hu.
 rewrite <- ln_beta_F2R. 2: intros Hu' ; now rewrite Hu' in Hu.
 destruct (ln_beta radix2 (F2R (Float radix2 mu eu))) as (e', He).
 apply (Rle_lt_trans _ _ _ (RRle_abs _)).

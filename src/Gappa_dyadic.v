@@ -24,7 +24,7 @@ Lemma Fopp2_correct :
 Proof.
 intros x.
 unfold float2R, Fopp2. simpl.
-apply F2R_opp.
+apply F2R_Zopp.
 Qed.
 
 Definition Fmult2 (x y : float2) :=
@@ -35,7 +35,7 @@ Definition Fmult2_correct :
   Fmult2 x y = (x * y)%R :>R.
 Proof.
 intros (mx, ex) (my, ey).
-exact (mult_F2R radix2 (Float radix2 mx ex) (Float radix2 my ey)).
+exact (F2R_mult radix2 (Float radix2 mx ex) (Float radix2 my ey)).
 Qed.
 
 Definition shl (m : Z) (d : positive) :=

@@ -31,7 +31,7 @@ Fixpoint digits (m : positive) : positive :=
 
 Lemma digits2_digits :
   forall m : positive,
-  Zpos (digits m) = Fcalc_digits.digits radix2 (Zpos m).
+  Zpos (digits m) = Zdigits radix2 (Zpos m).
 Proof.
 intros m.
 apply trans_eq with (Z_of_nat (S (digits2_Pnat m))).
@@ -41,7 +41,7 @@ now rewrite 2!Zpos_succ_morphism, IHm.
 now rewrite 2!Zpos_succ_morphism, IHm.
 easy.
 (* *)
-rewrite digits_ln_beta. 2: easy.
+rewrite Zdigits_ln_beta. 2: easy.
 apply sym_eq.
 apply ln_beta_unique.
 generalize (digits2_Pnat_correct m).

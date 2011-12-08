@@ -348,10 +348,10 @@ Theorem hrndG_conversion :
     Fcore_generic_fmt.round radix2 rexp hrndG (F2R (Float radix2 (Zpos m) e)).
 Proof with auto with typeclass_instances.
 intros rexp m e.
-assert (He: canonic_exponent radix2 rexp (F2R (Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
+assert (He: canonic_exp radix2 rexp (F2R (Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
 rewrite digits2_digits.
-rewrite digits_ln_beta. 2: easy.
-unfold canonic_exponent.
+rewrite Zdigits_ln_beta. 2: easy.
+unfold canonic_exp.
 rewrite ln_beta_F2R. 2: easy.
 now rewrite Zplus_comm.
 unfold round_pos.
@@ -522,14 +522,14 @@ apply bpow_gt_0.
 (* *)
 unfold round. simpl.
 change (Zneg m) with (- Zpos m)%Z.
-rewrite F2R_opp.
+rewrite F2R_Zopp.
 generalize (hrndG_conversion (rneg rdir) (rneg_good _) rexp m e).
 unfold Fcore_generic_fmt.round, rndG. simpl.
 rewrite Rcompare_Lt.
-rewrite canonic_exponent_opp.
+rewrite canonic_exp_opp.
 rewrite scaled_mantissa_opp.
 rewrite Ropp_involutive.
-rewrite F2R_opp.
+rewrite F2R_Zopp.
 intros H.
 rewrite <- H.
 case round_pos.
