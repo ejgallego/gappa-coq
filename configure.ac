@@ -64,11 +64,12 @@ if test -z "$OCAMLOPT"; then native_tactic=no; fi
 
 AC_MSG_CHECKING([for Flocq])
 AS_IF(
-  [ echo "Require Fcore Fcalc_digits." > conftest.v
+  [ echo "Require Import Flocq_version BinNat." \
+         "Goal (20000 <= Flocq_version)%N. easy. Qed." > conftest.v
     "$COQC" conftest.v > conftest.err ],
   [ AC_MSG_RESULT([yes]) ],
   [ AC_MSG_RESULT([no])
-    AC_MSG_ERROR([ *** Unable to find the Flocq library (http://flocq.gforge.inria.fr/)])])
+    AC_MSG_ERROR([ *** Unable to find library Flocq >= 2.0 (http://flocq.gforge.inria.fr/)])])
 rm -f conftest.v conftest.vo conftest.err
 
 AC_SUBST(COQLIBS)
