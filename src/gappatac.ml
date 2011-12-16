@@ -135,6 +135,7 @@ let coq_modules =
        ["Gappa"; "Gappa_round_def"];
        ["Gappa"; "Gappa_pred_bnd"];
        ["Gappa"; "Gappa_definitions"];
+       ["Flocq"; "Core"; "Fcore_Zaux"];
        ["Flocq"; "Core"; "Fcore_Raux"];
        ["Flocq"; "Core"; "Fcore_generic_fmt"];
        ["Flocq"; "Core"; "Fcore_FLT"];
@@ -164,6 +165,11 @@ let coq_Rinv = lazy (constant "Rinv")
 let coq_Rabs = lazy (constant "Rabs")
 let coq_sqrt = lazy (constant "sqrt")
 let coq_powerRZ = lazy (constant "powerRZ")
+let coq_bpow = lazy (constant "bpow")
+
+let coq_INR = lazy (constant "INR")
+let coq_IZR = lazy (constant "IZR")
+let coq_radix_val = lazy (constant "radix_val")
 
 let coq_Some = lazy (constant "Some")
 
@@ -187,8 +193,12 @@ let coq_RExpr = lazy (constant "RExpr")
 let coq_reUnknown = lazy (constant "reUnknown")
 let coq_reFloat2 = lazy (constant "reFloat2")
 let coq_reFloat10 = lazy (constant "reFloat10")
+let coq_reBpow2 = lazy (constant "reBpow2")
+let coq_reBpow10 = lazy (constant "reBpow10")
 let coq_rePow2 = lazy (constant "rePow2")
 let coq_rePow10 = lazy (constant "rePow10")
+let coq_reINR = lazy (constant "reINR")
+let coq_reIZR = lazy (constant "reIZR")
 let coq_reInteger = lazy (constant "reInteger")
 let coq_reBinary = lazy (constant "reBinary")
 let coq_reUnary = lazy (constant "reUnary")
@@ -216,18 +226,21 @@ let coq_bool = lazy (constant "bool")
 let coq_true = lazy (constant "true")
 let coq_false = lazy (constant "false")
 
+let coq_O = lazy (constant "O")
+let coq_S = lazy (constant "S")
+
 let coq_Z0 = lazy (constant "Z0")
 let coq_Zpos = lazy (constant "Zpos")
 let coq_Zneg = lazy (constant "Zneg")
 let coq_xH = lazy (constant "xH")
 let coq_xI = lazy (constant "xI")
 let coq_xO = lazy (constant "xO")
-let coq_IZR = lazy (constant "IZR")
 
 let var_table = Hashtbl.create 17
 let fun_table = Hashtbl.create 17
 let var_list = ref []
 let fun_list = ref []
+let global_env = ref Environ.empty_env
 
 let mkLApp f v = mkApp (Lazy.force f, v)
 
@@ -382,6 +395,15 @@ and qt_no_Rint t =
               match tr_real_constant a with
                 | 2 -> coq_rePow2
                 | 10 -> coq_rePow10
+                | _ -> raise NotGappa
+              in
+            mkLApp p [|(ignore (tr_arith_constant b); b)|] else
+          if c = Lazy.force coq_bpow then
+            let p =
+              match tr_arith_constant (Tacred.compute !global_env Evd.empty
+                (mkLApp coq_radix_val [|a|])) with
+                | 2 -> coq_reBpow2
+                | 10 -> coq_reBpow10
                 | _ -> raise NotGappa
               in
             mkLApp p [|(ignore (tr_arith_constant b); b)|]
@@ -637,6 +659,7 @@ let gappa_prepare =
 
 let gappa_quote gl =
   try
+    global_env := pf_env gl;
     let l = qt_hyps (pf_hyps_types gl) in
     let _R = Lazy.force coq_R in
     let _RAtom = Lazy.force coq_RAtom in

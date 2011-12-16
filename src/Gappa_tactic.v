@@ -92,9 +92,12 @@ Inductive RExpr :=
   | reFloat10 : Z -> Z -> RExpr
   | reUnary : UnaryOp -> RExpr -> RExpr
   | reBinary : BinaryOp -> RExpr -> RExpr -> RExpr
+  | reBpow2 : Z -> RExpr
+  | reBpow10 : Z -> RExpr
   | rePow2 : Z -> RExpr
   | rePow10 : Z -> RExpr
   | reINR : positive -> RExpr
+  | reIZR : Z -> RExpr
   | reApply : positive -> RExpr -> RExpr.
 
 Scheme Equality for positive.
@@ -138,12 +141,18 @@ Fixpoint convert_expr (t : RExpr) : R :=
     | boMul => Rmult
     | boDiv => Rdiv
     end (convert_expr x) (convert_expr y)
+  | reBpow2 x =>
+    bpow radix2 x
+  | reBpow10 x =>
+    bpow radix10 x
   | rePow2 x =>
     powerRZ 2%R x
   | rePow10 x =>
     powerRZ 10%R x
   | reINR x =>
     INR (nat_of_P x)
+  | reIZR x =>
+    IZR x
   | reApply f x =>
     nth (nat_of_P f) ((fun x => x) :: unknown_functions) (fun x => x) (convert_expr x)
   end.
@@ -273,6 +282,8 @@ Definition transform_atom_expr f a :=
   match a with
   | raBound l e u => raBound l (f e) u
   | raRel er ex l u => raRel (f er) (f ex) l u
+  | raEq ex ey => raEq (f ex) (f ey)
+  | raLe ex ey => raLe (f ex) (f ey)
   | _ => a
   end.
 
@@ -296,19 +307,25 @@ Definition gen_float_func t :=
     | Float2 1 (Zpos y') => reFloat2 x (Zneg y')
     | _ => t
     end
+  | reBinary boMul (reInteger x) (reBpow2 y) =>
+    reFloat2 x y
+  | reBinary boMul (reInteger x) (reBpow10 y) =>
+    reFloat10 x y
   | reBinary boMul (reInteger x) (rePow2 y) =>
     reFloat2 x y
   | reBinary boMul (reInteger x) (rePow10 y) =>
     reFloat10 x y
   | reINR x =>
     reInteger (Zpos x)
+  | reIZR x =>
+    reInteger x
   | _ => t
   end.
 
 Lemma gen_float_prop :
   stable_expr gen_float_func.
 Proof.
-intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
+intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try apply refl_equal.
 (* unary ops *)
 destruct o ; try apply refl_equal.
 destruct x ; try apply refl_equal.
@@ -334,11 +351,15 @@ unfold float2R, F2R at 2. simpl.
 now rewrite Rmult_1_l.
 (* INR *)
 exact (P2R_INR _).
+(* IZR *)
+exact (Z2R_IZR _).
 Qed.
 
 (* remove pending powerRZ *)
 Definition clean_pow_func t :=
   match t with
+  | reBpow2 x => reFloat2 1 x
+  | reBpow10 x => reFloat10 1 x
   | rePow2 x => reFloat2 1 x
   | rePow10 x => reFloat10 1 x
   | _ => t
@@ -347,7 +368,9 @@ Definition clean_pow_func t :=
 Lemma clean_pow_prop :
   stable_expr clean_pow_func.
 Proof.
-intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
+intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try apply refl_equal.
+apply (F2R_bpow radix2 x).
+apply (F2R_bpow radix10 x).
 simpl.
 unfold float2R.
 rewrite F2R_bpow.
@@ -382,7 +405,7 @@ unfold merge_float2_aux.
 generalize (compact_float2_correct m e).
 now destruct (compact_float2 m e).
 (* . *)
-intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal ; try exact (H x _).
+intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try apply refl_equal ; try exact (H x _).
 (* integer *)
 simpl.
 unfold merge_float2_aux.
@@ -414,7 +437,7 @@ Definition remove_inv_func t :=
 Lemma remove_inv_prop :
   stable_expr remove_inv_func.
 Proof.
-intros [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try apply refl_equal.
+intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try apply refl_equal.
 destruct o ; try apply refl_equal.
 exact (Rmult_1_l _).
 Qed.
@@ -446,7 +469,7 @@ Lemma change_abs_pos_prop :
   stable_atom_pos change_abs_pos_func.
 Proof.
 intros [l v u|x y l u|v w|v w|] H ; try exact H.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try exact H.
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try exact H.
 destruct o ; try exact H.
 exact (proj2 H).
 Qed.
@@ -462,7 +485,7 @@ Lemma change_abs_neg_prop :
 Proof.
 unfold change_abs_neg_func.
 intros [l v u|x y l u|v w|v w|] ; try nothing.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try nothing.
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try nothing.
 destruct o ; almost_nothing.
 split.
 simpl.
@@ -535,13 +558,13 @@ Lemma change_rel_pos_prop :
 Proof.
 unfold change_rel_pos_func.
 intros [l v u|x y l u|v w|v w|] H ; try exact H.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try exact H.
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try exact H.
 destruct o ; try exact H.
-destruct x as [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try exact H.
+destruct x as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try exact H.
 destruct o ; try exact H.
-destruct w as [u|u|u v|u v|o u|o u v|u|u|u|f u] ; try exact H.
+destruct w as [u|u|u v|u v|o u|o u v|u|u|u|u|u|u|f u] ; try exact H.
 destruct o ; try exact H.
-destruct v as [v|v|v w|v w|o v|o v w|v|v|v|f v] ; try exact H.
+destruct v as [v|v|v w|v w|o v|o v w|v|v|v|v|v|v|f v] ; try exact H.
 destruct o ; try exact H.
 case_eq (RExpr_beq y v) ; intros Hb.
 rewrite <- RExpr_dec_bl with (1 := Hb).
@@ -568,17 +591,17 @@ Lemma change_rel_neg_prop :
 Proof.
 unfold change_rel_neg_func.
 intros [l v u|x y l u|v w|v w|] ; try nothing.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try nothing.
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try nothing.
 destruct o ; try nothing.
-destruct x as [x|x|x y|x y|o x|o x y|x|x|x|f x] ; try nothing.
+destruct x as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try nothing.
 destruct o ; try nothing.
-destruct w as [u|u|u v|u v|o u|o u v|u|u|u|f u] ; try nothing.
+destruct w as [u|u|u v|u v|o u|o u v|u|u|u|u|u|u|f u] ; try nothing.
 destruct o ; try nothing.
-destruct v as [v|v|v w|v w|o v|o v w|v|v|v|f v] ; try nothing.
+destruct v as [v|v|v w|v w|o v|o v w|v|v|v|v|v|v|f v] ; try nothing.
 destruct o ; try nothing.
 case_eq (RExpr_beq y v) ; intros Hb ; try nothing.
 assert (H1 := get_float2_bound_correct u).
-destruct (get_float2_bound u) as [u1|u1|m e|u1 u2|o u1|o u1 u2|u1|u1|u1|f u1] ; try nothing.
+destruct (get_float2_bound u) as [u1|u1|m e|u1 u2|o u1|o u1 u2|u1|u1|u1|u1|u1|u1|f u1] ; try nothing.
 destruct m as [|m|m] ; almost_nothing.
 simpl.
 change (Float2 (Zneg m) e) with (Gappa_dyadic.Fopp2 (Float2 (Zpos m) e)).
@@ -614,10 +637,10 @@ Lemma remove_unknown_pos_prop :
 Proof.
 unfold remove_unknown_pos_func.
 intros [[l|] v [u|]|v w l u|v w|v w|] ; try easy.
-destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|fl xl] ; try easy ;
-  destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|fu xu] ; easy.
-destruct l as [l|l|l l'|l l'|o l|o l l'|l|l|l|f l] ; try easy.
-destruct u as [u|u|u u'|u u'|o u|o u u'|u|u|u|f u] ; try easy.
+destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|xl|xl|xl|fl xl] ; try easy ;
+  destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; easy.
+destruct l as [l|l|l l'|l l'|o l|o l l'|l|l|l|l|l|l|f l] ; try easy.
+destruct u as [u|u|u u'|u u'|o u|o u u'|u|u|u|u|u|u|f u] ; try easy.
 Qed.
 
 Definition remove_unknown_neg_func a :=
@@ -644,11 +667,11 @@ Lemma remove_unknown_neg_prop :
 Proof.
 unfold remove_unknown_neg_func.
 intros [[l|] v [u|]|v w l u|v w|v w|] ; try nothing ; try apply Pnil.
-destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|fl xl] ; try apply Pnil ;
-  destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|fu xu] ; try apply Pnil ;
+destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|xl|xl|xl|fl xl] ; try apply Pnil ;
+  destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; try apply Pnil ;
   nothing.
-destruct l as [l|l|l l'|l l'|o l|o l l'|l|l|l|f l] ; try apply Pnil.
-destruct u as [u|u|u u'|u u'|o u|o u u'|u|u|u|f u] ; try apply Pnil ; nothing.
+destruct l as [l|l|l l'|l l'|o l|o l l'|l|l|l|l|l|l|f l] ; try apply Pnil.
+destruct u as [u|u|u u'|u u'|o u|o u u'|u|u|u|u|u|u|f u] ; try apply Pnil ; nothing.
 Qed.
 
 Definition Gmax_lower x y :=
@@ -683,11 +706,11 @@ case_eq (Gmax_lower l1 l2) ; try easy.
 intros o Hl.
 destruct l1 as [l1|] ; simpl in H1 ; try easy.
 destruct l2 as [l2|] ; simpl in H2 ; try easy.
-destruct l1 as [xl1|xl1|xl1 yl1|xl1 yl1|ol1 xl1|ol1 xl1 yl1|xl1|xl1|xl1|fl1 xl1] ; try discriminate Hl.
-destruct l2 as [xl2|xl2|xl2 yl2|xl2 yl2|ol2 xl2|ol2 xl2 yl2|xl2|xl2|xl2|fl2 xl2] ; try discriminate Hl.
+destruct l1 as [xl1|xl1|xl1 yl1|xl1 yl1|ol1 xl1|ol1 xl1 yl1|xl1|xl1|xl1|xl1|xl1|xl1|fl1 xl1] ; try discriminate Hl.
+destruct l2 as [xl2|xl2|xl2 yl2|xl2 yl2|ol2 xl2|ol2 xl2 yl2|xl2|xl2|xl2|xl2|xl2|xl2|fl2 xl2] ; try discriminate Hl.
 inversion_clear Hl.
 now destruct (Gappa_dyadic.Fle2_spec (Float2 xl1 yl1) (Float2 xl2 yl2)).
-destruct l1 as [xl1|xl1|xl1 yl1|xl1 yl1|ol1 xl1|ol1 xl1 yl1|xl1|xl1|xl1|fl1 xl1] ; now inversion_clear Hl.
+destruct l1 as [xl1|xl1|xl1 yl1|xl1 yl1|ol1 xl1|ol1 xl1 yl1|xl1|xl1|xl1|xl1|xl1|xl1|fl1 xl1] ; now inversion_clear Hl.
 revert H2.
 now inversion_clear Hl.
 Qed.
@@ -706,11 +729,11 @@ case_eq (Gmin_upper u1 u2) ; try easy.
 intros o Hu.
 destruct u1 as [u1|] ; simpl in H1 ; try easy.
 destruct u2 as [u2|] ; simpl in H2 ; try easy.
-destruct u1 as [xu1|xu1|xu1 yu1|xu1 yu1|ou1 xu1|ou1 xu1 yu1|xu1|xu1|xu1|fu1 xu1] ; try discriminate Hu.
-destruct u2 as [xu2|xu2|xu2 yu2|xu2 yu2|ou2 xu2|ou2 xu2 yu2|xu2|xu2|xu2|fu2 xu2] ; try discriminate Hu.
+destruct u1 as [xu1|xu1|xu1 yu1|xu1 yu1|ou1 xu1|ou1 xu1 yu1|xu1|xu1|xu1|xu1|xu1|xu1|fu1 xu1] ; try discriminate Hu.
+destruct u2 as [xu2|xu2|xu2 yu2|xu2 yu2|ou2 xu2|ou2 xu2 yu2|xu2|xu2|xu2|xu2|xu2|xu2|fu2 xu2] ; try discriminate Hu.
 inversion_clear Hu.
 now destruct (Gappa_dyadic.Fle2_spec (Float2 xu1 yu1) (Float2 xu2 yu2)).
-destruct u1 as [xu1|xu1|xu1 yu1|xu1 yu1|ou1 xu1|ou1 xu1 yu1|xu1|xu1|xu1|fu1 xu1] ; now inversion_clear Hu.
+destruct u1 as [xu1|xu1|xu1 yu1|xu1 yu1|ou1 xu1|ou1 xu1 yu1|xu1|xu1|xu1|xu1|xu1|xu1|fu1 xu1] ; now inversion_clear Hu.
 revert H2.
 now inversion_clear Hu.
 Qed.
