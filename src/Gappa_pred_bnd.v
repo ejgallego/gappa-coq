@@ -184,6 +184,29 @@ exact H.
 exact (proj2 Hx).
 Qed.
 
+Definition eql_of_cst_helper (xi yi : FF) :=
+  Feq2 (lower xi) (upper yi) &&
+  Feq2 (upper xi) (lower yi).
+
+Theorem eql_of_cst :
+  forall x y : R, forall xi yi : FF,
+  BND x xi -> BND y yi ->
+  eql_of_cst_helper xi yi = true ->
+  x = y.
+Proof.
+intros x y xi yi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Feq2_correct _ _ H1). clear H1. intro H1.
+generalize (Feq2_correct _ _ H2). clear H2. intro H2.
+apply Rle_antisym.
+apply Rle_trans with (1 := proj2 Hx).
+rewrite H2.
+apply Hy.
+apply Rle_trans with (1 := proj2 Hy).
+rewrite <- H1.
+apply Hx.
+Qed.
+
 Definition neg_helper (xi zi : FF) :=
  Fle2 (lower zi) (Fopp2 (upper xi)) &&
  Fle2 (Fopp2 (lower xi)) (upper zi).
