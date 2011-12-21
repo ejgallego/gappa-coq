@@ -44,6 +44,27 @@ intros _.
 now apply Zle_trans with e1.
 Qed.
 
+Theorem fix_fixed_of_fix :
+  forall rdir {Hrnd : Valid_rnd rdir} d xn zn x,
+  FIX x xn ->
+  Zle_bool zn xn = true ->
+  FIX (rounding_fixed rdir d x) zn.
+Proof with auto with typeclass_instances.
+intros rdir Hrnd d xn zn x (f,(Hx1,Hx2)) Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intros H1.
+rewrite <- Hx1.
+destruct (Zle_or_lt d zn) as [Hn|Hn].
+rewrite round_generic...
+eexists f ; repeat split.
+now apply Zle_trans with xn.
+apply generic_format_F2R.
+intros _.
+apply Zle_trans with (1 := Hn).
+now apply Zle_trans with xn.
+eexists (Float2 _ _) ; repeat split.
+now apply Zlt_le_weak.
+Qed.
+
 Definition bnd_of_bnd_fix_helper (xi zi : FF) (e : Z) :=
   Fle2 (lower zi) (round roundUP (FIX_exp e) (lower xi)) &&
   Fle2 (round roundDN (FIX_exp e) (upper xi)) (upper zi).

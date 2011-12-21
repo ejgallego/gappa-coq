@@ -5,13 +5,6 @@ Require Import Gappa_float.
 
 Section Gappa_proxy.
 
-Theorem fix_fixed_of_fix :
- forall rdir d xn zn x,
- FIX x xn ->
- Zle_bool zn xn = true ->
- FIX (rounding_fixed rdir d x) zn.
-Admitted.
-
 Theorem flt_fixed_of_flt :
  forall rdir d xn zn x,
  FLT x xn ->
