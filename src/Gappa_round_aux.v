@@ -5,6 +5,9 @@ Require Import Fcore_defs.
 Require Import Fcore_digits.
 Require Import Fcalc_digits.
 Require Import Fcore_float_prop.
+Require Import Fcore_generic_fmt.
+Require Import Fcore_FIX.
+Require Import Fcore_FLX.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 
@@ -70,5 +73,76 @@ Lemma Zpos_pos_of_Z :
 induction a ; intros ; compute in H ; try discriminate H.
 exact (refl_equal _).
 Qed.
+
+Lemma FIX_iff_generic :
+  forall k x,
+  FIX x k <-> generic_format radix2 (FIX_exp k) x.
+Proof.
+intros k x.
+split.
+intros ((m,e),(H1,H2)).
+rewrite <- H1.
+now apply generic_format_F2R.
+intros H.
+destruct (FIX_format_generic _ _ _ H) as ((m,e),(H1,H2)).
+exists (Float2 m e) ; repeat split.
+easy.
+rewrite <- H2.
+apply Zle_refl.
+Qed.
+
+Lemma FLT_iff_generic :
+  forall p x,
+  FLT x p <-> generic_format radix2 (FLX_exp (Zpos p)) x.
+Proof.
+intros p x.
+split.
+intros ((m,e),(H1,H2)).
+apply generic_format_FLX.
+exists (Float radix2 m e).
+now split.
+intros H.
+destruct (@FLX_format_generic _ (Zpos p) (refl_equal Lt) _ H) as ((m,e),(H1,H2)).
+now exists (Float2 m e) ; repeat split.
+Qed.
+
+Lemma fix_le :
+  forall x : R, forall xn zn : Z,
+  FIX x xn ->
+  (zn <= xn)%Z ->
+  FIX x zn.
+Proof.
+intros x xn zn (xf,(Hx1,Hx2)) H.
+exists xf.
+split.
+exact Hx1.
+apply Zle_trans with (1 := H) (2 := Hx2).
+Qed.
+
+Lemma flt_le :
+  forall x : R, forall xn zn : positive,
+  FLT x xn ->
+  (Zpos xn <= Zpos zn)%Z ->
+  FLT x zn.
+Proof.
+intros x xn zn (xf,(Hx1,Hx2)) H.
+exists xf.
+split.
+exact Hx1.
+apply Zlt_le_trans with (1 := Hx2).
+apply le_Z2R.
+change (Z2R (Zpower radix2 (Zpos xn)) <= Z2R (Zpower radix2 (Zpos zn)))%R.
+apply Z2R_le.
+now apply Zpower_le.
+Qed.
+
+(* from Flocq 2.1 *)
+Axiom generic_round_generic :
+  forall (beta : radix) (fexp1 fexp2 : Z -> Z)
+    { valid_exp1 : Valid_exp fexp1 } { valid_exp2 : Valid_exp fexp2 }
+    (rnd : R -> Z) { valid_rnd : Valid_rnd rnd },
+  forall x : R,
+  generic_format beta fexp1 x ->
+  generic_format beta fexp1 (round beta fexp2 rnd x).
 
 End Gappa_round_aux.
