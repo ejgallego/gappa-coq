@@ -5,20 +5,6 @@ Require Import Gappa_float.
 
 Section Gappa_proxy.
 
-Theorem flt_fixed_of_flt :
- forall rdir d xn zn x,
- FLT x xn ->
- Zle_bool (Zpos xn) (Zpos zn) = true ->
- FLT (rounding_fixed rdir d x) zn.
-Admitted.
-
-Theorem flt_float_of_flt :
- forall rdir p d xn zn x,
- FLT x xn ->
- Zle_bool (Zpos xn) (Zpos zn) = true ->
- FLT (rounding_float rdir p d x) zn.
-Admitted.
-
 Axiom add_rr :
  forall x1 x2 y1 y2 : R, forall xi yi qi zi : FF,
  REL x1 x2 xi -> REL y1 y2 yi -> BND (x2 / (x2 + y2)) qi -> NZR (x2 + y2) ->

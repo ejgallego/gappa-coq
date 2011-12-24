@@ -626,23 +626,27 @@ Theorem fix_float_of_fix :
   FIX x xn ->
   Zle_bool zn xn = true ->
   FIX (rounding_float rdir p d x) zn.
-Proof with trivial.
-intros rdir Hrnd p d xn zn x (fx,(Hx1,Hx2)) Hb.
+Proof with auto with typeclass_instances.
+intros rdir Hrnd p d xn zn x Hx Hb.
 generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
-rewrite <- Hx1.
-destruct (Zle_or_lt (Fexp fx) (canonic_exp radix2 (FLT_exp d (Zpos p)) fx)) as [Hx|Hx].
-(* *)
-eexists (Float2 _ _) ; repeat split.
-simpl.
-apply Zle_trans with (1 := H1).
-now apply Zle_trans with (Fexp fx).
-(* *)
-rewrite round_generic...
-eexists (Float2 _ _) ; repeat split.
-now apply Zle_trans with xn.
-apply generic_format_F2R.
-intros _.
-now apply Zlt_le_weak.
+apply FIX_iff_generic.
+apply generic_round_generic...
+apply FIX_iff_generic.
+now apply fix_le with xn.
+Qed.
+
+Theorem flt_float_of_flt :
+  forall rdir {Hrnd : Valid_rnd rdir} p d xn zn x,
+  FLT x xn ->
+  Zle_bool (Zpos xn) (Zpos zn) = true ->
+  FLT (rounding_float rdir p d x) zn.
+Proof with auto with typeclass_instances.
+intros rdir Hrnd p d xn zn x H Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
+apply FLT_iff_generic.
+apply generic_round_generic...
+apply FLT_iff_generic.
+now apply flt_le with xn.
 Qed.
 
 End Gappa_float.

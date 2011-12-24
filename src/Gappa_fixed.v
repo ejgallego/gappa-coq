@@ -50,19 +50,28 @@ Theorem fix_fixed_of_fix :
   Zle_bool zn xn = true ->
   FIX (rounding_fixed rdir d x) zn.
 Proof with auto with typeclass_instances.
-intros rdir Hrnd d xn zn x (f,(Hx1,Hx2)) Hb.
-generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intros H1.
-rewrite <- Hx1.
-destruct (Zle_or_lt d zn) as [Hn|Hn].
-rewrite round_generic...
-eexists f ; repeat split.
-now apply Zle_trans with xn.
-apply generic_format_F2R.
-intros _.
-apply Zle_trans with (1 := Hn).
-now apply Zle_trans with xn.
-eexists (Float2 _ _) ; repeat split.
-now apply Zlt_le_weak.
+intros rdir Hrnd d xn zn x H Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
+apply FIX_iff_generic.
+apply generic_round_generic...
+apply FIX_iff_generic.
+now apply fix_le with xn.
+Qed.
+
+Local Instance Zpos_gt_0 : forall k, Prec_gt_0 (Zpos k). easy. Qed.
+
+Theorem flt_fixed_of_flt :
+  forall rdir {Hrnd : Valid_rnd rdir} d xn zn x,
+  FLT x xn ->
+  Zle_bool (Zpos xn) (Zpos zn) = true ->
+  FLT (rounding_fixed rdir d x) zn.
+Proof with auto with typeclass_instances.
+intros rdir Hrnd d xn zn x H Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
+apply FLT_iff_generic.
+apply generic_round_generic...
+apply FLT_iff_generic.
+now apply flt_le with xn.
 Qed.
 
 Definition bnd_of_bnd_fix_helper (xi zi : FF) (e : Z) :=
