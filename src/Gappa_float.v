@@ -102,6 +102,35 @@ rewrite <- (bpow_plus radix2 (-1)%Z).
 now rewrite (Zplus_comm (- Zpos p)), Zplus_assoc.
 Qed.
 
+Lemma float_relative_inv_n_whole :
+  forall c p d x,
+  (bpow radix2 (d + Zpos p - 1) < Rabs (rounding_float (Znearest c) p d x))%R ->
+  (Rabs ((rounding_float (Znearest c) p d x - x) / x) <= bpow radix2 (-Zpos p))%R.
+Proof with auto with typeclass_instances.
+intros c p d x Hx.
+assert (Hx0: x <> R0).
+intros Hx0.
+apply Rlt_not_le with (1 := Hx).
+rewrite Hx0, round_0, Rabs_R0...
+apply bpow_ge_0.
+destruct (Rle_or_lt (bpow radix2 (d + Zpos p - 1)) (Rabs x)) as [Hx1|Hx1].
+destruct (relative_error_N_FLT_ex radix2 d (Zpos p) (refl_equal _) c x Hx1) as (eps, (Hr1, Hr2)).
+change (FLT_exp d (Zpos p)) with (FLT_exp d (Zpos p)).
+rewrite Hr2.
+replace ((x * (1 + eps) - x) / x)%R with eps by now field.
+revert Hr1.
+rewrite <- (bpow_plus radix2 (-1)%Z).
+now rewrite (Zplus_comm (- Zpos p)), Zplus_assoc.
+elim Rlt_not_le with (1 := Hx).
+apply abs_round_le_generic...
+apply generic_format_bpow.
+unfold FLT_exp.
+ring_simplify (d + Zpos p - 1 + 1 - Zpos p)%Z.
+rewrite Zmax_idempotent.
+clear ; zify ; omega.
+now apply Rlt_le.
+Qed.
+
 Theorem fix_of_float :
   forall rdir x p k1 k2,
   Zle_bool k2 k1 = true ->
@@ -557,6 +586,50 @@ Qed.
 
 Definition float_relative_ne := float_relative_n (fun x => negb (Zeven x)).
 Definition float_relative_na := float_relative_n (Zle_bool 0).
+
+Definition float_relative_inv_n_helper (p : positive) (d : Z) (xi zi : FF) :=
+ Flt2 (Float2 1 (d + Zpos p - 1)) (lower xi) &&
+ Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
+ Fle2 (Float2 1 (Zneg p)) (upper zi).
+
+Theorem float_relative_inv_n :
+  forall c p d x xi zi,
+  ABS (rounding_float (Znearest c) p d x) xi ->
+  float_relative_inv_n_helper p d xi zi = true ->
+  REL (rounding_float (Znearest c) p d x) x zi.
+Proof with auto with typeclass_instances.
+intros c p d x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Flt2_correct _ _ H1). unfold float2R. simpl. rewrite F2R_bpow. clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite (F2R_Zopp _ 1%Z), F2R_bpow. clear H2. intro H2.
+generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite F2R_bpow. clear H3. intro H3.
+exists ((rounding_float (Znearest c) p d x - x) / x)%R.
+split.
+assert (Rabs ((rounding_float (Znearest c) p d x - x) / x) <= bpow radix2 (- Zpos p))%R.
+apply float_relative_inv_n_whole.
+apply Rlt_le_trans with (1 := H1).
+apply Hx.
+split.
+apply Rle_trans with (1 := H2).
+apply Ropp_le_cancel.
+rewrite Ropp_involutive.
+apply Rle_trans with (2 := H).
+rewrite <- Rabs_Ropp.
+apply Rabs_idem.
+apply Rle_trans with (2 := H3).
+apply Rle_trans with (2 := H).
+apply Rabs_idem.
+field.
+intros H.
+apply Rlt_not_le with (1 := H1).
+apply Rle_trans with (1 := proj1 (proj2 Hx)).
+rewrite H, round_0, Rabs_R0...
+apply bpow_ge_0.
+Qed.
+
+Definition float_relative_inv_ne := float_relative_inv_n (fun x => negb (Zeven x)).
+Definition float_relative_inv_na := float_relative_inv_n (Zle_bool 0).
 
 Definition rel_of_fix_float_n_helper (p : positive) (d xn : Z) (zi : FF) :=
  Zle_bool d xn &&
