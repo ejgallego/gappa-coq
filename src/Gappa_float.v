@@ -21,7 +21,7 @@ Definition float_ulp (p : positive) (d m e : Z) :=
  match m with
  | Zpos n => FLT_exp d (Zpos p) (e + Zpos (digits n))%Z
  | Zneg n => FLT_exp d (Zpos p) (e + Zpos (digits n))%Z
- | Z0 => (-d)%Z
+ | Z0 => d
  end.
 
 Lemma float_absolute_ne_sym :
@@ -61,15 +61,45 @@ unfold Zminus.
 rewrite (Zplus_comm _ (-1)).
 apply Zplus_le_compat_l.
 unfold canonic_exp.
-cut (ln_beta radix2 x <= k)%Z.
+apply monotone_exp...
+now apply ln_beta_le_bpow.
+Qed.
+
+Lemma float_absolute_inv_n_whole :
+  forall c p d k x,
+  (Rabs (rounding_float (Znearest c) p d x) < bpow radix2 k)%R ->
+  (Rabs (rounding_float (Znearest c) p d x - x) <= bpow radix2 (FLT_exp d (Zpos p) k - 1))%R.
+Proof with auto with typeclass_instances.
+intros c p d k x Hx.
+destruct (Req_dec x 0) as [Hx0|Hx0].
+rewrite Hx0, round_0, Rminus_0_r, Rabs_R0...
+apply bpow_ge_0.
+apply Rle_trans with (/2 * ulp radix2 (FLT_exp d (Zpos p)) x)%R.
+apply ulp_half_error...
+unfold ulp.
+rewrite <- (bpow_plus radix2 (-1)).
+apply bpow_le.
+unfold Zminus.
+rewrite (Zplus_comm _ (-1)).
+apply Zplus_le_compat_l.
+unfold canonic_exp.
+destruct (Zle_or_lt (ln_beta radix2 x) k) as [Hk1|Hk1].
+apply monotone_exp...
+destruct (Zle_or_lt (ln_beta radix2 x) d) as [Hk2|Hk2].
 unfold FLT_exp.
-generalize (Zmax_spec (ln_beta radix2 x - Zpos p) d) (Zmax_spec (k - Zpos p) d).
-omega.
-destruct (ln_beta radix2 x) as (e, He).
-simpl.
-specialize (He Hx0).
-apply bpow_lt_bpow with radix2.
-now apply Rle_lt_trans with (Rabs x).
+clear -Hk1 Hk2 ; zify ; omega.
+elim Rlt_not_le with (1 := Hx) ; clear Hx.
+apply Rle_trans with (bpow radix2 (Zmax k d)).
+apply bpow_le.
+apply Zle_max_l.
+apply abs_round_ge_generic...
+apply generic_format_bpow.
+unfold FLT_exp.
+clear ; zify ; omega.
+destruct (ln_beta radix2 x) as (ex,Ex) ; simpl in *.
+apply Rle_trans with (2 := proj1 (Ex Hx0)).
+apply bpow_le.
+clear -Hk1 Hk2 ; zify ; omega.
 Qed.
 
 Lemma Zmax_inf_l :
@@ -108,20 +138,10 @@ Lemma float_relative_inv_n_whole :
   (Rabs ((rounding_float (Znearest c) p d x - x) / x) <= bpow radix2 (-Zpos p))%R.
 Proof with auto with typeclass_instances.
 intros c p d x Hx.
-assert (Hx0: x <> R0).
-intros Hx0.
-apply Rlt_not_le with (1 := Hx).
-rewrite Hx0, round_0, Rabs_R0...
-apply bpow_ge_0.
-destruct (Rle_or_lt (bpow radix2 (d + Zpos p - 1)) (Rabs x)) as [Hx1|Hx1].
-destruct (relative_error_N_FLT_ex radix2 d (Zpos p) (refl_equal _) c x Hx1) as (eps, (Hr1, Hr2)).
-change (FLT_exp d (Zpos p)) with (FLT_exp d (Zpos p)).
-rewrite Hr2.
-replace ((x * (1 + eps) - x) / x)%R with eps by now field.
-revert Hr1.
-rewrite <- (bpow_plus radix2 (-1)%Z).
-now rewrite (Zplus_comm (- Zpos p)), Zplus_assoc.
-elim Rlt_not_le with (1 := Hx).
+apply float_relative_n_whole.
+apply Rnot_lt_le.
+contradict Hx.
+apply Rle_not_lt.
 apply abs_round_le_generic...
 apply generic_format_bpow.
 unfold FLT_exp.
@@ -358,6 +378,64 @@ Qed.
 
 Definition float_absolute_ne := float_absolute_n (fun x => negb (Zeven x)).
 Definition float_absolute_na := float_absolute_n (Zle_bool 0).
+
+Theorem float_absolute_inv_n :
+  forall c p d x xi zi,
+  ABS (rounding_float (Znearest c) p d x) xi ->
+  float_absolute_n_helper p d xi zi = true ->
+  BND (rounding_float (Znearest c) p d x - x) zi.
+Proof with auto with typeclass_instances.
+intros c p d x xi zi Hx Hb.
+assert (H: (Rabs (rounding_float (Znearest c) p d x - x) <= bpow radix2 (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1))%R).
+(* *)
+replace (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi))) with
+  (FLT_exp d (Zpos p) (if Z_eq_dec (Fnum (upper xi)) Z0 then d else (Fexp (upper xi) + Zpos (digits (pos_of_Z (Zabs (Fnum (upper xi))))))%Z)).
+apply float_absolute_inv_n_whole.
+apply Rle_lt_trans with (1 := proj2 (proj2 Hx)).
+unfold float2R.
+case Z_eq_dec ; intros Zx.
+rewrite Zx, F2R_0.
+apply bpow_gt_0.
+rewrite digits2_digits.
+rewrite Zpos_pos_of_Z.
+rewrite Fcore_digits.Zdigits_abs, Zplus_comm.
+rewrite <- Fcalc_digits.ln_beta_F2R_Zdigits with (1 := Zx).
+destruct ln_beta as (ex,Ex) ; simpl.
+apply Rle_lt_trans with (1 := RRle_abs _).
+apply Ex.
+contradict Zx.
+apply F2R_eq_0_reg with (1 := Zx).
+clear -Zx ; zify ; omega.
+unfold float_ulp.
+case Z_eq_dec ; intros Zx.
+rewrite Zx.
+unfold FLT_exp.
+clear ; zify ; omega.
+revert Zx.
+case Fnum ; simpl ; try easy.
+intros H.
+now elim H.
+(* *)
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). clear H2. intro H2.
+split.
+apply Rle_trans with (1 := H1).
+unfold float2R.
+rewrite (F2R_Zopp _ 1%Z).
+rewrite F2R_bpow.
+apply Ropp_le_cancel.
+rewrite Ropp_involutive.
+apply (Rle_trans _ _ _ (Rabs_idem _)).
+now rewrite Rabs_Ropp.
+apply Rle_trans with (2 := H2).
+unfold float2R.
+rewrite F2R_bpow.
+now apply (Rle_trans _ _ _ (Rabs_idem _)).
+Qed.
+
+Definition float_absolute_inv_ne := float_absolute_inv_n (fun x => negb (Zeven x)).
+Definition float_absolute_inv_na := float_absolute_inv_n (Zle_bool 0).
 
 Definition float_absolute_wide_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
  let u := upper xi in
