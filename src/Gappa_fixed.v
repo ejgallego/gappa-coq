@@ -28,16 +28,14 @@ exact H.
 Qed.
 
 Theorem fixed_of_fix :
-  forall rdir {Hrnd : Valid_rnd rdir} x e1 e2 xi,
+  forall rdir {Hrnd : Valid_rnd rdir} x e1 e2,
   FIX x e1 ->
-  Zle_bool e2 e1 && contains_zero_helper xi = true ->
-  BND (rounding_fixed rdir e2 x - x) xi.
+  Zle_bool e2 e1 = true ->
+  rounding_fixed rdir e2 x = x.
 Proof.
-intros rdir Hrnd x e1 e2 xi ((m,e),(Hx1,Hx2)) Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+intros rdir Hrnd x e1 e2 ((m,e),(Hx1,Hx2)) H1.
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
-rewrite round_generic with (1 := Hrnd).
-now apply sub_refl.
+apply round_generic with (1 := Hrnd).
 rewrite <- Hx1.
 apply generic_format_F2R.
 intros _.
