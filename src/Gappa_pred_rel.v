@@ -301,4 +301,132 @@ easy.
 now field.
 Qed.
 
+Definition FImult2 (x : float2) (yi : FF) :=
+  let (yl,yu) := yi in
+  if Fpos0 x then makepairF (Fmult2 x yl) (Fmult2 x yu)
+  else makepairF (Fmult2 x yu) (Fmult2 x yl).
+
+Lemma FImult2_correct :
+  forall (x : float2) yi y, BND y yi ->
+  BND (x * y) (FImult2 x yi).
+Proof.
+intros x (yl,yu) y Hy.
+unfold FImult2.
+replace (Fpos0 x) with (Zle_bool 0 (Fnum x)) by now unfold Fpos0 ; case (Fnum x).
+case Zle_bool_spec ; split ; simpl ; rewrite Fmult2_correct.
+apply monotony_1p.
+now apply Fcore_float_prop.F2R_ge_0_compat.
+apply Hy.
+apply monotony_1p.
+now apply Fcore_float_prop.F2R_ge_0_compat.
+apply Hy.
+apply monotony_1n.
+apply Fcore_float_prop.F2R_le_0_compat.
+now apply Zlt_le_weak.
+apply Hy.
+apply monotony_1n.
+apply Fcore_float_prop.F2R_le_0_compat.
+now apply Zlt_le_weak.
+apply Hy.
+Qed.
+
+Definition add_rr_helper (xi yi qi zi : FF) :=
+  let xql := FImult2 (lower qi) xi in
+  let xqu := FImult2 (upper qi) xi in
+  let yql := FImult2 (Fminus2 (Float2 1 0) (lower qi)) yi in
+  let yqu := FImult2 (Fminus2 (Float2 1 0) (upper qi)) yi in
+  Fle2 (lower zi) (Fplus2 (lower xql) (lower yql)) &&
+  Fle2 (lower zi) (Fplus2 (lower xqu) (lower yqu)) &&
+  Fle2 (Fplus2 (upper xql) (upper yql)) (upper zi) &&
+  Fle2 (Fplus2 (upper xqu) (upper yqu)) (upper zi).
+
+Theorem add_rr :
+  forall x1 x2 y1 y2 : R, forall xi yi qi zi : FF,
+  REL x1 x2 xi -> REL y1 y2 yi -> BND (x2 / (x2 + y2)) qi -> NZR (x2 + y2) ->
+  add_rr_helper xi yi qi zi = true ->
+  REL (x1 + y1) (x2 + y2) zi.
+Proof.
+intros x1 x2 y1 y2 xi yi qi zi (ex,(Hx1,Hx2)) (ey,(Hy1,Hy2)) Hq Zxy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb, H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb, H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1, H2).
+apply Fle2_correct in H1. rewrite Fplus2_correct in H1.
+apply Fle2_correct in H2. rewrite Fplus2_correct in H2.
+apply Fle2_correct in H3. rewrite Fplus2_correct in H3.
+apply Fle2_correct in H4. rewrite Fplus2_correct in H4.
+assert (H5 := FImult2_correct (lower qi) xi _ Hx1).
+assert (H6 := FImult2_correct (upper qi) xi _ Hx1).
+assert (H7 := FImult2_correct (Fminus2 (Float2 1 0) (lower qi)) yi _ Hy1).
+assert (H8 := FImult2_correct (Fminus2 (Float2 1 0) (upper qi)) yi _ Hy1).
+assert (H9 : float2R (Float2 1 0) = R1) by apply Rmult_1_r.
+assert (Ha : (float2R (Fminus2 (Float2 1 0) (lower qi)) = 1 - lower qi)%R).
+now rewrite Fminus2_correct, H9.
+assert (Hb : (float2R (Fminus2 (Float2 1 0) (upper qi)) = 1 - upper qi)%R).
+now rewrite Fminus2_correct, H9.
+exists ((x1 + y1) / (x2 + y2) - 1)%R.
+split.
+2: now field.
+rewrite Hx2, Hy2.
+replace ((x2 * (1 + ex) + y2 * (1 + ey)) / (x2 + y2) - 1)%R with
+  (ey + x2 / (x2 + y2) * (ex - ey))%R by now field.
+destruct (Rle_or_lt (ex - ey) 0) as [He|He].
+split.
+apply Rle_trans with (ey + upper qi * (ex - ey))%R.
+replace (ey + upper qi * (ex - ey))%R with (upper qi * ex + (1 - upper qi) * ey)%R by ring.
+apply Rle_trans with (1 := H2).
+apply Rplus_le_compat.
+apply H6.
+rewrite <- Hb.
+apply H8.
+apply Rplus_le_compat_l.
+apply monotony_2n with (1 := He).
+apply Hq.
+apply Rle_trans with (ey + lower qi * (ex - ey))%R.
+apply Rplus_le_compat_l.
+apply monotony_2n with (1 := He).
+apply Hq.
+replace (ey + lower qi * (ex - ey))%R with (lower qi * ex + (1 - lower qi) * ey)%R by ring.
+apply Rle_trans with (2 := H3).
+apply Rplus_le_compat.
+apply H5.
+rewrite <- Ha.
+apply H7.
+split.
+apply Rle_trans with (ey + lower qi * (ex - ey))%R.
+replace (ey + lower qi * (ex - ey))%R with (lower qi * ex + (1 - lower qi) * ey)%R by ring.
+apply Rle_trans with (1 := H1).
+apply Rplus_le_compat.
+apply H5.
+rewrite <- Ha.
+apply H7.
+apply Rplus_le_compat_l.
+apply monotony_2p with (1 := Rlt_le _ _ He).
+apply Hq.
+apply Rle_trans with (ey + upper qi * (ex - ey))%R.
+apply Rplus_le_compat_l.
+apply monotony_2p with (1 := Rlt_le _ _ He).
+apply Hq.
+replace (ey + upper qi * (ex - ey))%R with (upper qi * ex + (1 - upper qi) * ey)%R by ring.
+apply Rle_trans with (2 := H4).
+apply Rplus_le_compat.
+apply H6.
+rewrite <- Hb.
+apply H8.
+Qed.
+
+Theorem sub_rr :
+  forall x1 x2 y1 y2 : R, forall xi yi qi zi : FF,
+  REL x1 x2 xi -> REL y1 y2 yi -> BND (x2 / (x2 - y2)) qi -> NZR (x2 - y2) ->
+  add_rr_helper xi yi qi zi = true ->
+  REL (x1 - y1) (x2 - y2) zi.
+Proof.
+intros x1 x2 y1 y2 xi yi qi zi Hx (ey,(Hy1,Hy2)) Hq Zxy Hb.
+apply add_rr with (1 := Hx) (3 := Hq) (4 := Zxy) (5 := Hb).
+exists ey.
+split.
+exact Hy1.
+rewrite Hy2.
+ring.
+Qed.
+
 End Gappa_pred_rel.
