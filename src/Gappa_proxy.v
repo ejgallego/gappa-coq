@@ -5,12 +5,6 @@ Require Import Gappa_float.
 
 Section Gappa_proxy.
 
-Axiom bnd_div_of_rel_bnd_div :
- forall x1 x2 y : R, forall xi yi zi : FF,
- REL x1 x2 xi -> BND (x2 / y) yi ->
- true = true ->
- BND ((x1 - x2) / y) zi.
-
 Axiom relative_add : forall (p : positive) (e : Z) (r1 r2 : R), R.
 Axiom relative_sub : forall (p : positive) (e : Z) (r1 r2 : R), R.
 Axiom relative_mul : forall (p : positive) (e : Z) (r1 r2 : R), R.

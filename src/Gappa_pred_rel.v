@@ -369,6 +369,7 @@ split.
 rewrite Hx2, Hy2.
 replace ((x2 * (1 + ex) + y2 * (1 + ey)) / (x2 + y2) - 1)%R with
   (ey + x2 / (x2 + y2) * (ex - ey))%R by now field.
+unfold BND in Hq.
 destruct (Rle_or_lt (ex - ey) 0) as [He|He].
 split.
 apply Rle_trans with (ey + upper qi * (ex - ey))%R.
@@ -379,18 +380,17 @@ apply H6.
 rewrite <- Hb.
 apply H8.
 apply Rplus_le_compat_l.
-apply monotony_2n with (1 := He).
-apply Hq.
+now apply monotony_2n.
 apply Rle_trans with (ey + lower qi * (ex - ey))%R.
 apply Rplus_le_compat_l.
-apply monotony_2n with (1 := He).
-apply Hq.
+now apply monotony_2n.
 replace (ey + lower qi * (ex - ey))%R with (lower qi * ex + (1 - lower qi) * ey)%R by ring.
 apply Rle_trans with (2 := H3).
 apply Rplus_le_compat.
 apply H5.
 rewrite <- Ha.
 apply H7.
+apply Rlt_le in He.
 split.
 apply Rle_trans with (ey + lower qi * (ex - ey))%R.
 replace (ey + lower qi * (ex - ey))%R with (lower qi * ex + (1 - lower qi) * ey)%R by ring.
@@ -400,12 +400,10 @@ apply H5.
 rewrite <- Ha.
 apply H7.
 apply Rplus_le_compat_l.
-apply monotony_2p with (1 := Rlt_le _ _ He).
-apply Hq.
+now apply monotony_2p.
 apply Rle_trans with (ey + upper qi * (ex - ey))%R.
 apply Rplus_le_compat_l.
-apply monotony_2p with (1 := Rlt_le _ _ He).
-apply Hq.
+now apply monotony_2p.
 replace (ey + upper qi * (ex - ey))%R with (upper qi * ex + (1 - upper qi) * ey)%R by ring.
 apply Rle_trans with (2 := H4).
 apply Rplus_le_compat.
@@ -427,6 +425,50 @@ split.
 exact Hy1.
 rewrite Hy2.
 ring.
+Qed.
+
+Definition mul_helper (xi yi zi : FF) :=
+  let xly := FImult2 (lower xi) yi in
+  let xuy := FImult2 (upper xi) yi in
+  Fle2 (lower zi) (lower xly) &&
+  Fle2 (lower zi) (lower xuy) &&
+  Fle2 (upper xly) (upper zi) &&
+  Fle2 (upper xuy) (upper zi).
+
+Theorem bnd_div_of_rel_bnd_div :
+  forall x1 x2 y : R, forall xi yi zi : FF,
+  REL x1 x2 xi -> BND (x2 / y) yi -> NZR y ->
+  mul_helper xi yi zi = true ->
+  BND ((x1 - x2) / y) zi.
+Proof.
+intros x1 x2 y xi yi zi (ex,(Hx1,Hx2)) Hxy Zy Hb.
+rewrite Hx2.
+replace ((x2 * (1 + ex) - x2) / y)%R with (ex * (x2 / y))%R by now field.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb, H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb, H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1, H2).
+apply Fle2_correct in H1.
+apply Fle2_correct in H2.
+apply Fle2_correct in H3.
+apply Fle2_correct in H4.
+assert (H5 := FImult2_correct (lower xi) yi _ Hxy).
+assert (H6 := FImult2_correct (upper xi) yi _ Hxy).
+destruct (Rle_or_lt 0 (x2 / y)) as [Hy|Hy].
+split.
+apply Rle_trans with (1 := H1).
+apply Rle_trans with (1 := proj1 H5).
+now apply monotony_2p.
+apply Rle_trans with (2 := H4).
+apply Rle_trans with (2 := proj2 H6).
+now apply monotony_2p.
+apply Rlt_le in Hy.
+split.
+apply Rle_trans with (1 := H2).
+apply Rle_trans with (1 := proj1 H6).
+now apply monotony_2n.
+apply Rle_trans with (2 := H3).
+apply Rle_trans with (2 := proj2 H5).
+now apply monotony_2n.
 Qed.
 
 End Gappa_pred_rel.
