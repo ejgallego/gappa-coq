@@ -12,7 +12,6 @@ FILES = \
 	Gappa_pred_fixflt.v \
 	Gappa_pred_nzr.v \
 	Gappa_pred_rel.v \
-	Gappa_proxy.v \
 	Gappa_real.v \
 	Gappa_rewriting.v \
 	Gappa_round_aux.v \
