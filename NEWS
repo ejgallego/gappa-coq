@@ -1,3 +1,11 @@
+Version 0.18.0:
+ - improved error messages for the tactic
+ - added handling of bpow function to the tactic
+ - added support for Gappa 0.16.0
+ - proved eql_of_cst, fixed_fix_of_fix, float_relative_inv_n?,
+   float_absolute_inv_n?, add_rr, sub_rr, bnd_div_of_rel_bnd_div
+ - removed the file containing proxy theorems
+
 Version 0.17.0:
  - moved to Flocq 2.0
 
