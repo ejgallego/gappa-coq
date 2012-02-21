@@ -641,6 +641,20 @@ field.
 exact Hab.
 Qed.
 
+Theorem opp_fibq :
+  forall a b : R, forall zi : FF,
+  REL a b zi ->
+  REL (-a) (-b) zi.
+Proof.
+intros a b zi (ze, (Hz1, Hz2)).
+exists ze.
+split.
+exact Hz1.
+rewrite Hz2.
+apply sym_eq.
+apply Ropp_mult_distr_l_reverse.
+Qed.
+
 Theorem opp_fibe :
   forall a b : R,
   a = b -> (-a = -b)%R.
