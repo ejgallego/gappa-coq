@@ -517,66 +517,29 @@ generalize (Fle2_correct _ _ H8). rewrite Fmult2_correct. clear H8. intro H8.
 exact (IRmult_oo _ _ _ _ _ _ H1 H2 H3 H4 H6 H5 H7 H8 _ _ Hx Hy).
 Qed.
 
-Definition square_p_helper (xi zi : FF) :=
- Fpos0 (lower xi) &&
+Definition square_helper (xi zi : FF) :=
  Fle2 (lower zi) (Fmult2 (lower xi) (lower xi)) &&
  Fle2 (Fmult2 (upper xi) (upper xi)) (upper zi).
 
-Theorem square_p :
- forall x : R, forall xi zi : FF,
- BND x xi ->
- square_p_helper xi zi = true ->
- BND (x * x) zi.
-intros x xi zi Hx Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+Theorem square :
+  forall x : R, forall xi zi : FF,
+  ABS x xi ->
+  square_helper xi zi = true ->
+  BND (x * x) zi.
+Proof.
+intros x xi zi (Hx1,Hx2) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-apply mul_pp with (1 := Hx) (2 := Hx).
+fold (Rsqr x).
+rewrite Rsqr_abs.
+apply mul_pp with (1 := Hx2) (2 := Hx2).
 unfold mul_pp_helper.
-rewrite H1. rewrite H2. rewrite H3.
-apply refl_equal.
-Qed.
-
-Definition square_n_helper (xi zi : FF) :=
- Fneg0 (upper xi) &&
- Fle2 (lower zi) (Fmult2 (upper xi) (upper xi)) &&
- Fle2 (Fmult2 (lower xi) (lower xi)) (upper zi).
-
-Theorem square_n :
- forall x : R, forall xi zi : FF,
- BND x xi ->
- square_n_helper xi zi = true ->
- BND (x * x) zi.
-intros x xi zi Hx Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
-generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-apply mul_nn with (1 := Hx) (2 := Hx).
-unfold mul_nn_helper.
-rewrite H1. rewrite H2. rewrite H3.
-apply refl_equal.
-Qed.
-
-Definition square_o_helper (xi zi : FF) :=
- Fneg0 (lower xi) && Fpos0 (upper xi) &&
- Fneg0 (lower zi) &&
- Fle2 (Fmult2 (upper xi) (upper xi)) (upper zi) &&
- Fle2 (Fmult2 (lower xi) (lower xi)) (upper zi).
-
-Theorem square_o :
- forall x : R, forall xi zi : FF,
- BND x xi ->
- square_o_helper xi zi = true ->
- BND (x * x) zi.
-intros x xi zi Hx Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
-generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-generalize (Fneg0_correct _ H1). clear H1. intro H1.
-generalize (Fpos0_correct _ H2). clear H2. intro H2.
-generalize (Fneg0_correct _ H3). clear H3. intro H3.
-generalize (Fle2_correct _ _ H4). rewrite Fmult2_correct. clear H4. intro H4.
-generalize (Fle2_correct _ _ H5). rewrite Fmult2_correct. clear H5. intro H5.
-apply IRsquare_o with (1 := H1) (2 := H2) (3 := H3) (4 := H5) (5 := H4) (6 := Hx).
+rewrite H1, H2.
+apply Fcore_float_prop.F2R_ge_0_reg in Hx1.
+revert Hx1.
+unfold Fpos0.
+case (Fnum (lower xi)) ; try easy.
+intros p H.
+now elim H.
 Qed.
 
 Definition div_pp_helper (xi yi zi : FF) :=
