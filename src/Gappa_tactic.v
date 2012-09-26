@@ -567,7 +567,7 @@ destruct o ; try exact H.
 destruct v as [v|v|v w|v w|o v|o v w|v|v|v|v|v|v|f v] ; try exact H.
 destruct o ; try exact H.
 case_eq (RExpr_beq y v) ; intros Hb.
-rewrite <- RExpr_dec_bl with (1 := Hb).
+rewrite <- internal_RExpr_dec_bl with (1 := Hb).
 2: now rewrite Hb in H.
 simpl.
 apply <- change_rel_aux.
@@ -609,7 +609,7 @@ rewrite Gappa_dyadic.Fopp2_correct.
 apply -> change_rel_aux.
 split.
 now apply (Gappa_dyadic.Fpos0_correct (Float2 (Zpos m) e)).
-rewrite <- RExpr_dec_bl with (1 := Hb) in H.
+rewrite <- internal_RExpr_dec_bl with (1 := Hb) in H.
 simpl in H1.
 now rewrite H1.
 Qed.
@@ -797,7 +797,7 @@ change (convert_goal_aux gc gh).
 destruct a as [l' v u'|v w l' u'|v w|v w|] ; try (apply IHgh ; try apply H ; easy).
 simpl in H.
 case_eq (RExpr_beq e v) ; intros H3 ; rewrite H3 in H.
-rewrite (RExpr_dec_bl _ _ H3) in H1, IHgh.
+rewrite (internal_RExpr_dec_bl _ _ H3) in H1, IHgh.
 generalize (Gminmax_correct _ _ _ _ _ H1 H2).
 destruct (Gmax_lower l l') as [l''|].
 destruct (Gmin_upper u u') as [u''|].

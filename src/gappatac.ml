@@ -104,7 +104,7 @@ let coq_Rmult = lazy (constant "Rmult")
 let coq_Rdiv = lazy (constant "Rdiv")
 let coq_Rinv = lazy (constant "Rinv")
 let coq_Rabs = lazy (constant "Rabs")
-let coq_sqrt = lazy (constant "sqrt")
+let coq_sqrt = lazy (constant "R_sqrt.sqrt")
 let coq_powerRZ = lazy (constant "powerRZ")
 let coq_bpow = lazy (constant "bpow")
 
@@ -655,7 +655,7 @@ let no_glob f =
 
 (** replace all evars of any type [ty] by [(refl_equal true : ty)] *)
 let evars_to_vmcast sigma (emap, c) =
-  let emap = nf_evars emap in
+  let emap = nf_evar_map emap in
   let change_exist evar =
     let ty = Reductionops.nf_betaiota emap (Evd.existential_type emap evar) in
     mkCast (mkApp (Lazy.force coq_refl_equal,
@@ -717,7 +717,7 @@ let gappa_internal gl =
 (** {1 Packaging for [gappa_prepare; gappa_internal]: the [gappa] tactic} *)
 let gappa_prepare =
   let id = Ident (dummy_loc, id_of_string "gappa_prepare") in
-  lazy (Tacinterp.interp (Tacexpr.TacArg (Tacexpr.Reference id)))
+  lazy (Tacinterp.interp (Tacexpr.TacArg (dummy_loc, Tacexpr.Reference id)))
 
 let gappa gl =
   Coqlib.check_required_library ["Gappa"; "Gappa_tactic"];

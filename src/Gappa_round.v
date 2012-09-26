@@ -395,7 +395,7 @@ now apply Rlt_not_eq.
 revert H1.
 case rdir.
 intros H1.
-rewrite Nnat.Z_of_N_succ.
+rewrite Znat.Z_of_N_succ.
 rewrite Z_of_N_ZtoN.
 apply sym_eq.
 apply Zceil_floor_neq.
