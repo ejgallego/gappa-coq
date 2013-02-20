@@ -6,3 +6,8 @@ Proof.
 gappa.
 Qed.
 
+Lemma truc' :
+  forall b, (Rabs b <= 1 -> Rabs b <= 1)%R.
+Proof.
+gappa.
+Qed.
