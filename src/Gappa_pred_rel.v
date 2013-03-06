@@ -27,6 +27,129 @@ exact Hr.
 now field.
 Qed.
 
+Definition one_plus (xi : FF) :=
+  makepairF (Fplus2 (Float2 1 0) (lower xi)) (Fplus2 (Float2 1 0) (upper xi)).
+
+Lemma one_plus_correct :
+  forall x xi,
+  BND x xi ->
+  BND (1 + x) (one_plus xi).
+Proof.
+intros x xi Hx.
+apply IRplus with (xl := R1) (xu := R1) (4 := Hx) ; simpl.
+rewrite Fplus2_correct.
+apply Rplus_le_compat_r.
+unfold float2R, Fcore_defs.F2R. simpl.
+rewrite Rmult_1_l.
+apply Rle_refl.
+rewrite Fplus2_correct.
+apply Rplus_le_compat_r.
+unfold float2R, Fcore_defs.F2R. simpl.
+rewrite Rmult_1_l.
+apply Rle_refl.
+split ; apply Rle_refl.
+Qed.
+
+Theorem bnd_of_bnd_rel_p :
+  forall x y : R, forall yi ei xi : FF,
+  BND y yi -> REL x y ei ->
+  mul_pp_helper yi (one_plus ei) xi = true ->
+  BND x xi.
+Proof.
+intros x y yi ei xi Hy (e,(He1,He2)) Hb.
+rewrite He2.
+apply mul_pp with (1 := Hy) (3 := Hb).
+apply one_plus_correct with (1 := He1).
+Qed.
+
+Theorem bnd_of_bnd_rel_o :
+  forall x y : R, forall yi ei xi : FF,
+  BND y yi -> REL x y ei ->
+  mul_op_helper yi (one_plus ei) xi = true ->
+  BND x xi.
+Proof.
+intros x y yi ei xi Hy (e,(He1,He2)) Hb.
+rewrite He2.
+apply mul_op with (1 := Hy) (3 := Hb).
+apply one_plus_correct with (1 := He1).
+Qed.
+
+Theorem bnd_of_bnd_rel_n :
+  forall x y : R, forall yi ei xi : FF,
+  BND y yi -> REL x y ei ->
+  mul_np_helper yi (one_plus ei) xi = true ->
+  BND x xi.
+Proof.
+intros x y yi ei xi Hy (e,(He1,He2)) Hb.
+rewrite He2.
+apply mul_np with (1 := Hy) (3 := Hb).
+apply one_plus_correct with (1 := He1).
+Qed.
+
+Lemma rel_swap :
+  forall x y e ei,
+  BND e ei ->
+  x = (y * (1 + e))%R ->
+  Fpos (lower (one_plus ei)) = true ->
+  y = (x / (1 + e))%R.
+Proof.
+intros x y e ei He Hx Hb.
+rewrite Hx.
+field.
+apply Rgt_not_eq.
+apply Rlt_gt.
+assert (H := one_plus_correct _ _ He).
+destruct H as (H,_).
+apply Rlt_le_trans with (2 := H).
+now apply Fpos_correct.
+Qed.
+
+Theorem bnd_of_rel_bnd_p :
+  forall x y : R, forall xi ei yi : FF,
+  BND x xi -> REL x y ei ->
+  div_pp_helper xi (one_plus ei) yi = true ->
+  BND y yi.
+Proof.
+intros x y yi ei xi Hy (e,(He1,He2)) Hb.
+destruct (andb_prop _ _ Hb) as (H1,_).
+generalize (andb_prop _ _ H1). clear H1. intros (H1,_).
+generalize (andb_prop _ _ H1). clear H1. intros (H1,_).
+rewrite rel_swap with (1 := He1) (2 := He2) (3 := H1).
+apply div_pp with (1 := Hy) (3 := Hb).
+apply one_plus_correct with (1 := He1).
+Qed.
+
+Theorem bnd_of_rel_bnd_o :
+  forall x y : R, forall xi ei yi : FF,
+  BND x xi -> REL x y ei ->
+  div_op_helper xi (one_plus ei) yi = true ->
+  BND y yi.
+Proof.
+intros x y yi ei xi Hy (e,(He1,He2)) Hb.
+destruct (andb_prop _ _ Hb) as (H1,_).
+generalize (andb_prop _ _ H1). clear H1. intros (H1,_).
+generalize (andb_prop _ _ H1). clear H1. intros (H1,_).
+generalize (andb_prop _ _ H1). clear H1. intros (H1,_).
+rewrite rel_swap with (1 := He1) (2 := He2) (3 := H1).
+apply div_op with (1 := Hy) (3 := Hb).
+apply one_plus_correct with (1 := He1).
+Qed.
+
+Theorem bnd_of_rel_bnd_n :
+  forall x y : R, forall xi ei yi : FF,
+  BND x xi -> REL x y ei ->
+  div_np_helper xi (one_plus ei) yi = true ->
+  BND y yi.
+Proof.
+intros x y yi ei xi Hy (e,(He1,He2)) Hb.
+destruct (andb_prop _ _ Hb) as (H1,_).
+generalize (andb_prop _ _ H1). clear H1. intros (H1,_).
+generalize (andb_prop _ _ H1). clear H1. intros (H1,_).
+rewrite rel_swap with (1 := He1) (2 := He2) (3 := H1).
+apply div_np with (1 := Hy) (3 := Hb).
+apply one_plus_correct with (1 := He1).
+Qed.
+
 Theorem rel_refl :
   forall a : R, forall zi : FF,
   contains_zero_helper zi = true ->
