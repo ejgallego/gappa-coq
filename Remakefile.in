@@ -1,0 +1,110 @@
+all: src/Gappa_tactic.vo src/Gappa_obfuscate.vo
+
+clean: src/clean testsuite/clean
+
+check: testsuite/check
+
+Remakefile: Remakefile.in config.status
+	./config.status Remakefile
+
+configure config.status: configure.in
+	./config.status --recheck
+
+FILES = \
+	Gappa_common.v \
+	Gappa_decimal.v \
+	Gappa_definitions.v \
+	Gappa_dyadic.v \
+	Gappa_fixed.v \
+	Gappa_float.v \
+	Gappa_library.v \
+	Gappa_obfuscate.v \
+	Gappa_pred_abs.v \
+	Gappa_pred_bnd.v \
+	Gappa_pred_fixflt.v \
+	Gappa_pred_nzr.v \
+	Gappa_pred_rel.v \
+	Gappa_real.v \
+	Gappa_rewriting.v \
+	Gappa_round_aux.v \
+	Gappa_round_def.v \
+	Gappa_round.v \
+	Gappa_tactic.v \
+	Gappa_user.v
+
+OBJS = $(addprefix src/,$(addsuffix o,$(FILES)))
+
+%.vo: %.v
+	@COQDEP@ -R src Gappa ${1%.vo}.v | @REMAKE@ -r $1
+	@COQC@ -R src Gappa -dont-load-proofs ${1%.vo}.v
+
+COQSUBTREES = kernel lib interp parsing proofs pretyping tactics library toplevel
+COQINCLUDES = $(addprefix -I @COQLIBS@/, $(COQSUBTREES))
+
+src/gappatac.cmo: src/gappatac.ml
+	@OCAMLC@ -pp "@CAMLP4@o @COQLIBS@/parsing/grammar.cma" -rectypes $COQINCLUDES src/gappatac.ml -c -o $1
+
+src/gappatac.cmxs: src/gappatac.ml
+	@OCAMLOPT@ -pp "@CAMLP4@o @COQLIBS@/parsing/grammar.cma" -shared -rectypes $COQINCLUDES src/gappatac.ml -o $1
+
+MLTARGETS = $(addprefix src/, @TACTIC_TARGETS@)
+
+src/Gappa_tactic.vo: src/Gappa_tactic.v $(MLTARGETS)
+	@COQDEP@ -R src Gappa src/Gappa_tactic.v | @REMAKE@ -r $1
+	@COQC@ @TACTIC_PARAM@ -R src Gappa -dont-load-proofs src/Gappa_tactic.v
+
+src/clean:
+	rm -f $OBJS
+	cd src
+	rm -f gappatac.cmi gappatac.cmo gappatac.cmx gappatac.cmxs gappatac.o *.glob
+
+testsuite/check: src/Gappa_tactic.vo
+	set +e
+	cd testsuite
+	logfile="failures-$(date '+%Y-%m-%d').log"
+	cat /dev/null > log.tmp
+	cat /dev/null > "$logfile"
+	for f in *.v; do
+	  cp "$f" check_tmp.v
+	  @COQC@ -R ../src Gappa check_tmp.v > output.tmp 2>&1
+	  return_code=$?
+	  if [ ${return_code} -ne 0 ]; then
+	    (echo "*** $f exited with error code ${return_code}"; cat output.tmp; echo) >> "$logfile"
+	    echo "$f exited with error code ${return_code}" >> log.tmp
+	  fi
+	  rm -f check_tmp.v check_tmp.vo check_tmp.glob output.tmp
+	done
+	return_code=0
+	if [ -s log.tmp ]; then
+	  echo "*** Failures:"
+	  cat log.tmp
+	  return_code=1
+	else
+	  rm "$logfile"
+	fi
+	rm log.tmp
+	exit ${return_code}
+
+testsuite/clean:
+	rm -f testsuite/failures-*.log
+
+install:
+	prefix=@prefix@
+	exec_prefix=@exec_prefix@
+	cp $OBJS $MLTARGETS @libdir@
+
+EXTRA_DIST = \
+	configure
+
+dist: $(EXTRA_DIST)
+	PACK=@PACKAGE_TARNAME@-@PACKAGE_VERSION@
+	DIRS=$(git ls-tree -d -r --name-only HEAD)
+	FILES=$(git ls-tree -r --name-only HEAD)
+	rm -rf $PACK.tar.gz $PACK
+	mkdir $PACK
+	for d in $DIRS; do mkdir $PACK/$d; done
+	for f in $FILES ${EXTRA_DIST}; do cp $f $PACK/$f; done
+	git log --pretty="format:%ad %s" --date=short > $PACK/ChangeLog
+	rm $(find $PACK -name .gitignore)
+	tar czf $PACK.tar.gz $PACK
+	rm -rf $PACK
