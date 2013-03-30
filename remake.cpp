@@ -217,7 +217,7 @@ The set of rules from <b>Remakefile</b> is ill-formed:
 
 \section sec-compilation Compilation
 
-- On Linux: <tt>g++ -o remake remake.cpp</tt>
+- On Linux, MacOSX, and BSD: <tt>g++ -o remake remake.cpp</tt>
 - On Windows: <tt>g++ -o remake.exe remake.cpp -lws2_32</tt>
 
 Installing <b>remake</b> is needed only if <b>Remakefile</b> does not
@@ -283,7 +283,7 @@ https://github.com/apenwarr/redo for an implementation and some comprehensive do
 \section sec-licensing Licensing
 
 @author Guillaume Melquiond
-@version 0.2
+@version 0.3
 @date 2012-2013
 @copyright
 This program is free software: you can redistribute it and/or modify
@@ -324,6 +324,10 @@ GNU General Public License for more details.
 #define MACOSX
 #endif
 
+#ifdef __linux__
+#define LINUX
+#endif
+
 #ifdef WINDOWS
 #include <windows.h>
 #include <winbase.h>
@@ -349,7 +353,7 @@ typedef std::set<std::string> string_set;
 /**
  * Reference-counted shared object.
  * @note The default constructor delays the creation of the object until it
- *       is first deferenced.
+ *       is first dereferenced.
  */
 template<class T>
 struct ref_ptr
@@ -1841,13 +1845,13 @@ static void create_server()
 	if (setenv("REMAKE_SOCKET", socket_name, 1)) goto error;
 
 	// Create and listen to the socket.
-#ifdef MACOSX
+#ifdef LINUX
+	socket_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+	if (socket_fd < 0) goto error;
+#else
 	socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (socket_fd < 0) goto error;
 	if (fcntl(socket_fd, F_SETFD, FD_CLOEXEC) < 0) goto error;
-#else
-	socket_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
-	if (socket_fd < 0) goto error;
 #endif
 	if (bind(socket_fd, (struct sockaddr *)&socket_addr, len))
 		goto error;
@@ -1877,13 +1881,13 @@ void accept_client()
 	// WSAEventSelect puts sockets into nonblocking mode, so disable it here.
 	u_long nbio = 0;
 	if (ioctlsocket(fd, FIONBIO, &nbio)) goto error2;
-#elif defined(MACOSX)
+#elif defined(LINUX)
+	int fd = accept4(socket_fd, NULL, NULL, SOCK_CLOEXEC);
+	if (fd < 0) return;
+#else
 	int fd = accept(socket_fd, NULL, NULL);
 	if (fd < 0) return;
 	if (fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) return;
-#else
-	int fd = accept4(socket_fd, NULL, NULL, SOCK_CLOEXEC);
-	if (fd < 0) return;
 #endif
 	clients.push_front(client_t());
 	client_list::iterator proc = clients.begin();
