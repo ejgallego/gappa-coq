@@ -130,7 +130,6 @@ if test -z "$tactic_mode"; then tactic_mode=" none"; fi
 echo
 echo "=== Summary ==="
 echo "Installation directory   $libdir"
-echo "Module name              $module_name"
 echo "Gappa tactic            $tactic_mode"
 echo
 
