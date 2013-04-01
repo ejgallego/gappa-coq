@@ -1,3 +1,8 @@
+Version 0.19.0:
+  - switched build system to remake
+  - added support for Gappa 0.17.0
+  - proved opp_fibq, square, bnd_of_bnd_rel, bnd_of_rel_bnd
+
 Version 0.18.0:
  - improved error messages for the tactic
  - added handling of bpow function to the tactic
