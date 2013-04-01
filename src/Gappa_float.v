@@ -526,7 +526,7 @@ simpl (iter_nat (S (nat_of_P p)) positive xO xH).
 rewrite Zpos_xO.
 rewrite Zpos_xI.
 ring.
-rewrite Zneg_plus_distr.
+rewrite <- Zneg_plus_distr.
 rewrite <- (Zopp_neg p).
 ring.
 apply Rplus_le_reg_r with (Rabs x).

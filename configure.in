@@ -31,10 +31,10 @@ native_tactic=yes
 byte_tactic=yes
 
 AC_ARG_VAR(COQC, [Coq compiler command [coqc]])
-AC_MSG_CHECKING([for coqc >= 8.3])
+AC_MSG_CHECKING([for coqc >= 8.4])
 if test ! "$COQC"; then COQC=`which coqc`; fi
 coqc_version=[`"$COQC" -v | sed -n -e 's/^.*version \([0-9.]\+\).*$/\1/p'`]
-AX_VERSION_GE([$coqc_version], [8.3],
+AX_VERSION_GE([$coqc_version], [8.4],
   [ AC_MSG_RESULT([$COQC]) ],
   [ AC_MSG_RESULT([no])
     AC_MSG_ERROR([ *** Unable to find Coq (http://coq.inria.fr/)]) ])
