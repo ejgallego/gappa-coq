@@ -8,6 +8,7 @@ Remakefile: Remakefile.in config.status
 	./config.status Remakefile
 
 configure config.status: configure.in
+	autoconf
 	./config.status --recheck
 
 FILES = \
