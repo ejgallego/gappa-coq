@@ -150,22 +150,6 @@ apply div_np with (1 := Hy) (3 := Hb).
 apply one_plus_correct with (1 := He1).
 Qed.
 
-Theorem rel_add_zero :
-  forall x y a : R, forall ai zi : FF,
-  REL x y zi ->
-  BND a ai ->
-  andb (Fis0 (lower ai)) (Fis0 (upper ai)) = true ->
-  REL (x + a) (y + a) zi.
-Proof.
-intros x y a ai zi Hr Ha Hb.
-generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-unfold BND in Ha.
-rewrite 2!Fis0_correct in Ha by assumption.
-replace a with R0.
-now rewrite 2!Rplus_0_r.
-now apply Rle_antisym.
-Qed.
-
 Theorem rel_refl :
   forall a : R, forall zi : FF,
   contains_zero_helper zi = true ->
