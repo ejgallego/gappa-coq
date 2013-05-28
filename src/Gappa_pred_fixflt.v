@@ -308,25 +308,6 @@ rewrite Zplus_comm.
 now apply Zplus_le_compat_l.
 Qed.
 
-Lemma flt_format_aux :
-  forall x xn,
-  FLT x xn <-> generic_format radix2 (FLX_exp (Zpos xn)) x.
-Proof.
-intros x xn.
-split.
-intros (xf,(H1,H2)).
-apply generic_format_FLX.
-exists (Float radix2 (Fnum xf) (Fexp xf)).
-split ; trivial.
-now rewrite <- H1.
-intros H.
-apply FLX_format_generic in H ; try easy.
-destruct H as (xf,(H1,H2)).
-exists (Float2 (Fcore_defs.Fnum xf) (Fcore_defs.Fexp xf)).
-split ; trivial.
-now rewrite H1.
-Qed.
-
 Definition sub_flt_helper (xn yn zn : positive) (xyi : FF) :=
   Zle_bool (Zpos xn) (Zpos zn) &&
   Zle_bool (Zpos yn) (Zpos zn) &&
@@ -347,16 +328,16 @@ generalize (Fle2_correct _ _ H3). clear H3. intro H3.
 generalize (Fle2_correct _ _ H4). clear H4. intro H4.
 destruct (total_order_T y 0) as [[Zy|Zy]|Zy].
 (* *)
-apply <- flt_format_aux.
+apply <- FLT_iff_generic.
 unfold Rminus.
 rewrite <- (Ropp_involutive x), Rplus_comm.
 apply sterbenz.
 apply FLX_exp_monotone.
 apply generic_format_opp.
-apply -> flt_format_aux.
+apply -> FLT_iff_generic.
 now apply flt_subset with yn.
 apply generic_format_opp.
-apply -> flt_format_aux.
+apply -> FLT_iff_generic.
 now apply flt_subset with xn.
 rewrite Hxy3, <- Ropp_mult_distr_l_reverse.
 unfold Rdiv.
@@ -383,12 +364,12 @@ now apply Rle_trans with (2 := Hxy1).
 rewrite Zy, Rminus_0_r.
 now apply flt_subset with xn.
 (* *)
-apply <- flt_format_aux.
+apply <- FLT_iff_generic.
 apply sterbenz.
 apply FLX_exp_monotone.
-apply -> flt_format_aux.
+apply -> FLT_iff_generic.
 now apply flt_subset with xn.
-apply -> flt_format_aux.
+apply -> FLT_iff_generic.
 now apply flt_subset with yn.
 rewrite Hxy3.
 unfold Rdiv.
@@ -411,10 +392,10 @@ Theorem sub_flt_rev :
   FLT (y - x) zn.
 Proof.
 intros x y xn yn xyi zn Hx Hy Hxy Hb.
-apply <- flt_format_aux.
+apply <- FLT_iff_generic.
 rewrite <- Ropp_minus_distr.
 apply generic_format_opp.
-apply -> flt_format_aux.
+apply -> FLT_iff_generic.
 eapply sub_flt ; eassumption.
 Qed.
 
