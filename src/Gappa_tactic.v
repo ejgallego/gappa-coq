@@ -7,6 +7,8 @@ Require Export Gappa_library.
 
 Strategy 1000 [Fcore_generic_fmt.round].
 
+Module Gappa_Private.
+
 (* factor an integer into odd*2^e *)
 Definition float2_of_pos x :=
   let fix aux (m : positive) e { struct m } :=
@@ -951,6 +953,10 @@ Definition trans :=
   TGpos remove_unknown_pos_func remove_unknown_pos_prop ::
   TGall merge_hyps_func merge_hyps_prop ::
   nil.
+
+End Gappa_Private.
+
+Import Gappa_Private.
 
 Declare ML Module "gappatac".
 
