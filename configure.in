@@ -30,9 +30,12 @@ AC_PROG_CXX
 native_tactic=yes
 byte_tactic=yes
 
+AC_ARG_VAR(COQBIN, [path to Coq executables [empty]])
+if test ${COQBIN##*/}; then COQBIN=$COQBIN/; fi
+
 AC_ARG_VAR(COQC, [Coq compiler command [coqc]])
 AC_MSG_CHECKING([for coqc >= 8.4])
-if test ! "$COQC"; then COQC=`which coqc`; fi
+if test ! "$COQC"; then COQC=`which ${COQBIN}coqc`; fi
 coqc_version=[`"$COQC" -v | sed -n -e 's/^.*version \([0-9.]\+\).*$/\1/p'`]
 AX_VERSION_GE([$coqc_version], [8.4],
   [ AC_MSG_RESULT([$COQC]) ],
@@ -40,28 +43,43 @@ AX_VERSION_GE([$coqc_version], [8.4],
     AC_MSG_ERROR([ *** Unable to find Coq (http://coq.inria.fr/)]) ])
 
 AC_ARG_VAR(COQDEP, [Coq dependency analyzer command [coqdep]])
-AC_PATH_TOOL(COQDEP, coqdep)
+AC_MSG_CHECKING([for coqdep])
+if test ! "$COQDEP"; then COQDEP=`which ${COQBIN}coqdep`; fi
+AC_MSG_RESULT([$COQDEP])
+
+AC_ARG_VAR(CAMLBIN, [path to OCaml executables [coqc -config]])
+if test ! "$CAMLBIN"; then
+  CAMLBIN=`$COQC -config | sed -n -e 's/^CAMLBIN=\(.*\)/\1/p'`
+fi
 
 AC_ARG_VAR(OCAMLC, [OCaml compiler command [ocamlc]])
-AC_PATH_TOOL(OCAMLC, ocamlc)
+AC_MSG_CHECKING([for ocamlc])
+if test ! "$OCAMLC"; then
+  OCAMLC=`$COQC -config | sed -n -e 's/^OCAMLC=\(.*\)/\1/p'`
+  OCAMLC=`which ${CAMLBIN}$OCAMLC`
+fi
+AC_MSG_RESULT([$OCAMLC])
 
-AC_ARG_VAR(CAMLP4, [OCaml preprocessor [camlp5]])
-AC_PATH_TOOL(CAMLP4, camlp5)
+AC_ARG_VAR(CAMLP4, [OCaml preprocessor [camlp4]])
+AC_MSG_CHECKING([for camlp4])
+if test ! "$CAMLP4"; then
+  CAMLP4BIN=`$COQC -config | sed -n -e 's/^CAMLP4BIN=\(.*\)/\1/p'`
+  CAMLP4=`$COQC -config | sed -n -e 's/^CAMLP4=\(.*\)/\1/p'`
+  CAMLP4=`which ${CAMLP4BIN}$CAMLP4`
+fi
+AC_MSG_RESULT([$CAMLP4])
 
 AC_ARG_VAR(OCAMLOPT, [OCaml compiler command [ocamlopt]])
-AC_CACHE_CHECK([for ocamlopt >= 3.11], [gappa_cv_ocamlopt], [
-  if test "$OCAMLOPT"; then
-    gappa_cv_ocamlopt="$OCAMLOPT"
-  else
-    ocamlopt_path=`which ocamlopt`
-    if test -n "$ocamlopt_path"; then
-      ocamlopt_version=`"$ocamlopt_path" -version`
-      AX_VERSION_GE([$ocamlopt_version], [3.11], [gappa_cv_ocamlopt="$ocamlopt_path"])
-    fi
-  fi ])
-OCAMLOPT="$gappa_cv_ocamlopt"
-
-if test -z "$OCAMLOPT"; then native_tactic=no; fi
+AC_MSG_CHECKING([for ocamlopt >= 3.11])
+if test ! "$OCAMLOPT"; then
+  OCAMLOPT=`$COQC -config | sed -n -e 's/^OCAMLOPT=\(.*\)/\1/p'`
+  OCAMLOPT=`which ${CAMLBIN}$OCAMLOPT`
+fi
+ocamlopt_version=`$OCAMLOPT -version`
+AX_VERSION_GE([$ocamlopt_version], [3.11],
+  [ AC_MSG_RESULT([$OCAMLOPT]) ],
+  [ AC_MSG_RESULT([no])
+    native_tactic=no ])
 
 AC_MSG_CHECKING([for Flocq])
 AS_IF(
