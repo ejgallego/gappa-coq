@@ -1,8 +1,6 @@
 Require Import Reals.
 Require Import List.
-Require Import Fcore_Raux.
-Require Import Fcore_defs.
-Require Import Fcore_float_prop.
+Require Import Fcore.
 Require Export Gappa_library.
 
 Strategy 1000 [Fcore_generic_fmt.round].
@@ -134,8 +132,8 @@ Section Convert.
 
 Definition convert_format (f : Format) : Z -> Z :=
   match f with
-  | fFloat e p => Fcore_FLT.FLT_exp e p
-  | fFixed e => Fcore_FIX.FIX_exp e
+  | fFloat e p => FLT_exp e p
+  | fFixed e => FIX_exp e
   end.
 
 Definition convert_mode (m : Mode) : R -> Z :=
@@ -197,7 +195,7 @@ Definition convert_atom (a : RAtom) : Prop :=
   | raRel er ex l u => exists eps : R, (convert_expr l <= eps <= convert_expr u)%R /\ (convert_expr er = convert_expr ex * (1 + eps))%R
   | raLe x y => (convert_expr x <= convert_expr y)%R
   | raEq x y => (convert_expr x = convert_expr y)%R
-  | raFormat f x => Fcore_generic_fmt.generic_format radix2 (convert_format f) (convert_expr x)
+  | raFormat f x => generic_format radix2 (convert_format f) (convert_expr x)
   | raFalse => False
   end.
 
@@ -646,6 +644,50 @@ simpl in H1.
 now rewrite H1.
 Qed.
 
+Definition change_format_pos_func a :=
+  match a with
+  | raFormat (fFixed _ as fmt) x => raEq (reRound fmt mRndNE x) x
+  | raFormat (fFloat _ (Zpos _) as fmt) x => raEq (reRound fmt mRndNE x) x
+  | raFormat _ _ => raFalse
+  | _ => a
+  end.
+
+Lemma change_format_pos_prop :
+  stable_atom_pos change_format_pos_func.
+Proof.
+unfold change_format_pos_func.
+intros [l v u|x y l u|v w|v w|[em|em [|p|p]] x|] H ; try easy.
+simpl in H |- *.
+rewrite <- H.
+apply generic_format_round.
+apply FIX_exp_valid.
+apply valid_rnd_N.
+simpl in H |- *.
+rewrite <- H.
+apply generic_format_round.
+now apply FLT_exp_valid.
+apply valid_rnd_N.
+Qed.
+
+Definition change_format_neg_func a :=
+  match a with
+  | raFormat fmt x => raEq x (reRound fmt mRndNE x) :: nil
+  | _ => a :: nil
+  end.
+
+Lemma change_format_neg_prop :
+  stable_atom_neg change_format_neg_func.
+Proof.
+unfold change_format_neg_func.
+intros [l v u|x y l u|v w|v w|f x|] ; try nothing.
+apply Pcons ; try apply Pnil.
+simpl.
+intros H.
+apply sym_eq.
+apply round_generic with (2 := H).
+apply valid_rnd_N.
+Qed.
+
 Definition remove_unknown_pos_func a :=
   match a with
   | raBound (Some l) _ (Some u) =>
@@ -979,6 +1021,8 @@ Definition trans :=
   TGexpr remove_inv_func remove_inv_prop ::
   TGexpr gen_float_func gen_float_prop ::
   TGexpr clean_pow_func clean_pow_prop ::
+  TGneg change_format_neg_func change_format_neg_prop ::
+  TGpos change_format_pos_func change_format_pos_prop ::
   TGneg remove_unknown_neg_func remove_unknown_neg_prop ::
   TGpos remove_unknown_pos_func remove_unknown_pos_prop ::
   TGall merge_hyps_func merge_hyps_prop ::
