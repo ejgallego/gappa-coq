@@ -86,6 +86,17 @@ Inductive UnaryOp : Set :=
 Inductive BinaryOp : Set :=
   | boAdd | boSub | boMul | boDiv.
 
+Inductive Format : Set :=
+  | fFixed : Z -> Format
+  | fFloat : Z -> Z -> Format.
+
+Inductive Mode : Set :=
+  | mRndDN
+  | mRndUP
+  | mRndZR
+  | mRndNE
+  | mRndNA.
+
 (* represent an expression on real numbers *)
 Inductive RExpr :=
   | reUnknown : positive -> RExpr
@@ -100,12 +111,14 @@ Inductive RExpr :=
   | rePow10 : Z -> RExpr
   | reINR : positive -> RExpr
   | reIZR : Z -> RExpr
-  | reApply : positive -> RExpr -> RExpr.
+  | reRound : Format -> Mode -> RExpr -> RExpr.
 
 Scheme Equality for positive.
 Scheme Equality for Z.
 Scheme Equality for UnaryOp.
 Scheme Equality for BinaryOp.
+Scheme Equality for Format.
+Scheme Equality for Mode.
 Scheme Equality for RExpr.
 
 (* represent an atomic proposition *)
@@ -114,12 +127,27 @@ Inductive RAtom :=
   | raRel : RExpr -> RExpr -> RExpr -> RExpr -> RAtom
   | raLe : RExpr -> RExpr -> RAtom
   | raEq : RExpr -> RExpr -> RAtom
+  | raFormat : Format -> RExpr -> RAtom
   | raFalse : RAtom.
 
 Section Convert.
 
+Definition convert_format (f : Format) : Z -> Z :=
+  match f with
+  | fFloat e p => Fcore_FLT.FLT_exp e p
+  | fFixed e => Fcore_FIX.FIX_exp e
+  end.
+
+Definition convert_mode (m : Mode) : R -> Z :=
+  match m with
+  | mRndZR => Ztrunc
+  | mRndDN => Zfloor
+  | mRndUP => Zceil
+  | mRndNE => rndNE
+  | mRndNA => rndNA
+  end.
+
 Variable unknown_values : list R.
-Variable unknown_functions : list (R -> R).
 
 (* convert to an expression on real numbers *)
 Fixpoint convert_expr (t : RExpr) : R :=
@@ -155,8 +183,8 @@ Fixpoint convert_expr (t : RExpr) : R :=
     INR (nat_of_P x)
   | reIZR x =>
     IZR x
-  | reApply f x =>
-    nth (nat_of_P f) ((fun x => x) :: unknown_functions) (fun x => x) (convert_expr x)
+  | reRound f m x =>
+    Fcore_generic_fmt.round radix2 (convert_format f) (convert_mode m) (convert_expr x)
   end.
 
 (* convert to an atomic proposition *)
@@ -169,6 +197,7 @@ Definition convert_atom (a : RAtom) : Prop :=
   | raRel er ex l u => exists eps : R, (convert_expr l <= eps <= convert_expr u)%R /\ (convert_expr er = convert_expr ex * (1 + eps))%R
   | raLe x y => (convert_expr x <= convert_expr y)%R
   | raEq x y => (convert_expr x = convert_expr y)%R
+  | raFormat f x => Fcore_generic_fmt.generic_format radix2 (convert_format f) (convert_expr x)
   | raFalse => False
   end.
 
@@ -201,7 +230,7 @@ Fixpoint transform_expr (t : RExpr) :=
     match t with
     | reUnary o x => reUnary o (transform_expr x)
     | reBinary o x y => reBinary o (transform_expr x) (transform_expr y)
-    | reApply f x => reApply f (transform_expr x)
+    | reRound f m x => reRound f m (transform_expr x)
     | _ => t
     end.
 
@@ -276,7 +305,7 @@ Theorem transform_atom_bound_correct :
   forall a,
   convert_atom (transform_atom_bound (transform_expr f) a) <-> convert_atom a.
 Proof.
-now intros f Hf [[l|] e [u|]|x y l u|x y|x y|] ;
+now intros f Hf [[l|] e [u|]|x y l u|x y|x y|fmt x|] ;
   simpl ; split ; repeat rewrite (transform_expr_correct _ Hf).
 Qed.
 
@@ -286,7 +315,8 @@ Definition transform_atom_expr f a :=
   | raRel er ex l u => raRel (f er) (f ex) l u
   | raEq ex ey => raEq (f ex) (f ey)
   | raLe ex ey => raLe (f ex) (f ey)
-  | _ => a
+  | raFormat fmt e => raFormat fmt (f e)
+  | raFalse => a
   end.
 
 Theorem transform_atom_expr_correct :
@@ -295,7 +325,7 @@ Theorem transform_atom_expr_correct :
   forall a,
   convert_atom (transform_atom_expr (transform_expr f) a) <-> convert_atom a.
 Proof.
-now intros f Hf [l e u|x y l u|x y|x y|] ;
+now intros f Hf [l e u|x y l u|x y|x y|fmt x|] ;
   simpl ; split ; repeat rewrite (transform_expr_correct _ Hf).
 Qed.
 
@@ -327,7 +357,7 @@ Definition gen_float_func t :=
 Lemma gen_float_prop :
   stable_expr gen_float_func.
 Proof.
-intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try apply refl_equal.
+intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try apply refl_equal.
 (* unary ops *)
 destruct o ; try apply refl_equal.
 destruct x ; try apply refl_equal.
@@ -370,7 +400,7 @@ Definition clean_pow_func t :=
 Lemma clean_pow_prop :
   stable_expr clean_pow_func.
 Proof.
-intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try apply refl_equal.
+intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try apply refl_equal.
 apply (F2R_bpow radix2 x).
 apply (F2R_bpow radix10 x).
 simpl.
@@ -407,7 +437,7 @@ unfold merge_float2_aux.
 generalize (compact_float2_correct m e).
 now destruct (compact_float2 m e).
 (* . *)
-intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try apply refl_equal ; try exact (H x _).
+intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try apply refl_equal ; try exact (H x _).
 (* integer *)
 simpl.
 unfold merge_float2_aux.
@@ -439,7 +469,7 @@ Definition remove_inv_func t :=
 Lemma remove_inv_prop :
   stable_expr remove_inv_func.
 Proof.
-intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try apply refl_equal.
+intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try apply refl_equal.
 destruct o ; try apply refl_equal.
 exact (Rmult_1_l _).
 Qed.
@@ -470,8 +500,8 @@ Definition change_abs_pos_func a :=
 Lemma change_abs_pos_prop :
   stable_atom_pos change_abs_pos_func.
 Proof.
-intros [l v u|x y l u|v w|v w|] H ; try exact H.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try exact H.
+intros [l v u|x y l u|v w|v w|f x|] H ; try exact H.
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try exact H.
 destruct o ; try exact H.
 exact (proj2 H).
 Qed.
@@ -486,7 +516,7 @@ Lemma change_abs_neg_prop :
   stable_atom_neg change_abs_neg_func.
 Proof.
 unfold change_abs_neg_func.
-intros [l v u|x y l u|v w|v w|] ; try nothing.
+intros [l v u|x y l u|v w|v w|f x|] ; try nothing.
 destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try nothing.
 destruct o ; almost_nothing.
 split.
@@ -559,14 +589,14 @@ Lemma change_rel_pos_prop :
   stable_atom_pos change_rel_pos_func.
 Proof.
 unfold change_rel_pos_func.
-intros [l v u|x y l u|v w|v w|] H ; try exact H.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try exact H.
+intros [l v u|x y l u|v w|v w|f x|] H ; try exact H.
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try exact H.
 destruct o ; try exact H.
-destruct x as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try exact H.
+destruct x as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try exact H.
 destruct o ; try exact H.
-destruct w as [u|u|u v|u v|o u|o u v|u|u|u|u|u|u|f u] ; try exact H.
+destruct w as [u|u|u v|u v|o u|o u v|u|u|u|u|u|u|f m u] ; try exact H.
 destruct o ; try exact H.
-destruct v as [v|v|v w|v w|o v|o v w|v|v|v|v|v|v|f v] ; try exact H.
+destruct v as [v|v|v w|v w|o v|o v w|v|v|v|v|v|v|f m v] ; try exact H.
 destruct o ; try exact H.
 case_eq (RExpr_beq y v) ; intros Hb.
 rewrite <- internal_RExpr_dec_bl with (1 := Hb).
@@ -592,14 +622,14 @@ Lemma change_rel_neg_prop :
   stable_atom_neg change_rel_neg_func.
 Proof.
 unfold change_rel_neg_func.
-intros [l v u|x y l u|v w|v w|] ; try nothing.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try nothing.
+intros [l v u|x y l u|v w|v w|f x|] ; try nothing.
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try nothing.
 destruct o ; try nothing.
-destruct x as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try nothing.
+destruct x as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try nothing.
 destruct o ; try nothing.
-destruct w as [u|u|u v|u v|o u|o u v|u|u|u|u|u|u|f u] ; try nothing.
+destruct w as [u|u|u v|u v|o u|o u v|u|u|u|u|u|u|f m u] ; try nothing.
 destruct o ; try nothing.
-destruct v as [v|v|v w|v w|o v|o v w|v|v|v|v|v|v|f v] ; try nothing.
+destruct v as [v|v|v w|v w|o v|o v w|v|v|v|v|v|v|f m v] ; try nothing.
 destruct o ; try nothing.
 case_eq (RExpr_beq y v) ; intros Hb ; try nothing.
 assert (H1 := get_float2_bound_correct u).
@@ -638,7 +668,7 @@ Lemma remove_unknown_pos_prop :
   stable_atom_pos remove_unknown_pos_func.
 Proof.
 unfold remove_unknown_pos_func.
-intros [[l|] v [u|]|v w l u|v w|v w|] ; try easy.
+intros [[l|] v [u|]|v w l u|v w|v w|f x|] ; try easy.
 destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|xl|xl|xl|fl xl] ; try easy ;
   destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; easy.
 destruct l as [l|l|l l'|l l'|o l|o l l'|l|l|l|l|l|l|f l] ; try easy.
@@ -668,7 +698,7 @@ Lemma remove_unknown_neg_prop :
   stable_atom_neg remove_unknown_neg_func.
 Proof.
 unfold remove_unknown_neg_func.
-intros [[l|] v [u|]|v w l u|v w|v w|] ; try nothing ; try apply Pnil.
+intros [[l|] v [u|]|v w l u|v w|v w|f x|] ; try nothing ; try apply Pnil.
 destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|xl|xl|xl|fl xl] ; try apply Pnil ;
   destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; try apply Pnil ;
   nothing.
@@ -796,7 +826,7 @@ induction gh.
 easy.
 intros H H1 H2.
 change (convert_goal_aux gc gh).
-destruct a as [l' v u'|v w l' u'|v w|v w|] ; try (apply IHgh ; try apply H ; easy).
+destruct a as [l' v u'|v w l' u'|v w|v w|f x|] ; try (apply IHgh ; try apply H ; easy).
 simpl in H.
 case_eq (RExpr_beq e v) ; intros H3 ; rewrite H3 in H.
 rewrite (internal_RExpr_dec_bl _ _ H3) in H1, IHgh.
@@ -836,7 +866,7 @@ induction gh.
 easy.
 intros H1 H2.
 change (convert_goal_aux gc gh).
-destruct a as [l' v u'|v w l' u'|v w|v w|] ; try (apply IHgh ; apply H1 ; apply H2).
+destruct a as [l' v u'|v w l' u'|v w|v w|f x|] ; try (apply IHgh ; apply H1 ; apply H2).
 simpl in H1.
 now apply (merge_hyps_func_aux1_correct v l' u' gh gc).
 Qed.
@@ -867,11 +897,11 @@ Qed.
 End Convert.
 
 Inductive TG :=
-  | TGall f : (forall uv uf, stable_goal uv uf f) -> TG
-  | TGneg (f : RAtom -> list RAtom) : (forall uv uf, stable_atom_neg uv uf f) -> TG
-  | TGpos (f : RAtom -> RAtom) : (forall uv uf, stable_atom_pos uv uf f) -> TG
-  | TGbound (f : RExpr -> RExpr) : (forall uv uf, stable_expr uv uf f) -> TG
-  | TGexpr (f : RExpr -> RExpr) : (forall uv uf, stable_expr uv uf f) -> TG.
+  | TGall f : (forall uv, stable_goal uv f) -> TG
+  | TGneg (f : RAtom -> list RAtom) : (forall uv, stable_atom_neg uv f) -> TG
+  | TGpos (f : RAtom -> RAtom) : (forall uv, stable_atom_pos uv f) -> TG
+  | TGbound (f : RExpr -> RExpr) : (forall uv, stable_expr uv f) -> TG
+  | TGexpr (f : RExpr -> RExpr) : (forall uv, stable_expr uv f) -> TG.
 
 Definition transform_goal_once t g :=
   let '(gh, gc) := g in
@@ -888,11 +918,11 @@ Definition transform_goal_once t g :=
   end.
 
 Theorem transform_goal_once_correct :
-  forall uv uf t g,
-  convert_goal uv uf (transform_goal_once t g) ->
-  convert_goal uv uf g.
+  forall uv t g,
+  convert_goal uv (transform_goal_once t g) ->
+  convert_goal uv g.
 Proof.
-intros uv uf [f Hf|f Hf|f Hf|f Hf|f Hf] (gh, gc) ; simpl.
+intros uv [f Hf|f Hf|f Hf|f Hf|f Hf] (gh, gc) ; simpl.
 intros H.
 now apply Hf.
 intros H.
@@ -904,14 +934,14 @@ apply IHgh.
 now apply H1.
 induction gh.
 intros H.
-now apply -> (transform_atom_bound_correct uv uf f).
+now apply -> (transform_atom_bound_correct uv f).
 intros H1 H2.
 apply IHgh.
 apply H1.
 now apply <- transform_atom_bound_correct.
 induction gh.
 intros H.
-now apply -> (transform_atom_expr_correct uv uf f).
+now apply -> (transform_atom_expr_correct uv f).
 intros H1 H2.
 apply IHgh.
 apply H1.
@@ -922,10 +952,10 @@ Definition transform_goal :=
   fold_left (fun v t => transform_goal_once t v).
 
 Theorem transform_goal_correct :
-  forall l uv uf g,
-  convert_goal uv uf (transform_goal l g) -> convert_goal uv uf g.
+  forall l uv g,
+  convert_goal uv (transform_goal l g) -> convert_goal uv g.
 Proof.
-intros l uv uf.
+intros l uv.
 rewrite <- (rev_involutive l).
 induction (rev l) ; intros g ; simpl.
 easy.
@@ -961,18 +991,18 @@ Import Gappa_Private.
 Declare ML Module "gappatac".
 
 Ltac gappa_prepare :=
-  intros ; subst ; fold rndNE rndNA in * ;
+  intros ; fold rndNE rndNA in * ;
   gappa_quote ;
   let convert_apply t :=
     match goal with
-    | |- (convert_goal ?uv ?uf ?g) => t uv uf g
+    | |- (convert_goal ?uv ?g) => t uv g
     end in
-  convert_apply ltac:(fun uv _ g =>
+  convert_apply ltac:(fun uv g =>
     let rec generalize_list l :=
       match l with
       | (List.cons ?h ?t) => generalize h ; generalize_list t
       | List.nil => clear ; intros
       end in
     generalize_list uv) ;
-  convert_apply ltac:(fun uv uf g => refine (transform_goal_correct trans uv uf g _)) ;
-  convert_apply ltac:(fun uv uf g => let g := eval vm_compute in g in change (convert_goal uv uf g)).
+  convert_apply ltac:(fun uv g => refine (transform_goal_correct trans uv g _)) ;
+  convert_apply ltac:(fun uv g => let g := eval vm_compute in g in change (convert_goal uv g)).

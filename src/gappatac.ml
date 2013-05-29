@@ -128,6 +128,7 @@ let coq_raBound = lazy (constant "raBound")
 let coq_raRel = lazy (constant "raRel")
 let coq_raEq = lazy (constant "raEq")
 let coq_raLe = lazy (constant "raLe")
+let coq_raFormat = lazy (constant "raFormat")
 let coq_raFalse = lazy (constant "raFalse")
 
 let coq_RExpr = lazy (constant "RExpr")
@@ -143,7 +144,15 @@ let coq_reIZR = lazy (constant "reIZR")
 let coq_reInteger = lazy (constant "reInteger")
 let coq_reBinary = lazy (constant "reBinary")
 let coq_reUnary = lazy (constant "reUnary")
-let coq_reApply = lazy (constant "reApply")
+let coq_reRound = lazy (constant "reRound")
+
+let coq_mRndDN = lazy (constant "mRndDN")
+let coq_mRndNA = lazy (constant "mRndNA")
+let coq_mRndNE = lazy (constant "mRndNE")
+let coq_mRndUP = lazy (constant "mRndUP")
+let coq_mRndZR = lazy (constant "mRndZR")
+let coq_fFloat = lazy (constant "fFloat")
+let coq_fFixed = lazy (constant "fFixed")
 
 let coq_rndDN = lazy (constant "Zfloor")
 let coq_rndUP = lazy (constant "Zceil")
@@ -153,6 +162,7 @@ let coq_rndZR = lazy (constant "Ztrunc")
 let coq_round = lazy (constant "round")
 let coq_FLT_exp = lazy (constant "FLT_exp")
 let coq_FIX_exp = lazy (constant "FIX_exp")
+let coq_generic_format = lazy (constant "generic_format")
 
 let coq_boAdd = lazy (constant "boAdd")
 let coq_boSub = lazy (constant "boSub")
@@ -182,9 +192,7 @@ let coq_xO = lazy (constant "xO")
 exception NotGappa of constr
 
 let var_table = Hashtbl.create 17
-let fun_table = Hashtbl.create 17
 let var_list = ref []
-let fun_list = ref []
 let global_env = ref Environ.empty_env
 
 let mkLApp f v = mkApp (Lazy.force f, v)
@@ -262,18 +270,12 @@ let plain_of_int =
     | It_int n -> wrap n
     | It_none n -> n
 
-(** create a term [reApply ...] for an application and memoize the function term *)
-let qt_round qt_a qt_b =
-  let n =
-    try
-      Hashtbl.find fun_table qt_a
-    with Not_found ->
-      let n = mk_pos (Hashtbl.length fun_table + 1) in
-      Hashtbl.replace fun_table qt_a n;
-      fun_list := qt_a :: !fun_list;
-      n
-    in
-  mkLApp coq_reApply [|n; qt_b|]
+(** reify a format [Z->Z] *)
+let qt_fmt f =
+  match decompose_app f with
+    | c, [e;p] when c = Lazy.force coq_FLT_exp -> mkLApp coq_fFloat [|e;p|]
+    | c, [e] when c = Lazy.force coq_FIX_exp -> mkLApp coq_fFixed [|e|]
+    | _ -> raise (NotGappa f)
 
 (** reify a Coq term [t:R] *)
 let rec qt_term t =
@@ -327,14 +329,18 @@ and qt_no_Rint t =
           if c = Lazy.force coq_Rinv then gen_un coq_uoInv else
           if c = Lazy.force coq_Rabs then gen_un coq_uoAbs else
           if c = Lazy.force coq_sqrt then gen_un coq_uoSqrt else
-          try
-            let n = Hashtbl.find fun_table c in
-            mkLApp coq_reApply [|n; qt_term a|]
-          with Not_found ->
-            raise (NotGappa t)
+          raise (NotGappa t)
         end
-      | c, [u;v;w;b] when c = Lazy.force coq_round ->
-          qt_round (mkLApp coq_round [|u;v;w|]) (qt_term b)
+      | c, [_;v;w;b] when c = Lazy.force coq_round ->
+          (* TODO: check radix *)
+          let mode = match decompose_app w with
+            | c, [] when c = Lazy.force coq_rndDN -> Lazy.force coq_mRndDN
+            | c, [] when c = Lazy.force coq_rndNA -> Lazy.force coq_mRndNA
+            | c, [] when c = Lazy.force coq_rndNE -> Lazy.force coq_mRndNE
+            | c, [] when c = Lazy.force coq_rndUP -> Lazy.force coq_mRndUP
+            | c, [] when c = Lazy.force coq_rndZR -> Lazy.force coq_mRndZR
+            | _ -> raise (NotGappa w) in
+          mkLApp coq_reRound [|qt_fmt v; mode; qt_term b|]
       | c, [a;b] ->
           let gen_bin f = mkLApp coq_reBinary [|Lazy.force f; qt_term a; qt_term b|] in
           if c = Lazy.force coq_Rminus then gen_bin coq_boSub else
@@ -385,6 +391,8 @@ let qt_pred p = match decompose_app p with
       mkLApp coq_raLe [|qt_term b; qt_term a|]
   | c, [t;a;b] when c = Lazy.force coq_eq && t = Lazy.force coq_R ->
       mkLApp coq_raEq [|qt_term a; qt_term b|]
+  | c, [_;a;b] when c = Lazy.force coq_generic_format ->
+      mkLApp coq_raFormat [|qt_fmt a; qt_term b|]
   | _ -> raise (NotGappa p)
 
 (** reify hypotheses *)
@@ -404,13 +412,10 @@ let gappa_quote gl =
         mkList _RAtom (List.map (fun (_, h) -> h) l);
         qt_pred (pf_concl gl)|] in
     let uv = mkList _R !var_list in
-    let uf = mkList (mkArrow _R _R) !fun_list in
-    let e = mkLApp coq_convert_goal [|uv; uf; g|] in
+    let e = mkLApp coq_convert_goal [|uv; g|] in
     (*Pp.msgerrnl (Printer.pr_constr e);*)
     Hashtbl.clear var_table;
-    Hashtbl.clear fun_table;
     var_list := [];
-    fun_list := [];
     Tacticals.tclTHEN
       (Tacticals.tclTHEN
         (Tactics.generalize (List.map (fun (n, _) -> mkVar n) (List.rev l)))
@@ -419,9 +424,7 @@ let gappa_quote gl =
   with
     | NotGappa t ->
       Hashtbl.clear var_table;
-      Hashtbl.clear fun_table;
       var_list := [];
-      fun_list := [];
       anomalylabstrm "gappa_quote"
         (Pp.str "something wrong happened with term " ++ Printer.pr_constr t)
 
@@ -472,7 +475,7 @@ let tr_unop c = match decompose_app c with
   | _ -> raise (NotGappa c)
 
 (** translate a Coq term [c:RExpr] into [term] *)
-let rec tr_term uv uf t =
+let rec tr_term uv t =
   match decompose_app t with
     | c, [a] when c = Lazy.force coq_reUnknown ->
         let n = tr_positive a - 1 in
@@ -485,34 +488,48 @@ let rec tr_term uv uf t =
     | c, [a] when c = Lazy.force coq_reInteger ->
         Tconst (Constant.create (1, tr_arith_bigconstant a, Bigint.zero))
     | c, [op;a;b] when c = Lazy.force coq_reBinary ->
-        Tbinop (tr_binop op, tr_term uv uf a, tr_term uv uf b)
+        Tbinop (tr_binop op, tr_term uv a, tr_term uv b)
     | c, [op;a] when c = Lazy.force coq_reUnary ->
-        Tunop (tr_unop op, tr_term uv uf a)
-    | c, [a;b] when c = Lazy.force coq_reApply ->
-        let n = tr_positive a - 1 in
-        if (n < Array.length uf) then Tround (uf.(n), tr_term uv uf b)
-        else raise (NotGappa t)
+        Tunop (tr_unop op, tr_term uv a)
+    | c, [fmt;mode;a] when c = Lazy.force coq_reRound ->
+        let mode = match decompose_app mode with
+          | c, [] when c = Lazy.force coq_mRndDN -> "dn"
+          | c, [] when c = Lazy.force coq_mRndNA -> "na"
+          | c, [] when c = Lazy.force coq_mRndNE -> "ne"
+          | c, [] when c = Lazy.force coq_mRndUP -> "up"
+          | c, [] when c = Lazy.force coq_mRndZR -> "zr"
+          | _ -> raise (NotGappa mode) in
+        let rnd = match decompose_app fmt with
+          | c, [e;p] when c = Lazy.force coq_fFloat ->
+              let e = tr_arith_constant e in
+              let p = tr_arith_constant p in
+              sprintf "float<%d,%d,%s>" p e mode
+          | c, [e] when c = Lazy.force coq_fFixed ->
+              let e = tr_arith_constant e in
+              sprintf "fixed<%d,%s>" e mode
+          | _ -> raise (NotGappa fmt) in
+        Tround (rnd, tr_term uv a)
     | _ ->
         raise (NotGappa t)
 
 let tr_const c =
-  match tr_term [||] [||] c with
+  match tr_term [||] c with
     | Tconst v -> v
     | _ -> raise (NotGappa c)
 
 (** translate a Coq term [t:RAtom] into [pred] *)
-let tr_pred uv uf t =
+let tr_pred uv t =
   match decompose_app t with
     | c, [l;e;u] when c = Lazy.force coq_raBound ->
         begin match decompose_app l, decompose_app u with
           | (_, [_;l]), (_, [_;u]) ->
-              Pin (tr_term uv uf e, tr_const l, tr_const u)
+              Pin (tr_term uv e, tr_const l, tr_const u)
           | _ -> raise (NotGappa t)
         end
     | c, [er;ex;l;u] when c = Lazy.force coq_raRel ->
-        Prel (tr_term uv uf er, tr_term uv uf ex, tr_const l, tr_const u)
+        Prel (tr_term uv er, tr_term uv ex, tr_const l, tr_const u)
     | c, [er;ex] when c = Lazy.force coq_raEq ->
-        Peq (tr_term uv uf er, tr_term uv uf ex)
+        Peq (tr_term uv er, tr_term uv ex)
     | c, [] when c = Lazy.force coq_raFalse ->
         let cr i = Constant.create (1, i, Bigint.zero) in
         let c0 = cr Bigint.zero in
@@ -523,29 +540,6 @@ let tr_pred uv uf t =
 let tr_var c = match kind_of_term c with
   | Var x -> string_of_id x
   | _ -> raise (NotGappa c)
-
-(** translate a rounding function into [string] *)
-let tr_fun c = match decompose_app c with
-  | c, [rdx;fmt;mode] when c = Lazy.force coq_round ->
-      let mode = match decompose_app mode with
-        | c, [] when c = Lazy.force coq_rndDN -> "dn"
-        | c, [] when c = Lazy.force coq_rndNA -> "na"
-        | c, [] when c = Lazy.force coq_rndNE -> "ne"
-        | c, [] when c = Lazy.force coq_rndUP -> "up"
-        | c, [] when c = Lazy.force coq_rndZR -> "zr"
-        | _ -> raise (NotGappa mode) in
-      begin match decompose_app fmt with
-        | c, [e;p] when c = Lazy.force coq_FLT_exp ->
-            let e = tr_arith_constant e in
-            let p = tr_arith_constant p in
-            sprintf "float<%d,%d,%s>" p e mode
-        | c, [e] when c = Lazy.force coq_FIX_exp ->
-            let e = tr_arith_constant e in
-            sprintf "fixed<%d,%s>" e mode
-        | _ -> raise (NotGappa fmt)
-      end
-  | _ ->
-      raise (NotGappa c)
 
 (** translate a Coq term [t:list] into [list] by applying [f] to each element *)
 let tr_list f =
@@ -560,11 +554,10 @@ let tr_list f =
 (** translate a Coq term [c] of kind [convert_goal ...] *)
 let tr_goal c =
   match decompose_app c with
-    | c, [uv;uf;e] when c = Lazy.force coq_convert_goal ->
+    | c, [uv;e] when c = Lazy.force coq_convert_goal ->
         let uv = Array.of_list (tr_list tr_var uv) in
-        let uf = Array.of_list (tr_list tr_fun uf) in
         begin match decompose_app e with
-          | _, [_;_;h;g] -> (tr_list (tr_pred uv uf) h, tr_pred uv uf g)
+          | _, [_;_;h;g] -> (tr_list (tr_pred uv) h, tr_pred uv g)
           | _ -> raise (NotGappa e)
         end
     | _ -> raise (NotGappa c)
