@@ -66,26 +66,12 @@ Theorem nzr_of_nzr_rel_rev :
   forall z zr : R, forall zi : FF,
   NZR z ->
   REL z zr zi ->
-  Flt2_m1 (lower zi) = true ->
   NZR zr.
 Proof.
 intros z zr zi Hn (ze,(Hz1,Hz2)) H1.
-assert (1 + ze <> 0)%R.
-apply Rgt_not_eq.
-unfold Rgt.
-apply Rlt_le_trans with (1 + lower zi)%R.
-replace R0 with (1 + -1)%R. 2: ring.
-apply Rplus_lt_compat_l.
-now apply Flt2_m1_correct.
-apply Rplus_le_compat_l.
-apply Hz1.
-replace zr with (z * /(1 + ze))%R.
-unfold NZR.
-apply prod_neq_R0.
-exact Hn.
-now apply Rinv_neq_0_compat.
-rewrite Hz2.
-now field.
+apply Hn.
+rewrite Hz2, H1.
+apply Rmult_0_l.
 Qed.
 
 End Gappa_pred_nzr.
