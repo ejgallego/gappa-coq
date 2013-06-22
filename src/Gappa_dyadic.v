@@ -337,4 +337,18 @@ unfold float2R, F2R. simpl.
 now rewrite Rmult_1_r.
 Qed.
 
+Definition Fle2_m1 f :=
+  Fle2 (Float2 (-1) 0) f.
+
+Lemma Fle2_m1_correct :
+  forall f,
+  Fle2_m1 f = true ->
+  (-1 <= f)%R.
+Proof.
+intros f Hb.
+generalize (Fle2_correct _ _ Hb).
+unfold float2R, F2R. simpl.
+now rewrite Rmult_1_r.
+Qed.
+
 End Gappa_dyadic.

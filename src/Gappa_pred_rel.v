@@ -299,8 +299,8 @@ now rewrite <- Hx2.
 Qed.
 
 Definition mul_rr_helper (xi yi zi : FF) :=
-  Flt2_m1 (lower xi) &&
-  Flt2_m1 (lower yi) &&
+  Fle2_m1 (lower xi) &&
+  Fle2_m1 (lower yi) &&
   Fle2 (lower zi) (Fplus2 (Fplus2 (lower xi) (lower yi))
                           (Fmult2 (lower xi) (lower yi))) &&
   Fle2 (Fplus2 (Fplus2 (upper xi) (upper yi))
@@ -316,8 +316,8 @@ intros x1 x2 y1 y2 xi yi zi (xe,(Hx1,Hx2)) (ye,(Hy1,Hy2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-apply Flt2_m1_correct in H1.
-apply Flt2_m1_correct in H2.
+apply Fle2_m1_correct in H1.
+apply Fle2_m1_correct in H2.
 generalize (Fle2_correct _ _ H3).
 repeat rewrite Fplus2_correct.
 rewrite Fmult2_correct. clear H3. intro H3.
@@ -326,15 +326,14 @@ repeat rewrite Fplus2_correct.
 rewrite Fmult2_correct. clear H4. intro H4.
 exists (xe + ye + xe * ye)%R.
 split.
-apply IRcompose with (1 := Rlt_le _ _ H1) (2 := Rlt_le _ _ H2)
-  (3 := H3) (4 := H4) (5 := Hx1) (6 := Hy1).
+apply IRcompose with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := Hx1) (6 := Hy1).
 rewrite Hx2.
 rewrite Hy2.
 ring.
 Qed.
 
 Definition div_rr_helper (xi yi zi : FF) :=
-  Flt2_m1 (lower xi) &&
+  Fle2_m1 (lower xi) &&
   Flt2_m1 (lower yi) &&
   Fle2 (upper xi) (Fplus2 (Fplus2 (lower yi) (upper zi))
                           (Fmult2 (lower yi) (upper zi))) &&
@@ -351,7 +350,7 @@ intros x1 x2 y1 y2 xi yi zi (xe,(Hx1,Hx2)) (ye,(Hy1,Hy2)) Hy4 Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
-apply Flt2_m1_correct in H1.
+apply Fle2_m1_correct in H1.
 apply Flt2_m1_correct in H2.
 generalize (Fle2_correct _ _ H3).
 repeat rewrite Fplus2_correct.
@@ -361,8 +360,7 @@ repeat rewrite Fplus2_correct.
 rewrite Fmult2_correct. clear H4. intro H4.
 exists ((xe - ye) / (1 + ye))%R.
 split.
-apply IRcompose_inv with (1 := Rlt_le _ _ H1) (2 := H2)
- (3 := H4) (4 := H3) (5 := Hx1) (6 := Hy1).
+apply IRcompose_inv with (1 := H1) (2 := H2) (3 := H4) (4 := H3) (5 := Hx1) (6 := Hy1).
 rewrite Hx2.
 rewrite Hy2.
 field.
@@ -380,35 +378,24 @@ Theorem compose :
   mul_rr_helper xi yi zi = true ->
   REL x1 y2 zi.
 Proof.
-intros x1 x2 y2 xi yi zi Hx Hy Hb.
-generalize (mul_rr _ _ _ _ _ _ _ Hx Hy Hb).
-destruct Hx as (xe,(Hx1,Hx2)).
-destruct Hy as (ye,(Hy1,Hy2)).
-intros (ze,(Hz1,Hz2)).
-exists ze.
+intros x1 x2 y2 xi yi zi (xe,(Hx1,Hx2)) (ye,(Hy1,Hy2)) Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+apply Fle2_m1_correct in H1.
+apply Fle2_m1_correct in H2.
+generalize (Fle2_correct _ _ H3).
+repeat rewrite Fplus2_correct.
+rewrite Fmult2_correct. clear H3. intro H3.
+generalize (Fle2_correct _ _ H4).
+repeat rewrite Fplus2_correct.
+rewrite Fmult2_correct. clear H4. intro H4.
+exists (xe + ye + xe * ye)%R.
 split.
-exact Hz1.
-case (Req_dec y2 0) ; intro.
+apply IRcompose with (1 := H1) (2 := H2) (3 := H3) (4 := H4) (5 := Hx1) (6 := Hy1).
 rewrite Hx2.
 rewrite Hy2.
-rewrite H.
-repeat rewrite Rmult_0_l.
-apply refl_equal.
-apply Rmult_eq_reg_l with x2.
-rewrite Rmult_comm.
-now rewrite <- Rmult_assoc.
-rewrite Hy2.
-apply prod_neq_R0.
-exact H.
-apply Rgt_not_eq.
-rewrite <- (Rplus_opp_r R1).
-unfold Rgt.
-apply Rplus_lt_compat_l.
-apply Rlt_le_trans with (2 := proj1 Hy1).
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,_).
-generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,_).
-generalize (andb_prop _ _ Hb). clear Hb. intros (_,H0).
-now apply Flt2_m1_correct.
+ring.
 Qed.
 
 Theorem compose_swap :
