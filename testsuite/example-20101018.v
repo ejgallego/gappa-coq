@@ -3,8 +3,8 @@ Require Import Fcore.
 Require Import Gappa_tactic.
 Open Scope R_scope.
 
-Definition format :=
-  generic_format radix2 (FLT_exp (-1074) 53).
+Notation format :=
+  (generic_format radix2 (FLT_exp (-1074) 53)).
 Notation rnd :=
   (round radix2 (FLT_exp (-1074) 53) rndZR).
 
@@ -16,9 +16,5 @@ Goal
   format (a - b).
 Proof.
   intros a b Ha Hb Ia Ib.
-  refine (sym_eq (_ : rnd (a - b) = a - b)).
-  revert Ia Ib.
-  replace a with (rnd a).
-  replace b with (rnd b).
   gappa.
 Qed.
