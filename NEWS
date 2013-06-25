@@ -1,3 +1,7 @@
+Version 0.21.0:
+ - added support for Gappa 0.18.0
+ - added handling of formats to the tactic
+
 Version 0.20.0:
  - moved to Coq 8.4
 
