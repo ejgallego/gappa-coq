@@ -444,31 +444,6 @@ exact Hz.
 ring.
 Qed.
 
-Theorem val_xebq :
- forall a b : R, forall zi : FF,
- NZR a -> NZR b ->
- BND (b / (1 + (b - a) / a)) zi ->
- BND a zi.
-intros a b zi Ha Hb Hz.
-replace a with (b / (1 + (b - a) / a))%R.
-exact Hz.
-field.
-replace (a + (b - a))%R with b. 2: ring.
-exact (conj Ha Hb).
-Qed.
-
-Theorem val_xabq :
- forall a b : R, forall zi : FF,
- NZR a ->
- BND (a * (1 + (b - a) / a)) zi ->
- BND b zi.
-intros a b zi Ha Hz.
-replace b with (a * (1 + (b - a) / a))%R.
-exact Hz.
-field.
-exact Ha.
-Qed.
-
 Theorem div_mibq :
  forall a b c d : R, forall zi : FF,
  NZR b -> NZR c -> NZR d ->
