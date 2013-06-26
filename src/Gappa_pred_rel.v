@@ -372,6 +372,42 @@ apply Rplus_lt_compat_l with (1 := H2).
 exact Hy4.
 Qed.
 
+Definition inv_r_helper (xi zi : FF) :=
+  Flt2_m1 (lower xi) &&
+  Fpos0 (Fplus2 (Fplus2 (lower xi) (upper zi)) (Fmult2 (lower xi) (upper zi))) &&
+  Fneg0 (Fplus2 (Fplus2 (upper xi) (lower zi)) (Fmult2 (upper xi) (lower zi))).
+
+Theorem inv_r :
+  forall x1 x2 y : R, forall xi zi : FF,
+  REL x1 x2 xi -> NZR x2 ->
+  inv_r_helper xi zi = true ->
+  REL (y / x1) (y / x2) zi.
+Proof.
+intros x1 x2 y xi zi (xe,(Hx1,Hx2)) Hx3 Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+apply Flt2_m1_correct in H1.
+generalize (Fpos0_correct _ H2).
+repeat rewrite Fplus2_correct.
+rewrite Fmult2_correct. clear H2. intro H2.
+generalize (Fneg0_correct _ H3).
+repeat rewrite Fplus2_correct.
+rewrite Fmult2_correct. clear H3. intro H3.
+exists ((0 - xe) / (1 + xe))%R.
+split.
+apply IRcompose_inv with (xl := R0) (xu := R0) (2 := H1) (3 := H3) (4 := H2) (6 := Hx1).
+apply Rge_le, Ropp_0_le_ge_contravar, Rle_0_1.
+split ; apply Rle_refl.
+rewrite Hx2.
+field.
+split.
+apply Rgt_not_eq.
+apply Rlt_le_trans with (2 := Rplus_le_compat_l R1 _ _ (proj1 Hx1)).
+rewrite <- (Rplus_opp_r 1).
+apply Rplus_lt_compat_l with (1 := H1).
+exact Hx3.
+Qed.
+
 Theorem compose :
   forall x1 x2 y2 : R, forall xi yi zi : FF,
   REL x1 x2 xi -> REL x2 y2 yi ->
