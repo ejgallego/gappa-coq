@@ -17,30 +17,6 @@ apply Rgt_not_eq.
 apply Rlt_le_trans with (1 := H) (2 := proj1 (proj2 Hz)).
 Qed.
 
-Theorem nzr_of_bnd_p :
- forall z : R, forall zi : FF,
- BND z zi ->
- Fpos (lower zi) = true ->
- NZR z.
-intros z zi Hz Hb.
-generalize (Fpos_correct _ Hb). clear Hb. intro H.
-unfold NZR.
-apply Rgt_not_eq.
-apply Rlt_le_trans with (1 := H) (2 := proj1 Hz).
-Qed.
-
-Theorem nzr_of_bnd_n :
- forall z : R, forall zi : FF,
- BND z zi ->
- Fneg (upper zi) = true ->
- NZR z.
-intros z zi Hz Hb.
-generalize (Fneg_correct _ Hb). clear Hb. intro H.
-unfold NZR.
-apply Rlt_not_eq.
-apply Rle_lt_trans with (1 := proj2 Hz) (2 := H).
-Qed.
-
 Theorem nzr_of_nzr_rel :
   forall z zr : R, forall zi : FF,
   NZR zr ->
