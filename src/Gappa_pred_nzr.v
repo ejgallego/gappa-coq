@@ -2,6 +2,40 @@ Require Import Gappa_common.
 
 Section Gappa_pred_nzr.
 
+Theorem neg_nzr :
+  forall x : R,
+  NZR x ->
+  NZR (-x).
+Proof.
+unfold NZR.
+intros x Hx.
+contradict Hx.
+rewrite <- (Ropp_involutive x), Hx.
+apply Ropp_0.
+Qed.
+
+Theorem mul_nzr :
+  forall x y : R,
+  NZR x -> NZR y ->
+  NZR (x * y).
+Proof.
+intros x y Hx Hy.
+apply Rmult_integral_contrapositive.
+now split.
+Qed.
+
+Theorem div_nzr :
+  forall x y : R,
+  NZR x -> NZR y ->
+  NZR (x / y).
+Proof.
+intros x y Hx Hy.
+apply Rmult_integral_contrapositive.
+split.
+exact Hx.
+now apply Rinv_neq_0_compat.
+Qed.
+
 Theorem nzr_of_abs :
  forall z : R, forall zi : FF,
  ABS z zi ->
