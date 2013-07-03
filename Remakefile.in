@@ -43,10 +43,10 @@ COQSUBTREES = kernel lib interp parsing proofs pretyping tactics library topleve
 COQINCLUDES = $(addprefix -I @COQLIBS@/, $(COQSUBTREES))
 
 src/gappatac.cmo: src/gappatac.ml
-	@OCAMLC@ -pp "@CAMLP4@o @COQLIBS@/parsing/grammar.cma" -rectypes $COQINCLUDES -c $< -o $@
+	@OCAMLC@ -pp "@CAMLP4@o @COQLIBS@/parsing/grammar.cma" -rectypes $(COQINCLUDES) -c $< -o $@
 
 src/gappatac.cmxs: src/gappatac.ml
-	@OCAMLOPT@ -pp "@CAMLP4@o @COQLIBS@/parsing/grammar.cma" -rectypes $COQINCLUDES -shared $< -o $@
+	@OCAMLOPT@ -pp "@CAMLP4@o @COQLIBS@/parsing/grammar.cma" -rectypes $(COQINCLUDES) -shared $< -o $@
 
 MLTARGETS = $(addprefix src/, @TACTIC_TARGETS@)
 
@@ -105,7 +105,7 @@ dist: $(EXTRA_DIST)
 	rm -rf $PACK.tar.gz $PACK
 	mkdir $PACK
 	for d in $DIRS; do mkdir $PACK/$d; done
-	for f in $FILES ${EXTRA_DIST}; do cp $f $PACK/$f; done
+	for f in $FILES $(EXTRA_DIST); do cp $f $PACK/$f; done
 	git log --pretty="format:%ad %s" --date=short > $PACK/ChangeLog
 	rm `find $PACK -name .gitignore`
 	tar czf $PACK.tar.gz $PACK
