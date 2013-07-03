@@ -18,6 +18,7 @@ FILES = \
 	Gappa_round_def.v \
 	Gappa_round.v \
 	Gappa_tactic.v \
+	Gappa_tree.v \
 	Gappa_user.v
 
 OBJS = $(addprefix src/,$(addsuffix o,$(FILES)))

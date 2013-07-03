@@ -360,12 +360,15 @@ Fixpoint flatten t :=
         let t' := flatten t in
         match t' with
         | Ttree cnj' la lt =>
-          if Bool.eqb cnj cnj' then (app la la', app lt lt')
-          else (la', cons t lt')
+          match Bool.eqb cnj cnj', lt, la with
+          | true, _, _ => (app la la', app lt lt')
+          | _, nil, (a :: nil) => (cons a la', lt')
+          | _, _, _ => (la', cons t lt')
+          end
         end
       end in
     match la, lt with
-    | nil, (t :: nil) => t
+    | nil, (t :: nil) => flatten t
     | _, _ =>
       let '(la', lt') := ft lt in
       Ttree cnj (app la la') lt'
@@ -386,22 +389,25 @@ set (ft := fix ft lt :=
         let t' := flatten t in
         match t' with
         | Ttree cnj' la lt =>
-          if Bool.eqb cnj cnj' then (app la la', app lt lt')
-          else (la', cons t lt')
+          match Bool.eqb cnj cnj', lt, la with
+          | true, _, _ => (app la la', app lt lt')
+          | _, nil, (a :: nil) => (cons a la', lt')
+          | _, _, _ => (la', cons t lt')
+          end
         end
       end).
 assert (interp_tree (let '(la',lt') := ft lt in Ttree cnj (app la la') lt') rm
   <-> interp_tree (Ttree cnj la lt) rm).
 assert (interp_list_tree cnj lt rm <->
-  (let '(la', lt') := ft lt in
-   interp_lists cnj la' lt' rm)).
+  let '(la', lt') := ft lt in interp_lists cnj la' lt' rm).
 induction lt as [|t lt].
-destruct cnj as [|].
+destruct cnj.
 easy.
 split.
 intros [].
 intros [[]|[]].
 simpl.
+clearbody ft.
 destruct (ft lt) as (la'', lt'').
 specialize (flatten_correct t).
 destruct (flatten t) as (cnj',la',lt').
@@ -410,7 +416,7 @@ case Bool.eqb.
 intros H.
 rewrite <- H in flatten_correct by easy.
 clear H.
-destruct cnj as [|].
+destruct cnj.
 split.
 intros H.
 apply interp_lists_app.
@@ -444,6 +450,7 @@ now apply interp_tree_correct.
 apply IHlt in H.
 now right.
 intros _.
+assert (interp_list_tree cnj (t :: lt) rm <-> interp_lists cnj la'' (t :: lt'') rm).
 destruct cnj as [|].
 split.
 intros (H1,H2).
@@ -474,6 +481,39 @@ now left.
 now left.
 right.
 apply (proj2 IHlt).
+now right.
+(* *)
+destruct lt' as [|t' lt'] ; try easy.
+destruct la' as [|a' [|a'' la']] ; try easy.
+destruct cnj.
+split.
+intros (H1,H2).
+split.
+split.
+now apply flatten_correct.
+now apply IHlt.
+now apply IHlt.
+intros ((H1,H2),H3).
+split.
+now apply flatten_correct.
+apply IHlt.
+now split.
+split.
+intros [H'|H'].
+left.
+left.
+now apply flatten_correct.
+destruct (proj1 IHlt H') as [H''|H''].
+left.
+now right.
+now right.
+intros [[H'|H']|H'].
+left.
+now apply flatten_correct.
+apply H.
+now left.
+apply H.
+right.
 now right.
 (* *)
 clearbody ft.
@@ -518,17 +558,19 @@ now apply H.
 (* *)
 change (flatten (Ttree cnj la lt)) with
   (match la, lt with
-    | nil, (t :: nil) => t
+    | nil, (t :: nil) => flatten t
     | _, _ =>
       let '(la', lt') := ft lt in
       Ttree cnj (app la la') lt'
     end).
-clear flatten_correct.
 destruct la as [|a la].
 destruct lt as [|t lt].
-easy.
-now destruct lt as [|t' lt].
-exact H.
+now clear flatten_correct.
+destruct lt as [|t' lt].
+simpl.
+apply flatten_correct.
+now clear flatten_correct.
+now clear flatten_correct.
 Qed.
 
 Inductive atom_relation :=
@@ -650,6 +692,12 @@ Definition relate (p : pos_atom) (q : atom) : atom_relation :=
     if index_eq px qx then if index_eq py qy then weak_compare pi qi pos else ARunknown else ARunknown
   | Afix px pc, (Afix qx qc, pos) =>
     if index_eq px qx then if Zle_bool qc pc then if pos then ARimply else ARcontradict else ARunknown else ARunknown
+  | Aflt px pc, (Aflt qx qc, pos) =>
+    if index_eq px qx then if Zle_bool (Zpos pc) (Zpos qc) then if pos then ARimply else ARcontradict else ARunknown else ARunknown
+  | Anzr px, (Anzr qx, pos) =>
+    if index_eq px qx then if pos then ARimply else ARcontradict else ARunknown
+  | Aeql px py, (Aeql qx qy, pos) =>
+    if index_eq px qx then if index_eq py qy then if pos then ARimply else ARcontradict else ARunknown else ARunknown
   | _, _ => ARunknown
   end.
 
@@ -735,5 +783,441 @@ exists (Float2 m e).
 split.
 exact Hm.
 now apply Zle_trans with (1 := H).
+(* *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+clear H.
+generalize (Zle_cases (Zpos pc) (Zpos qc)).
+case Zle_bool ; try easy.
+intros H.
+destruct Hp as ((m,e),(Hm,He)).
+case pos.
+exists (Float2 m e).
+split.
+exact Hm.
+apply Zlt_le_trans with (1 := He).
+apply le_Z2R.
+change (Z2R (Zpower radix2 (Zpos pc)) <= Z2R (Zpower radix2 (Zpos qc)))%R.
+apply Z2R_le.
+now apply Zpower_le.
+intros H'.
+contradict H'.
+exists (Float2 m e).
+split.
+exact Hm.
+apply Zlt_le_trans with (1 := He).
+apply le_Z2R.
+change (Z2R (Zpower radix2 (Zpos pc)) <= Z2R (Zpower radix2 (Zpos qc)))%R.
+apply Z2R_le.
+now apply Zpower_le.
+(* *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+now case pos.
+(* *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+clear H.
+generalize (index_eq_correct py qy).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+clear H.
+now case pos.
+Qed.
 
+Inductive truth_value {A : Type} :=
+  | TVtrue
+  | TVfalse
+  | TVother : A -> truth_value.
+
+Fixpoint simplify' t p :=
+  match t with
+  | Ttree cnj la lt =>
+    let ft := fix ft lt :=
+      match lt with
+      | nil => if cnj then TVtrue else TVfalse
+      | t :: lt =>
+        match simplify' t p, cnj, ft lt with
+        | TVtrue, true, lt => lt
+        | TVtrue, false, _ => TVtrue
+        | TVfalse, true, _ => TVfalse
+        | TVfalse, false, lt => lt
+        | TVother t, true, TVtrue => TVother (t :: nil)
+        | TVother _, true, TVfalse => TVfalse
+        | TVother t, true, TVother lt => TVother (t :: lt)
+        | TVother _, false, TVtrue => TVtrue
+        | TVother t, false, TVfalse => TVother (t :: nil)
+        | TVother t, false, TVother lt => TVother (t :: lt)
+        end
+      end in
+    let fa := fix fa la :=
+      match la with
+      | nil => if cnj then TVtrue else TVfalse
+      | a :: la =>
+        match relate p a, cnj, fa la with
+        | ARimply, true, la => la
+        | ARimply, false, _ => TVtrue
+        | ARcontradict, true, _ => TVfalse
+        | ARcontradict, false, la => la
+        | ARunknown, true, TVtrue => TVother (a :: nil)
+        | ARunknown, true, TVfalse => TVfalse
+        | ARunknown, true, TVother la => TVother (a :: la)
+        | ARunknown, false, TVtrue => TVtrue
+        | ARunknown, false, TVfalse => TVother (a :: nil)
+        | ARunknown, false, TVother la => TVother (a :: la)
+        end
+      end in
+    match fa la, cnj, ft lt with
+    | TVtrue, true, TVtrue => TVtrue
+    | TVtrue, true, TVfalse => TVfalse
+    | TVtrue, true, TVother lt => TVother (flatten (Ttree cnj nil lt))
+    | TVtrue, false, _ => TVtrue
+    | TVfalse, true, _ => TVfalse
+    | TVfalse, false, TVtrue => TVtrue
+    | TVfalse, false, TVfalse => TVfalse
+    | TVfalse, false, TVother lt => TVother (flatten (Ttree cnj nil lt))
+    | TVother la, true, TVtrue => TVother (Ttree cnj la nil)
+    | TVother _, true, TVfalse => TVfalse
+    | TVother la, true, TVother lt => TVother (flatten (Ttree cnj la lt))
+    | TVother _, false, TVtrue => TVtrue
+    | TVother la, false, TVfalse => TVother (flatten (Ttree cnj la nil))
+    | TVother la, false, TVother lt => TVother (flatten (Ttree cnj la lt))
+    end
+  end.
+
+Lemma iff_True :
+  forall P : Prop, P <-> (P <-> True).
+Proof.
+split.
+now split.
+intros (_,H).
+now apply H.
+Qed.
+
+Lemma iff_False :
+  forall P : Prop, not P <-> (P <-> False).
+Proof.
+split.
+now split.
+now intros (H,_).
+Qed.
+
+Theorem simplify'_correct :
+  forall t p rm,
+  interp_pos_atom p rm ->
+  (interp_tree t rm <->
+  match simplify' t p with
+  | TVtrue => True
+  | TVfalse => False
+  | TVother t => interp_tree t rm
+  end).
+Proof.
+intros t p rm Hp.
+revert t.
+fix 1.
+intros (cnj,la,lt).
+set (ft := fix ft lt :=
+      match lt with
+      | nil => if cnj then TVtrue else TVfalse
+      | t :: lt =>
+        match simplify' t p, cnj, ft lt with
+        | TVtrue, true, lt => lt
+        | TVtrue, false, _ => TVtrue
+        | TVfalse, true, _ => TVfalse
+        | TVfalse, false, lt => lt
+        | TVother t, true, TVtrue => TVother (t :: nil)
+        | TVother _, true, TVfalse => TVfalse
+        | TVother t, true, TVother lt => TVother (t :: lt)
+        | TVother _, false, TVtrue => TVtrue
+        | TVother t, false, TVfalse => TVother (t :: nil)
+        | TVother t, false, TVother lt => TVother (t :: lt)
+        end
+      end).
+assert (Ht: interp_list_tree cnj lt rm <->
+  match ft lt with
+  | TVtrue => True
+  | TVfalse => False
+  | TVother lt => interp_list_tree cnj lt rm
+  end).
+induction lt as [|t lt] ; simpl ; clearbody ft.
+now destruct cnj.
+generalize (simplify'_correct t).
+clear simplify'_correct.
+destruct (simplify' t p) as [| |t'].
+intros (_,H).
+specialize (H I).
+destruct (ft lt) as [| |lt'].
+apply <- iff_True in IHlt.
+replace (if cnj then @TVtrue (list tree) else @TVtrue (list tree)) with (@TVtrue (list tree)) by now case cnj.
+apply -> iff_True.
+destruct cnj.
+now split.
+now left.
+apply <- iff_False in IHlt.
+destruct cnj.
+apply -> iff_False.
+now intros (_,H').
+apply -> iff_True.
+now left.
+destruct cnj.
+apply iff_trans with (2 := IHlt).
+split.
+now intros (_,H').
+intros H'.
+now split.
+apply -> iff_True.
+now left.
+intros H.
+apply <- iff_False in H.
+destruct (ft lt) as [| |lt'].
+apply <- iff_True in IHlt.
+destruct cnj.
+apply -> iff_False.
+now intros (H',_).
+apply -> iff_True.
+now right.
+apply <- iff_False in IHlt.
+replace (if cnj then @TVfalse (list tree) else @TVfalse (list tree)) with (@TVfalse (list tree)) by now case cnj.
+apply -> iff_False.
+destruct cnj.
+now intros (_,H').
+now intros [H'|H'].
+destruct cnj.
+apply -> iff_False.
+now intros (H',_).
+apply iff_trans with (2 := IHlt).
+split.
+now intros [H'|H'].
+intros H'.
+now right.
+intros H.
+destruct (ft lt) as [| |lt'].
+apply <- iff_True in IHlt.
+destruct cnj.
+now split ; intros (H1,H2) ; split ; try apply H.
+apply -> iff_True.
+now right.
+apply <- iff_False in IHlt.
+destruct cnj.
+apply -> iff_False.
+now intros (_,H').
+now split ; intros [H'|H'] ; try (left ; apply H).
+destruct cnj.
+now split ; intros (H1,H2) ; split ; try apply H ; try apply IHlt.
+split ; intros [H'|H'].
+left.
+now apply H.
+right.
+now apply IHlt.
+left.
+now apply H.
+right.
+now apply IHlt.
+(* *)
+clear simplify'_correct.
+set (fa := fix fa la :=
+      match la with
+      | nil => if cnj then TVtrue else TVfalse
+      | a :: la =>
+        match relate p a, cnj, fa la with
+        | ARimply, true, la => la
+        | ARimply, false, _ => TVtrue
+        | ARcontradict, true, _ => TVfalse
+        | ARcontradict, false, la => la
+        | ARunknown, true, TVtrue => TVother (a :: nil)
+        | ARunknown, true, TVfalse => TVfalse
+        | ARunknown, true, TVother la => TVother (a :: la)
+        | ARunknown, false, TVtrue => TVtrue
+        | ARunknown, false, TVfalse => TVother (a :: nil)
+        | ARunknown, false, TVother la => TVother (a :: la)
+        end
+      end).
+assert (Ha: interp_list_atom cnj la rm <->
+  match fa la with
+  | TVtrue => True
+  | TVfalse => False
+  | TVother la => interp_list_atom cnj la rm
+  end).
+clearbody ft.
+clear Ht.
+induction la as [|a la] ; simpl ; clearbody fa.
+now destruct cnj.
+generalize (relate_correct p a rm Hp).
+destruct (relate p a) as [| |].
+intros H.
+destruct (fa la) as [| |la'].
+apply <- iff_True in IHla.
+replace (if cnj then @TVtrue (list atom) else @TVtrue (list atom)) with (@TVtrue (list atom)) by now case cnj.
+apply -> iff_True.
+destruct cnj.
+now split.
+now left.
+apply <- iff_False in IHla.
+destruct cnj.
+apply -> iff_False.
+now intros (_,H').
+apply -> iff_True.
+now left.
+destruct cnj.
+apply iff_trans with (2 := IHla).
+split.
+now intros (_,H').
+intros H'.
+now split.
+apply -> iff_True.
+now left.
+intros H.
+destruct (fa la) as [| |la'].
+apply <- iff_True in IHla.
+destruct cnj.
+apply -> iff_False.
+now intros (H',_).
+apply -> iff_True.
+now right.
+apply <- iff_False in IHla.
+replace (if cnj then @TVfalse (list atom) else @TVfalse (list atom)) with (@TVfalse (list atom)) by now case cnj.
+apply -> iff_False.
+destruct cnj.
+now intros (_,H').
+now intros [H'|H'].
+destruct cnj.
+apply -> iff_False.
+now intros (H',_).
+apply iff_trans with (2 := IHla).
+split.
+now intros [H'|H'].
+intros H'.
+now right.
+intros _.
+destruct (fa la) as [| |la'].
+apply <- iff_True in IHla.
+destruct cnj.
+now split ; intros (H1,H2) ; split.
+apply -> iff_True.
+now right.
+apply <- iff_False in IHla.
+destruct cnj.
+apply -> iff_False.
+now intros (_,H').
+now split ; intros [H|H] ; try left.
+destruct cnj.
+now split ; intros (H1,H2) ; split ; try apply H ; try apply IHla.
+split ; intros [H'|H'].
+now left.
+right.
+now apply IHla.
+now left.
+right.
+now apply IHla.
+(* *)
+change (simplify' (Ttree cnj la lt) p) with
+    match fa la, cnj, ft lt with
+    | TVtrue, true, TVtrue => TVtrue
+    | TVtrue, true, TVfalse => TVfalse
+    | TVtrue, true, TVother lt => TVother (flatten (Ttree cnj nil lt))
+    | TVtrue, false, _ => TVtrue
+    | TVfalse, true, _ => TVfalse
+    | TVfalse, false, TVtrue => TVtrue
+    | TVfalse, false, TVfalse => TVfalse
+    | TVfalse, false, TVother lt => TVother (flatten (Ttree cnj nil lt))
+    | TVother la, true, TVtrue => TVother (Ttree cnj la nil)
+    | TVother _, true, TVfalse => TVfalse
+    | TVother la, true, TVother lt => TVother (flatten (Ttree cnj la lt))
+    | TVother _, false, TVtrue => TVtrue
+    | TVother la, false, TVfalse => TVother (flatten (Ttree cnj la nil))
+    | TVother la, false, TVother lt => TVother (flatten (Ttree cnj la lt))
+    end.
+clearbody ft fa.
+rewrite interp_tree_correct.
+destruct (fa la) as [| |la'].
+apply <- iff_True in Ha.
+destruct (ft lt) as [| |lt'].
+apply <- iff_True in Ht.
+replace (if cnj then @TVtrue tree else @TVtrue tree) with (@TVtrue tree) by now case cnj.
+apply -> iff_True.
+destruct cnj.
+now split.
+now left.
+apply <- iff_False in Ht.
+destruct cnj.
+apply -> iff_False.
+now intros (_,H').
+apply -> iff_True.
+now left.
+destruct cnj.
+rewrite flatten_correct.
+rewrite interp_tree_correct.
+now split ; intros (H1,H2) ; split ; try apply Ht.
+apply -> iff_True.
+now left.
+apply <- iff_False in Ha.
+destruct (ft lt) as [| |lt'].
+apply <- iff_True in Ht.
+destruct cnj.
+apply -> iff_False.
+now intros (H',_).
+apply -> iff_True.
+now right.
+apply <- iff_False in Ht.
+replace (if cnj then @TVfalse tree else @TVfalse tree) with (@TVfalse tree) by now case cnj.
+apply -> iff_False.
+destruct cnj.
+now intros (H',_).
+now intros [H'|H'].
+destruct cnj.
+apply -> iff_False.
+now intros (H',_).
+rewrite flatten_correct.
+rewrite interp_tree_correct.
+now split ; intros [H'|H'] ; try (right ; apply Ht).
+destruct (ft lt) as [| |lt'].
+apply <- iff_True in Ht.
+destruct cnj.
+rewrite interp_tree_correct.
+now split ; intros (H1,H2) ; split ; try apply Ha.
+apply -> iff_True.
+now right.
+apply <- iff_False in Ht.
+destruct cnj.
+apply -> iff_False.
+now intros (_,H').
+rewrite flatten_correct.
+rewrite interp_tree_correct.
+now split ; intros [H'|H'] ; try (left ; apply Ha).
+destruct cnj.
+rewrite flatten_correct.
+rewrite interp_tree_correct.
+now split ; intros (H1,H2) ; split ; try apply Ha ; try apply Ht.
+rewrite flatten_correct.
+rewrite interp_tree_correct.
+split ; intros [H'|H'].
+left.
+now apply Ha.
+right.
+now apply Ht.
+left.
+now apply Ha.
+right.
+now apply Ht.
+Qed.
+
+Theorem simplify :
+  forall t p rm,
+  interp_pos_atom p rm ->
+  interp_tree t rm ->
+  match simplify' t p with
+  | TVtrue => True
+  | TVfalse => False
+  | TVother t => interp_tree t rm
+  end.
+Proof.
+intros t p rm Hp.
+now apply simplify'_correct.
 Qed.

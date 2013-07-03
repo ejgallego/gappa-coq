@@ -12,6 +12,7 @@ Require Export Gappa_rewriting.
 Require Export Gappa_round_def.
 Require Export Gappa_fixed.
 Require Export Gappa_float.
+Require Export Gappa_tree.
 Require Export Gappa_user.
 
 Ltac finalize := vm_cast_no_check (refl_equal true).
