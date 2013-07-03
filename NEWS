@@ -1,3 +1,6 @@
+Version 0.21.1:
+ - fixed build for the tarball and the tactic
+
 Version 0.21.0:
  - added support for Gappa 0.18.0
  - added handling of formats to the tactic
