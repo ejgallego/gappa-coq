@@ -210,10 +210,105 @@ Fixpoint convert_goal_aux gh : Prop :=
   | nil => convert_atom gc
   end.
 
+Fixpoint convert_goal_aux' gh : Prop :=
+  match gh with
+  | h :: gh => convert_atom h /\ convert_goal_aux' gh
+  | nil => not (convert_atom gc)
+  end.
+
 End ConvertGoal.
 
 Definition convert_goal g :=
   let '(gh, gc) := g in convert_goal_aux gc gh.
+
+Definition convert_goal' g :=
+  let '(gh, gc) := g in not (convert_goal_aux' gc gh).
+
+Lemma decidable_atom :
+  forall a, not (not (convert_atom a)) -> convert_atom a.
+Proof.
+intros [[l|] e [u|]|x y l u|x y|x y|fmt x|] ; simpl.
+split.
+apply Rnot_lt_le.
+contradict H.
+intros (H',_).
+apply (Rlt_irrefl (convert_expr e)).
+now apply Rlt_le_trans with (1 := H).
+apply Rnot_lt_le.
+contradict H.
+intros (_,H').
+apply (Rlt_irrefl (convert_expr e)).
+now apply Rle_lt_trans with (2 := H).
+intros H.
+apply Rnot_lt_le.
+contradict H.
+now apply Rlt_not_le.
+intros H.
+apply Rnot_lt_le.
+contradict H.
+now apply Rlt_not_le.
+now intros _.
+intros H.
+destruct (Req_dec (convert_expr y) 0) as [H'|H'].
+exists (convert_expr l).
+split.
+split.
+apply Rle_refl.
+apply Rnot_lt_le.
+contradict H.
+intros (eps,((H1,H2),_)).
+apply Rle_not_lt with (2 := H).
+now apply Rle_trans with (1 := H1).
+rewrite H', Rmult_0_l.
+destruct (Req_dec (convert_expr x) 0) as [H''|H''] ; try easy.
+elim H.
+contradict H''.
+destruct H'' as (eps,(_,H'')).
+rewrite H'', H'.
+apply Rmult_0_l.
+exists (convert_expr x / convert_expr y - 1)%R.
+split.
+assert (not (not (convert_expr l <= convert_expr x / convert_expr y - 1 <= convert_expr u)%R)).
+contradict H.
+intros (eps,(H1,H2)).
+apply H.
+rewrite H2.
+now replace (convert_expr y * (1 + eps) / convert_expr y - 1)%R with eps ; [idtac | field].
+split.
+apply Rnot_lt_le.
+contradict H0.
+intros (H'',_).
+now apply Rle_not_lt with (2 := H0).
+apply Rnot_lt_le.
+contradict H0.
+intros (_,H'').
+now apply Rle_not_lt with (2 := H0).
+now field.
+intros H.
+apply Rnot_lt_le.
+contradict H.
+now apply Rlt_not_le.
+intros H.
+now destruct (Req_dec (convert_expr x) (convert_expr y)) as [H'|H'].
+intros H.
+unfold generic_format.
+match goal with |- ?x = ?y => now destruct (Req_dec x y) as [H'|H'] end.
+intros H.
+now elim H.
+Qed.
+
+Theorem convert_goal_correct :
+  forall g, convert_goal' g -> convert_goal g.
+Proof.
+intros (gh, gc).
+unfold convert_goal', convert_goal.
+induction gh as [|h gh].
+apply decidable_atom.
+intros H1 H2.
+apply IHgh.
+contradict H1.
+now split.
+Qed.
 
 Section StableExpr.
 
@@ -924,18 +1019,6 @@ unfold merge_hyps_func.
 apply merge_hyps_func_aux2_correct.
 Qed.
 
-Theorem contradict_goal :
-  forall gh gc,
-  convert_goal_aux raFalse gh -> convert_goal (gh, gc).
-Proof.
-intros gh gc.
-induction gh.
-easy.
-intros H1 H2.
-apply IHgh.
-now apply H1.
-Qed.
-
 End Convert.
 
 Inductive TG :=
@@ -1049,4 +1132,5 @@ Ltac gappa_prepare :=
       end in
     generalize_list uv) ;
   convert_apply ltac:(fun uv g => refine (transform_goal_correct trans uv g _)) ;
-  convert_apply ltac:(fun uv g => let g := eval vm_compute in g in change (convert_goal uv g)).
+  convert_apply ltac:(fun uv g => let g := eval vm_compute in g in change (convert_goal uv g)) ;
+  apply convert_goal_correct.

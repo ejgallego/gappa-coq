@@ -121,7 +121,7 @@ let coq_cons = lazy (constant "cons")
 let coq_nil = lazy (constant "nil")
 
 let coq_convert_goal = lazy (constant "convert_goal")
-let coq_contradict_goal = lazy (constant "contradict_goal")
+let coq_convert_goal_ = lazy (constant "convert_goal'")
 
 let coq_RAtom = lazy (constant "RAtom")
 let coq_raBound = lazy (constant "raBound")
@@ -551,10 +551,10 @@ let tr_list f =
     in
   aux
 
-(** translate a Coq term [c] of kind [convert_goal ...] *)
+(** translate a Coq term [c] of kind [convert_goal' ...] *)
 let tr_goal c =
   match decompose_app c with
-    | c, [uv;e] when c = Lazy.force coq_convert_goal ->
+    | c, [uv;e] when c = Lazy.force coq_convert_goal_ ->
         let uv = Array.of_list (tr_list tr_var uv) in
         begin match decompose_app e with
           | _, [_;_;h;g] -> (tr_list (tr_pred uv) h, tr_pred uv g)
@@ -625,12 +625,10 @@ let call_gappa c_of_s hl p =
   remove_file gappa_in;
   remove_file gappa_err;
   let cin = open_in gappa_out in
-  let format = Scanf.sscanf (input_line cin) "(* %d%s *)"
-    (fun i s -> (i, s = ",contradiction")) in
   let constr = c_of_s (Stream.of_channel cin) in
   close_in cin;
   remove_file gappa_out;
-  (constr, format)
+  constr
 
 (** execute [f] after disabling globalization *)
 let no_glob f =
@@ -674,31 +672,18 @@ let var_name = function
 
 (** apply to the proof term [c] all the needed variables from the context
     and as many metas as needed to match hypotheses *)
-let build_proof_term c nb_hyp contra =
+let build_proof_term c =
   let bl, _ = decompose_lam c in
-  let pf = List.fold_right (fun (x,t) pf -> mkApp (pf, [| var_name x |])) bl c in
-  let rec aux n pf =
-    if n > 0 then aux (n - 1) (mkApp (pf, [| mk_new_meta () |])) else pf
-    in
-  let pf = aux nb_hyp pf in
-  if contra then mkApp (pf, [| Lazy.force coq_False |])
-  else pf
+  List.fold_right (fun (x,t) pf -> mkApp (pf, [| var_name x |])) bl c
 
 (** the [gappa_internal] tactic *)
 let gappa_internal gl =
   try
     let (h, g) = tr_goal (pf_concl gl) in
-    let ((emap, pf), (nb_hyp, contra)) = call_gappa (constr_of_stream gl) h g in
+    let (emap, pf) = call_gappa (constr_of_stream gl) h g in
     let pf = evars_to_vmcast (project gl) (emap, pf) in
-    let pf = build_proof_term pf nb_hyp contra in
-    Tacticals.tclTHEN
-      (if contra then
-         Tactics.apply (Lazy.force coq_contradict_goal)
-       else
-         Tacticals.tclIDTAC)
-      (Tacticals.tclTHEN
-        (Tacticals.tclMAP (fun _ -> Tactics.introf) h)
-        (Tacticals.tclTHEN (Tacmach.refine_no_check pf) Tactics.assumption)) gl
+    let pf = build_proof_term pf in
+    Tacmach.refine_no_check pf gl
   with
     | NotGappa t ->
       errorlabstrm "gappa_internal"
