@@ -134,7 +134,7 @@ Theorem absurd_intersect :
  forall z : R, forall xi yi : FF,
  BND z xi -> BND z yi ->
  Flt2 (upper xi) (lower yi) = true ->
- contradiction.
+ False.
 intros z xi yi Hx Hy Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 generalize (Rle_lt_trans _ _ _ (proj2 Hx) H). clear H. intro H.
@@ -146,7 +146,7 @@ Theorem absurd_intersect_hb :
  forall z : R, forall xf : float2, forall yi : FF,
  (z <= xf)%R -> BND z yi ->
  Flt2 xf (lower yi) = true ->
- contradiction.
+ False.
 intros z xi yi Hx Hy Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 generalize (Rle_lt_trans _ _ _ Hx H). clear H. intro H.
@@ -158,7 +158,7 @@ Theorem absurd_intersect_bh :
  forall z : R, forall xi : FF, forall yf : float2,
  BND z xi -> (yf <= z)%R ->
  Flt2 (upper xi) yf = true ->
- contradiction.
+ False.
 intros z xi yi Hx Hy Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 generalize (Rle_lt_trans _ _ _ (proj2 Hx) H). clear H. intro H.

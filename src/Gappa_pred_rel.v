@@ -283,7 +283,7 @@ Theorem absurd_intersect_rr :
   forall z1 z2 : R, forall xi yi : FF,
   REL z1 z2 xi -> REL z1 z2 yi -> NZR z2 ->
   Flt2 (upper xi) (lower yi) = true ->
-  contradiction.
+  False.
 Proof.
 intros z1 z2 xi yi (xe,(Hx1,Hx2)) (ye,(Hy1,Hy2)) Hz Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.

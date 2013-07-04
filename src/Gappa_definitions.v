@@ -26,6 +26,4 @@ Definition FLT (x : R) (n : positive) :=
  exists f : float2, float2R f = x /\ (Zabs (Fnum f) < Zpower_pos 2 n)%Z.
 Definition NZR (x : R) := (x <> 0)%R.
 
-Definition contradiction := forall P : Prop, P.
-
 End Gappa_definitions.

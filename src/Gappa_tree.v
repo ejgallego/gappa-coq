@@ -1,7 +1,7 @@
 Require Import Reals List Bool.
 Require Import Gappa_common.
 
-Definition index := nat.
+Notation index := nat.
 Definition realmap := list R.
 Definition get rm n := nth n rm R0.
 
@@ -43,12 +43,13 @@ Definition interp_pos_atom a rm :=
   | Aeql x y => get rm x = get rm y
   end.
 
-Definition atom := (pos_atom * bool)%type.
+Inductive atom :=
+  Atom : pos_atom -> bool -> atom.
 
 Definition interp_atom a rm :=
   match a with
-  | (a,true) => interp_pos_atom a rm
-  | (a,false) => not (interp_pos_atom a rm)
+  | Atom a true => interp_pos_atom a rm
+  | Atom a false => not (interp_pos_atom a rm)
   end.
 
 Inductive tree :=
@@ -684,19 +685,19 @@ Qed.
 
 Definition relate (p : pos_atom) (q : atom) : atom_relation :=
   match p, q with
-  | Abnd px pi, (Abnd qx qi, pos) =>
+  | Abnd px pi, Atom (Abnd qx qi) pos =>
     if index_eq px qx then compare pi qi pos else ARunknown
-  | Aabs px pi, (Aabs qx qi, pos) =>
+  | Aabs px pi, Atom (Aabs qx qi) pos =>
     if index_eq px qx then if Fpos0 (lower qi) then compare pi qi pos else ARunknown else ARunknown
-  | Arel px py pi, (Arel qx qy qi, pos) =>
+  | Arel px py pi, Atom (Arel qx qy qi) pos =>
     if index_eq px qx then if index_eq py qy then weak_compare pi qi pos else ARunknown else ARunknown
-  | Afix px pc, (Afix qx qc, pos) =>
+  | Afix px pc, Atom (Afix qx qc) pos =>
     if index_eq px qx then if Zle_bool qc pc then if pos then ARimply else ARcontradict else ARunknown else ARunknown
-  | Aflt px pc, (Aflt qx qc, pos) =>
+  | Aflt px pc, Atom (Aflt qx qc) pos =>
     if index_eq px qx then if Zle_bool (Zpos pc) (Zpos qc) then if pos then ARimply else ARcontradict else ARunknown else ARunknown
-  | Anzr px, (Anzr qx, pos) =>
+  | Anzr px, Atom (Anzr qx) pos =>
     if index_eq px qx then if pos then ARimply else ARcontradict else ARunknown
-  | Aeql px py, (Aeql qx qy, pos) =>
+  | Aeql px py, Atom (Aeql qx qy) pos =>
     if index_eq px qx then if index_eq py qy then if pos then ARimply else ARcontradict else ARunknown else ARunknown
   | _, _ => ARunknown
   end.
@@ -1208,16 +1209,63 @@ right.
 now apply Ht.
 Qed.
 
+Scheme Equality for positive.
+Scheme Equality for Z.
+Scheme Equality for nat.
+Scheme Equality for float2.
+Scheme Equality for FF.
+Scheme Equality for pos_atom.
+Scheme Equality for atom.
+Scheme Equality for list.
+
+Fixpoint tree_beq t1 t2 : bool :=
+  match t1, t2 with
+  | Ttree cnj1 la1 lt1, Ttree cnj2 la2 lt2 =>
+    if eqb cnj1 cnj2 then
+      if list_beq atom atom_beq la1 la2 then
+        list_beq tree tree_beq lt1 lt2
+      else false
+    else false
+  end.
+
+Lemma tree_beq_correct :
+  forall t1 t2, tree_beq t1 t2 = true -> t1 = t2.
+Proof.
+fix 1.
+intros (cnj1,la1,lt1).
+intros (cnj2,la2,lt2).
+simpl.
+generalize (eqb_prop cnj1 cnj2).
+case eqb ; try easy.
+intros Hc. specialize (Hc eq_refl).
+generalize (internal_list_dec_bl _ _ internal_atom_dec_bl la1 la2).
+case list_beq ; try easy.
+intros Ha. specialize (Ha eq_refl).
+generalize (internal_list_dec_bl _ _ tree_beq_correct lt1 lt2).
+case list_beq ; try easy.
+intros Ht. specialize (Ht eq_refl).
+intros _.
+now apply f_equal3.
+Qed.
+
 Theorem simplify :
-  forall t p rm,
+  forall t t' p rm,
   interp_pos_atom p rm ->
   interp_tree t rm ->
-  match simplify' t p with
-  | TVtrue => True
-  | TVfalse => False
-  | TVother t => interp_tree t rm
-  end.
+  tree_beq (
+    match simplify' t p with
+    | TVtrue => Ttree true nil nil
+    | TVfalse => Ttree false nil nil
+    | TVother t => t
+    end) t' = true ->
+  interp_tree t' rm.
 Proof.
-intros t p rm Hp.
-now apply simplify'_correct.
+intros t t' p rm Hp Ht Hs.
+rewrite <- (tree_beq_correct _ _ Hs).
+generalize (proj1 (simplify'_correct t p rm Hp)).
+intros H.
+destruct (simplify' t p).
+easy.
+easy.
+now apply H.
 Qed.

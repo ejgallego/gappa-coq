@@ -187,7 +187,7 @@ Theorem absurd_intersect_aa :
  forall z : R, forall xi yi : FF,
  ABS z xi -> ABS z yi ->
  Flt2 (upper xi) (lower yi) = true ->
- contradiction.
+ False.
 intros z xi yi Hx Hy Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 generalize (Rle_lt_trans _ _ _ (proj2 (proj2 Hx)) H). clear H. intro H.
