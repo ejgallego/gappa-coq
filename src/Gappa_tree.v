@@ -25,6 +25,8 @@ Qed.
 
 Inductive pos_atom :=
   | Abnd : index -> FF -> pos_atom
+  | Aleq : index -> float2 -> pos_atom
+  | Ageq : index -> float2 -> pos_atom
   | Aabs : index -> FF -> pos_atom
   | Arel : index -> index -> FF -> pos_atom
   | Afix : index -> Z -> pos_atom
@@ -35,6 +37,8 @@ Inductive pos_atom :=
 Definition interp_pos_atom a rm :=
   match a with
   | Abnd x xi => BND (get rm x) xi
+  | Aleq x xu => Rle (get rm x) xu
+  | Ageq x xl => Rle xl (get rm x)
   | Aabs x xi => ABS (get rm x) xi
   | Arel x y xi => REL (get rm x) (get rm y) xi
   | Afix x xc => FIX (get rm x) xc
@@ -174,6 +178,10 @@ Definition relate (p : pos_atom) (q : pos_atom) (pos : bool) : atom_relation :=
   match p, q with
   | Abnd px pi, Abnd qx qi =>
     if index_eq px qx then compare pi qi pos else ARunknown
+  | Abnd px pi, Aleq qx qu =>
+    if index_eq px qx then if Fle2 (upper pi) qu then if pos then ARimply else ARcontradict else if Flt2 qu (lower pi) then if pos then ARcontradict else ARimply else ARunknown else ARunknown
+  | Abnd px pi, Ageq qx ql =>
+    if index_eq px qx then if Fle2 ql (lower pi) then if pos then ARimply else ARcontradict else if Flt2 (upper pi) ql then if pos then ARcontradict else ARimply else ARunknown else ARunknown
   | Aabs px pi, Aabs qx qi =>
     if index_eq px qx then if Fpos0 (lower qi) then compare pi qi pos else ARunknown else ARunknown
   | Arel px py pi, Arel qx qy qi =>
@@ -199,7 +207,7 @@ Theorem relate_correct :
   end.
 Proof.
 unfold interp_atom.
-intros [px pi|px pi|px py pi|px pc|px pc|px|px py] [qx qi|qx qi|qx qy qi|qx qc|qx qc|qx|qx qy] pos rm Hp ; try exact I ; simpl.
+intros [px pi|px pu|px pl|px pi|px py pi|px pc|px pc|px|px py] [qx qi|qx qu|qx ql|qx qi|qx qy qi|qx qc|qx qc|qx|qx qy] pos rm Hp ; try exact I ; simpl.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -207,6 +215,48 @@ intros H.
 rewrite H in Hp by easy.
 generalize (compare_correct pi qi pos _ Hp).
 now case compare.
+(* *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+generalize (Fle2_correct (upper pi) qu).
+case Fle2.
+intros H'.
+assert (Rle (get rm qx) qu).
+apply Rle_trans with (1 := proj2 Hp).
+now apply H'.
+now case pos.
+intros _.
+generalize (Flt2_correct qu (lower pi)).
+case Flt2 ; try easy.
+intros H'.
+assert (not (Rle (get rm qx) qu)).
+intros H''.
+apply Rlt_not_le with (1 := H' eq_refl).
+now apply Rle_trans with (1 := proj1 Hp).
+now case pos.
+(* *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+generalize (Fle2_correct ql (lower pi)).
+case Fle2.
+intros H'.
+assert (Rle ql (get rm qx)).
+apply Rle_trans with (2 := proj1 Hp).
+now apply H'.
+now case pos.
+intros _.
+generalize (Flt2_correct (upper pi) ql).
+case Flt2 ; try easy.
+intros H'.
+assert (not (Rle ql (get rm qx))).
+intros H''.
+apply Rlt_not_le with (1 := H' eq_refl).
+now apply Rle_trans with (2 := proj2 Hp).
+now case pos.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
