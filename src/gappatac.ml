@@ -412,7 +412,7 @@ match decompose_app p with
             mkLApp coq_rtAnd [|qt_pred a; qt_pred b|]
       end
   | c, [a;b] when c = Lazy.force coq_or ->
-      mkLApp coq_rtAtom [|mkLApp coq_rtOr [|qt_pred a; qt_pred b|]|]
+      mkLApp coq_rtOr [|qt_pred a; qt_pred b|]
   | c, [a;b] when c = Lazy.force coq_Rle ->
       mkLApp coq_rtAtom [|mkLApp coq_raLe [|qt_term a; qt_term b|]|]
   | c, [a;b] when c = Lazy.force coq_Rge ->
