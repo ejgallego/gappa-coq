@@ -67,17 +67,6 @@ rewrite bpow_plus, <- Rmult_assoc.
 now rewrite Z2R_opp, Ropp_mult_distr_l_reverse.
 Qed.
 
-Section ListProp.
-
-Variable A : Type.
-Variable P : A -> Prop.
-
-Inductive list_prop : list A -> Prop :=
-  | Pnil : list_prop nil
-  | Pcons x q : P x -> list_prop q -> list_prop (x :: q).
-
-End ListProp.
-
 Inductive UnaryOp : Set :=
   | uoNeg | uoSqrt | uoAbs | uoInv.
 
@@ -125,8 +114,16 @@ Inductive RAtom :=
   | raRel : RExpr -> RExpr -> RExpr -> RExpr -> RAtom
   | raLe : RExpr -> RExpr -> RAtom
   | raEq : RExpr -> RExpr -> RAtom
-  | raFormat : Format -> RExpr -> RAtom
-  | raFalse : RAtom.
+  | raFormat : Format -> RExpr -> RAtom.
+
+Inductive RTree :=
+  | rtTrue : RTree
+  | rtFalse : RTree
+  | rtAtom : RAtom -> RTree
+  | rtNot : RTree -> RTree
+  | rtAnd : RTree -> RTree -> RTree
+  | rtOr : RTree -> RTree -> RTree
+  | rtImpl : RTree -> RTree -> RTree.
 
 Section Convert.
 
@@ -196,118 +193,255 @@ Definition convert_atom (a : RAtom) : Prop :=
   | raLe x y => (convert_expr x <= convert_expr y)%R
   | raEq x y => (convert_expr x = convert_expr y)%R
   | raFormat f x => generic_format radix2 (convert_format f) (convert_expr x)
-  | raFalse => False
   end.
 
-Section ConvertGoal.
-
-Variable gc : RAtom.
-
-(* convert to a complete proposition *)
-Fixpoint convert_goal_aux gh : Prop :=
-  match gh with
-  | h :: gh => convert_atom h -> convert_goal_aux gh
-  | nil => convert_atom gc
+Fixpoint convert_tree (t : RTree) : Prop :=
+  match t with
+  | rtTrue => True
+  | rtFalse => False
+  | rtAtom a => convert_atom a
+  | rtNot t => not (convert_tree t)
+  | rtAnd t1 t2 => (convert_tree t1) /\ (convert_tree t2)
+  | rtOr t1 t2 => (convert_tree t1) \/ (convert_tree t2)
+  | rtImpl t1 t2 => (convert_tree t1) -> (convert_tree t2)
   end.
-
-Fixpoint convert_goal_aux' gh : Prop :=
-  match gh with
-  | h :: gh => convert_atom h /\ convert_goal_aux' gh
-  | nil => not (convert_atom gc)
-  end.
-
-End ConvertGoal.
-
-Definition convert_goal g :=
-  let '(gh, gc) := g in convert_goal_aux gc gh.
-
-Definition convert_goal' g :=
-  let '(gh, gc) := g in not (convert_goal_aux' gc gh).
 
 Lemma decidable_atom :
-  forall a, not (not (convert_atom a)) -> convert_atom a.
+  forall a, { convert_atom a } + { not (convert_atom a) }.
 Proof.
-intros [[l|] e [u|]|x y l u|x y|x y|fmt x|] ; simpl.
-split.
-apply Rnot_lt_le.
-contradict H.
-intros (H',_).
-apply (Rlt_irrefl (convert_expr e)).
-now apply Rlt_le_trans with (1 := H).
-apply Rnot_lt_le.
-contradict H.
-intros (_,H').
-apply (Rlt_irrefl (convert_expr e)).
-now apply Rle_lt_trans with (2 := H).
-intros H.
-apply Rnot_lt_le.
-contradict H.
+intros [[l|] e [u|]|x y l u|x y|x y|fmt x] ; simpl.
+destruct (Rle_lt_dec (convert_expr l) (convert_expr e)) as [Hl|Hl].
+destruct (Rle_lt_dec (convert_expr e) (convert_expr u)) as [Hu|Hu].
+now left ; split.
+right.
+intros (_,H).
+now apply Rlt_not_le with (1 := Hu).
+right.
+intros (H,_).
+now apply Rlt_not_le with (1 := Hl).
+destruct (Rle_lt_dec (convert_expr l) (convert_expr e)) as [Hl|Hl].
+now left.
+right.
 now apply Rlt_not_le.
-intros H.
-apply Rnot_lt_le.
-contradict H.
+destruct (Rle_lt_dec (convert_expr e) (convert_expr u)) as [Hu|Hu].
+now left.
+right.
 now apply Rlt_not_le.
-now intros _.
-intros H.
-destruct (Req_dec (convert_expr y) 0) as [H'|H'].
+now left.
+destruct (Req_EM_T (convert_expr y) 0) as [Zy|Zy].
+destruct (Req_EM_T (convert_expr x) 0) as [Zx|Zx].
+destruct (Rle_lt_dec (convert_expr l) (convert_expr u)) as [H|H].
+left.
 exists (convert_expr l).
 split.
 split.
 apply Rle_refl.
-apply Rnot_lt_le.
-contradict H.
+exact H.
+now rewrite Zy, Rmult_0_l.
+right.
 intros (eps,((H1,H2),_)).
-apply Rle_not_lt with (2 := H).
-now apply Rle_trans with (1 := H1).
-rewrite H', Rmult_0_l.
-destruct (Req_dec (convert_expr x) 0) as [H''|H''] ; try easy.
-elim H.
-contradict H''.
-destruct H'' as (eps,(_,H'')).
-rewrite H'', H'.
-apply Rmult_0_l.
+apply Rlt_not_le with (1 := H).
+now apply Rle_trans with eps.
+right.
+intros (eps,(_,H')).
+now rewrite Zy, Rmult_0_l in H'.
+destruct (Rle_lt_dec (convert_expr l) (convert_expr x / convert_expr y - 1)) as [Hl|Hl].
+destruct (Rle_lt_dec (convert_expr x / convert_expr y - 1) (convert_expr u)) as [Hu|Hu].
+left.
 exists (convert_expr x / convert_expr y - 1)%R.
 split.
-assert (not (not (convert_expr l <= convert_expr x / convert_expr y - 1 <= convert_expr u)%R)).
-contradict H.
-intros (eps,(H1,H2)).
-apply H.
-rewrite H2.
-now replace (convert_expr y * (1 + eps) / convert_expr y - 1)%R with eps ; [idtac | field].
-split.
-apply Rnot_lt_le.
-contradict H0.
-intros (H'',_).
-now apply Rle_not_lt with (2 := H0).
-apply Rnot_lt_le.
-contradict H0.
-intros (_,H'').
-now apply Rle_not_lt with (2 := H0).
+now split.
 now field.
-intros H.
-apply Rnot_lt_le.
-contradict H.
+right.
+intros (eps,((_,H),H')).
+apply Rlt_not_le with (1 := Hu).
+rewrite H'.
+now replace (convert_expr y * (1 + eps) / convert_expr y - 1)%R with eps ; [idtac | field].
+right.
+intros (eps,((H,_),H')).
+apply Rlt_not_le with (1 := Hl).
+rewrite H'.
+now replace (convert_expr y * (1 + eps) / convert_expr y - 1)%R with eps ; [idtac | field].
+destruct (Rle_lt_dec (convert_expr x) (convert_expr y)) as [H|H].
+now left.
+right.
 now apply Rlt_not_le.
-intros H.
-now destruct (Req_dec (convert_expr x) (convert_expr y)) as [H'|H'].
-intros H.
-unfold generic_format.
-match goal with |- ?x = ?y => now destruct (Req_dec x y) as [H'|H'] end.
-intros H.
-now elim H.
+apply Req_EM_T.
+apply Req_EM_T.
 Qed.
 
-Theorem convert_goal_correct :
-  forall g, convert_goal' g -> convert_goal g.
+Lemma decidable_tree :
+  forall t, { convert_tree t } + { not (convert_tree t) }.
 Proof.
-intros (gh, gc).
-unfold convert_goal', convert_goal.
-induction gh as [|h gh].
+induction t as [| |a|t Ht|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2].
+now left.
+now right.
 apply decidable_atom.
-intros H1 H2.
-apply IHgh.
-contradict H1.
+destruct Ht as [Ht|Ht].
+now right.
+now left.
+destruct Ht1 as [Ht1|Ht1].
+destruct Ht2 as [Ht2|Ht2].
+now left ; split.
+right.
+now intros (_,H).
+right.
+now intros (H,_).
+destruct Ht1 as [Ht1|Ht1].
+left.
+now left.
+destruct Ht2 as [Ht2|Ht2].
+left.
+now right.
+right.
+now intros [H|H].
+destruct Ht2 as [Ht2|Ht2].
+left.
+now intros _.
+destruct Ht1 as [Ht1|Ht1].
+right.
+contradict Ht2.
+now apply Ht2.
+left.
+now intros H.
+Qed.
+
+Fixpoint normalize_tree (t : RTree) (pos : bool) :=
+  match t with
+  | rtTrue => if pos then rtTrue else rtFalse
+  | rtFalse => if pos then rtFalse else rtTrue
+  | rtAtom a => if pos then t else rtNot t
+  | rtNot t => normalize_tree t (negb pos)
+  | rtImpl t1 t2 => (if pos then rtOr else rtAnd) (normalize_tree t1 (negb pos)) (normalize_tree t2 pos)
+  | rtOr t1 t2 => (if pos then rtOr else rtAnd) (normalize_tree t1 pos) (normalize_tree t2 pos)
+  | rtAnd t1 t2 => (if pos then rtAnd else rtOr) (normalize_tree t1 pos) (normalize_tree t2 pos)
+  end.
+
+Theorem normalize_tree_correct :
+  forall t pos,
+  convert_tree (normalize_tree t pos) <-> if pos then convert_tree t else not (convert_tree t).
+Proof.
+induction t as [| |a|t Ht|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2] ;
+  destruct pos ; split ; simpl ; try easy.
+intros H.
+now apply H.
+apply (Ht false).
+apply (Ht false).
+intros H.
+intros H'.
+apply H'.
+now apply (Ht true).
+intros H.
+apply (Ht true).
+now destruct (decidable_tree t) as [H'|H'].
+intros (H1,H2).
+split.
+now apply (Ht1 true).
+now apply (Ht2 true).
+intros (H1,H2).
+split.
+now apply (Ht1 true).
+now apply (Ht2 true).
+intros [H|H] (H1,H2).
+now apply (Ht1 false).
+now apply (Ht2 false).
+specialize (Ht1 false).
+specialize (Ht2 false).
+intros H.
+destruct (decidable_tree t1) as [H'|H'].
+right.
+apply Ht2.
+contradict H.
 now split.
+left.
+now apply Ht1.
+intros [H|H].
+left.
+now apply (Ht1 true).
+right.
+now apply (Ht2 true).
+intros [H|H].
+left.
+now apply (Ht1 true).
+right.
+now apply (Ht2 true).
+intros (H1,H2) [H|H].
+now apply (Ht1 false).
+now apply (Ht2 false).
+intros H.
+split.
+apply (Ht1 false).
+contradict H.
+now left.
+apply (Ht2 false).
+contradict H.
+now right.
+intros [H|H] H'.
+now apply (Ht1 false) in H.
+now apply (Ht2 true).
+intros H.
+destruct (decidable_tree t1) as [H'|H'].
+right.
+apply (Ht2 true).
+now apply H.
+left.
+now apply (Ht1 false).
+intros (H1,H2) H'.
+apply (Ht1 true) in H1.
+apply H' in H1.
+now apply (Ht2 false).
+intros H.
+split.
+destruct (decidable_tree t1) as [H'|H'].
+now apply (Ht1 true).
+now elim H.
+apply (Ht2 false).
+now contradict H.
+Qed.
+
+Fixpoint simplify_tree (t : RTree) :=
+  match t with
+  | rtNot rtTrue => rtFalse
+  | rtNot rtFalse => rtTrue
+  | rtAnd t1 t2 =>
+    match simplify_tree t1, simplify_tree t2 with
+    | rtTrue, t => t
+    | rtFalse, _ => rtFalse
+    | t, rtTrue => t
+    | _, rtFalse => rtFalse
+    | t1, t2 => rtAnd t1 t2
+    end
+  | rtOr t1 t2 =>
+    match simplify_tree t1, simplify_tree t2 with
+    | rtTrue, _ => rtTrue
+    | rtFalse, t => t
+    | _, rtTrue => rtTrue
+    | t, rtFalse => t
+    | t1, t2 => rtOr t1 t2
+    end
+  | _ => t
+  end.
+
+Theorem simplify_tree_correct :
+  forall t,
+  convert_tree t -> convert_tree (simplify_tree t).
+Proof.
+induction t as [| |a|t Ht|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2] ; try easy.
+destruct t ; try easy.
+intros H.
+now apply H.
+intros (H1,H2).
+specialize (Ht1 H1).
+specialize (Ht2 H2).
+simpl.
+destruct (simplify_tree t1) ; try easy ; destruct (simplify_tree t2) ; try easy ; split ; easy.
+intros [H|H].
+specialize (Ht1 H).
+simpl.
+destruct (simplify_tree t1) ; try easy ; destruct (simplify_tree t2) ; try easy ; left ; easy.
+specialize (Ht2 H).
+simpl.
+destruct (simplify_tree t1) ; try easy ; destruct (simplify_tree t2) ; try easy ; right ; easy.
 Qed.
 
 Section StableExpr.
@@ -341,47 +475,8 @@ Qed.
 
 End StableExpr.
 
-Section StableAtomNeg.
-
-Definition stable_atom_neg f :=
-  forall a, list_prop _ (fun b => convert_atom a -> convert_atom b) (f a).
-
-Variable chg_atom_neg : RAtom -> list RAtom.
-
-Fixpoint transform_goal_neg gh :=
-  match gh with
-  | h :: gh => chg_atom_neg h ++ (transform_goal_neg gh)
-  | nil => nil
-  end.
-
-Theorem transform_goal_neg_correct :
-  stable_atom_neg chg_atom_neg ->
-  forall gh gc, convert_goal_aux gc (transform_goal_neg gh) -> convert_goal_aux gc gh.
-Proof.
-intros Hn gh gc.
-induction gh.
-easy.
-simpl.
-intros H1 H2.
-apply IHgh.
-clear IHgh.
-specialize (Hn a).
-induction (chg_atom_neg a).
-exact H1.
-inversion_clear Hn.
-apply IHl.
-exact H0.
-apply H1.
-now apply H.
-Qed.
-
-End StableAtomNeg.
-
-Definition stable_atom_pos f :=
-  forall a, convert_atom (f a) -> convert_atom a.
-
-Definition stable_goal f :=
-  forall gh gc, convert_goal (f gh gc) -> convert_goal (gh, gc).
+Definition stable_atom f :=
+  forall a, convert_atom (f a) <-> convert_atom a.
 
 Definition transform_atom_bound f a :=
   match a with
@@ -395,10 +490,9 @@ Definition transform_atom_bound f a :=
 Theorem transform_atom_bound_correct :
   forall f,
   stable_expr f ->
-  forall a,
-  convert_atom (transform_atom_bound (transform_expr f) a) <-> convert_atom a.
+  stable_atom (transform_atom_bound (transform_expr f)).
 Proof.
-now intros f Hf [[l|] e [u|]|x y l u|x y|x y|fmt x|] ;
+now intros f Hf [[l|] e [u|]|x y l u|x y|x y|fmt x] ;
   simpl ; split ; repeat rewrite (transform_expr_correct _ Hf).
 Qed.
 
@@ -409,18 +503,78 @@ Definition transform_atom_expr f a :=
   | raEq ex ey => raEq (f ex) (f ey)
   | raLe ex ey => raLe (f ex) (f ey)
   | raFormat fmt e => raFormat fmt (f e)
-  | raFalse => a
   end.
 
 Theorem transform_atom_expr_correct :
   forall f,
   stable_expr f ->
-  forall a,
-  convert_atom (transform_atom_expr (transform_expr f) a) <-> convert_atom a.
+  stable_atom (transform_atom_expr (transform_expr f)).
 Proof.
-now intros f Hf [l e u|x y l u|x y|x y|fmt x|] ;
+now intros f Hf [l e u|x y l u|x y|x y|fmt x] ;
   simpl ; split ; repeat rewrite (transform_expr_correct _ Hf).
 Qed.
+
+Definition stable_tree f :=
+  forall t, convert_tree (f t) <-> convert_tree t.
+
+Section StableTree.
+
+Variable chg_atom : RAtom -> RAtom.
+
+Fixpoint transform_tree_atom (t : RTree) : RTree :=
+  match t with
+  | rtTrue => rtTrue
+  | rtFalse => rtFalse
+  | rtAtom a => rtAtom (chg_atom a)
+  | rtNot t => rtNot (transform_tree_atom t)
+  | rtAnd t1 t2 => rtAnd (transform_tree_atom t1) (transform_tree_atom t2)
+  | rtOr t1 t2 => rtOr (transform_tree_atom t1) (transform_tree_atom t2)
+  | rtImpl t1 t2 => rtImpl (transform_tree_atom t1) (transform_tree_atom t2)
+  end.
+
+Theorem transform_tree_atom_correct :
+  stable_atom chg_atom ->
+  stable_tree transform_tree_atom.
+Proof.
+intros Hs t.
+induction t as [| |a|t Ht|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2] ; simpl ; intuition.
+now apply Hs.
+now apply Hs.
+Qed.
+
+End StableTree.
+
+Definition stable_atom_tree f :=
+  forall a (pos : bool),
+  (if pos then convert_atom a else not (convert_atom a)) ->
+  convert_tree (f pos a).
+
+Section StableTree'.
+
+Variable chg_atom : bool -> RAtom -> RTree.
+
+Fixpoint transform_tree_atom' (t : RTree) : RTree :=
+  match t with
+  | rtTrue => rtTrue
+  | rtFalse => rtFalse
+  | rtAtom a => chg_atom true a
+  | rtNot (rtAtom a) => chg_atom false a
+  | rtAnd t1 t2 => rtAnd (transform_tree_atom' t1) (transform_tree_atom' t2)
+  | rtOr t1 t2 => rtOr (transform_tree_atom' t1) (transform_tree_atom' t2)
+  | _ => t
+  end.
+
+Theorem transform_tree_atom'_correct :
+  stable_atom_tree chg_atom ->
+  forall t,
+  convert_tree t -> convert_tree (transform_tree_atom' t).
+Proof.
+intros Hs t.
+induction t as [| |a|t Ht|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2] ; simpl ; intuition.
+destruct t ; intuition.
+Qed.
+
+End StableTree'.
 
 (* transform INR and IZR into real integers, change a/b and a*2^b into floats *)
 Definition gen_float_func t :=
@@ -581,42 +735,24 @@ rewrite (transform_expr_correct _ gen_float_prop).
 now rewrite (transform_expr_correct _ remove_inv_prop).
 Qed.
 
-Ltac nothing := apply Pcons ; try apply Pnil ; intros H ; exact H.
-Ltac almost_nothing := apply Pcons ; try apply Pnil ; intros H ; try exact H.
-
-Definition change_abs_pos_func a :=
+Definition change_abs_func a :=
   match a with
   | raLe (reUnary uoAbs u as u') v => raBound (Some (reFloat2 0 0)) u' (Some v)
   | _ => a
   end.
 
-Lemma change_abs_pos_prop :
-  stable_atom_pos change_abs_pos_func.
+Lemma change_abs_prop :
+  stable_atom change_abs_func.
 Proof.
-intros [l v u|x y l u|v w|v w|f x|] H ; try exact H.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try exact H.
-destruct o ; try exact H.
-exact (proj2 H).
-Qed.
-
-Definition change_abs_neg_func a :=
-  match a with
-  | raLe (reUnary uoAbs u as u') v => raBound (Some (reFloat2 0 0)) u' (Some v) :: nil
-  | _ => a :: nil
-  end.
-
-Lemma change_abs_neg_prop :
-  stable_atom_neg change_abs_neg_func.
-Proof.
-unfold change_abs_neg_func.
-intros [l v u|x y l u|v w|v w|f x|] ; try nothing.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f x] ; try nothing.
-destruct o ; almost_nothing.
+intros [l v u|x y l u|v w|v w|f x] ; try easy.
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try easy.
+destruct o ; try easy.
 split.
-simpl.
-unfold float2R.
-rewrite F2R_0.
+now intros (_,H).
+split.
+replace (convert_expr (reFloat2 0 0)) with R0.
 apply Rabs_pos.
+apply eq_sym, Rmult_0_l.
 exact H.
 Qed.
 
@@ -669,121 +805,85 @@ now rewrite Ropp_involutive.
 apply H1.
 Qed.
 
-Definition change_rel_pos_func a :=
+Definition change_rel_func a :=
   match a with
   | raLe (reUnary uoAbs (reBinary boSub er ex)) (reBinary boMul u (reUnary uoAbs ex')) =>
     if RExpr_beq ex ex' then
-      raRel er ex (reUnary uoNeg u) u
+      match get_float2_bound u with
+      | reFloat2 (Zpos m) e => raRel er ex (reFloat2 (Zneg m) e) (reFloat2 (Zpos m) e)
+      | _ => a
+      end
     else a
   | _ => a
   end.
 
-Lemma change_rel_pos_prop :
-  stable_atom_pos change_rel_pos_func.
+Lemma change_rel_prop :
+  stable_atom change_rel_func.
 Proof.
-unfold change_rel_pos_func.
-intros [l v u|x y l u|v w|v w|f x|] H ; try exact H.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try exact H.
-destruct o ; try exact H.
-destruct x as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try exact H.
-destruct o ; try exact H.
-destruct w as [u|u|u v|u v|o u|o u v|u|u|u|u|u|u|f m u] ; try exact H.
-destruct o ; try exact H.
-destruct v as [v|v|v w|v w|o v|o v w|v|v|v|v|v|v|f m v] ; try exact H.
-destruct o ; try exact H.
-case_eq (RExpr_beq y v) ; intros Hb.
+unfold change_rel_func.
+intros [l v u|x y l u|v w|v w|f x] ; try easy.
+destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try easy.
+destruct o ; try easy.
+destruct x as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try easy.
+destruct o ; try easy.
+destruct w as [u|u|u v|u v|o u|o u v|u|u|u|u|u|u|f m u] ; try easy.
+destruct o ; try easy.
+destruct v as [v|v|v w|v w|o v|o v w|v|v|v|v|v|v|f m v] ; try easy.
+destruct o ; try easy.
+case_eq (RExpr_beq y v) ; try easy.
+intros Hb.
 rewrite <- internal_RExpr_dec_bl with (1 := Hb).
-2: now rewrite Hb in H.
-simpl.
-apply <- change_rel_aux.
-now rewrite Hb in H.
-Qed.
-
-Definition change_rel_neg_func a :=
-  match a with
-  | raLe (reUnary uoAbs (reBinary boSub er ex)) (reBinary boMul b (reUnary uoAbs ex')) =>
-    if RExpr_beq ex ex' then
-      match get_float2_bound b with
-      | reFloat2 (Zpos m) e => raRel er ex (reFloat2 (Zneg m) e) (reFloat2 (Zpos m) e) :: nil
-      | _ => a :: nil
-      end
-    else a :: nil
-  | _ => a :: nil
-  end.
-
-Lemma change_rel_neg_prop :
-  stable_atom_neg change_rel_neg_func.
-Proof.
-unfold change_rel_neg_func.
-intros [l v u|x y l u|v w|v w|f x|] ; try nothing.
-destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try nothing.
-destruct o ; try nothing.
-destruct x as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try nothing.
-destruct o ; try nothing.
-destruct w as [u|u|u v|u v|o u|o u v|u|u|u|u|u|u|f m u] ; try nothing.
-destruct o ; try nothing.
-destruct v as [v|v|v w|v w|o v|o v w|v|v|v|v|v|v|f m v] ; try nothing.
-destruct o ; try nothing.
-case_eq (RExpr_beq y v) ; intros Hb ; try nothing.
-assert (H1 := get_float2_bound_correct u).
-destruct (get_float2_bound u) as [u1|u1|m e|u1 u2|o u1|o u1 u2|u1|u1|u1|u1|u1|u1|f u1] ; try nothing.
-destruct m as [|m|m] ; almost_nothing.
-simpl.
+assert (H := get_float2_bound_correct u).
+destruct (get_float2_bound u) as [u1|u1|m e|u1 u2|o u1|o u1 u2|u1|u1|u1|u1|u1|u1|f u1] ; try easy.
+destruct m as [|m|m] ; try easy.
+simpl in H |- *.
 change (Float2 (Zneg m) e) with (Gappa_dyadic.Fopp2 (Float2 (Zpos m) e)).
 rewrite Gappa_dyadic.Fopp2_correct.
+rewrite H.
+split ; intro H'.
+now apply <- change_rel_aux.
 apply -> change_rel_aux.
 split.
+rewrite <- H.
 now apply (Gappa_dyadic.Fpos0_correct (Float2 (Zpos m) e)).
-rewrite <- internal_RExpr_dec_bl with (1 := Hb) in H.
-simpl in H1.
-now rewrite H1.
+exact H'.
 Qed.
 
-Definition change_format_pos_func a :=
-  match a with
-  | raFormat (fFixed _ as fmt) x => raEq (reRound fmt mRndNE x) x
-  | raFormat (fFloat _ (Zpos _) as fmt) x => raEq (reRound fmt mRndNE x) x
-  | raFormat _ _ => raFalse
-  | _ => a
-  end.
+Definition change_format_func (pos : bool) a :=
+  let a' :=
+    match a with
+    | raFormat (fFixed _ as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
+    | raFormat (fFloat _ (Zpos _) as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
+    | _ => a
+    end in
+  if pos then rtAtom a' else rtNot (rtAtom a').
 
-Lemma change_format_pos_prop :
-  stable_atom_pos change_format_pos_func.
+Lemma change_format_prop :
+  stable_atom_tree change_format_func.
 Proof.
-unfold change_format_pos_func.
-intros [l v u|x y l u|v w|v w|[em|em [|p|p]] x|] H ; try easy.
-simpl in H |- *.
+unfold change_format_func.
+intros [l v u|x y l u|v w|v w|[em|em [|p|p]] x] pos ; try (case pos ; easy) ; simpl ; intros H.
+destruct pos ; simpl.
+apply sym_eq, round_generic.
+apply valid_rnd_N.
+exact H.
+contradict H.
 rewrite <- H.
 apply generic_format_round.
 apply FIX_exp_valid.
 apply valid_rnd_N.
-simpl in H |- *.
+destruct pos ; simpl.
+apply sym_eq, round_generic.
+apply valid_rnd_N.
+exact H.
+contradict H.
 rewrite <- H.
 apply generic_format_round.
 now apply FLT_exp_valid.
 apply valid_rnd_N.
 Qed.
 
-Definition change_format_neg_func a :=
-  match a with
-  | raFormat fmt x => raEq x (reRound fmt mRndNE x) :: nil
-  | _ => a :: nil
-  end.
-
-Lemma change_format_neg_prop :
-  stable_atom_neg change_format_neg_func.
-Proof.
-unfold change_format_neg_func.
-intros [l v u|x y l u|v w|v w|f x|] ; try nothing.
-apply Pcons ; try apply Pnil.
-simpl.
-intros H.
-apply sym_eq.
-apply round_generic with (2 := H).
-apply valid_rnd_N.
-Qed.
-
-Definition remove_unknown_pos_func a :=
+Definition remove_unknown_func (pos : bool) a :=
   match a with
   | raBound (Some l) _ (Some u) =>
     match l with
@@ -791,325 +891,113 @@ Definition remove_unknown_pos_func a :=
     | reFloat2 _ _ =>
       match u with
       | reInteger _
-      | reFloat2 _ _ => a
-      | _ => raFalse
+      | reFloat2 _ _ => if pos then rtAtom a else rtNot (rtAtom a)
+      | _ => rtTrue
       end
-    | _ => raFalse
+    | _ => rtTrue
     end
-  | raRel _ _ (reFloat2 _ _) (reFloat2 _ _) => a
-  | raEq _ _ => a
-  | _ => raFalse
+  | raRel _ _ (reFloat2 _ _) (reFloat2 _ _) => if pos then rtAtom a else rtNot (rtAtom a)
+  | raEq _ _ => if pos then rtAtom a else rtNot (rtAtom a)
+  | _ => rtTrue
   end.
 
-Lemma remove_unknown_pos_prop :
-  stable_atom_pos remove_unknown_pos_func.
+Lemma remove_unknown_prop :
+  stable_atom_tree remove_unknown_func.
 Proof.
-unfold remove_unknown_pos_func.
-intros [[l|] v [u|]|v w l u|v w|v w|f x|] ; try easy.
-destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|xl|xl|xl|fl xl] ; try easy ;
-  destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; easy.
+intros [[l|] v [u|]|x y l u|v w|v w|[em|em [|p|p]] x] pos ; try (case pos ; easy) ; simpl ; intros H.
+destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|xl|xl|xl|fl xl] ; try easy.
+destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; try easy.
+now destruct pos.
+now destruct pos.
+destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; try easy.
+now destruct pos.
+now destruct pos.
 destruct l as [l|l|l l'|l l'|o l|o l l'|l|l|l|l|l|l|f l] ; try easy.
 destruct u as [u|u|u u'|u u'|o u|o u u'|u|u|u|u|u|u|f u] ; try easy.
-Qed.
-
-Definition remove_unknown_neg_func a :=
-  match a with
-  | raBound (Some l) _ (Some u) =>
-    match l with
-    | reInteger _
-    | reFloat2 _ _ =>
-      match u with
-      | reInteger _
-      | reFloat2 _ _ => a :: nil
-      | _ => nil
-      end
-    | _ => nil
-    end
-  | raBound _ _ _ => a :: nil
-  | raRel _ _ (reFloat2 _ _) (reFloat2 _ _) => a :: nil
-  | raEq _ _ => a :: nil
-  | _ => nil
-  end.
-
-Lemma remove_unknown_neg_prop :
-  stable_atom_neg remove_unknown_neg_func.
-Proof.
-unfold remove_unknown_neg_func.
-intros [[l|] v [u|]|v w l u|v w|v w|f x|] ; try nothing ; try apply Pnil.
-destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|xl|xl|xl|fl xl] ; try apply Pnil ;
-  destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; try apply Pnil ;
-  nothing.
-destruct l as [l|l|l l'|l l'|o l|o l l'|l|l|l|l|l|l|f l] ; try apply Pnil.
-destruct u as [u|u|u u'|u u'|o u|o u u'|u|u|u|u|u|u|f u] ; try apply Pnil ; nothing.
-Qed.
-
-Definition Gmax_lower x y :=
-  match x, y with
-  | None, _ => Some y
-  | _, None => Some x
-  | Some (reFloat2 xm xe as x'), Some (reFloat2 ym ye as y') =>
-    Some (Some (if Gappa_dyadic.Fle2 (Float2 xm xe) (Float2 ym ye) then y' else x'))
-  | _, _ => None
-  end.
-
-Definition Gmin_upper x y :=
-  match x, y with
-  | None, _ => Some y
-  | _, None => Some x
-  | Some (reFloat2 xm xe as x'), Some (reFloat2 ym ye as y') =>
-    Some (Some (if Gappa_dyadic.Fle2 (Float2 xm xe) (Float2 ym ye) then x' else y'))
-  | _, _ => None
-  end.
-
-Lemma Gmax_lower_correct :
-  forall e l1 l2,
-  convert_atom (raBound l1 e None) ->
-  convert_atom (raBound l2 e None) ->
-  match Gmax_lower l1 l2 with
-  | Some l => convert_atom (raBound l e None)
-  | _ => True
-  end.
-Proof.
-intros e l1 l2 H1 H2.
-case_eq (Gmax_lower l1 l2) ; try easy.
-intros o Hl.
-destruct l1 as [l1|] ; simpl in H1 ; try easy.
-destruct l2 as [l2|] ; simpl in H2 ; try easy.
-destruct l1 as [xl1|xl1|xl1 yl1|xl1 yl1|ol1 xl1|ol1 xl1 yl1|xl1|xl1|xl1|xl1|xl1|xl1|fl1 xl1] ; try discriminate Hl.
-destruct l2 as [xl2|xl2|xl2 yl2|xl2 yl2|ol2 xl2|ol2 xl2 yl2|xl2|xl2|xl2|xl2|xl2|xl2|fl2 xl2] ; try discriminate Hl.
-inversion_clear Hl.
-now destruct (Gappa_dyadic.Fle2_spec (Float2 xl1 yl1) (Float2 xl2 yl2)).
-destruct l1 as [xl1|xl1|xl1 yl1|xl1 yl1|ol1 xl1|ol1 xl1 yl1|xl1|xl1|xl1|xl1|xl1|xl1|fl1 xl1] ; now inversion_clear Hl.
-revert H2.
-now inversion_clear Hl.
-Qed.
-
-Lemma Gmin_upper_correct :
-  forall e u1 u2,
-  convert_atom (raBound None e u1) ->
-  convert_atom (raBound None e u2) ->
-  match Gmin_upper u1 u2 with
-  | Some u => convert_atom (raBound None e u)
-  | _ => True
-  end.
-Proof.
-intros e u1 u2 H1 H2.
-case_eq (Gmin_upper u1 u2) ; try easy.
-intros o Hu.
-destruct u1 as [u1|] ; simpl in H1 ; try easy.
-destruct u2 as [u2|] ; simpl in H2 ; try easy.
-destruct u1 as [xu1|xu1|xu1 yu1|xu1 yu1|ou1 xu1|ou1 xu1 yu1|xu1|xu1|xu1|xu1|xu1|xu1|fu1 xu1] ; try discriminate Hu.
-destruct u2 as [xu2|xu2|xu2 yu2|xu2 yu2|ou2 xu2|ou2 xu2 yu2|xu2|xu2|xu2|xu2|xu2|xu2|fu2 xu2] ; try discriminate Hu.
-inversion_clear Hu.
-now destruct (Gappa_dyadic.Fle2_spec (Float2 xu1 yu1) (Float2 xu2 yu2)).
-destruct u1 as [xu1|xu1|xu1 yu1|xu1 yu1|ou1 xu1|ou1 xu1 yu1|xu1|xu1|xu1|xu1|xu1|xu1|fu1 xu1] ; now inversion_clear Hu.
-revert H2.
-now inversion_clear Hu.
-Qed.
-
-Lemma raBound_split :
-  forall e l u,
-  convert_atom (raBound l e u) <->
-  convert_atom (raBound l e None) /\ convert_atom (raBound None e u).
-Proof.
-intros e [l|] [u|] ; split ; (intros (H1,H2) || intros H) ; try split ; easy.
-Qed.
-
-Lemma Gminmax_correct :
-  forall e l1 u1 l2 u2,
-  convert_atom (raBound l1 e u1) ->
-  convert_atom (raBound l2 e u2) ->
-  match Gmax_lower l1 l2, Gmin_upper u1 u2 with
-  | Some l, Some u => convert_atom (raBound l e u)
-  | _, _ => True
-  end.
-Proof.
-intros e l1 u1 l2 u2 H1 H2.
-destruct (proj1 (raBound_split _ _ _) H1) as (H1l,H1u).
-destruct (proj1 (raBound_split _ _ _) H2) as (H2l,H2u).
-generalize (Gmax_lower_correct _ _ _ H1l H2l).
-destruct (Gmax_lower l1 l2) as [l|] ; try easy.
-intros Hl.
-generalize (Gmin_upper_correct _ _ _ H1u H2u).
-destruct (Gmin_upper u1 u2) as [u|] ; try easy.
-intros Hu.
-apply <- raBound_split ; now split.
-Qed.
-
-Section MergeHypsFunc1.
-
-Variable e : RExpr.
-Variable l u : option RExpr.
-
-Fixpoint merge_hyps_func_aux1 gh :=
-  match gh with
-  | nil => raBound l e u :: nil
-  | raBound l' e' u' as h' :: gh =>
-    if RExpr_beq e e' then
-      match Gmax_lower l l', Gmin_upper u u' with
-      | Some l'', Some u'' => raBound l'' e' u'' :: gh
-      | _, _ => h' :: merge_hyps_func_aux1 gh
-      end
-    else h' :: merge_hyps_func_aux1 gh
-  | h' :: gh => h' :: merge_hyps_func_aux1 gh
-  end.
-
-Lemma merge_hyps_func_aux1_correct :
-  forall gh gc,
-  convert_goal_aux gc (merge_hyps_func_aux1 gh) -> convert_goal_aux gc (raBound l e u :: gh).
-Proof.
-intros gh gc.
-induction gh.
-easy.
-intros H H1 H2.
-change (convert_goal_aux gc gh).
-destruct a as [l' v u'|v w l' u'|v w|v w|f x|] ; try (apply IHgh ; try apply H ; easy).
-simpl in H.
-case_eq (RExpr_beq e v) ; intros H3 ; rewrite H3 in H.
-rewrite (internal_RExpr_dec_bl _ _ H3) in H1, IHgh.
-generalize (Gminmax_correct _ _ _ _ _ H1 H2).
-destruct (Gmax_lower l l') as [l''|].
-destruct (Gmin_upper u u') as [u''|].
-intros H4.
-now apply H.
-intros _.
-apply IHgh.
-now apply H.
-easy.
-intros _.
-apply IHgh.
-now apply H.
-easy.
-apply IHgh.
-now apply H.
-easy.
-Qed.
-
-End MergeHypsFunc1.
-
-Fixpoint merge_hyps_func_aux2 gh :=
-  match gh with
-  | raBound l e u :: gh => (merge_hyps_func_aux1 e l u gh)
-  | h :: gh => h :: merge_hyps_func_aux2 gh
-  | nil => nil
-  end.
-
-Lemma merge_hyps_func_aux2_correct :
-  forall gh gc,
-  convert_goal_aux gc (merge_hyps_func_aux2 gh) -> convert_goal_aux gc gh.
-Proof.
-intros gh gc.
-induction gh.
-easy.
-intros H1 H2.
-change (convert_goal_aux gc gh).
-destruct a as [l' v u'|v w l' u'|v w|v w|f x|] ; try (apply IHgh ; apply H1 ; apply H2).
-simpl in H1.
-now apply (merge_hyps_func_aux1_correct v l' u' gh gc).
-Qed.
-
-Definition merge_hyps_func gh (gc : RAtom) :=
-  (merge_hyps_func_aux2 gh, gc).
-
-Lemma merge_hyps_prop :
-  stable_goal merge_hyps_func.
-Proof.
-intros gh gc.
-unfold merge_hyps_func.
-apply merge_hyps_func_aux2_correct.
+now destruct pos.
 Qed.
 
 End Convert.
 
-Inductive TG :=
-  | TGall f : (forall uv, stable_goal uv f) -> TG
-  | TGneg (f : RAtom -> list RAtom) : (forall uv, stable_atom_neg uv f) -> TG
-  | TGpos (f : RAtom -> RAtom) : (forall uv, stable_atom_pos uv f) -> TG
-  | TGbound (f : RExpr -> RExpr) : (forall uv, stable_expr uv f) -> TG
-  | TGexpr (f : RExpr -> RExpr) : (forall uv, stable_expr uv f) -> TG.
+Inductive Transform :=
+  | trAtom (f : RAtom -> RAtom) : (forall uv, stable_atom uv f) -> Transform
+  | trLeaf (f : bool -> RAtom -> RTree) : (forall uv, stable_atom_tree uv f) -> Transform
+  | trBound (f : RExpr -> RExpr) : (forall uv, stable_expr uv f) -> Transform
+  | trExpr (f : RExpr -> RExpr) : (forall uv, stable_expr uv f) -> Transform
+  | trTree (f : RTree -> RTree) : (forall uv t, convert_tree uv t -> convert_tree uv (f t)) -> Transform.
 
-Definition transform_goal_once t g :=
-  let '(gh, gc) := g in
-  match t with
-  | TGall f _ => f gh gc
-  | TGneg f _ => (transform_goal_neg f gh, gc)
-  | TGpos f _ => (gh, f gc)
-  | TGbound f _ =>
-    let f' := transform_atom_bound (transform_expr f) in
-    (map f' gh, f' gc)
-  | TGexpr f _ =>
-    let f' := transform_atom_expr (transform_expr f) in
-    (map f' gh, f' gc)
+Definition transform_once tr t :=
+  match tr with
+  | trAtom f _ => transform_tree_atom f t
+  | trLeaf f _ => transform_tree_atom' f t
+  | trBound f _ => transform_tree_atom (transform_atom_bound (transform_expr f)) t
+  | trExpr f _ => transform_tree_atom (transform_atom_expr (transform_expr f)) t
+  | trTree f _ => f t
   end.
 
-Theorem transform_goal_once_correct :
-  forall uv t g,
-  convert_goal uv (transform_goal_once t g) ->
-  convert_goal uv g.
+Theorem transform_once_correct :
+  forall uv tr t,
+  convert_tree uv t ->
+  convert_tree uv (transform_once tr t).
 Proof.
-intros uv [f Hf|f Hf|f Hf|f Hf|f Hf] (gh, gc) ; simpl.
-intros H.
+intros uv [f Hf|f Hf|f Hf|f Hf|f Hf] t Ht ; simpl.
+now apply transform_tree_atom_correct.
+now apply transform_tree_atom'_correct.
+apply transform_tree_atom_correct with (2 := Ht).
+now apply transform_atom_bound_correct.
+apply transform_tree_atom_correct with (2 := Ht).
+now apply transform_atom_expr_correct.
 now apply Hf.
-intros H.
-now apply transform_goal_neg_correct with f.
-induction gh.
-apply Hf.
-intros H1 H2.
-apply IHgh.
-now apply H1.
-induction gh.
-intros H.
-now apply -> (transform_atom_bound_correct uv f).
-intros H1 H2.
-apply IHgh.
-apply H1.
-now apply <- transform_atom_bound_correct.
-induction gh.
-intros H.
-now apply -> (transform_atom_expr_correct uv f).
-intros H1 H2.
-apply IHgh.
-apply H1.
-now apply <- transform_atom_expr_correct.
 Qed.
 
-Definition transform_goal :=
-  fold_left (fun v t => transform_goal_once t v).
+Definition transform :=
+  fold_left (fun v t => transform_once t v).
 
-Theorem transform_goal_correct :
-  forall l uv g,
-  convert_goal uv (transform_goal l g) -> convert_goal uv g.
+Theorem transform_correct :
+  forall l uv t,
+  convert_tree uv t ->
+  convert_tree uv (transform l t).
 Proof.
-intros l uv.
+intros l uv t Ht.
 rewrite <- (rev_involutive l).
-induction (rev l) ; intros g ; simpl.
+induction (rev l) as [|h l' Hl] ; simpl.
 easy.
-unfold transform_goal.
+unfold transform.
 rewrite fold_left_app.
 simpl.
-intros H.
-apply IHl0.
-now apply transform_goal_once_correct in H.
+apply transform_once_correct.
+apply Hl.
 Qed.
 
 Definition trans :=
-  TGneg change_rel_neg_func change_rel_neg_prop ::
-  TGpos change_rel_pos_func change_rel_pos_prop ::
-  TGneg change_abs_neg_func change_abs_neg_prop ::
-  TGpos change_abs_pos_func change_abs_pos_prop ::
-  TGbound remove_inv_func remove_inv_prop ::
-  TGbound gen_float_func gen_float_prop ::
-  TGbound clean_pow_func clean_pow_prop ::
-  TGbound merge_float2_func merge_float2_prop ::
-  TGexpr remove_inv_func remove_inv_prop ::
-  TGexpr gen_float_func gen_float_prop ::
-  TGexpr clean_pow_func clean_pow_prop ::
-  TGneg change_format_neg_func change_format_neg_prop ::
-  TGpos change_format_pos_func change_format_pos_prop ::
-  TGneg remove_unknown_neg_func remove_unknown_neg_prop ::
-  TGpos remove_unknown_pos_func remove_unknown_pos_prop ::
-  TGall merge_hyps_func merge_hyps_prop ::
+  trAtom change_rel_func change_rel_prop ::
+  trAtom change_abs_func change_abs_prop ::
+  trBound remove_inv_func remove_inv_prop ::
+  trBound gen_float_func gen_float_prop ::
+  trBound clean_pow_func clean_pow_prop ::
+  trBound merge_float2_func merge_float2_prop ::
+  trExpr remove_inv_func remove_inv_prop ::
+  trExpr gen_float_func gen_float_prop ::
+  trExpr clean_pow_func clean_pow_prop ::
+  trLeaf change_format_func change_format_prop ::
+  trLeaf remove_unknown_func remove_unknown_prop ::
+  trTree simplify_tree simplify_tree_correct ::
   nil.
+
+Theorem prepare_goal :
+  forall uv t,
+  convert_tree uv (rtNot (transform trans (normalize_tree t false))) ->
+  convert_tree uv t.
+Proof.
+intros uv t.
+change (not (convert_tree uv (transform trans (normalize_tree t false))) -> convert_tree uv t).
+intros H.
+destruct (decidable_tree uv t) as [H'|H'].
+easy.
+contradict H.
+apply transform_correct.
+now apply normalize_tree_correct.
+Qed.
 
 End Gappa_Private.
 
@@ -1122,7 +1010,7 @@ Ltac gappa_prepare :=
   gappa_quote ;
   let convert_apply t :=
     match goal with
-    | |- (convert_goal ?uv ?g) => t uv g
+    | |- (convert_tree ?uv ?g) => t uv g
     end in
   convert_apply ltac:(fun uv g =>
     let rec generalize_list l :=
@@ -1131,6 +1019,5 @@ Ltac gappa_prepare :=
       | List.nil => clear ; intros
       end in
     generalize_list uv) ;
-  convert_apply ltac:(fun uv g => refine (transform_goal_correct trans uv g _)) ;
-  convert_apply ltac:(fun uv g => let g := eval vm_compute in g in change (convert_goal uv g)) ;
-  apply convert_goal_correct.
+  convert_apply ltac:(fun uv g => refine (prepare_goal uv g _)) ;
+  convert_apply ltac:(fun uv g => let g := eval vm_compute in g in change (convert_tree uv g)).

@@ -53,10 +53,16 @@ type term =
   | Tunop of unop * term
   | Tround of rounding_mode * term
 
+type atom =
+  | Ain of term * Constant.t * Constant.t
+  | Arel of term * term * Constant.t * Constant.t
+  | Aeq of term * term
+
 type pred =
-  | Pin of term * Constant.t * Constant.t
-  | Prel of term * term * Constant.t * Constant.t
-  | Peq of term * term
+  | Patom of atom
+  | Pand of pred * pred
+  | Por of pred * pred
+  | Pnot of pred
 
 (** {1 Symbols needed by the tactics} *)
 
@@ -85,11 +91,14 @@ let coq_modules =
 
 let constant = gen_constant_in_modules "gappa" coq_modules
 
+let coq_True = lazy (constant "True")
 let coq_False = lazy (constant "False")
 let coq_eq = lazy (build_coq_eq ())
 let coq_refl_equal = lazy (constant "refl_equal")
 
 let coq_and = lazy (constant "and")
+let coq_or = lazy (constant "or")
+let coq_not = lazy (constant "not")
 
 let coq_R = lazy (constant "R")
 let coq_R0 = lazy (constant "R0")
@@ -120,8 +129,16 @@ let coq_list = lazy (constant "list")
 let coq_cons = lazy (constant "cons")
 let coq_nil = lazy (constant "nil")
 
-let coq_convert_goal = lazy (constant "convert_goal")
-let coq_convert_goal_ = lazy (constant "convert_goal'")
+let coq_convert_tree = lazy (constant "convert_tree")
+
+let coq_RTree = lazy (constant "RTree")
+let coq_rtTrue = lazy (constant "rtTrue")
+let coq_rtFalse = lazy (constant "rtFalse")
+let coq_rtAtom = lazy (constant "rtAtom")
+let coq_rtNot = lazy (constant "rtNot")
+let coq_rtAnd = lazy (constant "rtAnd")
+let coq_rtOr = lazy (constant "rtOr")
+let coq_rtImpl = lazy (constant "rtImpl")
 
 let coq_RAtom = lazy (constant "RAtom")
 let coq_raBound = lazy (constant "raBound")
@@ -374,25 +391,36 @@ and qt_no_Rint t =
       e
 
 (** reify a Coq term [p:Prop] *)
-let qt_pred p = match decompose_app p with
+let rec qt_pred p = match kind_of_term p with
+  | Prod (_,a,b) -> mkLApp coq_rtImpl [|qt_pred a; qt_pred b|]
+  | _ ->
+match decompose_app p with
+  | c, [] when c = Lazy.force coq_True ->
+      Lazy.force coq_rtTrue
+  | c, [] when c = Lazy.force coq_False ->
+      Lazy.force coq_rtFalse
+  | c, [a] when c = Lazy.force coq_not ->
+      mkLApp coq_rtNot [|qt_pred a|]
   | c, [a;b] when c = Lazy.force coq_and ->
       begin match decompose_app a, decompose_app b with
         | (c1, [a1;b1]), (c2, [a2;b2])
           when c1 = Lazy.force coq_Rle && c2 = Lazy.force coq_Rle && b1 = a2 ->
-            mkLApp coq_raBound
+            mkLApp coq_rtAtom [|mkLApp coq_raBound
               [|mkLApp coq_Some [|Lazy.force coq_RExpr; qt_term a1|]; qt_term b1;
-                mkLApp coq_Some [|Lazy.force coq_RExpr; qt_term b2|]|]
+                mkLApp coq_Some [|Lazy.force coq_RExpr; qt_term b2|]|]|]
         | _ ->
-            raise (NotGappa p)
+            mkLApp coq_rtAnd [|qt_pred a; qt_pred b|]
       end
+  | c, [a;b] when c = Lazy.force coq_or ->
+      mkLApp coq_rtAtom [|mkLApp coq_rtOr [|qt_pred a; qt_pred b|]|]
   | c, [a;b] when c = Lazy.force coq_Rle ->
-      mkLApp coq_raLe [|qt_term a; qt_term b|]
+      mkLApp coq_rtAtom [|mkLApp coq_raLe [|qt_term a; qt_term b|]|]
   | c, [a;b] when c = Lazy.force coq_Rge ->
-      mkLApp coq_raLe [|qt_term b; qt_term a|]
+      mkLApp coq_rtAtom [|mkLApp coq_raLe [|qt_term b; qt_term a|]|]
   | c, [t;a;b] when c = Lazy.force coq_eq && t = Lazy.force coq_R ->
-      mkLApp coq_raEq [|qt_term a; qt_term b|]
+      mkLApp coq_rtAtom [|mkLApp coq_raEq [|qt_term a; qt_term b|]|]
   | c, [_;a;b] when c = Lazy.force coq_generic_format ->
-      mkLApp coq_raFormat [|qt_fmt a; qt_term b|]
+      mkLApp coq_rtAtom [|mkLApp coq_raFormat [|qt_fmt a; qt_term b|]|]
   | _ -> raise (NotGappa p)
 
 (** reify hypotheses *)
@@ -406,13 +434,11 @@ let gappa_quote gl =
     global_env := pf_env gl;
     let l = qt_hyps (pf_hyps_types gl) in
     let _R = Lazy.force coq_R in
-    let _RAtom = Lazy.force coq_RAtom in
-    let g = mkLApp coq_pair
-      [|mkLApp coq_list [|_RAtom|]; _RAtom;
-        mkList _RAtom (List.map (fun (_, h) -> h) l);
-        qt_pred (pf_concl gl)|] in
+    let g = List.fold_left
+      (fun acc (_, h) -> mkLApp coq_rtImpl [|h; acc|])
+      (qt_pred (pf_concl gl)) l in
     let uv = mkList _R !var_list in
-    let e = mkLApp coq_convert_goal [|uv; g|] in
+    let e = mkLApp coq_convert_tree [|uv; g|] in
     (*Pp.msgerrnl (Printer.pr_constr e);*)
     Hashtbl.clear var_table;
     var_list := [];
@@ -518,22 +544,36 @@ let tr_const c =
     | _ -> raise (NotGappa c)
 
 (** translate a Coq term [t:RAtom] into [pred] *)
-let tr_pred uv t =
+let tr_atom uv t =
   match decompose_app t with
     | c, [l;e;u] when c = Lazy.force coq_raBound ->
         begin match decompose_app l, decompose_app u with
           | (_, [_;l]), (_, [_;u]) ->
-              Pin (tr_term uv e, tr_const l, tr_const u)
+              Ain (tr_term uv e, tr_const l, tr_const u)
           | _ -> raise (NotGappa t)
         end
     | c, [er;ex;l;u] when c = Lazy.force coq_raRel ->
-        Prel (tr_term uv er, tr_term uv ex, tr_const l, tr_const u)
+        Arel (tr_term uv er, tr_term uv ex, tr_const l, tr_const u)
     | c, [er;ex] when c = Lazy.force coq_raEq ->
-        Peq (tr_term uv er, tr_term uv ex)
+        Aeq (tr_term uv er, tr_term uv ex)
     | c, [] when c = Lazy.force coq_raFalse ->
         let cr i = Constant.create (1, i, Bigint.zero) in
         let c0 = cr Bigint.zero in
-        Pin (Tconst (cr Bigint.one), c0, c0)
+        Ain (Tconst (cr Bigint.one), c0, c0)
+    | _ ->
+        raise (NotGappa t)
+
+(** translate a Coq term [t:RTree] into [pred] *)
+let rec tr_pred uv t =
+  match decompose_app t with
+    | c, [a] when c = Lazy.force coq_rtAtom ->
+        Patom (tr_atom uv a)
+    | c, [a] when c = Lazy.force coq_rtNot ->
+        Pnot (tr_pred uv a)
+    | c, [a;b] when c = Lazy.force coq_rtAnd ->
+        Pand (tr_pred uv a, tr_pred uv b)
+    | c, [a;b] when c = Lazy.force coq_rtOr ->
+        Por (tr_pred uv a, tr_pred uv b)
     | _ ->
         raise (NotGappa t)
 
@@ -551,15 +591,12 @@ let tr_list f =
     in
   aux
 
-(** translate a Coq term [c] of kind [convert_goal' ...] *)
+(** translate a Coq term [c] of kind [convert_tree ...] *)
 let tr_goal c =
   match decompose_app c with
-    | c, [uv;e] when c = Lazy.force coq_convert_goal_ ->
+    | c, [uv;e] when c = Lazy.force coq_convert_tree ->
         let uv = Array.of_list (tr_list tr_var uv) in
-        begin match decompose_app e with
-          | _, [_;_;h;g] -> (tr_list (tr_pred uv) h, tr_pred uv g)
-          | _ -> raise (NotGappa e)
-        end
+        tr_pred uv e
     | _ -> raise (NotGappa c)
 
 (** print a Gappa term *)
@@ -584,31 +621,35 @@ let rec print_term fmt = function
       fprintf fmt "(%s(%a))" m print_term t
 
 (** print a Gappa predicate *)
-let print_pred fmt = function
-  | Pin (t, c1, c2) ->
+let print_atom fmt = function
+  | Ain (t, c1, c2) ->
       fprintf fmt "%a in [%a, %a]"
         print_term t Constant.print c1 Constant.print c2
-  | Prel (t1, t2, c1, c2) ->
+  | Arel (t1, t2, c1, c2) ->
       fprintf fmt "%a -/ %a in [%a,%a]"
         print_term t1 print_term t2 Constant.print c1 Constant.print c2
-  | Peq (t1, t2) ->
+  | Aeq (t1, t2) ->
       fprintf fmt "%a = %a" print_term t1 print_term t2
+
+let rec print_pred fmt = function
+  | Patom a -> print_atom fmt a
+  | Pnot t -> fprintf fmt "not (%a)" print_pred t
+  | Pand (t1, t2) -> fprintf fmt "(%a) /\\ (%a)" print_pred t1 print_pred t2
+  | Por (t1, t2) -> fprintf fmt "(%a) \\/ (%a)" print_pred t1 print_pred t2
 
 let temp_file f = if !debug then f else Filename.temp_file f ""
 let remove_file f = if not !debug then try Sys.remove f with _ -> ()
 
 exception GappaFailed of string
 
-(** print a Gappa goal from [hl |- p] and call Gappa on it,
+(** print a Gappa goal from [p] and call Gappa on it,
     parse the comment at the start of its output,
     build a Coq term by calling [c_of_s] *)
-let call_gappa c_of_s hl p =
+let call_gappa c_of_s p =
   let gappa_in = temp_file "gappa_inp" in
   let c = open_out gappa_in in
   let fmt = formatter_of_out_channel c in
-  fprintf fmt "@[{ ";
-  List.iter (fun h -> fprintf fmt "%a ->@ " print_pred h) hl;
-  fprintf fmt "%a }@]@." print_pred p;
+  fprintf fmt "@[{ %a }@]@." print_pred p;
   close_out c;
   let gappa_out = temp_file "gappa_out" in
   let gappa_err = temp_file "gappa_err" in
@@ -679,8 +720,8 @@ let build_proof_term c =
 (** the [gappa_internal] tactic *)
 let gappa_internal gl =
   try
-    let (h, g) = tr_goal (pf_concl gl) in
-    let (emap, pf) = call_gappa (constr_of_stream gl) h g in
+    let g = tr_goal (pf_concl gl) in
+    let (emap, pf) = call_gappa (constr_of_stream gl) g in
     let pf = evars_to_vmcast (project gl) (emap, pf) in
     let pf = build_proof_term pf in
     Tacmach.refine_no_check pf gl
