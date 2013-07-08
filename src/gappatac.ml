@@ -54,7 +54,7 @@ type term =
   | Tround of rounding_mode * term
 
 type atom =
-  | Ain of term * Constant.t * Constant.t
+  | Ain of term * Constant.t option * Constant.t option
   | Arel of term * term * Constant.t * Constant.t
   | Aeq of term * term
 
@@ -146,7 +146,6 @@ let coq_raRel = lazy (constant "raRel")
 let coq_raEq = lazy (constant "raEq")
 let coq_raLe = lazy (constant "raLe")
 let coq_raFormat = lazy (constant "raFormat")
-let coq_raFalse = lazy (constant "raFalse")
 
 let coq_RExpr = lazy (constant "RExpr")
 let coq_reUnknown = lazy (constant "reUnknown")
@@ -547,19 +546,20 @@ let tr_const c =
 let tr_atom uv t =
   match decompose_app t with
     | c, [l;e;u] when c = Lazy.force coq_raBound ->
-        begin match decompose_app l, decompose_app u with
-          | (_, [_;l]), (_, [_;u]) ->
-              Ain (tr_term uv e, tr_const l, tr_const u)
-          | _ -> raise (NotGappa t)
-        end
+        let l = match decompose_app l with
+          | (_, [_;l]) -> Some (tr_const l)
+          | (_, [_]) -> None
+          | _ -> assert false in
+        let u = match decompose_app u with
+          | (_, [_;u]) -> Some (tr_const u)
+          | (_, [_]) -> None
+          | _ -> assert false in
+        if l = None && u = None then raise (NotGappa t);
+        Ain (tr_term uv e, l, u)
     | c, [er;ex;l;u] when c = Lazy.force coq_raRel ->
         Arel (tr_term uv er, tr_term uv ex, tr_const l, tr_const u)
     | c, [er;ex] when c = Lazy.force coq_raEq ->
         Aeq (tr_term uv er, tr_term uv ex)
-    | c, [] when c = Lazy.force coq_raFalse ->
-        let cr i = Constant.create (1, i, Bigint.zero) in
-        let c0 = cr Bigint.zero in
-        Ain (Tconst (cr Bigint.one), c0, c0)
     | _ ->
         raise (NotGappa t)
 
@@ -622,9 +622,14 @@ let rec print_term fmt = function
 
 (** print a Gappa predicate *)
 let print_atom fmt = function
-  | Ain (t, c1, c2) ->
+  | Ain (t, Some c1, Some c2) ->
       fprintf fmt "%a in [%a, %a]"
         print_term t Constant.print c1 Constant.print c2
+  | Ain (t, Some c, None) ->
+      fprintf fmt "%a >= %a" print_term t Constant.print c
+  | Ain (t, None, Some c) ->
+      fprintf fmt "%a <= %a" print_term t Constant.print c
+  | Ain (_, None, None) -> assert false
   | Arel (t1, t2, c1, c2) ->
       fprintf fmt "%a -/ %a in [%a,%a]"
         print_term t1 print_term t2 Constant.print c1 Constant.print c2

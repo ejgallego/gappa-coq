@@ -756,6 +756,32 @@ apply eq_sym, Rmult_0_l.
 exact H.
 Qed.
 
+Definition change_le_func a :=
+  match a with
+  | raLe x y =>
+    match get_float2_bound x with
+    | reFloat2 _ _ as x => raBound (Some x) y None
+    | _ =>
+      match get_float2_bound y with
+      | reFloat2 _ _ as y => raBound None x (Some y)
+      | _ => a
+      end
+    end
+  | _ => a
+  end.
+
+Lemma change_le_prop :
+  stable_atom change_le_func.
+Proof.
+intros [l v u|x y l u|v w|v w|f x] ; try easy.
+simpl.
+assert (Hv := get_float2_bound_correct v).
+assert (Hw := get_float2_bound_correct w).
+destruct (get_float2_bound v) as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ;
+  destruct (get_float2_bound w) as [x'|x'|x' y'|x' y'|o' x'|o' x' y'|x'|x'|x'|x'|x'|x'|f' m' x'] ;
+  try easy ; try (now rewrite <- Hw) ; now rewrite <- Hv.
+Qed.
+
 Lemma change_rel_aux:
   forall x y b, (0 <= b /\ Rabs (x - y) <= b * Rabs y)%R <-> (exists eps, -b <= eps <= b /\ x = y * (1 + eps))%R.
 Proof.
@@ -885,13 +911,13 @@ Qed.
 
 Definition remove_unknown_func (pos : bool) a :=
   match a with
-  | raBound (Some l) _ (Some u) =>
+  | raBound l _ u =>
     match l with
-    | reInteger _
-    | reFloat2 _ _ =>
+    | Some (reFloat2 _ _)
+    | None =>
       match u with
-      | reInteger _
-      | reFloat2 _ _ => if pos then rtAtom a else rtNot (rtAtom a)
+      | Some (reFloat2 _ _)
+      | None => if pos then rtAtom a else rtNot (rtAtom a)
       | _ => rtTrue
       end
     | _ => rtTrue
@@ -908,9 +934,9 @@ intros [[l|] v [u|]|x y l u|v w|v w|[em|em [|p|p]] x] pos ; try (case pos ; easy
 destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|xl|xl|xl|fl xl] ; try easy.
 destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; try easy.
 now destruct pos.
+destruct l as [l|l|l l'|l l'|o l|o l l'|l|l|l|l|l|l|f l] ; try easy.
 now destruct pos.
-destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; try easy.
-now destruct pos.
+destruct u as [u|u|u u'|u u'|o u|o u u'|u|u|u|u|u|u|f u] ; try easy.
 now destruct pos.
 destruct l as [l|l|l l'|l l'|o l|o l l'|l|l|l|l|l|l|f l] ; try easy.
 destruct u as [u|u|u u'|u u'|o u|o u u'|u|u|u|u|u|u|f u] ; try easy.
@@ -979,6 +1005,7 @@ Definition trans :=
   trExpr remove_inv_func remove_inv_prop ::
   trExpr gen_float_func gen_float_prop ::
   trExpr clean_pow_func clean_pow_prop ::
+  trAtom change_le_func change_le_prop ::
   trLeaf change_format_func change_format_prop ::
   trLeaf remove_unknown_func remove_unknown_prop ::
   trTree simplify_tree simplify_tree_correct ::
