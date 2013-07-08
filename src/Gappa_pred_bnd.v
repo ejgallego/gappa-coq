@@ -130,6 +130,21 @@ apply Rle_trans with (1 := H1) (2 := Hy).
 apply Rle_trans with (1 := (proj2 Hx)) (2 := H2).
 Qed.
 
+Theorem intersect_hh :
+  forall z : R, forall xf yf : float2, forall zi : FF,
+  (z <= xf)%R -> (yf <= z)%R ->
+  intersect_helper xf yf zi = true ->
+  BND z zi.
+Proof.
+intros z xf yf zi Hx Hy Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+apply Fle2_correct in H1.
+apply Fle2_correct in H2.
+split.
+apply Rle_trans with (1 := H1) (2 := Hy).
+apply Rle_trans with (1 := Hx) (2 := H2).
+Qed.
+
 Theorem absurd_intersect :
  forall z : R, forall xi yi : FF,
  BND z xi -> BND z yi ->
