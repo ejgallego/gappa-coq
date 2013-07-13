@@ -1039,12 +1039,15 @@ Ltac gappa_prepare :=
     match goal with
     | |- (convert_tree ?uv ?g) => t uv g
     end in
-  convert_apply ltac:(fun uv g =>
-    let rec generalize_list l :=
-      match l with
-      | (List.cons ?h ?t) => generalize h ; generalize_list t
-      | List.nil => clear ; intros
-      end in
-    generalize_list uv) ;
+  let rec generalize_all m n l :=
+    match l with
+    | List.nil => clear
+    | List.cons ?h ?q =>
+      match n with
+      | O => generalize h ; intro ; convert_apply ltac:(fun uv _ => generalize_all (S m) (S m) uv)
+      | S ?n => generalize_all m n q
+      end
+    end in
+  convert_apply ltac:(fun uv _ => generalize_all O O uv) ;
   convert_apply ltac:(fun uv g => refine (prepare_goal uv g _)) ;
   convert_apply ltac:(fun uv g => let g := eval vm_compute in g in change (convert_tree uv g)).
