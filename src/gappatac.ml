@@ -145,6 +145,7 @@ let coq_raBound = lazy (constant "raBound")
 let coq_raRel = lazy (constant "raRel")
 let coq_raEq = lazy (constant "raEq")
 let coq_raLe = lazy (constant "raLe")
+let coq_raGeneric = lazy (constant "raGeneric")
 let coq_raFormat = lazy (constant "raFormat")
 
 let coq_RExpr = lazy (constant "RExpr")
@@ -176,6 +177,8 @@ let coq_rndNE = lazy (constant "rndNE")
 let coq_rndNA = lazy (constant "rndNA")
 let coq_rndZR = lazy (constant "Ztrunc")
 let coq_round = lazy (constant "round")
+let coq_FLT_format = lazy (constant "FLT_format")
+let coq_FIX_format = lazy (constant "FIX_format")
 let coq_FLT_exp = lazy (constant "FLT_exp")
 let coq_FIX_exp = lazy (constant "FIX_exp")
 let coq_generic_format = lazy (constant "generic_format")
@@ -418,8 +421,14 @@ match decompose_app p with
       mkLApp coq_rtAtom [|mkLApp coq_raLe [|qt_term b; qt_term a|]|]*)
   | c, [t;a;b] when c = Lazy.force coq_eq && t = Lazy.force coq_R ->
       mkLApp coq_rtAtom [|mkLApp coq_raEq [|qt_term a; qt_term b|]|]
-  | c, [_;a;b] when c = Lazy.force coq_generic_format ->
-      mkLApp coq_rtAtom [|mkLApp coq_raFormat [|qt_fmt a; qt_term b|]|]
+  | c, [_;e;x] when c = Lazy.force coq_FIX_format ->
+      let fmt = mkLApp coq_fFixed [|e|] in
+      mkLApp coq_rtAtom [|mkLApp coq_raFormat [|fmt; qt_term x|]|]
+  | c, [_;e;p;x] when c = Lazy.force coq_FLT_format ->
+      let fmt = mkLApp coq_fFloat [|e;p|] in
+      mkLApp coq_rtAtom [|mkLApp coq_raFormat [|fmt; qt_term x|]|]
+  | c, [_;f;x] when c = Lazy.force coq_generic_format ->
+      mkLApp coq_rtAtom [|mkLApp coq_raGeneric [|qt_fmt f; qt_term x|]|]
   | _ -> raise (NotGappa p)
 
 (** reify hypotheses *)

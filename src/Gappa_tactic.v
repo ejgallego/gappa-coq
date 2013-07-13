@@ -114,6 +114,7 @@ Inductive RAtom :=
   | raRel : RExpr -> RExpr -> RExpr -> RExpr -> RAtom
   | raLe : RExpr -> RExpr -> RAtom
   | raEq : RExpr -> RExpr -> RAtom
+  | raGeneric : Format -> RExpr -> RAtom
   | raFormat : Format -> RExpr -> RAtom.
 
 Inductive RTree :=
@@ -127,10 +128,16 @@ Inductive RTree :=
 
 Section Convert.
 
-Definition convert_format (f : Format) : Z -> Z :=
+Definition convert_exp (f : Format) : Z -> Z :=
   match f with
   | fFloat e p => FLT_exp e p
   | fFixed e => FIX_exp e
+  end.
+
+Definition convert_format (f : Format) : R -> Prop :=
+  match f with
+  | fFloat e p => FLT_format radix2 e p
+  | fFixed e => FIX_format radix2 e
   end.
 
 Definition convert_mode (m : Mode) : R -> Z :=
@@ -179,7 +186,7 @@ Fixpoint convert_expr (t : RExpr) : R :=
   | reIZR x =>
     IZR x
   | reRound f m x =>
-    Fcore_generic_fmt.round radix2 (convert_format f) (convert_mode m) (convert_expr x)
+    Fcore_generic_fmt.round radix2 (convert_exp f) (convert_mode m) (convert_expr x)
   end.
 
 (* convert to an atomic proposition *)
@@ -192,7 +199,8 @@ Definition convert_atom (a : RAtom) : Prop :=
   | raRel er ex l u => exists eps : R, (convert_expr l <= eps <= convert_expr u)%R /\ (convert_expr er = convert_expr ex * (1 + eps))%R
   | raLe x y => (convert_expr x <= convert_expr y)%R
   | raEq x y => (convert_expr x = convert_expr y)%R
-  | raFormat f x => generic_format radix2 (convert_format f) (convert_expr x)
+  | raGeneric f x => generic_format radix2 (convert_exp f) (convert_expr x)
+  | raFormat f x => convert_format f (convert_expr x)
   end.
 
 Fixpoint convert_tree (t : RTree) : Prop :=
@@ -208,8 +216,8 @@ Fixpoint convert_tree (t : RTree) : Prop :=
 
 Lemma decidable_atom :
   forall a, { convert_atom a } + { not (convert_atom a) }.
-Proof.
-intros [[l|] e [u|]|x y l u|x y|x y|fmt x] ; simpl.
+Proof with auto with typeclass_instances.
+intros [[l|] e [u|]|x y l u|x y|x y|fmt x|fmt x] ; simpl.
 destruct (Rle_lt_dec (convert_expr l) (convert_expr e)) as [Hl|Hl].
 destruct (Rle_lt_dec (convert_expr e) (convert_expr u)) as [Hu|Hu].
 now left ; split.
@@ -268,6 +276,49 @@ right.
 now apply Rlt_not_le.
 apply Req_EM_T.
 apply Req_EM_T.
+destruct fmt as [e|e p].
+simpl.
+destruct (Req_EM_T (convert_expr x) (round radix2 (FIX_exp e) rndZR (convert_expr x))) as [H|H].
+left.
+apply FIX_format_generic.
+rewrite H.
+apply generic_format_round...
+right.
+contradict H.
+apply sym_eq, round_generic...
+now apply generic_format_FIX.
+destruct (Z_lt_le_dec 0 p) as [Hp|Hp].
+destruct (Req_EM_T (convert_expr x) (round radix2 (FLT_exp e p) rndZR (convert_expr x))) as [H|H].
+left.
+apply FLT_format_generic.
+apply Hp.
+rewrite H.
+apply generic_format_round...
+right.
+contradict H.
+apply sym_eq, round_generic...
+now apply generic_format_FLT.
+destruct p.
+destruct (Req_EM_T (convert_expr x) 0) as [H|H].
+left.
+rewrite H.
+exists (Float radix2 0 e).
+split.
+apply sym_eq, F2R_0.
+split.
+apply eq_refl.
+apply Zle_refl.
+right.
+intros ((xm,xe)&H1&H2&H3).
+simpl in H2.
+assert (xm = Z0).
+clear -H2 ; zify ; omega.
+now rewrite H0, F2R_0 in H1.
+now elim Hp.
+right.
+intros ((xm,xe)&H1&H2&H3).
+apply Zlt_not_le with (1 := H2).
+apply Zabs_pos.
 Qed.
 
 Lemma decidable_tree :
@@ -492,7 +543,7 @@ Theorem transform_atom_bound_correct :
   stable_expr f ->
   stable_atom (transform_atom_bound (transform_expr f)).
 Proof.
-now intros f Hf [[l|] e [u|]|x y l u|x y|x y|fmt x] ;
+now intros f Hf [[l|] e [u|]|x y l u|x y|x y|fmt x|fmt x] ;
   simpl ; split ; repeat rewrite (transform_expr_correct _ Hf).
 Qed.
 
@@ -502,6 +553,7 @@ Definition transform_atom_expr f a :=
   | raRel er ex l u => raRel (f er) (f ex) l u
   | raEq ex ey => raEq (f ex) (f ey)
   | raLe ex ey => raLe (f ex) (f ey)
+  | raGeneric fmt e => raGeneric fmt (f e)
   | raFormat fmt e => raFormat fmt (f e)
   end.
 
@@ -510,7 +562,7 @@ Theorem transform_atom_expr_correct :
   stable_expr f ->
   stable_atom (transform_atom_expr (transform_expr f)).
 Proof.
-now intros f Hf [l e u|x y l u|x y|x y|fmt x] ;
+now intros f Hf [l e u|x y l u|x y|x y|fmt x|fmt x] ;
   simpl ; split ; repeat rewrite (transform_expr_correct _ Hf).
 Qed.
 
@@ -744,7 +796,7 @@ Definition change_abs_func a :=
 Lemma change_abs_prop :
   stable_atom change_abs_func.
 Proof.
-intros [l v u|x y l u|v w|v w|f x] ; try easy.
+intros [l v u|x y l u|v w|v w|f x|f x] ; try easy.
 destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try easy.
 destruct o ; try easy.
 split.
@@ -773,7 +825,7 @@ Definition change_le_func a :=
 Lemma change_le_prop :
   stable_atom change_le_func.
 Proof.
-intros [l v u|x y l u|v w|v w|f x] ; try easy.
+intros [l v u|x y l u|v w|v w|f x|f x] ; try easy.
 simpl.
 assert (Hv := get_float2_bound_correct v).
 assert (Hw := get_float2_bound_correct w).
@@ -847,7 +899,7 @@ Lemma change_rel_prop :
   stable_atom change_rel_func.
 Proof.
 unfold change_rel_func.
-intros [l v u|x y l u|v w|v w|f x] ; try easy.
+intros [l v u|x y l u|v w|v w|f x|f x] ; try easy.
 destruct v as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try easy.
 destruct o ; try easy.
 destruct x as [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try easy.
@@ -878,6 +930,8 @@ Qed.
 Definition change_format_func (pos : bool) a :=
   let a' :=
     match a with
+    | raGeneric (fFixed _ as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
+    | raGeneric (fFloat _ (Zpos _) as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
     | raFormat (fFixed _ as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
     | raFormat (fFloat _ (Zpos _) as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
     | _ => a
@@ -888,7 +942,7 @@ Lemma change_format_prop :
   stable_atom_tree change_format_func.
 Proof.
 unfold change_format_func.
-intros [l v u|x y l u|v w|v w|[em|em [|p|p]] x] pos ; try (case pos ; easy) ; simpl ; intros H.
+intros [l v u|x y l u|v w|v w|[em|em [|p|p]] x|[em|em [|p|p]] x] pos ; try (case pos ; easy) ; simpl ; intros H.
 destruct pos ; simpl.
 apply sym_eq, round_generic.
 apply valid_rnd_N.
@@ -904,6 +958,28 @@ apply valid_rnd_N.
 exact H.
 contradict H.
 rewrite <- H.
+apply generic_format_round.
+now apply FLT_exp_valid.
+apply valid_rnd_N.
+destruct pos ; simpl.
+apply sym_eq, round_generic.
+apply valid_rnd_N.
+now apply generic_format_FIX.
+contradict H.
+rewrite <- H.
+apply FIX_format_generic.
+apply generic_format_round.
+apply FIX_exp_valid.
+apply valid_rnd_N.
+destruct pos ; simpl.
+apply sym_eq, round_generic.
+apply valid_rnd_N.
+apply generic_format_FLT.
+exact H.
+contradict H.
+rewrite <- H.
+apply FLT_format_generic.
+easy.
 apply generic_format_round.
 now apply FLT_exp_valid.
 apply valid_rnd_N.
@@ -930,7 +1006,7 @@ Definition remove_unknown_func (pos : bool) a :=
 Lemma remove_unknown_prop :
   stable_atom_tree remove_unknown_func.
 Proof.
-intros [[l|] v [u|]|x y l u|v w|v w|[em|em [|p|p]] x] pos ; try (case pos ; easy) ; simpl ; intros H.
+intros [[l|] v [u|]|x y l u|v w|v w|f x|f x] pos ; try (case pos ; easy) ; simpl ; intros H.
 destruct l as [xl|xl|xl yl|xl yl|ol xl|ol xl yl|xl|xl|xl|xl|xl|xl|fl xl] ; try easy.
 destruct u as [xu|xu|xu yu|xu yu|ou xu|ou xu yu|xu|xu|xu|xu|xu|xu|fu xu] ; try easy.
 now destruct pos.
