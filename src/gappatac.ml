@@ -414,8 +414,8 @@ match decompose_app p with
       mkLApp coq_rtOr [|qt_pred a; qt_pred b|]
   | c, [a;b] when c = Lazy.force coq_Rle ->
       mkLApp coq_rtAtom [|mkLApp coq_raLe [|qt_term a; qt_term b|]|]
-  | c, [a;b] when c = Lazy.force coq_Rge ->
-      mkLApp coq_rtAtom [|mkLApp coq_raLe [|qt_term b; qt_term a|]|]
+  (*| c, [a;b] when c = Lazy.force coq_Rge ->
+      mkLApp coq_rtAtom [|mkLApp coq_raLe [|qt_term b; qt_term a|]|]*)
   | c, [t;a;b] when c = Lazy.force coq_eq && t = Lazy.force coq_R ->
       mkLApp coq_rtAtom [|mkLApp coq_raEq [|qt_term a; qt_term b|]|]
   | c, [_;a;b] when c = Lazy.force coq_generic_format ->
@@ -648,7 +648,6 @@ let remove_file f = if not !debug then try Sys.remove f with _ -> ()
 exception GappaFailed of string
 
 (** print a Gappa goal from [p] and call Gappa on it,
-    parse the comment at the start of its output,
     build a Coq term by calling [c_of_s] *)
 let call_gappa c_of_s p =
   let gappa_in = temp_file "gappa_inp" in
