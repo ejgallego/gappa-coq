@@ -210,7 +210,8 @@ let coq_xO = lazy (constant "xO")
 
 exception NotGappa of constr
 
-let var_table = Hashtbl.create 17
+let var_terms = Hashtbl.create 17
+let var_names = Hashtbl.create 17
 let var_list = ref []
 let global_env = ref Environ.empty_env
 
@@ -385,10 +386,10 @@ and qt_no_Rint t =
       | _ -> raise (NotGappa t)
   with NotGappa _ ->
     try
-      Hashtbl.find var_table t
+      Hashtbl.find var_terms t
     with Not_found ->
-      let e = mkLApp coq_reUnknown [|mk_pos (Hashtbl.length var_table + 1)|] in
-      Hashtbl.replace var_table t e;
+      let e = mkLApp coq_reUnknown [|mk_pos (Hashtbl.length var_terms + 1)|] in
+      Hashtbl.add var_terms t e;
       var_list := t :: !var_list;
       e
 
@@ -448,7 +449,7 @@ let gappa_quote gl =
     let uv = mkList _R !var_list in
     let e = mkLApp coq_convert_tree [|uv; g|] in
     (*Pp.msgerrnl (Printer.pr_constr e);*)
-    Hashtbl.clear var_table;
+    Hashtbl.clear var_terms;
     var_list := [];
     Tacticals.tclTHEN
       (Tacticals.tclTHEN
@@ -457,7 +458,7 @@ let gappa_quote gl =
       (Tacmach.convert_concl_no_check e DEFAULTcast) gl
   with
     | NotGappa t ->
-      Hashtbl.clear var_table;
+      Hashtbl.clear var_terms;
       var_list := [];
       anomalylabstrm "gappa_quote"
         (Pp.str "something wrong happened with term " ++ Printer.pr_constr t)
@@ -587,7 +588,25 @@ let rec tr_pred uv t =
         raise (NotGappa t)
 
 let tr_var c = match kind_of_term c with
-  | Var x -> string_of_id x
+  | Var x ->
+    let s = string_of_id x in
+    for i = 0 to String.length s - 1 do
+      let c = s.[i] in
+      if not (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') ||
+        ('0' <= c && c <= '9') || c == '_') then s.[i] <- '_';
+    done;
+    if s.[0] = '_' then s.[0] <- 'G';
+    let s = ref s in
+    begin try
+      while true do
+        ignore (Hashtbl.find var_names !s);
+        s := !s ^ "_";
+      done;
+      assert false
+    with Not_found ->
+      Hashtbl.add var_names !s c;
+      !s
+    end
   | _ -> raise (NotGappa c)
 
 (** translate a Coq term [t:list] into [list] by applying [f] to each element *)
@@ -720,7 +739,7 @@ let var_name = function
   | Name id ->
       let s = string_of_id id in
       let s = String.sub s 1 (String.length s - 1) in
-      mkVar (id_of_string s)
+      Hashtbl.find var_names s
   | Anonymous ->
       assert false
 
@@ -733,6 +752,12 @@ let build_proof_term c =
 (** the [gappa_internal] tactic *)
 let gappa_internal gl =
   try
+    Hashtbl.clear var_names;
+    List.iter (let dummy = mkVar (id_of_string "dummy") in
+      fun n -> Hashtbl.add var_names n dummy)
+      ["fma"; "sqrt"; "not"; "in"; "float"; "fixed"; "int";
+       "homogen80x"; "homogen80x_init"; "float80x";
+       "add_rel"; "sub_rel"; "mul_rel"; "fma_rel" ];
     let g = tr_goal (pf_concl gl) in
     let (emap, pf) = call_gappa (constr_of_stream gl) g in
     let pf = evars_to_vmcast (project gl) (emap, pf) in
