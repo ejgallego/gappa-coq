@@ -434,8 +434,18 @@ match decompose_app p with
 
 (** reify hypotheses *)
 let qt_hyps =
-  List.fold_left
-    (fun acc (n, h) -> try (n, qt_pred h) :: acc with NotGappa _ -> acc) []
+  List.fold_left (fun acc (n, h) ->
+    let old_var_list = !var_list in
+    try (n, qt_pred h) :: acc
+    with NotGappa _ ->
+      while not (!var_list == old_var_list) do
+        match !var_list with
+        | h :: q ->
+          Hashtbl.remove var_terms h;
+          var_list := q
+        | [] -> assert false
+      done;
+      acc) []
 
 (** the [gappa_quote] tactic *)
 let gappa_quote gl =
