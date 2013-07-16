@@ -1120,7 +1120,9 @@ Ltac gappa_prepare :=
     | List.nil => clear
     | List.cons ?h ?q =>
       match n with
-      | O => generalize h ; intro ; convert_apply ltac:(fun uv _ => generalize_all (S m) (S m) uv)
+      | O =>
+        generalize h ; clear ; intro ;
+        convert_apply ltac:(fun uv _ => generalize_all (S m) (S m) uv)
       | S ?n => generalize_all m n q
       end
     end in
