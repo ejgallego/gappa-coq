@@ -395,7 +395,9 @@ and qt_no_Rint t =
 
 (** reify a Coq term [p:Prop] *)
 let rec qt_pred p = match kind_of_term p with
-  | Prod (_,a,b) -> mkLApp coq_rtImpl [|qt_pred a; qt_pred b|]
+  | Prod (_,a,b) ->
+    if not (closed0 b) then raise (NotGappa p);
+    mkLApp coq_rtImpl [|qt_pred a; qt_pred b|]
   | _ ->
 match decompose_app p with
   | c, [] when c = Lazy.force coq_True ->
