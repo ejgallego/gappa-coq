@@ -1,3 +1,11 @@
+Version 1.0.0:
+ - added support for Gappa 1.0.0
+ - fixed invalid identifiers being sent to Gappa
+ - fixed broken generalization of terms
+ - added support for negation, disjunction, and implication
+ - allowed half-bounded intervals
+ - proved tree simplification
+
 Version 0.21.1:
  - fixed build for the tarball and the tactic
 
