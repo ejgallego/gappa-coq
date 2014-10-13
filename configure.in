@@ -36,7 +36,7 @@ if test ${COQBIN##*/}; then COQBIN=$COQBIN/; fi
 AC_ARG_VAR(COQC, [Coq compiler command [coqc]])
 AC_MSG_CHECKING([for coqc >= 8.4])
 if test ! "$COQC"; then COQC=`which ${COQBIN}coqc`; fi
-coqc_version=[`"$COQC" -v | sed -n -e 's/^.*version \([0-9.]\+\).*$/\1/p'`]
+coqc_version=[`$COQC -v | sed -n -e 's/^.*version \([0-9.]\+\).*$/\1/p'`]
 AX_VERSION_GE([$coqc_version], [8.4],
   [ AC_MSG_RESULT([$COQC]) ],
   [ AC_MSG_RESULT([no])
@@ -85,7 +85,7 @@ AC_MSG_CHECKING([for Flocq])
 AS_IF(
   [ echo "Require Import Flocq_version BinNat." \
          "Goal (20000 <= Flocq_version)%N. easy. Qed." > conftest.v
-    "$COQC" conftest.v > conftest.err ],
+    $COQC conftest.v > conftest.err ],
   [ AC_MSG_RESULT([yes]) ],
   [ AC_MSG_RESULT([no])
     AC_MSG_ERROR([ *** Unable to find library Flocq >= 2.0 (http://flocq.gforge.inria.fr/)])])
