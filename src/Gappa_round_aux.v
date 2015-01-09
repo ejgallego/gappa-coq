@@ -136,13 +136,4 @@ apply Z2R_le.
 now apply Zpower_le.
 Qed.
 
-(* from Flocq 2.1 *)
-Axiom generic_round_generic :
-  forall (beta : radix) (fexp1 fexp2 : Z -> Z)
-    { valid_exp1 : Valid_exp fexp1 } { valid_exp2 : Valid_exp fexp2 }
-    (rnd : R -> Z) { valid_rnd : Valid_rnd rnd },
-  forall x : R,
-  generic_format beta fexp1 x ->
-  generic_format beta fexp1 (round beta fexp2 rnd x).
-
 End Gappa_round_aux.

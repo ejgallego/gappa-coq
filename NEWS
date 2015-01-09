@@ -1,3 +1,6 @@
+Version 1.1.0:
+ - moved to Flocq 2.4
+
 Version 1.0.0:
  - added support for Gappa 1.0.0
  - fixed invalid identifiers being sent to Gappa
