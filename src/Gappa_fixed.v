@@ -12,8 +12,6 @@ Require Import Gappa_round.
 Global Notation rounding_fixed rdir e :=
   (Fcore_generic_fmt.round radix2 (FIX_exp e) rdir) (only parsing).
 
-Section Gappa_fixed.
-
 Theorem fix_of_fixed :
   forall rdir,
   forall x : R, forall k1 k2 : Z,
@@ -188,5 +186,3 @@ unfold float2R, Zminus.
 rewrite F2R_bpow, Zplus_comm.
 apply bpow_plus.
 Qed.
-
-End Gappa_fixed.

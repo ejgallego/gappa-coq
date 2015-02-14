@@ -1,8 +1,6 @@
 Require Import Reals.
 Require Import Gappa_common.
 
-Section Gappa_rewriting.
-
 Theorem bnd_rewrite :
   forall a b : R, forall zi : FF,
   a = b -> BND b zi -> BND a zi.
@@ -71,6 +69,7 @@ Theorem opp_mibs :
  forall a b : R, forall zi : FF,
  BND (-a - -b) zi ->
  BND (-(a - b)) zi.
+Proof.
 intros a b zi Hz.
 replace (-(a - b))%R with (-a - -b)%R.
 exact Hz.
@@ -81,6 +80,7 @@ Theorem add_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) + (c + b)) zi ->
  BND (a + b) zi.
+Proof.
 intros a b c zi Hz.
 replace (a + b)%R with ((a - c) + (c + b))%R.
 exact Hz.
@@ -91,6 +91,7 @@ Theorem add_xars :
  forall a b c : R, forall zi : FF,
  BND ((a + c) + (b - c)) zi ->
  BND (a + b) zi.
+Proof.
 intros a b c zi Hz.
 replace (a + b)%R with ((a + c) + (b - c))%R.
 exact Hz.
@@ -101,6 +102,7 @@ Theorem sub_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) + (c - b)) zi ->
  BND (a - b) zi.
+Proof.
 intros a b c zi Hz.
 replace (a - b)%R with ((a - c) + (c - b))%R.
 exact Hz.
@@ -111,6 +113,7 @@ Theorem sub_xars :
  forall a b c : R, forall zi : FF,
  BND ((a - c) - (b - c)) zi ->
  BND (a - b) zi.
+Proof.
 intros a b c zi Hz.
 replace (a - b)%R with ((a - c) - (b - c))%R.
 exact Hz.
@@ -121,6 +124,7 @@ Theorem mul_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) * b + c * b) zi ->
  BND (a * b) zi.
+Proof.
 intros a b c zi Hz.
 replace (a * b)%R with ((a - c) * b + c * b)%R.
 exact Hz.
@@ -131,6 +135,7 @@ Theorem mul_xars :
  forall a b c : R, forall zi : FF,
  BND (a * (b - c) + a * c) zi ->
  BND (a * b) zi.
+Proof.
 intros a b c zi Hz.
 replace (a * b)%R with (a * (b - c) + a * c)%R.
 exact Hz.
@@ -141,6 +146,7 @@ Theorem add_mibs :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) + (b - d)) zi ->
  BND ((a + b) - (c + d)) zi.
+Proof.
 intros a b c d zi Hz.
 replace ((a + b) - (c + d))%R with ((a - c) + (b - d))%R.
 exact Hz.
@@ -151,6 +157,7 @@ Theorem add_fils :
  forall a b c : R, forall zi : FF,
  BND (b - c) zi ->
  BND ((a + b) - (a + c)) zi.
+Proof.
 intros a b c zi Hz.
 replace ((a + b) - (a + c))%R with (b - c)%R.
 exact Hz.
@@ -161,6 +168,7 @@ Theorem add_firs :
  forall a b c : R, forall zi : FF,
  BND (a - c) zi ->
  BND ((a + b) - (c + b)) zi.
+Proof.
 intros a b c zi Hz.
 replace ((a + b) - (c + b))%R with (a - c)%R.
 exact Hz.
@@ -171,6 +179,7 @@ Theorem add_filq :
  forall a b c : R, forall zi : FF,
  NZR (a + c) -> BND ((b - c) / (a + c)) zi ->
  BND (((a + b) - (a + c)) / (a + c)) zi.
+Proof.
 intros a b c zi Hac Hz.
 replace (((a + b) - (a + c)) / (a + c))%R with ((b - c) / (a + c))%R.
 exact Hz.
@@ -182,6 +191,7 @@ Theorem add_firq :
  forall a b c : R, forall zi : FF,
  NZR (c + b) -> BND ((a - c) / (c + b)) zi ->
  BND (((a + b) - (c + b)) / (c + b)) zi.
+Proof.
 intros a b c zi Hac Hz.
 replace (((a + b) - (c + b)) / (c + b))%R with ((a - c) / (c + b))%R.
 exact Hz.
@@ -193,6 +203,7 @@ Theorem sub_mibs :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) + -(b - d)) zi ->
  BND ((a - b) - (c - d)) zi.
+Proof.
 intros a b c d zi Hz.
 replace ((a - b) - (c - d))%R with ((a - c) + -(b - d))%R.
 exact Hz.
@@ -203,6 +214,7 @@ Theorem sub_fils :
  forall a b c : R, forall zi : FF,
  BND (-(b - c)) zi ->
  BND ((a - b) - (a - c)) zi.
+Proof.
 intros a b c zi Hz.
 replace ((a - b) - (a - c))%R with (-(b - c))%R.
 exact Hz.
@@ -213,6 +225,7 @@ Theorem sub_firs :
  forall a b c : R, forall zi : FF,
  BND (a - c) zi ->
  BND ((a - b) - (c - b)) zi.
+Proof.
 intros a b c zi Hz.
 replace ((a - b) - (c - b))%R with (a - c)%R.
 exact Hz.
@@ -223,6 +236,7 @@ Theorem sub_filq :
  forall a b c : R, forall zi : FF,
  NZR (a - c) -> BND (- ((b - c) / (a - c))) zi ->
  BND (((a - b) - (a - c)) / (a - c)) zi.
+Proof.
 intros a b c zi Hac Hz.
 replace (((a - b) - (a - c)) / (a - c))%R with (-((b - c) / (a - c)))%R.
 exact Hz.
@@ -234,6 +248,7 @@ Theorem sub_firq :
  forall a b c : R, forall zi : FF,
  NZR (c - b) -> BND ((a - c) / (c - b)) zi ->
  BND (((a - b) - (c - b)) / (c - b)) zi.
+Proof.
 intros a b c zi Hac Hz.
 replace (((a - b) - (c - b)) / (c - b))%R with ((a - c) / (c - b))%R.
 exact Hz.
@@ -245,6 +260,7 @@ Theorem mul_fils :
  forall a b c : R, forall zi : FF,
  BND (a * (b - c)) zi ->
  BND (a * b - a * c) zi.
+Proof.
 intros a b c zi Hz.
 replace (a * b - a * c)%R with (a * (b - c))%R.
 exact Hz.
@@ -255,6 +271,7 @@ Theorem mul_firs :
  forall a b c : R, forall zi : FF,
  BND ((a - c) * b) zi ->
  BND (a * b - c * b) zi.
+Proof.
 intros a b c zi Hz.
 replace (a * b - c * b)%R with ((a - c) * b)%R.
 exact Hz.
@@ -265,6 +282,7 @@ Theorem mul_mars :
  forall a b c d : R, forall zi : FF,
  BND (a * (b - d) + (a - c) * d) zi ->
  BND (a * b - c * d) zi.
+Proof.
 intros a b c d zi Hz.
 replace (a * b - c * d)%R with (a * (b - d) + (a - c) * d)%R.
 exact Hz.
@@ -275,6 +293,7 @@ Theorem mul_mals :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) * b + c * (b - d)) zi ->
  BND (a * b - c * d) zi.
+Proof.
 intros a b c d zi Hz.
 replace (a * b - c * d)%R with ((a - c) * b + c * (b - d))%R.
 exact Hz.
@@ -285,6 +304,7 @@ Theorem mul_mabs :
  forall a b c d : R, forall zi : FF,
  BND (a * (b - d) + (a - c) * b - ((a - c) * (b - d))) zi ->
  BND (a * b - c * d) zi.
+Proof.
 intros a b c d zi Hz.
 replace (a * b - c * d)%R with (a * (b - d) + (a - c) * b - ((a - c) * (b - d)))%R.
 exact Hz.
@@ -295,6 +315,7 @@ Theorem mul_mibs :
  forall a b c d : R, forall zi : FF,
  BND (c * (b - d) + (a - c) * d + (a - c) * (b - d)) zi ->
  BND (a * b - c * d) zi.
+Proof.
 intros a b c d zi Hz.
 replace (a * b - c * d)%R with (c * (b - d) + (a - c) * d + (a - c) * (b - d))%R.
 exact Hz.
@@ -306,6 +327,7 @@ Theorem err_xalq :
  NZR b -> NZR c ->
  BND ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b)) zi ->
  BND ((a - b) / b) zi.
+Proof.
 intros a b c zi Hb Hc Hz.
 replace ((a - b) / b)%R with ((a - c) / c + (c - b) / b + ((a - c) / c) * ((c - b) / b))%R.
 exact Hz.
@@ -346,6 +368,7 @@ Theorem sqrt_mibs :
  BND ((a - b) / (sqrt a + sqrt b)) zi ->
  Fpos0 (lower ai) && Fpos0 (lower bi) = true ->
  BND (sqrt a - sqrt b) zi.
+Proof.
 intros a b ai bi zi Ha Hb Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1,H2).
 generalize (Fpos0_correct _ H1). clear H1. intro H1.
@@ -394,6 +417,7 @@ Theorem sqrt_mibq :
  BND (sqrt (1 + (a - b) / b) - 1) zi ->
  Fpos0 (lower ai) && Fpos (lower bi) = true ->
  BND ((sqrt a - sqrt b) / sqrt b) zi.
+Proof.
 intros a b ai bi zi Ha Hb Hz H.
 generalize (andb_prop _ _ H). clear H. intros (H1,H2).
 generalize (Fpos0_correct _ H1). clear H1. intro H1.
@@ -419,6 +443,7 @@ Theorem abs_mul_xx :
  forall a b : R, forall zi : FF,
  BND (Rabs a * Rabs b) zi ->
  BND (Rabs (a * b)) zi.
+Proof.
 intros a b zi Hz.
 rewrite Rabs_mult.
 exact Hz.
@@ -428,6 +453,7 @@ Theorem val_xebs :
  forall a b : R, forall zi : FF,
  BND (b - (b - a)) zi ->
  BND a zi.
+Proof.
 intros a b zi Hz.
 replace a with (b - (b - a))%R.
 exact Hz.
@@ -438,6 +464,7 @@ Theorem val_xabs :
  forall a b : R, forall zi : FF,
  BND (a + (b - a)) zi ->
  BND b zi.
+Proof.
 intros a b zi Hz.
 replace b with (a + (b - a))%R.
 exact Hz.
@@ -449,6 +476,7 @@ Theorem div_mibq :
  NZR b -> NZR c -> NZR d ->
  BND (((a - c) / c - (b - d) / d) / (1 + (b - d) / d)) zi ->
  BND ((a / b - c / d) / (c / d)) zi.
+Proof.
 intros a b c d zi Hb Hc Hd Hz.
 replace ((a / b - c / d) / (c / d))%R with (((a - c) / c - (b - d) / d) / (1 + (b - d) / d))%R.
 exact Hz.
@@ -461,6 +489,7 @@ Theorem div_xals :
  NZR c ->
  BND ((b - a) / c + a / c) zi ->
  BND (b / c) zi.
+Proof.
 intros a b c zi Hc Hz.
 replace (b / c)%R with ((b - a) / c + a / c)%R.
 exact Hz.
@@ -487,6 +516,7 @@ Theorem div_fir :
  NZR b ->
  BND a zi ->
  BND ((a * b) / b) zi.
+Proof.
 intros a b zi Hb Hz.
 replace (( a * b) / b)%R with a.
 exact Hz.
@@ -499,6 +529,7 @@ Theorem div_fil :
  NZR a ->
  BND b zi ->
  BND ((a * b) / a) zi.
+Proof.
 intros a b zi Hb Hz.
 replace (( a * b) / a)%R with b.
 exact Hz.
@@ -510,6 +541,7 @@ Theorem err_xabq :
  forall a b : R, forall zi : FF,
  NZR b -> BND (1 + (a - b) / b) zi ->
  BND (a / b) zi.
+Proof.
 intros a b zi Hb Hz.
 replace (a / b)%R with (1 + (a - b) / b)%R.
 exact Hz.
@@ -521,6 +553,7 @@ Theorem err_fabq :
  forall a b : R, forall zi : FF,
  NZR b -> BND (a / b) zi ->
  BND (1 + (a - b) / b) zi.
+Proof.
 intros a b zi Hb Hz.
 replace (1 + (a - b) / b)%R with (a / b)%R .
 exact Hz.
@@ -532,6 +565,7 @@ Theorem addf_1 :
   forall a b : R, forall zi : FF,
   NZR a -> NZR (a + b) -> BND (1 / (1 + b / a)) zi ->
   BND (a / (a + b)) zi.
+Proof.
 intros a b zi Ha Hab Hz.
 replace (a / (a + b))%R with (1 / (1 + b / a))%R.
 exact Hz.
@@ -543,6 +577,7 @@ Theorem addf_2 :
   forall a b : R, forall zi : FF,
   NZR (a + b) -> BND (1 - b / (a + b)) zi ->
   BND (a / (a + b)) zi.
+Proof.
 intros a b zi Hab Hz.
 replace (a / (a + b))%R with (1 - b / (a + b))%R.
 exact Hz.
@@ -554,6 +589,7 @@ Theorem addf_3 :
   forall a b : R, forall zi : FF,
   NZR a -> NZR (a - b) -> BND (1 / (1 - b / a)) zi ->
   BND (a / (a - b)) zi.
+Proof.
 intros a b zi Ha Hab Hz.
 replace (a / (a - b))%R with (1 / (1 - b / a))%R.
 exact Hz.
@@ -565,6 +601,7 @@ Theorem addf_4 :
   forall a b : R, forall zi : FF,
   NZR (a - b) -> BND (1 + b / (a - b)) zi ->
   BND (a / (a - b)) zi.
+Proof.
 intros a b zi Hab Hz.
 replace (a / (a - b))%R with (1 + b / (a - b))%R.
 exact Hz.
@@ -576,6 +613,7 @@ Theorem addf_5 :
   forall a b : R, forall zi : FF,
   NZR b -> NZR (a + b) -> BND (1 / (a / b + 1)) zi ->
   BND (b / (a + b)) zi.
+Proof.
 intros a b zi Hb Hab Hz.
 replace (b / (a + b))%R with (1 / (a / b + 1))%R.
 exact Hz.
@@ -587,6 +625,7 @@ Theorem addf_6 :
   forall a b : R, forall zi : FF,
   NZR (a + b) -> BND (1 - a / (a + b)) zi ->
   BND (b / (a + b)) zi.
+Proof.
 intros a b zi Hab Hz.
 replace (b / (a + b))%R with (1 - a / (a + b))%R.
 exact Hz.
@@ -598,6 +637,7 @@ Theorem addf_7 :
   forall a b : R, forall zi : FF,
   NZR b -> NZR (a - b) -> BND (1 / (a / b - 1)) zi ->
   BND (b / (a - b)) zi.
+Proof.
 intros a b zi Hb Hab Hz.
 replace (b / (a - b))%R with (1 / (a / b - 1))%R.
 exact Hz.
@@ -609,6 +649,7 @@ Theorem addf_8 :
   forall a b : R, forall zi : FF,
   NZR (a - b) -> BND (a / (a - b) - 1) zi ->
   BND (b / (a - b)) zi.
+Proof.
 intros a b zi Hab Hz.
 replace (b / (a - b))%R with (a / (a - b) - 1)%R.
 exact Hz.
@@ -701,5 +742,3 @@ Proof.
 intros a b c H.
 now rewrite H.
 Qed.
-
-End Gappa_rewriting.

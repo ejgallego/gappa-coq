@@ -11,8 +11,6 @@ Require Import Flocq.Core.Fcore_FLX.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 
-Section Gappa_round_aux.
-
 Lemma float2_shift_p1 :
   forall e m : Z,
   Float2 m (e + 1) = Float2 (m * 2) e :>R.
@@ -70,6 +68,7 @@ Definition pos_of_Z (n : Z) :=
 Lemma Zpos_pos_of_Z :
  forall a : Z, (0 < a)%Z ->
  (Zpos (pos_of_Z a) = a)%Z.
+Proof.
 induction a ; intros ; compute in H ; try discriminate H.
 exact (refl_equal _).
 Qed.
@@ -135,5 +134,3 @@ change (Z2R (Zpower radix2 (Zpos xn)) <= Z2R (Zpower radix2 (Zpos zn)))%R.
 apply Z2R_le.
 now apply Zpower_le.
 Qed.
-
-End Gappa_round_aux.

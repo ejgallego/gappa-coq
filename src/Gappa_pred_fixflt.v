@@ -3,8 +3,6 @@ Require Import Flocq.Prop.Fprop_Sterbenz.
 Require Import Gappa_common.
 Require Import Gappa_round_aux.
 
-Section Gappa_pred_fixflt.
-
 Theorem fix_subset :
   forall x : R, forall xn zn : Z,
   FIX x xn ->
@@ -37,6 +35,7 @@ Theorem fix_of_singleton_bnd :
  ABS x xi ->
  fix_of_singleton_bnd_helper xi n = true ->
  FIX x n.
+Proof.
 intros x xi n (_, (Hx1, Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -74,6 +73,7 @@ Theorem flt_of_singleton_bnd :
  ABS x xi ->
  flt_of_singleton_bnd_helper xi n = true ->
  FLT x n.
+Proof.
 intros x xi n (_, (Hx1, Hx2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -112,6 +112,7 @@ Theorem add_fix :
  FIX x xn -> FIX y yn ->
  add_fix_helper xn yn zn = true ->
  FIX (x + y)%R zn.
+Proof.
 intros x y xn yn zn (fx,(Hx1,Hx2)) (fy,(Hy1,Hy2)) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zle_bool_imp_le _ _ H1). clear H1. intro H1.
@@ -133,6 +134,7 @@ Theorem sub_fix :
  FIX x xn -> FIX y yn ->
  add_fix_helper xn yn zn = true ->
  FIX (x - y)%R zn.
+Proof.
 intros x y xn yn zn Hx (fy,(Hy1,Hy2)) Hb.
 unfold Rminus.
 apply (add_fix _ (-y) _ yn zn Hx).
@@ -149,6 +151,7 @@ Theorem mul_fix :
  FIX x xn -> FIX y yn ->
  Zle_bool zn (xn + yn) = true ->
  FIX (x * y)%R zn.
+Proof.
 intros x y xn yn zn (fx,(Hx1,Hx2)) (fy,(Hy1,Hy2)) Hb.
 generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
 exists (Fmult2 fx fy).
@@ -164,6 +167,7 @@ Theorem mul_flt :
  FLT x xn -> FLT y yn ->
  Zle_bool (Zpos xn + Zpos yn) (Zpos zn) = true ->
  FLT (x * y)%R zn.
+Proof.
 intros x y xn yn zn (fx,(Hx1,Hx2)) (fy,(Hy1,Hy2)) Hb.
 generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
 exists (Fmult2 fx fy).
@@ -398,5 +402,3 @@ apply generic_format_opp.
 apply -> FLT_iff_generic.
 eapply sub_flt ; eassumption.
 Qed.
-
-End Gappa_pred_fixflt.

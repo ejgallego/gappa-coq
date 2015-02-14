@@ -1,7 +1,5 @@
 Require Import Gappa_common.
 
-Section Gappa_pred_nzr.
-
 Theorem neg_nzr :
   forall x : R,
   NZR x ->
@@ -37,10 +35,11 @@ now apply Rinv_neq_0_compat.
 Qed.
 
 Theorem nzr_of_abs :
- forall z : R, forall zi : FF,
- ABS z zi ->
- Fpos (lower zi) = true ->
- NZR z.
+  forall z : R, forall zi : FF,
+  ABS z zi ->
+  Fpos (lower zi) = true ->
+  NZR z.
+Proof.
 intros z zi Hz Hb.
 generalize (Fpos_correct _ Hb). clear Hb. intro H.
 case (Rcase_abs z) ; intro.
@@ -83,5 +82,3 @@ apply Hn.
 rewrite Hz2, H1.
 apply Rmult_0_l.
 Qed.
-
-End Gappa_pred_nzr.

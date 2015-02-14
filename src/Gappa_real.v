@@ -1,13 +1,12 @@
 Require Import Reals.
 
-Section Gappa_real.
-
 Theorem IRsubset :
  forall yl yu zl zu : R,
  (zl <= yl)%R -> (yu <= zu)%R ->
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= y <= zu)%R.
+Proof.
 intros yl yu zl zu Hzl Hzu y (Hyl,Hyu).
 split.
 apply Rle_trans with (1 := Hzl) (2 := Hyl).
@@ -20,6 +19,7 @@ Theorem IRplus :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x + y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -33,6 +33,7 @@ Theorem IRopp :
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= -y <= zu)%R.
+Proof.
 intros yl yu zl zu Hzl Hzu y (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -46,6 +47,7 @@ Theorem IRminus :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x - y <= zu)%R.
+Proof.
 unfold Rminus.
 intros xl xu yl yu zl zu Hzl Hzu x y Hx Hy.
 apply IRplus with (1 := Hzl) (2 := Hzu) (3 := Hx).
@@ -54,21 +56,25 @@ Qed.
 
 Lemma monotony_1p :
  forall a x y : R, (0 <= a)%R -> (x <= y)%R -> (a * x <= a * y)%R.
+Proof.
 auto with real.
 Qed.
 
 Lemma monotony_2p :
  forall a x y : R, (0 <= a)%R -> (x <= y)%R -> (x * a <= y * a)%R.
+Proof.
 auto with real.
 Qed.
 
 Lemma monotony_1n :
  forall a x y : R, (a <= 0)%R -> (x <= y)%R -> (a * y <= a * x)%R.
+Proof.
 auto with real.
 Qed.
 
 Lemma monotony_2n :
  forall a x y : R, (a <= 0)%R -> (x <= y)%R -> (y * a <= x * a)%R.
+Proof.
 intros a x y Ha H.
 rewrite Rmult_comm. rewrite (Rmult_comm x).
 apply Rge_le.
@@ -82,6 +88,7 @@ Theorem IRmult_pp :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -100,6 +107,7 @@ Theorem IRmult_po :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx Hy1 Hy2 Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -118,6 +126,7 @@ Theorem IRmult_pn :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -136,6 +145,7 @@ Theorem IRmult_op :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx1 Hx2 Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -155,6 +165,7 @@ Theorem IRmult_oo :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx1 Hx2 Hy1 Hy2 Hzl1 Hzl2 Hzu1 Hzu2 x y (Hxl,Hxu) (Hyl,Hyu).
 case (Rlt_le_dec 0 x) ; intro H.
 generalize (Rlt_le _ _ H). clear H. intro H.
@@ -185,6 +196,7 @@ Theorem IRmult_on :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx1 Hx2 Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -203,6 +215,7 @@ Theorem IRmult_np :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -221,6 +234,7 @@ Theorem IRmult_no :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx Hy1 Hy2 Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -239,6 +253,7 @@ Theorem IRmult_nn :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -257,6 +272,7 @@ Inductive interval_sign (xl xu : R) : Set :=
 
 Lemma interval_sign_correct :
  forall xl xu : R, (xl <= xu)%R -> interval_sign xl xu.
+Proof.
 intros xl xu H.
 case (Rlt_le_dec xu 0); intro H0.
 exact (Nsign _ _ (Rlt_le _ _ H0)).
@@ -267,6 +283,7 @@ Qed.
 
 Lemma Rmin_trans :
  forall a b c : R, (c <= Rmin a b)%R -> (c <= a)%R /\ (c <= b)%R.
+Proof.
 intros a b c H.
 split.
 exact (Rle_trans _ _ _ H (Rmin_l _ _)).
@@ -275,6 +292,7 @@ Qed.
 
 Lemma Rmax_trans :
  forall a b c : R, (Rmax a b <= c)%R -> (a <= c)%R /\ (b <= c)%R.
+Proof.
 intros a b c H.
 split.
 exact (Rle_trans _ _ _ (RmaxLess1 _ _) H).
@@ -288,6 +306,7 @@ Lemma IRmult_minmax :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hzl Hzu x y Hx Hy.
 decompose [and] (Rmin_trans _ _ _ Hzl).
 decompose [and] (Rmin_trans _ _ _ H).
@@ -314,6 +333,7 @@ Lemma Rle_Rinv_pos :
  forall x y : R,
  (0 < x)%R -> (x <= y)%R ->
  (/y <= /x)%R.
+Proof.
 intros x y Hx H.
 apply Rle_Rinv with (1 := Hx) (3 := H).
 apply Rlt_le_trans with (1 := Hx) (2 := H).
@@ -323,6 +343,7 @@ Lemma Rle_Rinv_neg :
  forall x y : R,
  (y < 0)%R -> (x <= y)%R ->
  (/y <= /x)%R.
+Proof.
 intros x y Hy H.
 apply Ropp_le_cancel.
 repeat rewrite Ropp_inv_permute.
@@ -340,6 +361,7 @@ Lemma IRinv_p :
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= /y <= zu)%R.
+Proof.
 intros yl yu zl zu Hy Hzl Hzu y (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -355,6 +377,7 @@ Lemma IRinv_n :
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= /y <= zu)%R.
+Proof.
 intros yl yu zl zu Hy Hzl Hzu y (Hyl,Hyu).
 apply IRsubset with (1 := Hzl) (2 := Hzu).
 split.
@@ -370,6 +393,7 @@ Lemma IRinv_disj :
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= /y <= zu)%R.
+Proof.
 intros yl yu zl zu [Hy2|Hy1] Hzl Hzu y Hy.
 exact (IRinv_n _ _ _ _ Hy2 Hzl Hzu _ Hy).
 exact (IRinv_p _ _ _ _ Hy1 Hzl Hzu _ Hy).
@@ -383,6 +407,7 @@ Lemma IRdiv_minmax :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x / y <= zu)%R.
+Proof.
 unfold Rdiv.
 intros xl xu yl yu zl zu H Hzl Hzu x y Hx Hy.
 apply (IRmult_minmax _ _ (/yu) (/yl) _ _ Hzl Hzu _ (/y) Hx).
@@ -393,6 +418,7 @@ Lemma IRdiv_aux_p :
  forall yl yu y : R,
  (0 < yl)%R -> (yl <= y <= yu)%R ->
  (0 <= / yl)%R /\ (0 <= / yu)%R /\ (yl <> 0)%R /\ (yu <> 0)%R /\ (/ yu <= /y <= / yl)%R.
+Proof.
 intros yl yu y Hyl Hy.
 split. left.
 apply Rinv_0_lt_compat.
@@ -420,6 +446,7 @@ Theorem IRdiv_pp :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x / y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hxl Hyl Hzl Hzu x y Hx Hy.
 generalize (IRdiv_aux_p _ _ _ Hyl Hy).
 intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
@@ -443,6 +470,7 @@ Theorem IRdiv_op :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x / y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hxl Hxu Hyl Hzl Hzu x y Hx Hy.
 generalize (IRdiv_aux_p _ _ _ Hyl Hy).
 intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
@@ -465,6 +493,7 @@ Theorem IRdiv_np :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x / y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hxu Hyl Hzl Hzu x y Hx Hy.
 generalize (IRdiv_aux_p _ _ _ Hyl Hy).
 intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
@@ -482,6 +511,7 @@ Lemma IRdiv_aux_n :
  forall yl yu y : R,
  (yu < 0)%R -> (yl <= y <= yu)%R ->
  (/ yl <= 0)%R /\ (/ yu <= 0)%R /\ (yl <> 0)%R /\ (yu <> 0)%R /\ (/ yu <= /y <= / yl)%R.
+Proof.
 intros yl yu y Hyu Hy.
 split. left.
 apply Rinv_lt_0_compat.
@@ -509,6 +539,7 @@ Theorem IRdiv_pn :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x / y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hxl Hyu Hzl Hzu x y Hx Hy.
 generalize (IRdiv_aux_n _ _ _ Hyu Hy).
 intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
@@ -532,6 +563,7 @@ Theorem IRdiv_on :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x / y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hxl Hxu Hyu Hzl Hzu x y Hx Hy.
 generalize (IRdiv_aux_n _ _ _ Hyu Hy).
 intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
@@ -554,6 +586,7 @@ Theorem IRdiv_nn :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x / y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hxu Hyu Hzl Hzu x y Hx Hy.
 generalize (IRdiv_aux_n _ _ _ Hyu Hy).
 intros (Hy1, (Hy2, (Hy3, (Hy4, Hy5)))).
@@ -574,6 +607,7 @@ Theorem IRsquare_o :
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= y * y <= zu)%R.
+Proof.
 intros yl yu zl zu Hy1 Hy2 Hzl Hzu1 Hzu2 y (Hyl,Hyu).
 split.
 fold (Rsqr y).
@@ -596,6 +630,7 @@ Theorem IRsqrt :
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= sqrt y <= zu)%R.
+Proof.
 intros yl yu zl zu.
 case (Rlt_le_dec 0 zl) ; intros Hzl1 Hzl2 Hzu1 Hzu2 y (Hyl,Hyu).
 assert (H1: (zl * zl <= y)%R).
@@ -632,6 +667,7 @@ Theorem IRcompose :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= x + y + x * y <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 replace (x + y + x * y)%R with ((1 + x) * (1 + y) - 1)%R. 2: ring.
 assert (H : (1 + zl <= (1 + x) * (1 + y) <= 1 + zu)%R).
@@ -663,6 +699,7 @@ Theorem IRcompose_inv :
  forall x y : R,
  (xl <= x <= xu)%R -> (yl <= y <= yu)%R ->
  (zl <= (x - y) / (1 + y) <= zu)%R.
+Proof.
 intros xl xu yl yu zl zu Hx Hy Hzl Hzu x y (Hxl,Hxu) (Hyl,Hyu).
 assert (H0: (0 = 1 + -1)%R). ring.
 assert (Hc: (0 < 1 + yl)%R).
@@ -708,6 +745,7 @@ Theorem IRabs_p :
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= Rabs y <= zu)%R.
+Proof.
 intros yl yu zl zu Hy Hzl Hzu y Hylu.
 rewrite Rabs_pos_eq.
 apply IRsubset with (1 := Hzl) (2 := Hzu) (3 := Hylu).
@@ -720,6 +758,7 @@ Theorem IRabs_o :
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= Rabs y <= zu)%R.
+Proof.
 intros yl yu zl zu Hzl Hzu1 Hzu2 y (Hyl,Hyu).
 split.
 apply Rle_trans with (1 := Hzl) (2 := Rabs_pos y).
@@ -736,10 +775,9 @@ Theorem IRabs_n :
  forall y : R,
  (yl <= y <= yu)%R ->
  (zl <= Rabs y <= zu)%R.
+Proof.
 intros yl yu zl zu Hy Hzl Hzu y Hylu.
 rewrite Rabs_left1.
 apply IRopp with (1 := Hzl) (2 := Hzu) (3 := Hylu).
 apply Rle_trans with (1 := proj2 Hylu) (2 := Hy).
 Qed.
-
-End Gappa_real.

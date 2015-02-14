@@ -1,8 +1,6 @@
 Require Import Flocq.Core.Fcore_defs.
 Require Import Gappa_common.
 
-Section Gappa_decimal.
-
 Definition Dcompare (x : float2) (y : float10) :=
  let m := Fnum10 y in let e := Fexp10 y in
  match e with
@@ -14,6 +12,7 @@ Definition Dcompare (x : float2) (y : float10) :=
 Lemma pow_exp :
  forall x y : R, forall e : nat,
  (x^e * y^e = (x*y)^e)%R.
+Proof.
 intros x y e.
 induction e.
 apply Rmult_1_l.
@@ -25,6 +24,7 @@ Qed.
 Lemma Zpower_pos_pos:
  forall x e : positive,
  (0 < Zpower_pos (Zpos x) e)%Z.
+Proof.
 intros x e.
 rewrite Zpower_pos_nat.
 induction (nat_of_P e).
@@ -114,5 +114,3 @@ unfold Dle_df.
 rewrite Dcompare_correct.
 now case Rcompare.
 Qed.
-
-End Gappa_decimal.

@@ -6,8 +6,6 @@ Require Import Flocq.Core.Fcore_float_prop.
 Require Import Flocq.Calc.Fcalc_ops.
 Require Import Gappa_definitions.
 
-Section Gappa_dyadic.
-
 Lemma float2_zero :
   forall e : Z, Float2 0 e = R0 :>R.
 Proof.
@@ -16,7 +14,7 @@ apply F2R_0.
 Qed.
 
 Definition Fopp2 (x : float2) :=
- Float2 (- Fnum x) (Fexp x).
+  Float2 (- Fnum x) (Fexp x).
 
 Lemma Fopp2_correct :
   forall x : float2,
@@ -28,7 +26,7 @@ apply F2R_Zopp.
 Qed.
 
 Definition Fmult2 (x y : float2) :=
- Float2 (Fnum x * Fnum y) (Fexp x + Fexp y).
+  Float2 (Fnum x * Fnum y) (Fexp x + Fexp y).
 
 Definition Fmult2_correct :
   forall x y : float2,
@@ -350,5 +348,3 @@ generalize (Fle2_correct _ _ Hb).
 unfold float2R, F2R. simpl.
 now rewrite Rmult_1_r.
 Qed.
-
-End Gappa_dyadic.

@@ -10,8 +10,6 @@ Require Import Gappa_dyadic.
 Require Import Gappa_round_def.
 Require Import Gappa_round_aux.
 
-Section Gappa_round.
-
 Definition shr_aux (p : rnd_record) : rnd_record :=
  let s := rnd_r p || rnd_s p in
  match (rnd_m p) with
@@ -724,5 +722,3 @@ now rewrite orb_comm, andb_comm.
 Qed.
 
 Canonical Structure roundNA_cs := Build_rndG_prop _ _ roundNA_eq.
-
-End Gappa_round.

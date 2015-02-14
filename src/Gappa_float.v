@@ -15,8 +15,6 @@ Require Import Gappa_round.
 Global Notation rounding_float rdir p d :=
   (Fcore_generic_fmt.round radix2 (FLT_exp d (Zpos p)) rdir) (only parsing).
 
-Section Gappa_float.
-
 Definition float_ulp (p : positive) (d m e : Z) :=
  match m with
  | Zpos n => FLT_exp d (Zpos p) (e + Zpos (digits n))%Z
@@ -799,5 +797,3 @@ apply generic_round_generic...
 apply FLT_iff_generic.
 now apply flt_le with xn.
 Qed.
-
-End Gappa_float.

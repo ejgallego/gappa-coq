@@ -2,8 +2,6 @@ Require Import Flocq.Core.Fcore_defs.
 Require Import Gappa_common.
 Require Import Gappa_pred_bnd.
 
-Section Gappa_user.
-
 Definition rewrite_ne_helper (xi : FF) (n : Z) :=
  Flt2 (upper xi) (Float2 n 0) || Flt2 (Float2 n 0) (lower xi).
 
@@ -97,6 +95,7 @@ Lemma rewrite_lt0 :
  forall x : R, forall xi : FF, BND x xi ->
  rewrite_lt0_helper xi = true ->
  (x < 0)%R.
+Proof.
 intros x xi Hx Hb.
 generalize (Fneg_correct _ Hb). clear Hb. intro H.
 apply Rle_lt_trans with (1 := proj2 Hx).
@@ -110,6 +109,7 @@ Lemma rewrite_le0 :
  forall x : R, forall xi : FF, BND x xi ->
  rewrite_le0_helper xi = true ->
  (x <= 0)%R.
+Proof.
 intros x xi Hx Hb.
 generalize (Fneg0_correct _ Hb). clear Hb. intro H.
 apply Rle_trans with (1 := proj2 Hx).
@@ -123,6 +123,7 @@ Lemma rewrite_gt0 :
  forall x : R, forall xi : FF, BND x xi ->
  rewrite_gt0_helper xi = true ->
  (x > 0)%R.
+Proof.
 intros x xi Hx Hb.
 generalize (Fpos_correct _ Hb). clear Hb. intro H.
 unfold Rgt.
@@ -137,11 +138,10 @@ Lemma rewrite_ge0 :
  forall x : R, forall xi : FF, BND x xi ->
  rewrite_ge0_helper xi = true ->
  (x >= 0)%R.
+Proof.
 intros x xi Hx Hb.
 generalize (Fpos0_correct _ Hb). clear Hb. intro H.
 apply Rle_ge.
 apply Rle_trans with (2 := proj1 Hx).
 exact H.
 Qed.
-
-End Gappa_user.

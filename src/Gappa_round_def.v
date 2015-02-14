@@ -4,8 +4,6 @@ Require Import Flocq.Core.Fcore_Raux.
 Require Import Flocq.Core.Fcore_generic_fmt.
 Require Import Flocq.Core.Fcore_rnd_ne.
 
-Section Gappa_round_def.
-
 Record rnd_record : Set := rnd_record_mk {
   rnd_m : N ;
   rnd_r : bool ;
@@ -36,6 +34,7 @@ Definition GrndZR (r : rnd_record) : bool :=
  false.
 
 Lemma GrndZR_good : good_rdir GrndZR.
+Proof.
 unfold good_rdir, GrndZR. simpl.
 intuition.
 Qed.
@@ -44,6 +43,7 @@ Definition GrndAW (r : rnd_record) : bool :=
  rnd_r r || rnd_s r.
 
 Lemma GrndAW_good : good_rdir GrndAW.
+Proof.
 unfold good_rdir, GrndAW. simpl.
 intuition.
 Qed.
@@ -52,6 +52,7 @@ Definition GrndNE (r : rnd_record) : bool :=
  rnd_r r && (rnd_s r || negb (is_even (rnd_m r))).
 
 Lemma GrndNE_good : good_rdir GrndNE.
+Proof.
 unfold good_rdir, GrndNE. simpl.
 intuition.
 Qed.
@@ -60,6 +61,7 @@ Definition GrndNO (r : rnd_record) : bool :=
  rnd_r r && (rnd_s r || is_even (rnd_m r)).
 
 Lemma GrndNO_good : good_rdir GrndNO.
+Proof.
 unfold good_rdir, GrndNO. simpl.
 intuition.
 Qed.
@@ -68,6 +70,7 @@ Definition GrndNZ (r : rnd_record) : bool :=
  rnd_r r && rnd_s r.
 
 Lemma GrndNZ_good : good_rdir GrndNZ.
+Proof.
 unfold good_rdir, GrndNZ. simpl.
 intuition.
 Qed.
@@ -76,6 +79,7 @@ Definition GrndNA (r : rnd_record) : bool :=
  rnd_r r.
 
 Lemma GrndNA_good : good_rdir GrndNA.
+Proof.
 unfold good_rdir, GrndNA. simpl.
 intuition.
 Qed.
@@ -84,6 +88,7 @@ Definition GrndOD (r : rnd_record) : bool :=
  (rnd_r r || rnd_s r) && is_even (rnd_m r).
 
 Lemma GrndOD_good : good_rdir GrndOD.
+Proof.
 unfold good_rdir, GrndOD. simpl.
 intros.
 case (is_even m) ; intuition.
@@ -100,8 +105,6 @@ Definition roundNZ := round_dir_mk GrndNZ GrndNZ GrndNZ_good GrndNZ_good.
 Definition roundNA := round_dir_mk GrndNA GrndNA GrndNA_good GrndNA_good.
 Definition roundNU := round_dir_mk GrndNA GrndNZ GrndNA_good GrndNZ_good.
 Definition roundND := round_dir_mk GrndNZ GrndNA GrndNZ_good GrndNA_good.
-
-End Gappa_round_def.
 
 Definition rndNE := ZnearestE.
 Definition rndNA := ZnearestA.

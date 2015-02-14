@@ -1,10 +1,9 @@
 Require Import Gappa_common.
 Require Import Gappa_pred_nzr.
 
-Section Gappa_pred_abs.
-
 Lemma Rabs_def2b :
- forall x a : R, (Rabs x <= a)%R -> (-a <= x <= a)%R.
+  forall x a : R, (Rabs x <= a)%R -> (-a <= x <= a)%R.
+Proof.
 intros x a H.
 split.
 case (Rcase_abs x); intros.
@@ -40,6 +39,7 @@ Theorem bnd_of_abs :
  ABS x xi ->
  bnd_of_abs_helper xi zi = true ->
  BND x zi.
+Proof.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite Fopp2_correct. fold float2R. clear H1. intro H1.
@@ -56,6 +56,7 @@ Theorem abs_of_uabs :
  BND (Rabs x) zi ->
  Fpos0 (lower zi) = true ->
  ABS x zi.
+Proof.
 intros x zi Hx Hb.
 generalize (Fpos0_correct _ Hb). clear Hb. intro H1.
 exact (conj H1 Hx).
@@ -65,6 +66,7 @@ Theorem uabs_of_abs :
  forall x : R, forall zi : FF,
  ABS x zi ->
  BND (Rabs x) zi.
+Proof.
 intros x zi (_,Hx2).
 exact Hx2.
 Qed.
@@ -79,6 +81,7 @@ Theorem abs_of_bnd_p :
  BND x xi ->
  abs_of_bnd_p_helper xi zi = true ->
  ABS x zi.
+Proof.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -101,6 +104,7 @@ Theorem abs_of_bnd_o :
  BND x xi ->
  abs_of_bnd_o_helper xi zi = true ->
  ABS x zi.
+Proof.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -125,6 +129,7 @@ Theorem abs_of_bnd_n :
  BND x xi ->
  abs_of_bnd_n_helper xi zi = true ->
  ABS x zi.
+Proof.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -149,6 +154,7 @@ Theorem abs_subset :
  ABS x xi ->
  abs_subset_helper xi zi = true ->
  ABS x zi.
+Proof.
 intros x xi zi (Hx1,Hx2) Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -170,6 +176,7 @@ Theorem intersect_aa :
  ABS z xi -> ABS z yi ->
  intersect_aa_helper (upper xi) (lower yi) zi = true ->
  ABS z zi.
+Proof.
 intros z xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -188,6 +195,7 @@ Theorem absurd_intersect_aa :
  ABS z xi -> ABS z yi ->
  Flt2 (upper xi) (lower yi) = true ->
  False.
+Proof.
 intros z xi yi Hx Hy Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 generalize (Rle_lt_trans _ _ _ (proj2 (proj2 Hx)) H). clear H. intro H.
@@ -205,6 +213,7 @@ Theorem mul_aa :
  ABS x xi -> ABS y yi ->
  mul_aa_helper xi yi zi = true ->
  ABS (x * y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -230,6 +239,7 @@ Theorem div_aa :
  ABS x xi -> ABS y yi ->
  div_aa_helper xi yi zi = true ->
  ABS (x / y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -261,6 +271,7 @@ Theorem add_aa_p :
  ABS x xi -> ABS y yi ->
  add_aa_p_helper xi yi zi = true ->
  ABS (x + y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -293,6 +304,7 @@ Theorem add_aa_o :
  ABS x xi -> ABS y yi ->
  add_aa_o_helper xi yi zi = true ->
  ABS (x + y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fis0_correct _ H1). clear H1. intro H1.
@@ -318,6 +330,7 @@ Theorem add_aa_n :
  ABS x xi -> ABS y yi ->
  add_aa_n_helper xi yi zi = true ->
  ABS (x + y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -346,6 +359,7 @@ Theorem sub_aa_p :
  ABS x xi -> ABS y yi ->
  add_aa_p_helper xi yi zi = true ->
  ABS (x - y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 unfold Rminus.
 apply add_aa_p with xi yi.
@@ -361,6 +375,7 @@ Theorem sub_aa_o :
  ABS x xi -> ABS y yi ->
  add_aa_o_helper xi yi zi = true ->
  ABS (x - y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 unfold Rminus.
 apply add_aa_o with xi yi.
@@ -376,6 +391,7 @@ Theorem sub_aa_n :
  ABS x xi -> ABS y yi ->
  add_aa_n_helper xi yi zi = true ->
  ABS (x - y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 unfold Rminus.
 apply add_aa_n with xi yi.
@@ -396,6 +412,7 @@ Theorem bnd_of_bnd_abs_p :
  BND x xi -> ABS x yi ->
  bnd_of_bnd_abs_p_helper xi yi zi = true ->
  BND x zi.
+Proof.
 intros x xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -427,6 +444,7 @@ Theorem bnd_of_bnd_abs_n :
  BND x xi -> ABS x yi ->
  bnd_of_bnd_abs_n_helper xi yi zi = true ->
  BND x zi.
+Proof.
 intros x xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -447,5 +465,3 @@ rewrite (Rabs_right _ H) in Hy.
 elim (Rlt_not_le x (upper xi)). 2: exact (proj2 Hx).
 apply Rlt_le_trans with (1 := H1) (2 := proj1 (proj2 Hy)).
 Qed.
-
-End Gappa_pred_abs.

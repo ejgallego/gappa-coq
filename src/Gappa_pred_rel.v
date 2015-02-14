@@ -1,12 +1,11 @@
 Require Import Gappa_common.
 Require Import Gappa_pred_bnd.
 
-Section Gappa_pred_rel.
-
 Theorem bnd_of_nzr_rel :
  forall a b : R, forall zi : FF,
  NZR b -> REL a b zi ->
  BND ((a - b) / b) zi.
+Proof.
 intros a b zi Hb (x,(Hr1,Hr2)).
 cutrewrite ((a - b) / b = x)%R.
 exact Hr1.
@@ -616,5 +615,3 @@ apply Rle_trans with (2 := H3).
 apply Rle_trans with (2 := proj2 H5).
 now apply monotony_2n.
 Qed.
-
-End Gappa_pred_rel.

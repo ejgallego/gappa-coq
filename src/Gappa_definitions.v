@@ -3,8 +3,6 @@ Require Import ZArith.
 Require Import Flocq.Core.Fcore_Raux.
 Require Import Flocq.Core.Fcore_defs.
 
-Section Gappa_definitions.
-
 Definition radix2 := Build_radix 2 (refl_equal true).
 Record float2 : Set := Float2 { Fnum : Z ; Fexp : Z }.
 Coercion float2R (x : float2) := F2R (Float radix2 (Fnum x) (Fexp x)).
@@ -25,5 +23,3 @@ Definition FIX (x : R) (n : Z) :=
 Definition FLT (x : R) (n : positive) :=
  exists f : float2, float2R f = x /\ (Zabs (Fnum f) < Zpower_pos 2 n)%Z.
 Definition NZR (x : R) := (x <> 0)%R.
-
-End Gappa_definitions.

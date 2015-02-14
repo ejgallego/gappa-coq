@@ -1,8 +1,6 @@
 Require Import Gappa_common.
 Require Import Gappa_decimal.
 
-Section Gappa_pred_bnd.
-
 Definition Float1 := Z2R.
 
 Definition constant2_helper (x : float2) (zi : FF) :=
@@ -12,6 +10,7 @@ Theorem constant2 :
  forall x : float2, forall zi : FF,
  constant2_helper x zi = true ->
  BND x zi.
+Proof.
 intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
@@ -23,6 +22,7 @@ Theorem constant1 :
  forall x : Z, forall zi : FF,
  constant2_helper (Float2 x 0) zi = true ->
  BND (Float1 x) zi.
+Proof.
 intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
@@ -39,6 +39,7 @@ Theorem constant10 :
  forall x : float10, forall zi : FF,
  constant10_helper x zi = true ->
  BND x zi.
+Proof.
 intros x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Dle_fd_correct _ _ H1). clear H1. intro H1.
@@ -55,6 +56,7 @@ Theorem subset :
  BND x xi ->
  subset_helper xi zi = true ->
  BND x zi.
+Proof.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
@@ -67,6 +69,7 @@ Theorem subset_l :
  BND x xi ->
  Fle2 f (lower xi) = true ->
  (f <= x)%R.
+Proof.
 intros x xi f Hx Hb.
 generalize (Fle2_correct _ _ Hb). clear Hb. intro H1.
 apply Rle_trans with (1 := H1).
@@ -78,6 +81,7 @@ Theorem subset_r :
  BND x xi ->
  Fle2 (upper xi) f = true ->
  (x <= f)%R.
+Proof.
 intros x xi f Hx Hb.
 generalize (Fle2_correct _ _ Hb). clear Hb. intro H1.
 apply Rle_trans with (2 := H1).
@@ -93,6 +97,7 @@ Theorem intersect :
  BND z xi -> BND z yi ->
  intersect_helper (upper xi) (lower yi) zi = true ->
  BND z zi.
+Proof.
 intros z xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
@@ -107,6 +112,7 @@ Theorem intersect_hb :
  (z <= xf)%R -> BND z yi ->
  intersect_helper xf (lower yi) zi = true ->
  BND z zi.
+Proof.
 intros z xf yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
@@ -121,6 +127,7 @@ Theorem intersect_bh :
  BND z xi -> (yf <= z)%R ->
  intersect_helper (upper xi) yf zi = true ->
  BND z zi.
+Proof.
 intros z yf xi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
@@ -150,6 +157,7 @@ Theorem absurd_intersect :
  BND z xi -> BND z yi ->
  Flt2 (upper xi) (lower yi) = true ->
  False.
+Proof.
 intros z xi yi Hx Hy Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 generalize (Rle_lt_trans _ _ _ (proj2 Hx) H). clear H. intro H.
@@ -162,6 +170,7 @@ Theorem absurd_intersect_hb :
  (z <= xf)%R -> BND z yi ->
  Flt2 xf (lower yi) = true ->
  False.
+Proof.
 intros z xi yi Hx Hy Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 generalize (Rle_lt_trans _ _ _ Hx H). clear H. intro H.
@@ -174,6 +183,7 @@ Theorem absurd_intersect_bh :
  BND z xi -> (yf <= z)%R ->
  Flt2 (upper xi) yf = true ->
  False.
+Proof.
 intros z xi yi Hx Hy Hb.
 generalize (Flt2_correct _ _ Hb). clear Hb. intro H.
 generalize (Rle_lt_trans _ _ _ (proj2 Hx) H). clear H. intro H.
@@ -187,6 +197,7 @@ Theorem union :
  Fle2 (lower xi1) (lower xi) = true ->
  (BND x (makepairF (upper xi1) (upper xi)) -> P) ->
  BND x xi -> P.
+Proof.
 intros x P xi xi1 Hx1 Hb Hx2 Hx.
 generalize (Fle2_correct _ _ Hb). clear Hb. intro H1.
 case (Rlt_le_dec x (upper xi1)) ; intro H.
@@ -231,6 +242,7 @@ Theorem neg :
  BND x xi ->
  neg_helper xi zi = true ->
  BND (-x) zi.
+Proof.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite Fopp2_correct. clear H1. intro H1.
@@ -247,6 +259,7 @@ Theorem add :
  BND x xi -> BND y yi ->
  add_helper xi yi zi = true ->
  BND (x + y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite Fplus2_correct. clear H1. intro H1.
@@ -263,6 +276,7 @@ Theorem sub :
  BND x xi -> BND y yi ->
  sub_helper xi yi zi = true ->
  BND (x - y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite Fminus2_correct. clear H1. intro H1.
@@ -278,6 +292,7 @@ Lemma not_zero_correct :
  BND z zi ->
  not_zero zi = true ->
  (z <> 0)%R.
+Proof.
 intros z zi Hz Hb.
 apply Rlt_dichotomy_converse.
 generalize (orb_prop _ _ Hb). clear Hb.
@@ -301,6 +316,7 @@ Lemma contains_zero :
  forall zi : FF,
  contains_zero_helper zi = true ->
  BND 0 zi.
+Proof.
 intros zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fneg0_correct _ H1). clear H1. intro H1.
@@ -312,6 +328,7 @@ Lemma sub_refl :
  forall x : R, forall zi : FF,
  contains_zero_helper zi = true ->
  BND (x - x) zi.
+Proof.
 intros x zi Hb.
 unfold Rminus.
 rewrite (Rplus_opp_r x).
@@ -339,6 +356,7 @@ Lemma div_refl :
  NZR x ->
  div_refl_helper zi = true ->
  BND (x / x) zi.
+Proof.
 intros x zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 assert (Float2 1 0 = 1 :>R)%R.
@@ -361,6 +379,7 @@ Theorem mul_pp :
  BND x xi -> BND y yi ->
  mul_pp_helper xi yi zi = true ->
  BND (x * y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -383,6 +402,7 @@ Theorem mul_pn :
  BND x xi -> BND y yi ->
  mul_pn_helper xi yi zi = true ->
  BND (x * y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -401,6 +421,7 @@ Theorem mul_np :
  BND x xi -> BND y yi ->
  mul_np_helper xi yi zi = true ->
  BND (x * y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
 exact (mul_pn _ _ _ _ _ Hy Hx Hb).
@@ -417,6 +438,7 @@ Theorem mul_nn :
  BND x xi -> BND y yi ->
  mul_nn_helper xi yi zi = true ->
  BND (x * y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -439,6 +461,7 @@ Theorem mul_po :
  BND x xi -> BND y yi ->
  mul_po_helper xi yi zi = true ->
  BND (x * y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
@@ -459,6 +482,7 @@ Theorem mul_op :
  BND x xi -> BND y yi ->
  mul_po_helper yi xi zi = true ->
  BND (x * y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
 exact (mul_po _ _ _ _ _ Hy Hx Hb).
@@ -475,6 +499,7 @@ Theorem mul_no :
  BND x xi -> BND y yi ->
  mul_no_helper xi yi zi = true ->
  BND (x * y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
@@ -495,6 +520,7 @@ Theorem mul_on :
  BND x xi -> BND y yi ->
  mul_no_helper yi xi zi = true ->
  BND (x * y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 rewrite Rmult_comm.
 exact (mul_no _ _ _ _ _ Hy Hx Hb).
@@ -513,6 +539,7 @@ Theorem mul_oo :
  BND x xi -> BND y yi ->
  mul_oo_helper xi yi zi = true ->
  BND (x * y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H8).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H7).
@@ -568,6 +595,7 @@ Theorem div_pp :
  BND x xi -> BND y yi ->
  div_pp_helper xi yi zi = true ->
  BND (x / y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -590,6 +618,7 @@ Theorem div_op :
  BND x xi -> BND y yi ->
  div_op_helper xi yi zi = true ->
  BND (x / y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
@@ -614,6 +643,7 @@ Theorem div_np :
  BND x xi -> BND y yi ->
  div_np_helper xi yi zi = true ->
  BND (x / y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -636,6 +666,7 @@ Theorem div_pn :
  BND x xi -> BND y yi ->
  div_pn_helper xi yi zi = true ->
  BND (x / y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -658,6 +689,7 @@ Theorem div_on :
  BND x xi -> BND y yi ->
  div_on_helper xi yi zi = true ->
  BND (x / y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H5).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
@@ -682,6 +714,7 @@ Theorem div_nn :
  BND x xi -> BND y yi ->
  div_nn_helper xi yi zi = true ->
  BND (x / y) zi.
+Proof.
 intros x y xi yi zi Hx Hy Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H4).
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
@@ -695,6 +728,7 @@ Qed.
 
 Lemma Rabs_idem :
  forall x : R, (x <= Rabs x)%R.
+Proof.
 intro x.
 unfold Rabs. case Rcase_abs ; intro H.
 apply Rle_trans with (1 := (Rlt_le _ _ H)).
@@ -712,6 +746,7 @@ Theorem invert_abs :
  BND (Rabs x) xi ->
  invert_abs_helper xi zi = true ->
  BND x zi.
+Proof.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). rewrite Fopp2_correct. clear H1. intro H1.
@@ -739,6 +774,7 @@ Theorem sqrtG:
  BND x xi ->
  sqrt_helper xi zi = true ->
  BND (sqrt x) zi.
+Proof.
 intros x xi zi Hx Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
@@ -772,5 +808,3 @@ intros _.
 apply Fpos0_correct.
 exact H1.
 Qed.
-
-End Gappa_pred_bnd.
