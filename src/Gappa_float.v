@@ -1,10 +1,10 @@
 Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
-Require Import Fcore.
-Require Import Fcalc_digits.
-Require Import Fcalc_round.
-Require Import Fprop_relative.
+Require Import Flocq.Core.Fcore.
+Require Import Flocq.Calc.Fcalc_digits.
+Require Import Flocq.Calc.Fcalc_round.
+Require Import Flocq.Prop.Fprop_relative.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_pred_bnd.

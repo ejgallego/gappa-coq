@@ -1,6 +1,6 @@
 Require Import Reals.
 Require Import List.
-Require Import Fcore.
+Require Import Flocq.Core.Fcore.
 Require Export Gappa_library.
 
 Strategy 1000 [Fcore_generic_fmt.round].

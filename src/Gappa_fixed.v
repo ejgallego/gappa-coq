@@ -1,7 +1,7 @@
 Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
-Require Import Fcore.
+Require Import Flocq.Core.Fcore.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_pred_bnd.

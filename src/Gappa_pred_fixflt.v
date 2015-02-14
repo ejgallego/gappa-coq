@@ -1,5 +1,5 @@
-Require Import Fcore.
-Require Import Fprop_Sterbenz.
+Require Import Flocq.Core.Fcore.
+Require Import Flocq.Prop.Fprop_Sterbenz.
 Require Import Gappa_common.
 Require Import Gappa_round_aux.
 

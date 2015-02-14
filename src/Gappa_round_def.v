@@ -1,8 +1,8 @@
 Require Import Bool.
 Require Import ZArith.
-Require Import Fcore_Raux.
-Require Import Fcore_generic_fmt.
-Require Import Fcore_rnd_ne.
+Require Import Flocq.Core.Fcore_Raux.
+Require Import Flocq.Core.Fcore_generic_fmt.
+Require Import Flocq.Core.Fcore_rnd_ne.
 
 Section Gappa_round_def.
 

@@ -1,4 +1,4 @@
-Require Import Fcore_defs.
+Require Import Flocq.Core.Fcore_defs.
 Require Import Gappa_common.
 Require Import Gappa_pred_bnd.
 

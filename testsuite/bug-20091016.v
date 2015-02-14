@@ -1,5 +1,5 @@
 Require Import Reals.
-Require Import Fcore.
+Require Import Flocq.Core.Fcore.
 Require Import Gappa_tactic.
 
 Definition rnd := rounding_float rndNE 53 (-1074).

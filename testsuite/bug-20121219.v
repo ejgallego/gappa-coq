@@ -1,5 +1,5 @@
 Require Import Reals.
-Require Import Fcore.
+Require Import Flocq.Core.Fcore.
 Require Import Gappa_tactic.
 
 Coercion F2R : float >-> R.

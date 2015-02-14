@@ -2,9 +2,9 @@ Require Import Decidable.
 Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
-Require Import Fcore.
-Require Import Fcalc_bracket.
-Require Import Fcalc_digits.
+Require Import Flocq.Core.Fcore.
+Require Import Flocq.Calc.Fcalc_bracket.
+Require Import Flocq.Calc.Fcalc_digits.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_round_def.

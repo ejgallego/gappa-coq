@@ -1,9 +1,9 @@
 Require Import ZArith.
 Require Import Reals.
-Require Import Fcore_Raux.
-Require Import Fcore_defs.
-Require Import Fcore_float_prop.
-Require Import Fcalc_ops.
+Require Import Flocq.Core.Fcore_Raux.
+Require Import Flocq.Core.Fcore_defs.
+Require Import Flocq.Core.Fcore_float_prop.
+Require Import Flocq.Calc.Fcalc_ops.
 Require Import Gappa_definitions.
 
 Section Gappa_dyadic.

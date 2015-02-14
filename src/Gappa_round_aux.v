@@ -1,13 +1,13 @@
 Require Import ZArith.
 Require Import Reals.
-Require Import Fcore_Raux.
-Require Import Fcore_defs.
-Require Import Fcore_digits.
-Require Import Fcalc_digits.
-Require Import Fcore_float_prop.
-Require Import Fcore_generic_fmt.
-Require Import Fcore_FIX.
-Require Import Fcore_FLX.
+Require Import Flocq.Core.Fcore_Raux.
+Require Import Flocq.Core.Fcore_defs.
+Require Import Flocq.Core.Fcore_digits.
+Require Import Flocq.Calc.Fcalc_digits.
+Require Import Flocq.Core.Fcore_float_prop.
+Require Import Flocq.Core.Fcore_generic_fmt.
+Require Import Flocq.Core.Fcore_FIX.
+Require Import Flocq.Core.Fcore_FLX.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 

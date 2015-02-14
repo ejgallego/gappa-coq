@@ -1,7 +1,7 @@
 Require Import Reals.
 Require Import ZArith.
-Require Import Fcore_Raux.
-Require Import Fcore_defs.
+Require Import Flocq.Core.Fcore_Raux.
+Require Import Flocq.Core.Fcore_defs.
 
 Section Gappa_definitions.
 
