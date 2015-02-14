@@ -3,7 +3,7 @@ Require Import ZArith.
 Require Import Flocq.Core.Fcore_Raux.
 Require Import Flocq.Core.Fcore_defs.
 
-Definition radix2 := Build_radix 2 (refl_equal true).
+Notation radix2 := Fcore_Zaux.radix2.
 Record float2 : Set := Float2 { Fnum : Z ; Fexp : Z }.
 Coercion float2R (x : float2) := F2R (Float radix2 (Fnum x) (Fexp x)).
 Definition radix10 := Build_radix 10 (refl_equal true).
