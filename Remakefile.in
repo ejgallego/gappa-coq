@@ -23,6 +23,8 @@ FILES = \
 
 OBJS = $(addprefix src/,$(addsuffix o,$(FILES)))
 
+.PHONY: all check clean dist install
+
 all: $(OBJS)
 
 clean: src/clean testsuite/clean
@@ -38,7 +40,7 @@ configure config.status: configure.in
 
 %.vo: %.v
 	@COQDEP@ -R src Gappa $< | @REMAKE@ -r $@
-	@COQC@ -R src Gappa -dont-load-proofs $<
+	@COQC@ -R src Gappa $<
 
 COQSUBTREES = kernel lib interp parsing proofs pretyping tactics library toplevel
 COQINCLUDES = $(addprefix -I @COQLIBS@/, $(COQSUBTREES))
@@ -53,7 +55,7 @@ MLTARGETS = $(addprefix src/, @TACTIC_TARGETS@)
 
 src/Gappa_tactic.vo: src/Gappa_tactic.v $(MLTARGETS)
 	@COQDEP@ -R src Gappa $< | @REMAKE@ -r $@
-	@COQC@ @TACTIC_PARAM@ -R src Gappa -dont-load-proofs $<
+	@COQC@ @TACTIC_PARAM@ -R src Gappa $<
 
 src/clean:
 	rm -f $(OBJS)
