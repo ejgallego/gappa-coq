@@ -1129,3 +1129,5 @@ Ltac gappa_prepare :=
   convert_apply ltac:(fun uv _ => generalize_all O O uv) ;
   convert_apply ltac:(fun uv g => refine (prepare_goal uv g _)) ;
   convert_apply ltac:(fun uv g => let g := eval vm_compute in g in change (convert_tree uv g)).
+
+Ltac gappa := abstract (gappa_prepare ; gappa_internal).
