@@ -23,7 +23,7 @@ Definition shr_aux (p : rnd_record) : rnd_record :=
  end.
 
 Definition shr (m : positive) (d : positive) :=
- iter_pos d _ shr_aux (rnd_record_mk (Npos m) false false).
+ iter_pos shr_aux d (rnd_record_mk (Npos m) false false).
 
 Definition round_pos (rdir : rnd_record -> bool)
   (rexp : Z -> Z) (m : positive) (e : Z) :=
@@ -210,7 +210,7 @@ Lemma shr_conversion :
 Proof.
 intros m d.
 unfold shr.
-rewrite iter_nat_of_P.
+rewrite iter_pos_nat.
 rewrite (Zpos_eq_Z_of_nat_o_nat_of_P d).
 induction (nat_of_P d).
 (* *)
@@ -221,7 +221,7 @@ rewrite Zfloor_Z2R.
 unfold hrndG_aux, inbetween_loc.
 now rewrite Rcompare_Eq.
 (* *)
-simpl iter_nat.
+rewrite iter_nat_S.
 rewrite IHn. clear IHn.
 unfold hrndG_aux.
 set (ms := (Z2R (Zpos m) * bpow radix2 (- Z_of_nat (S n)))%R).
