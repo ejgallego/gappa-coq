@@ -520,10 +520,8 @@ unfold shift_pos.
 repeat rewrite iter_nat_of_P.
 rewrite <- Pplus_one_succ_r.
 rewrite nat_of_P_succ_morphism.
-simpl (iter_nat (S (nat_of_P p)) positive xO xH).
-rewrite Zpos_xO.
-rewrite Zpos_xI.
-ring.
+simpl.
+now rewrite Z.pos_sub_diag.
 rewrite <- Zneg_plus_distr.
 rewrite <- (Zopp_neg p).
 ring.
