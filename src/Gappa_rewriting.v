@@ -199,6 +199,26 @@ field.
 exact Hac.
 Qed.
 
+Theorem add_xilu :
+  forall a b : R, forall zi : FF,
+  BND ((a + b) - b) zi ->
+  BND a zi.
+Proof.
+intros a b zi Hz.
+replace a with (a + b - b)%R by ring.
+exact Hz.
+Qed.
+
+Theorem add_xiru :
+  forall a b : R, forall zi : FF,
+  BND ((a + b) - a) zi ->
+  BND b zi.
+Proof.
+intros a b zi Hz.
+replace b with (a + b - a)%R by ring.
+exact Hz.
+Qed.
+
 Theorem sub_mibs :
  forall a b c d : R, forall zi : FF,
  BND ((a - c) + -(b - d)) zi ->
@@ -362,6 +382,30 @@ rewrite Hz2.
 ring.
 Qed.
 
+Theorem mul_xilu :
+  forall a b : R, forall zi : FF,
+  NZR b ->
+  BND ((a * b) / b) zi ->
+  BND a zi.
+Proof.
+intros a b zi Hb Hz.
+replace a with (a * b / b)%R.
+exact Hz.
+now field.
+Qed.
+
+Theorem mul_xiru :
+  forall a b : R, forall zi : FF,
+  NZR a ->
+  BND ((a * b) / a) zi ->
+  BND b zi.
+Proof.
+intros a b zi Hb Hz.
+replace b with (a * b / a)%R.
+exact Hz.
+now field.
+Qed.
+
 Theorem sqrt_mibs :
  forall a b : R, forall ai bi zi : FF,
  BND a ai -> BND b bi ->
@@ -437,6 +481,21 @@ field.
 apply Rgt_not_eq.
 unfold Rgt.
 apply Rlt_le_trans with (1 := H2) (2 := proj1 Hb).
+Qed.
+
+Theorem sqrt_xibu :
+  forall a : R, forall ai zi : FF,
+  BND a ai ->
+  BND (sqrt a * sqrt a) zi ->
+  Fpos0 (lower ai) = true ->
+  BND a zi.
+Proof.
+intros a ai zi Ha Hz H.
+generalize (Fpos0_correct _ H). clear H. intro H.
+rewrite <- (sqrt_sqrt a).
+exact Hz.
+apply Rle_trans with (1 := H).
+apply Ha.
 Qed.
 
 Theorem abs_mul_xx :
@@ -535,6 +594,31 @@ replace (( a * b) / a)%R with b.
 exact Hz.
 field.
 exact Hb.
+Qed.
+
+Theorem div_xilu :
+  forall a b : R, forall zi : FF,
+  NZR b ->
+  BND ((a / b) * b) zi ->
+  BND a zi.
+Proof.
+intros a b zi Hb Hz.
+replace a with (a / b * b)%R.
+exact Hz.
+now field.
+Qed.
+
+Theorem div_xiru :
+  forall a b : R, forall zi : FF,
+  NZR a -> NZR b ->
+  BND (a / (a / b)) zi ->
+  BND b zi.
+Proof.
+intros a b zi Ha Hb Hz.
+replace b with (a / (a / b))%R.
+exact Hz.
+field.
+now split.
 Qed.
 
 Theorem err_xabq :
