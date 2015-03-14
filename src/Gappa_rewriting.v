@@ -76,6 +76,15 @@ exact Hz.
 ring.
 Qed.
 
+Theorem opp_xibu :
+  forall a : R, forall zi : FF,
+  BND (-(-a)) zi ->
+  BND a zi.
+Proof.
+intros a zi Hz.
+now rewrite <- (Ropp_involutive a).
+Qed.
+
 Theorem add_xals :
  forall a b c : R, forall zi : FF,
  BND ((a - c) + (c + b)) zi ->
@@ -643,6 +652,15 @@ replace (1 + (a - b) / b)%R with (a / b)%R .
 exact Hz.
 field.
 exact Hb.
+Qed.
+
+Theorem square_xibu :
+  forall a : R, forall zi : FF,
+  BND (sqrt (a * a)) zi ->
+  BND (Rabs a) zi.
+Proof.
+intros a zi Hz.
+now rewrite <- sqrt_Rsqr_abs.
 Qed.
 
 Theorem addf_1 :
