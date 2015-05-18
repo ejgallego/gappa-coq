@@ -162,59 +162,87 @@ apply Zle_trans with (1 := H1).
 exact (Zplus_le_compat _ _ _ _ Hx2 Hy2).
 Qed.
 
-Theorem mul_flt :
- forall x y : R, forall xn yn zn : positive,
- FLT x xn -> FLT y yn ->
- Zle_bool (Zpos xn + Zpos yn) (Zpos zn) = true ->
- FLT (x * y)%R zn.
+Lemma flt_abs_aux :
+  forall x : R, forall xn : positive,
+  FLT (Rabs x) xn <-> FLT x xn.
 Proof.
-intros x y xn yn zn (fx,(Hx1,Hx2)) (fy,(Hy1,Hy2)) Hb.
-generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
+intros x xn.
+unfold Rabs.
+case Rcase_abs ; intros Hx.
+2: easy.
+split ; intros [[mx ex] [Hx1 Hx2]] ;
+  exists (Float2 (Zopp mx) ex) ; split ; simpl.
+rewrite <- (Ropp_involutive x), <- Hx1.
+apply F2R_Zopp.
+now rewrite Zabs_Zopp.
+rewrite <- Hx1.
+apply F2R_Zopp.
+now rewrite Zabs_Zopp.
+Qed.
+
+Lemma flt_1_aux :
+  forall x y : R, forall yn : positive,
+  FLT x 1 -> FLT y yn ->
+  FLT (x * y)%R yn.
+Proof.
+intros x y yn [[mx ex] [<- Hx]] Hy.
+destruct mx as [|mx|mx].
+rewrite float2_zero, Rmult_0_l.
+exists (Float2 Z0 0).
+split.
+apply float2_zero.
+now apply (Zpower_gt_0 radix2 (Zpos yn)).
+destruct mx ; try now destruct mx.
+destruct Hy as [[my ey] [<- Hy]].
+exists (Float2 my (ex + ey)).
+split.
+2: exact Hy.
+unfold float2R ; simpl.
+rewrite <- Fcalc_ops.F2R_mult.
+unfold Fcalc_ops.Fmult.
+now rewrite Zmult_1_l.
+destruct mx ; try now destruct mx.
+destruct Hy as [[my ey] [<- Hy]].
+exists (Float2 (-my) (ex + ey)).
+split.
+2: simpl ; now rewrite Zabs_Zopp.
+unfold float2R ; simpl.
+rewrite <- Fcalc_ops.F2R_mult.
+unfold Fcalc_ops.Fmult.
+now replace (-1 * my)%Z with (Zopp my) by ring.
+Qed.
+
+Theorem mul_flt :
+  forall x y : R, forall xn yn zn : positive,
+  FLT x xn -> FLT y yn ->
+  Zle_bool (Zpos (if xn =? 1 then yn else if yn =? 1 then xn else xn + yn)%positive) (Zpos zn) = true ->
+  FLT (x * y)%R zn.
+Proof.
+intros x y xn yn zn Hx Hy Hb.
+apply Zle_bool_imp_le in Hb.
+revert Hb.
+apply flt_le.
+case Pos.eqb_spec.
+intros ->.
+now apply flt_1_aux.
+intros _.
+case Pos.eqb_spec.
+intros ->.
+rewrite Rmult_comm.
+now apply flt_1_aux.
+intros _.
+destruct Hx as [fx [Hx1 Hx2]].
+destruct Hy as [fy [Hy1 Hy2]].
 exists (Fmult2 fx fy).
 split.
 rewrite <- Hx1. rewrite <- Hy1.
 apply Fmult2_correct.
-apply Zlt_le_trans with (Zpower_nat 2 (nat_of_P xn + nat_of_P yn)).
-rewrite Zpower_nat_is_exp.
-simpl.
+change (Z.pow_pos 2 (xn + yn)) with (Zpower radix2 (Zpos xn + Zpos yn)).
+rewrite Zpower_plus by easy.
+simpl Zabs.
 rewrite Zabs_Zmult.
-repeat rewrite <- Zpower_pos_nat.
-apply Zle_lt_trans with (Zabs (Fnum fx) * Zpower_pos 2 yn)%Z.
-exact (Zmult_le_compat_l _ _ _ (Zlt_le_weak _ _ Hy2) (Zabs_pos (Fnum fx))).
-apply Zmult_lt_compat_r with (2 := Hx2).
-rewrite Zpower_pos_nat.
-unfold Zpower_nat.
-set (f := fun x0 : Z => (2 * x0)%Z).
-induction (nat_of_P yn).
-exact (refl_equal _).
-simpl.
-unfold f at 1.
-omega.
-rewrite Zpower_pos_nat.
-assert (nat_of_P xn + nat_of_P yn <= nat_of_P zn).
-case (le_or_lt (nat_of_P xn + nat_of_P yn) (nat_of_P zn)) ; intro.
-exact H.
-elim (Zle_not_lt _ _ H1).
-repeat rewrite Zpos_eq_Z_of_nat_o_nat_of_P.
-rewrite <- inj_plus.
-exact (inj_lt _ _ H).
-rewrite (le_plus_minus _ _ H).
-generalize (nat_of_P xn + nat_of_P yn).
-intros.
-rewrite Zpower_nat_is_exp.
-pattern (Zpower_nat 2 n) at 1 ; replace (Zpower_nat 2 n) with (Zpower_nat 2 n * 1)%Z.
-2: apply Zmult_1_r.
-apply Zmult_le_compat_l.
-unfold Zpower_nat.
-set (f := fun x0 : Z => (2 * x0)%Z).
-induction (nat_of_P zn - n).
-apply Zle_refl.
-simpl.
-unfold f at 1.
-omega.
-apply Zpower_NR0.
-compute.
-discriminate.
+apply Zmult_lt_compat ; split ;
+  try assumption ; apply Zabs_pos.
 Qed.
 
 Theorem fix_of_flt_bnd :
