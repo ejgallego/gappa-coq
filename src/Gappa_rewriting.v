@@ -654,15 +654,6 @@ field.
 exact Hb.
 Qed.
 
-Theorem square_xibu :
-  forall a : R, forall zi : FF,
-  BND (sqrt (a * a)) zi ->
-  BND (Rabs a) zi.
-Proof.
-intros a zi Hz.
-now rewrite <- sqrt_Rsqr_abs.
-Qed.
-
 Theorem addf_1 :
   forall a b : R, forall zi : FF,
   NZR a -> NZR (a + b) -> BND (1 / (1 + b / a)) zi ->

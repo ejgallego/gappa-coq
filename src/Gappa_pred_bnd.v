@@ -808,3 +808,36 @@ intros _.
 apply Fpos0_correct.
 exact H1.
 Qed.
+
+Definition square_rev_helper (xi zi : FF) :=
+  Fpos0 (lower zi) && Fpos0 (upper zi) &&
+  Fle2 (Fmult2 (lower zi) (lower zi)) (lower xi) &&
+  Fle2 (upper xi) (Fmult2 (upper zi) (upper zi)).
+
+Theorem square_rev :
+  forall x : R, forall xi zi : FF,
+  ABS (x * x) xi ->
+  square_rev_helper xi zi = true ->
+  ABS x zi.
+Proof.
+intros x xi zi [Hx1 Hx2] Hb.
+apply andb_prop in Hb.
+destruct Hb as [Hb H4].
+apply andb_prop in Hb.
+destruct Hb as [Hb H3].
+apply andb_prop in Hb.
+destruct Hb as [H1 H2].
+apply Fpos0_correct in H1.
+apply Fpos0_correct in H2.
+apply Fle2_correct in H3.
+apply Fle2_correct in H4.
+split.
+exact H1.
+rewrite <- sqrt_Rsqr_abs.
+rewrite Rabs_pos_eq in Hx2 by apply Rle_0_sqr.
+apply IRsqrt with (2 := H2) (4 := Hx2).
+case Rlt_le_dec ; intros H5.
+now rewrite <- Fmult2_correct.
+exact Hx1.
+now rewrite <- Fmult2_correct.
+Qed.
