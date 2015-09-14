@@ -699,11 +699,11 @@ let call_gappa c_of_s p =
     close_in c;
     raise (GappaFailed buf)
   end;
-  remove_file gappa_in;
   remove_file gappa_err;
   let cin = open_in gappa_out in
   let constr = c_of_s (Stream.of_channel cin) in
   close_in cin;
+  remove_file gappa_in;
   remove_file gappa_out;
   constr
 
