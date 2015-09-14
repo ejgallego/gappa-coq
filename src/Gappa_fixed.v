@@ -147,8 +147,8 @@ generalize (Fpos0_correct _ H2). clear H2. intro H2.
 split.
 (* *)
 apply Rle_trans with (1 := H1).
-destruct (Rabs_def2 _ _ (ulp_error radix2 (FIX_exp e) Zfloor x)) as (_, H).
-apply Rlt_le.
+destruct (Rabs_le_inv _ _ (error_le_ulp radix2 (FIX_exp e) Zfloor x)) as (H, _).
+rewrite ulp_FIX in H.
 unfold float2R.
 rewrite (F2R_Zopp _ 1%Z).
 now rewrite F2R_bpow.
@@ -171,7 +171,7 @@ intros e x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-assert (H := ulp_half_error radix2 (FIX_exp e) (fun x => negb (Zeven x)) x).
+assert (H := error_le_half_ulp radix2 (FIX_exp e) (fun x => negb (Zeven x)) x).
 replace (/2 * ulp radix2 (FIX_exp e) x)%R with (float2R (Float2 1 (e - 1))) in H.
 (* *)
 destruct (Rabs_le_inv _ _ H) as (H3,H4).
@@ -181,7 +181,7 @@ unfold float2R.
 now rewrite (F2R_Zopp _ 1%Z).
 now apply Rle_trans with (2 := H2).
 (* *)
-unfold ulp, canonic_exp, FIX_exp.
+rewrite ulp_FIX.
 unfold float2R, Zminus.
 rewrite F2R_bpow, Zplus_comm.
 apply bpow_plus.

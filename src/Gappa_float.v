@@ -51,8 +51,8 @@ destruct (Req_dec x 0) as [Hx0|Hx0].
 rewrite Hx0, round_0, Rminus_0_r, Rabs_R0...
 apply bpow_ge_0.
 apply Rle_trans with (/2 * ulp radix2 (FLT_exp d (Zpos p)) x)%R.
-apply ulp_half_error...
-unfold ulp.
+apply error_le_half_ulp...
+rewrite ulp_neq_0; trivial.
 rewrite <- (bpow_plus radix2 (-1)).
 apply bpow_le.
 unfold Zminus.
@@ -73,8 +73,8 @@ destruct (Req_dec x 0) as [Hx0|Hx0].
 rewrite Hx0, round_0, Rminus_0_r, Rabs_R0...
 apply bpow_ge_0.
 apply Rle_trans with (/2 * ulp radix2 (FLT_exp d (Zpos p)) x)%R.
-apply ulp_half_error...
-unfold ulp.
+apply error_le_half_ulp...
+rewrite ulp_neq_0; trivial.
 rewrite <- (bpow_plus radix2 (-1)).
 apply bpow_le.
 unfold Zminus.
@@ -311,26 +311,16 @@ apply bpow_ge_0.
 replace (bpow radix2 (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1)) with (/2 * ulp radix2 (FLT_exp d (Zpos p)) (upper xi))%R.
 (* . *)
 apply Rle_trans with (/2 * ulp radix2 (FLT_exp d (Zpos p)) x)%R.
-apply ulp_half_error...
+apply error_le_half_ulp...
 apply Rmult_le_compat_l.
 apply Rlt_le.
 apply Rinv_0_lt_compat.
 now apply (Z2R_lt 0 2).
 rewrite <- ulp_abs.
-apply ulp_le.
-clear.
-intros m n H.
-unfold FLT_exp.
-generalize (Zmax_spec (m - Zpos p) d) (Zmax_spec (n - Zpos p) d).
-omega.
-now apply Rabs_pos_lt.
+apply ulp_le_pos...
+apply Rabs_pos.
 apply Hx.
 (* . *)
-unfold ulp.
-rewrite <- (bpow_plus radix2 (-1)).
-unfold Zminus.
-rewrite (Zplus_comm _ (-1)).
-apply (f_equal (fun e => bpow radix2 (-1 + e))).
 assert (Hm0: (Fnum (upper xi)) <> Z0).
 assert (Hx1 := Rabs_no_R0 _ Hx0).
 contradict Hx1.
@@ -343,6 +333,12 @@ simpl in Hx1.
 rewrite Hx1.
 apply float2_zero.
 apply Rabs_pos.
+rewrite ulp_neq_0.
+2: now apply F2R_neq_0_compat.
+rewrite <- (bpow_plus radix2 (-1)).
+unfold Zminus.
+rewrite (Zplus_comm _ (-1)).
+apply (f_equal (fun e => bpow radix2 (-1 + e))).
 clear -Hm0.
 destruct (upper xi) as (m, e).
 unfold canonic_exp, float2R.
