@@ -47,16 +47,11 @@ AC_MSG_CHECKING([for coqdep])
 if test ! "$COQDEP"; then COQDEP=`which ${COQBIN}coqdep`; fi
 AC_MSG_RESULT([$COQDEP])
 
-AC_ARG_VAR(CAMLBIN, [path to OCaml executables [coqc -config]])
-if test ! "$CAMLBIN"; then
-  CAMLBIN=`$COQC -config | sed -n -e 's/^CAMLBIN=\(.*\)/\1/p'`
-fi
-
 AC_ARG_VAR(OCAMLC, [OCaml compiler command [ocamlc]])
 AC_MSG_CHECKING([for ocamlc])
 if test ! "$OCAMLC"; then
   OCAMLC=`$COQC -config | sed -n -e 's/^OCAMLC=\(.*\)/\1/p'`
-  OCAMLC=`which ${CAMLBIN}$OCAMLC`
+  OCAMLC=`which $OCAMLC`
 fi
 AC_MSG_RESULT([$OCAMLC])
 
@@ -65,7 +60,7 @@ AC_MSG_CHECKING([for camlp4])
 if test ! "$CAMLP4"; then
   CAMLP4BIN=`$COQC -config | sed -n -e 's/^CAMLP4BIN=\(.*\)/\1/p'`
   CAMLP4=`$COQC -config | sed -n -e 's/^CAMLP4=\(.*\)/\1/p'`
-  CAMLP4=`which ${CAMLP4BIN}$CAMLP4`
+  CAMLP4=`which $CAMLP4`
 fi
 AC_MSG_RESULT([$CAMLP4])
 
@@ -73,7 +68,7 @@ AC_ARG_VAR(OCAMLOPT, [OCaml compiler command [ocamlopt]])
 AC_MSG_CHECKING([for ocamlopt >= 3.11])
 if test ! "$OCAMLOPT"; then
   OCAMLOPT=`$COQC -config | sed -n -e 's/^OCAMLOPT=\(.*\)/\1/p'`
-  OCAMLOPT=`which ${CAMLBIN}$OCAMLOPT`
+  OCAMLOPT=`which $OCAMLOPT`
 fi
 ocamlopt_version=`$OCAMLOPT -version`
 AX_VERSION_GE([$ocamlopt_version], [3.11],
@@ -103,11 +98,13 @@ fi
 
 AC_SUBST(COQPPLIBS)
 AC_SUBST(COQDEFINE)
+AC_SUBST(COQINCML)
 AX_VERSION_GE([$coqc_version], [8.5],
   [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
-    COQDEFINE=COQ85],
+    COQDEFINE=COQ85
+    COQINCML="-I src" ],
   [ COQPPLIBS="$COQLIB/parsing/grammar.cma"
-    COQDEFINE=COQ84])
+    COQDEFINE=COQ84 ])
 
 AC_ARG_ENABLE([tactic],
   AS_HELP_STRING([--disable-tactic], [do not compile a "gappa" tactic]),
