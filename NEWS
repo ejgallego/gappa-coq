@@ -1,3 +1,6 @@
+Version 1.2.1:
+ - fixed compilation with Coq 8.5 and/or camlp4
+
 Version 1.2.0:
  - moved to Flocq 2.5
 
