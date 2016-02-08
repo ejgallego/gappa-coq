@@ -737,7 +737,7 @@ let evars_to_vmcast sigma (emap, c) =
 
 let constr_of_stream gl s =
   no_glob (fun () -> interp_open_constr (project gl) (pf_env gl)
-    (Pcoq.Gram.Entry.parse Pcoq.Constr.constr (Pcoq.Gram.parsable s)))
+    (Pcoq.Gram.entry_parse Pcoq.Constr.constr (Pcoq.Gram.parsable s)))
 
 let var_name = function
   | Name id ->
