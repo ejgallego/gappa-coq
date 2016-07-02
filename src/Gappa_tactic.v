@@ -75,7 +75,8 @@ Inductive BinaryOp : Set :=
 
 Inductive Format : Set :=
   | fFixed : Z -> Format
-  | fFloat : Z -> Z -> Format.
+  | fFloat : Z -> Z -> Format
+  | fFloatx : Z -> Format.
 
 Inductive Mode : Set :=
   | mRndDN
@@ -131,12 +132,14 @@ Section Convert.
 Definition convert_exp (f : Format) : Z -> Z :=
   match f with
   | fFloat e p => FLT_exp e p
+  | fFloatx p => FLX_exp p
   | fFixed e => FIX_exp e
   end.
 
 Definition convert_format (f : Format) : R -> Prop :=
   match f with
   | fFloat e p => FLT_format radix2 e p
+  | fFloatx p => FLX_format radix2 p
   | fFixed e => FIX_format radix2 e
   end.
 
@@ -276,7 +279,7 @@ right.
 now apply Rlt_not_le.
 apply Req_EM_T.
 apply Req_EM_T.
-destruct fmt as [e|e p].
+destruct fmt as [e|e p|p].
 simpl.
 destruct (Req_EM_T (convert_expr x) (round radix2 (FIX_exp e) rndZR (convert_expr x))) as [H|H].
 left.
@@ -317,6 +320,36 @@ now rewrite H0, F2R_0 in H1.
 now elim Hp.
 right.
 intros ((xm,xe)&H1&H2&H3).
+apply Zlt_not_le with (1 := H2).
+apply Zabs_pos.
+destruct (Z_lt_le_dec 0 p) as [Hp|Hp].
+destruct (Req_EM_T (convert_expr x) (round radix2 (FLX_exp p) rndZR (convert_expr x))) as [H|H].
+left.
+apply FLX_format_generic.
+apply Hp.
+rewrite H.
+apply generic_format_round...
+right.
+contradict H.
+apply sym_eq, round_generic...
+now apply generic_format_FLX.
+destruct p.
+destruct (Req_EM_T (convert_expr x) 0) as [H|H].
+left.
+rewrite H.
+exists (Float radix2 0 0).
+split.
+apply sym_eq, F2R_0.
+split.
+right.
+intros ((xm,xe)&H1&H2).
+simpl in H2.
+assert (xm = Z0).
+clear -H2 ; zify ; omega.
+now rewrite H0, F2R_0 in H1.
+now elim Hp.
+right.
+intros ((xm,xe)&H1&H2).
 apply Zlt_not_le with (1 := H2).
 apply Zabs_pos.
 Qed.
@@ -932,8 +965,10 @@ Definition change_format_func (pos : bool) a :=
     match a with
     | raGeneric (fFixed _ as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
     | raGeneric (fFloat _ (Zpos _) as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
+    | raGeneric (fFloatx (Zpos _) as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
     | raFormat (fFixed _ as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
     | raFormat (fFloat _ (Zpos _) as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
+    | raFormat (fFloatx (Zpos _) as fmt) x => if pos then raEq x (reRound fmt mRndNE x) else raEq (reRound fmt mRndNE x) x
     | _ => a
     end in
   if pos then rtAtom a' else rtNot (rtAtom a').
@@ -942,7 +977,7 @@ Lemma change_format_prop :
   stable_atom_tree change_format_func.
 Proof.
 unfold change_format_func.
-intros [l v u|x y l u|v w|v w|[em|em [|p|p]] x|[em|em [|p|p]] x] pos ; try (case pos ; easy) ; simpl ; intros H.
+intros [l v u|x y l u|v w|v w|[em|em [|p|p]|[|p|p]] x|[em|em [|p|p]|[|p|p]] x] pos ; try (case pos ; easy) ; simpl ; intros H.
 destruct pos ; simpl.
 apply sym_eq, round_generic.
 apply valid_rnd_N.
@@ -960,6 +995,15 @@ contradict H.
 rewrite <- H.
 apply generic_format_round.
 now apply FLT_exp_valid.
+apply valid_rnd_N.
+destruct pos ; simpl.
+apply sym_eq, round_generic.
+apply valid_rnd_N.
+exact H.
+contradict H.
+rewrite <- H.
+apply generic_format_round.
+now apply FLX_exp_valid.
 apply valid_rnd_N.
 destruct pos ; simpl.
 apply sym_eq, round_generic.
@@ -982,6 +1026,18 @@ apply FLT_format_generic.
 easy.
 apply generic_format_round.
 now apply FLT_exp_valid.
+apply valid_rnd_N.
+destruct pos ; simpl.
+apply sym_eq, round_generic.
+apply valid_rnd_N.
+apply generic_format_FLX.
+exact H.
+contradict H.
+rewrite <- H.
+apply FLX_format_generic.
+easy.
+apply generic_format_round.
+now apply FLX_exp_valid.
 apply valid_rnd_N.
 Qed.
 

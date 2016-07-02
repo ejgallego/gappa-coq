@@ -178,6 +178,7 @@ let coq_mRndNE = coq_ref_Gappa_Private "mRndNE"
 let coq_mRndUP = coq_ref_Gappa_Private "mRndUP"
 let coq_mRndZR = coq_ref_Gappa_Private "mRndZR"
 let coq_fFloat = coq_ref_Gappa_Private "fFloat"
+let coq_fFloatx = coq_ref_Gappa_Private "fFloatx"
 let coq_fFixed = coq_ref_Gappa_Private "fFixed"
 let coq_boAdd = coq_ref_Gappa_Private "boAdd"
 let coq_boSub = coq_ref_Gappa_Private "boSub"
@@ -202,6 +203,9 @@ let coq_generic_format = coq_ref_Fcore_generic_fmt "generic_format"
 let coq_ref_Fcore_FLT = find_reference "Gappa" ["Flocq"; "Core"; "Fcore_FLT"]
 let coq_FLT_format = coq_ref_Fcore_FLT "FLT_format"
 let coq_FLT_exp = coq_ref_Fcore_FLT "FLT_exp"
+let coq_ref_Fcore_FLX = find_reference "Gappa" ["Flocq"; "Core"; "Fcore_FLX"]
+let coq_FLX_format = coq_ref_Fcore_FLX "FLX_format"
+let coq_FLX_exp = coq_ref_Fcore_FLX "FLX_exp"
 let coq_ref_Fcore_FIX = find_reference "Gappa" ["Flocq"; "Core"; "Fcore_FIX"]
 let coq_FIX_format = coq_ref_Fcore_FIX "FIX_format"
 let coq_FIX_exp = coq_ref_Fcore_FIX "FIX_exp"
@@ -294,6 +298,7 @@ let plain_of_int =
 let qt_fmt f =
   match decompose_app f with
     | c, [e;p] when is_global coq_FLT_exp c -> mkLApp coq_fFloat [|e;p|]
+    | c, [p] when is_global coq_FLX_exp c -> mkLApp coq_fFloatx [|p|]
     | c, [e] when is_global coq_FIX_exp c -> mkLApp coq_fFixed [|e|]
     | _ -> raise (NotGappa f)
 
@@ -428,6 +433,9 @@ match decompose_app p with
   | c, [_;e;p;x] when is_global coq_FLT_format c ->
       let fmt = mkLApp coq_fFloat [|e;p|] in
       mkLApp coq_rtAtom [|mkLApp coq_raFormat [|fmt; qt_term x|]|]
+  | c, [_;p;x] when is_global coq_FLX_format c ->
+      let fmt = mkLApp coq_fFloatx [|p|] in
+      mkLApp coq_rtAtom [|mkLApp coq_raFormat [|fmt; qt_term x|]|]
   | c, [_;f;x] when is_global coq_generic_format c ->
       mkLApp coq_rtAtom [|mkLApp coq_raGeneric [|qt_fmt f; qt_term x|]|]
   | _ -> raise (NotGappa p)
@@ -543,6 +551,9 @@ let rec tr_term uv t =
               let e = tr_arith_constant e in
               let p = tr_arith_constant p in
               sprintf "float<%d,%d,%s>" p e mode
+          | c, [p] when is_global coq_fFloatx c ->
+              let p = tr_arith_constant p in
+              sprintf "float<%d,%s>" p mode
           | c, [e] when is_global coq_fFixed c ->
               let e = tr_arith_constant e in
               sprintf "fixed<%d,%s>" e mode

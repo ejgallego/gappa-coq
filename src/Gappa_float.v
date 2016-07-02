@@ -15,6 +15,9 @@ Require Import Gappa_round.
 Global Notation rounding_float rdir p d :=
   (Fcore_generic_fmt.round radix2 (FLT_exp d (Zpos p)) rdir) (only parsing).
 
+Global Notation rounding_floatx rdir p :=
+  (Fcore_generic_fmt.round radix2 (FLX_exp (Zpos p)) rdir) (only parsing).
+
 Definition float_ulp (p : positive) (d m e : Z) :=
  match m with
  | Zpos n => FLT_exp d (Zpos p) (e + Zpos (digits n))%Z
@@ -22,11 +25,33 @@ Definition float_ulp (p : positive) (d m e : Z) :=
  | Z0 => d
  end.
 
+Definition floatx_ulp (p : positive) (m e : Z) :=
+ match m with
+ | Zpos n => FLX_exp (Zpos p) (e + Zpos (digits n))%Z
+ | Zneg n => FLX_exp (Zpos p) (e + Zpos (digits n))%Z
+ | Z0 => Z0
+ end.
+
 Lemma float_absolute_ne_sym :
   forall p d x,
   (Rabs (rounding_float rndNE p d x - x) = Rabs (rounding_float rndNE p d (Rabs x) - Rabs x))%R.
 Proof.
 intros p d x.
+destruct (Rle_or_lt 0 x) as [H|H].
+rewrite (Rabs_right _ (Rle_ge _ _ H)).
+exact (refl_equal _).
+rewrite (Rabs_left _ H).
+rewrite round_NE_opp.
+unfold Rminus.
+rewrite <- Ropp_plus_distr.
+now rewrite Rabs_Ropp.
+Qed.
+
+Lemma floatx_absolute_ne_sym :
+  forall p x,
+  (Rabs (rounding_floatx rndNE p x - x) = Rabs (rounding_floatx rndNE p (Rabs x) - Rabs x))%R.
+Proof.
+intros p x.
 destruct (Rle_or_lt 0 x) as [H|H].
 rewrite (Rabs_right _ (Rle_ge _ _ H)).
 exact (refl_equal _).
@@ -51,6 +76,28 @@ destruct (Req_dec x 0) as [Hx0|Hx0].
 rewrite Hx0, round_0, Rminus_0_r, Rabs_R0...
 apply bpow_ge_0.
 apply Rle_trans with (/2 * ulp radix2 (FLT_exp d (Zpos p)) x)%R.
+apply error_le_half_ulp...
+rewrite ulp_neq_0; trivial.
+rewrite <- (bpow_plus radix2 (-1)).
+apply bpow_le.
+unfold Zminus.
+rewrite (Zplus_comm _ (-1)).
+apply Zplus_le_compat_l.
+unfold canonic_exp.
+apply monotone_exp...
+now apply ln_beta_le_bpow.
+Qed.
+
+Lemma floatx_absolute_n_whole :
+  forall c p k x,
+  (Rabs x < bpow radix2 k)%R ->
+  (Rabs (rounding_floatx (Znearest c) p x - x) <= bpow radix2 (FLX_exp (Zpos p) k - 1))%R.
+Proof with auto with typeclass_instances.
+intros c p k x Hx.
+destruct (Req_dec x 0) as [Hx0|Hx0].
+rewrite Hx0, round_0, Rminus_0_r, Rabs_R0...
+apply bpow_ge_0.
+apply Rle_trans with (/2 * ulp radix2 (FLX_exp (Zpos p)) x)%R.
 apply error_le_half_ulp...
 rewrite ulp_neq_0; trivial.
 rewrite <- (bpow_plus radix2 (-1)).
@@ -100,6 +147,38 @@ apply bpow_le.
 clear -Hk1 Hk2 ; zify ; omega.
 Qed.
 
+Lemma floatx_absolute_inv_n_whole :
+  forall c p k x,
+  (Rabs (rounding_floatx (Znearest c) p x) < bpow radix2 k)%R ->
+  (Rabs (rounding_floatx (Znearest c) p x - x) <= bpow radix2 (FLX_exp (Zpos p) k - 1))%R.
+Proof with auto with typeclass_instances.
+intros c p k x Hx.
+destruct (Req_dec x 0) as [Hx0|Hx0].
+rewrite Hx0, round_0, Rminus_0_r, Rabs_R0...
+apply bpow_ge_0.
+apply Rle_trans with (/2 * ulp radix2 (FLX_exp (Zpos p)) x)%R.
+apply error_le_half_ulp...
+rewrite ulp_neq_0; trivial.
+rewrite <- (bpow_plus radix2 (-1)).
+apply bpow_le.
+unfold Zminus.
+rewrite (Zplus_comm _ (-1)).
+apply Zplus_le_compat_l.
+unfold canonic_exp.
+apply monotone_exp...
+destruct (Zle_or_lt (ln_beta radix2 x) k) as [Hk1|Hk1].
+exact Hk1.
+elim Rlt_not_le with (1 := Hx) ; clear Hx.
+apply abs_round_ge_generic...
+apply generic_format_bpow.
+unfold FLX_exp.
+clear ; zify ; omega.
+destruct (ln_beta radix2 x) as (ex,Ex) ; simpl in *.
+apply Rle_trans with (2 := proj1 (Ex Hx0)).
+apply bpow_le.
+clear -Hk1 ; omega.
+Qed.
+
 Lemma Zmax_inf_l :
  forall m n : Z, (n <= m)%Z -> Zmax m n = m.
 intros m n H.
@@ -122,7 +201,6 @@ apply Rle_not_lt with (1 := Hx).
 rewrite Hx0, Rabs_R0.
 apply bpow_gt_0.
 destruct (relative_error_N_FLT_ex radix2 d (Zpos p) (refl_equal _) c x Hx) as (eps, (Hr1, Hr2)).
-change (FLT_exp d (Zpos p)) with (FLT_exp d (Zpos p)).
 rewrite Hr2.
 replace ((x * (1 + eps) - x) / x)%R with eps by now field.
 revert Hr1.
@@ -174,6 +252,24 @@ generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FLT.
 destruct (FLT_format_generic radix2 k (Zpos p1) (Fcore_generic_fmt.round radix2 (FLT_exp k (Zpos p1)) rdir x))
   as ((m, e), (H1, (H2, _))).
+apply generic_format_round...
+rewrite H1.
+eexists (Float2 _ _) ; repeat split.
+apply Zlt_le_trans with (1 := H2).
+change (Zpower_pos 2 p2) with (Zpower radix2 (Zpos p2)).
+now apply Zpower_le.
+Qed.
+
+Theorem flt_of_floatx :
+  forall rdir {Hrnd : Valid_rnd rdir} x p1 p2,
+  Zle_bool (Zpos p1) (Zpos p2) = true ->
+  FLT (rounding_floatx rdir p1 x) p2.
+Proof with auto with typeclass_instances.
+intros rdir Hrnd x p1 p2 H.
+generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
+unfold FLT.
+destruct (FLX_format_generic radix2 (Zpos p1) (Fcore_generic_fmt.round radix2 (FLX_exp (Zpos p1)) rdir x))
+  as ((m, e), (H1, H2)).
 apply generic_format_round...
 rewrite H1.
 eexists (Float2 _ _) ; repeat split.
@@ -234,6 +330,35 @@ omega.
 now apply Zle_trans with d1.
 Qed.
 
+Theorem floatx_of_flt :
+  forall rdir {Hrnd : Valid_rnd rdir},
+  forall x : R,
+  forall p1 p2 : positive,
+  FLT x p1 ->
+  Zle_bool (Zpos p1) (Zpos p2) = true ->
+  rounding_floatx rdir p2 x = x.
+Proof with auto with typeclass_instances.
+intros rdir Hrnd x p1 p2 [[m e] [Hx1 Hx2]] Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
+apply round_generic...
+rewrite <- Hx1.
+apply generic_format_F2R.
+unfold canonic_exp.
+intros Hm ; simpl.
+rewrite ln_beta_F2R with (1 := Hm).
+simpl.
+unfold FLX_exp.
+cut (ln_beta radix2 (Z2R m) <= Zpos p1)%Z.
+clear -H1 ; omega.
+apply bpow_lt_bpow with radix2.
+destruct (ln_beta radix2 (Z2R m)) as [n Hn].
+simpl.
+specialize (Hn (Z2R_neq _ _ Hm)).
+apply Rle_lt_trans with (1 := proj1 Hn).
+rewrite <- Z2R_abs.
+now apply Z2R_lt.
+Qed.
+
 Existing Instance valid_rnd_Gf.
 
 Definition round_helper (rnd : float2 -> float2) (xi zi : FF) :=
@@ -265,14 +390,39 @@ Definition float_round_zr := float_round roundZR_cs.
 Definition float_round_ne := float_round roundNE_cs.
 Definition float_round_na := float_round roundNA_cs.
 
-Definition enforce_helper (p : positive) (d : Z) (xi zi : FF) :=
- Fle2 (lower zi) (round roundUP (FLT_exp d (Zpos p)) (lower xi)) &&
- Fle2 (round roundDN (FLT_exp d (Zpos p)) (upper xi)) (upper zi).
+Theorem floatx_round :
+  forall rdir p x xi zi,
+  BND x xi ->
+  round_helper (round (rndG_g rdir) (FLX_exp (Zpos p))) xi zi = true ->
+  BND (rounding_floatx (rndG_f rdir) p x) zi.
+Proof with auto with typeclass_instances.
+intros rdir p x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). rewrite rndG_conversion. clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). rewrite rndG_conversion. clear H2. intro H2.
+split.
+apply Rle_trans with (1 := H1).
+apply round_le...
+apply Hx.
+apply Rle_trans with (2 := H2).
+apply round_le...
+apply Hx.
+Qed.
+
+Definition floatx_round_dn := floatx_round roundDN_cs.
+Definition floatx_round_up := floatx_round roundUP_cs.
+Definition floatx_round_zr := floatx_round roundZR_cs.
+Definition floatx_round_ne := floatx_round roundNE_cs.
+Definition floatx_round_na := floatx_round roundNA_cs.
+
+Definition enforce_helper (fexp : Z -> Z) (xi zi : FF) :=
+ Fle2 (lower zi) (round roundUP fexp (lower xi)) &&
+ Fle2 (round roundDN fexp (upper xi)) (upper zi).
 
 Theorem float_enforce :
   forall rdir {Hrnd : Valid_rnd rdir} p d x xi zi,
   BND (rounding_float rdir p d x) xi ->
-  enforce_helper p d xi zi = true ->
+  enforce_helper (FLT_exp d (Zpos p)) xi zi = true ->
   BND (rounding_float rdir p d x) zi.
 Proof with auto with typeclass_instances.
 intros rdir Hrnd p d x xi zi Hx Hb.
@@ -287,6 +437,27 @@ rewrite <- (round_generic _ _ rndUP _ (generic_format_round radix2 (FLT_exp d (Z
 apply round_le...
 apply Rle_trans with (2 := H2).
 rewrite <- (round_generic _ _ rndDN _ (generic_format_round radix2 (FLT_exp d (Zpos p)) rdir x)).
+apply round_le...
+Qed.
+
+Theorem floatx_enforce :
+  forall rdir {Hrnd : Valid_rnd rdir} p x xi zi,
+  BND (rounding_floatx rdir p x) xi ->
+  enforce_helper (FLX_exp (Zpos p)) xi zi = true ->
+  BND (rounding_floatx rdir p x) zi.
+Proof with auto with typeclass_instances.
+intros rdir Hrnd p x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). rewrite (rndG_conversion roundUP_cs). clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). rewrite (rndG_conversion roundDN_cs). clear H2. intro H2.
+revert Hx.
+intros (Hx1, Hx2).
+split.
+apply Rle_trans with (1 := H1).
+rewrite <- (round_generic _ _ rndUP _ (generic_format_round radix2 (FLX_exp (Zpos p)) rdir x)).
+apply round_le...
+apply Rle_trans with (2 := H2).
+rewrite <- (round_generic _ _ rndDN _ (generic_format_round radix2 (FLX_exp (Zpos p)) rdir x)).
 apply round_le...
 Qed.
 
@@ -657,6 +828,40 @@ Qed.
 Definition float_relative_ne := float_relative_n (fun x => negb (Zeven x)).
 Definition float_relative_na := float_relative_n (Zle_bool 0).
 
+Definition floatx_relative_n_helper (p : positive) (xi zi : FF) :=
+ Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
+ Fle2 (Float2 1 (Zneg p)) (upper zi).
+
+Theorem floatx_relative_n :
+  forall c p x xi zi,
+  ABS x xi ->
+  floatx_relative_n_helper p xi zi = true ->
+  REL (rounding_floatx (Znearest c) p x) x zi.
+Proof.
+intros c p x xi zi Hx Hb.
+generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
+generalize (Fle2_correct _ _ H1). unfold float2R. simpl. rewrite (F2R_Zopp _ 1%Z), F2R_bpow. clear H1. intro H1.
+generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite F2R_bpow. clear H2. intro H2.
+destruct (relative_error_N_FLX_ex radix2 (Zpos p) (refl_equal _) c x) as (eps, (Hr1, Hr2)).
+exists eps.
+refine (conj _ Hr2).
+rewrite <- (bpow_plus radix2 (-1)%Z) in Hr1.
+rewrite (Zplus_comm (- Zpos p)), Zplus_assoc in Hr1.
+split.
+apply Rle_trans with (1 := H1).
+apply Ropp_le_cancel.
+rewrite Ropp_involutive.
+apply Rle_trans with (2 := Hr1).
+rewrite <- Rabs_Ropp.
+apply Rabs_idem.
+apply Rle_trans with (2 := H2).
+apply Rle_trans with (2 := Hr1).
+apply Rabs_idem.
+Qed.
+
+Definition floatx_relative_ne := floatx_relative_n (fun x => negb (Zeven x)).
+Definition floatx_relative_na := floatx_relative_n (Zle_bool 0).
+
 Definition float_relative_inv_n_helper (p : positive) (d : Z) (xi zi : FF) :=
  Flt2 (Float2 1 (d + Zpos p - 1)) (lower xi) &&
  Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
@@ -778,6 +983,20 @@ apply FIX_iff_generic.
 now apply fix_le with xn.
 Qed.
 
+Theorem fix_floatx_of_fix :
+  forall rdir {Hrnd : Valid_rnd rdir} p xn zn x,
+  FIX x xn ->
+  Zle_bool zn xn = true ->
+  FIX (rounding_floatx rdir p x) zn.
+Proof with auto with typeclass_instances.
+intros rdir Hrnd p xn zn x Hx Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
+apply FIX_iff_generic.
+apply generic_round_generic...
+apply FIX_iff_generic.
+now apply fix_le with xn.
+Qed.
+
 Theorem flt_float_of_flt :
   forall rdir {Hrnd : Valid_rnd rdir} p d xn zn x,
   FLT x xn ->
@@ -785,6 +1004,20 @@ Theorem flt_float_of_flt :
   FLT (rounding_float rdir p d x) zn.
 Proof with auto with typeclass_instances.
 intros rdir Hrnd p d xn zn x H Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
+apply FLT_iff_generic.
+apply generic_round_generic...
+apply FLT_iff_generic.
+now apply flt_le with xn.
+Qed.
+
+Theorem flt_floatx_of_flt :
+  forall rdir {Hrnd : Valid_rnd rdir} p xn zn x,
+  FLT x xn ->
+  Zle_bool (Zpos xn) (Zpos zn) = true ->
+  FLT (rounding_floatx rdir p x) zn.
+Proof with auto with typeclass_instances.
+intros rdir Hrnd p xn zn x H Hb.
 generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
 apply FLT_iff_generic.
 apply generic_round_generic...
