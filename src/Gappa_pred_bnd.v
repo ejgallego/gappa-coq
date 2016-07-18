@@ -192,22 +192,54 @@ elim (Rlt_irrefl _ H).
 Qed.
 
 Theorem union :
- forall x : R, forall P : Prop, forall xi xi1 : FF,
- (BND x xi1 -> P) ->
- Fle2 (lower xi1) (lower xi) = true ->
- (BND x (makepairF (upper xi1) (upper xi)) -> P) ->
- BND x xi -> P.
+  forall (x : R) (P : Prop) (xi xi1 : FF),
+  (BND x xi1 -> P) ->
+  Fle2 (lower xi1) (lower xi) = true ->
+  (BND x (makepairF (upper xi1) (upper xi)) -> P) ->
+  BND x xi -> P.
 Proof.
 intros x P xi xi1 Hx1 Hb Hx2 Hx.
 generalize (Fle2_correct _ _ Hb). clear Hb. intro H1.
 case (Rlt_le_dec x (upper xi1)) ; intro H.
 apply Hx1.
-split ; auto with real.
-apply Rle_trans with (1 := H1) (2 := (proj1 Hx)).
+split.
+now apply Rle_trans with (2 := proj1 Hx).
+now apply Rlt_le.
 apply Hx2.
 split.
 exact H.
 exact (proj2 Hx).
+Qed.
+
+Theorem union_hb :
+  forall (x : R) (P : Prop) (xu xu1 : float2),
+  (Rle x xu1 -> P) ->
+  (BND x (makepairF xu1 xu) -> P) ->
+  Rle x xu -> P.
+Proof.
+intros x P xu xu1 Hx1 Hx2 Hx.
+case (Rlt_le_dec x xu1) ; intro H.
+apply Hx1.
+now apply Rlt_le.
+apply Hx2.
+now split.
+Qed.
+
+Theorem union_bh :
+  forall (x : R) (P : Prop) (xl : float2) (xi1 : FF),
+  (BND x xi1 -> P) ->
+  Fle2 (lower xi1) xl = true ->
+  (Rle (upper xi1) x -> P) ->
+  Rle xl x -> P.
+Proof.
+intros x P xl xi1 Hx1 Hb Hx2 Hx.
+generalize (Fle2_correct _ _ Hb). clear Hb. intro H1.
+case (Rlt_le_dec x (upper xi1)) ; intro H.
+apply Hx1.
+split.
+now apply Rle_trans with xl.
+now apply Rlt_le.
+now apply Hx2.
 Qed.
 
 Definition eql_of_cst_helper (xi yi : FF) :=
