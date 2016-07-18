@@ -48,6 +48,18 @@ let convert_concl_no_check a b = Proofview.V82.of_tactic (Tactics.convert_concl_
 let anomalylabstrm label = Errors.anomaly ~label
 let dummy_loc = Loc.dummy_loc
 
+let coq_reference t1 t2 =
+  let th = lazy (coq_reference t1 t2) in
+  fun x -> lazy (Lazy.force th x)
+
+let find_reference t1 t2 =
+  let th = lazy (find_reference t1 t2) in
+  fun x -> lazy (Lazy.force th x)
+
+let is_global c t = is_global (Lazy.force c) t
+
+let constr_of_global f = constr_of_global (Lazy.force f)
+
 DECLARE PLUGIN "gappatac"
 
 END
