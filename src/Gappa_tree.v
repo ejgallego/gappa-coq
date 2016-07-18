@@ -194,6 +194,14 @@ Definition relate (p : pos_atom) (q : pos_atom) (pos : bool) : atom_relation :=
     if index_eq px qx then if pos then ARimply else ARcontradict else ARunknown
   | Aeql px py, Aeql qx qy =>
     if index_eq px qx then if index_eq py qy then if pos then ARimply else ARcontradict else ARunknown else ARunknown
+  | Aleq px pu, Aleq qx qu =>
+    if index_eq px qx then if Fle2 pu qu then if pos then ARimply else ARcontradict else ARunknown else ARunknown
+  | Aleq px pu, Ageq qx ql =>
+    if index_eq px qx then if Flt2 pu ql then if pos then ARcontradict else ARimply else ARunknown else ARunknown
+  | Ageq px pl, Aleq qx qu =>
+    if index_eq px qx then if Flt2 qu pl then if pos then ARcontradict else ARimply else ARunknown else ARunknown
+  | Ageq px pl, Ageq qx ql =>
+    if index_eq px qx then if Fle2 ql pl then if pos then ARimply else ARcontradict else ARunknown else ARunknown
   | _, _ => ARunknown
   end.
 
@@ -256,6 +264,56 @@ assert (not (Rle ql (get rm qx))).
 intros H''.
 apply Rlt_not_le with (1 := H' eq_refl).
 now apply Rle_trans with (2 := proj2 Hp).
+now case pos.
+(* *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+generalize (Fle2_correct pu qu).
+case Fle2 ; try easy.
+intros H'.
+assert (Rle (get rm qx) qu).
+apply Rle_trans with (1 := Hp).
+now apply H'.
+now case pos.
+(* *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+generalize (Flt2_correct pu ql).
+case Flt2 ; try easy.
+intros H'.
+assert (not (Rle ql (get rm qx))).
+apply Rlt_not_le.
+apply Rle_lt_trans with (1 := Hp).
+now apply H'.
+now case pos.
+(* *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+generalize (Flt2_correct qu pl).
+case Flt2 ; try easy.
+intros H'.
+assert (not (Rle (get rm qx) qu)).
+apply Rlt_not_le.
+apply Rlt_le_trans with (2 := Hp).
+now apply H'.
+now case pos.
+(* *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+generalize (Fle2_correct ql pl).
+case Fle2 ; try easy.
+intros H'.
+assert (Rle ql (get rm qx)).
+apply Rle_trans with (2 := Hp).
+now apply H'.
 now case pos.
 (* *)
 generalize (index_eq_correct px qx).
