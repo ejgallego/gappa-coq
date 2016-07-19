@@ -16,8 +16,3 @@ Require Export Gappa_float.
 Require Export Gappa_user.
 
 Ltac finalize := vm_cast_no_check (refl_equal true).
-Ltac next_interval t h :=
- apply t with (1 := h) ; [ finalize |
- clear h ; intro h ; simpl in h ; revert h ].
-Ltac next_interval' t h :=
- apply t with (1 := h) ; [ clear h ].
