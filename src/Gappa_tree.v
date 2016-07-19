@@ -76,41 +76,31 @@ Definition subset (xi yi : FF) :=
 Definition empty_inter (xi yi : FF) :=
   if Flt2 (upper xi) (lower yi) then true else Flt2 (upper yi) (lower xi).
 
-Definition compare xi yi (ypos:bool) :=
-  if ypos then
-    if subset xi yi then ARimply
-    else if empty_inter xi yi then ARcontradict
-    else ARunknown
-  else
-    if subset xi yi then ARcontradict
-    else if empty_inter xi yi then ARimply
-    else ARunknown.
+Definition compare xi yi :=
+  if subset xi yi then ARimply
+  else if empty_inter xi yi then ARcontradict
+  else ARunknown.
 
 Lemma compare_correct :
-  forall xi yi ypos,
+  forall xi yi,
   forall x, BND x xi ->
-  match compare xi yi ypos with
-  | ARimply => if ypos then BND x yi else not (BND x yi)
-  | ARcontradict => not (if ypos then BND x yi else not (BND x yi))
+  match compare xi yi with
+  | ARimply => BND x yi
+  | ARcontradict => not (BND x yi)
   | ARunknown => True
   end.
 Proof.
-intros (xl,xu) (yl,yu) ypos x ; unfold compare, subset, empty_inter, BND ; simpl.
+intros (xl,xu) (yl,yu) x ; unfold compare, subset, empty_inter, BND ; simpl.
 intros (Hx1,Hx2).
 generalize (Fle2_correct yl xl) (Fle2_correct xu yu) (Flt2_correct xu yl) (Flt2_correct yu xl).
 case Fle2.
 case Fle2.
 intros H1 H2 _ _.
-assert (yl <= x <= yu)%R.
 split.
 apply Rle_trans with (2 := Hx1).
 now apply H1.
 apply Rle_trans with (1 := Hx2).
 now apply H2.
-case ypos.
-exact H.
-intros H'.
-now apply H'.
 case Flt2.
 intros H1 _ H2 _.
 apply False_rec.
@@ -119,109 +109,76 @@ apply Rle_lt_trans with (1 := H1 eq_refl).
 apply Rle_lt_trans with (1 := Hx1).
 apply Rle_lt_trans with (1 := Hx2).
 now apply H2.
-case Flt2.
+case Flt2 ; try easy.
 intros _ _ _ H.
-assert (~(yl <= x <= yu)%R).
 intros (_,Hy).
 apply (Rlt_irrefl x).
 apply Rle_lt_trans with (1 := Hy).
 apply Rlt_le_trans with (2 := Hx1).
 now apply H.
-now case ypos.
-intros _ _ _ _.
-now case ypos.
 case Flt2.
 intros _ _ H _.
-assert (~(yl <= x <= yu)%R).
 intros (Hy,_).
 apply (Rlt_irrefl x).
 apply Rle_lt_trans with (1 := Hx2).
 apply Rlt_le_trans with (2 := Hy).
 now apply H.
-now case ypos.
-case Flt2.
+case Flt2 ; try easy.
 intros _ _ _ H.
-assert (~(yl <= x <= yu)%R).
 intros (_,Hy).
 apply (Rlt_irrefl x).
 apply Rle_lt_trans with (1 := Hy).
 apply Rlt_le_trans with (2 := Hx1).
 now apply H.
-now case ypos.
-now case ypos.
 Qed.
 
-Definition weak_compare xi yi (ypos:bool) :=
-  if ypos then
-    if subset xi yi then ARimply
-    else ARunknown
-  else
-    if subset xi yi then ARcontradict
-    else ARunknown.
-
-Lemma weak_compare_correct :
-  forall xi yi ypos,
-  forall x, BND x xi ->
-  match weak_compare xi yi ypos with
-  | ARimply => if ypos then BND x yi else False
-  | ARcontradict => not (if ypos then True else not (BND x yi))
-  | ARunknown => True
-  end.
-Proof.
-intros xi yi ypos x Hx.
-generalize (compare_correct xi yi ypos x Hx).
-unfold compare, weak_compare.
-now case ypos ; case subset.
-Qed.
-
-Definition relate (p : pos_atom) (q : pos_atom) (pos : bool) : atom_relation :=
+Definition relate' (p : pos_atom) (q : pos_atom) : atom_relation :=
   match p, q with
   | Abnd px pi, Abnd qx qi =>
-    if index_eq px qx then compare pi qi pos else ARunknown
+    if index_eq px qx then compare pi qi else ARunknown
   | Abnd px pi, Aleq qx qu =>
-    if index_eq px qx then if Fle2 (upper pi) qu then if pos then ARimply else ARcontradict else if Flt2 qu (lower pi) then if pos then ARcontradict else ARimply else ARunknown else ARunknown
+    if index_eq px qx then if Fle2 (upper pi) qu then ARimply else if Flt2 qu (lower pi) then ARcontradict else ARunknown else ARunknown
   | Abnd px pi, Ageq qx ql =>
-    if index_eq px qx then if Fle2 ql (lower pi) then if pos then ARimply else ARcontradict else if Flt2 (upper pi) ql then if pos then ARcontradict else ARimply else ARunknown else ARunknown
+    if index_eq px qx then if Fle2 ql (lower pi) then ARimply else if Flt2 (upper pi) ql then ARcontradict else ARunknown else ARunknown
   | Aabs px pi, Aabs qx qi =>
-    if index_eq px qx then if Fpos0 (lower qi) then compare pi qi pos else ARunknown else ARunknown
+    if index_eq px qx then if Fpos0 (lower qi) then compare pi qi else ARunknown else ARunknown
   | Arel px py pi, Arel qx qy qi =>
-    if index_eq px qx then if index_eq py qy then weak_compare pi qi pos else ARunknown else ARunknown
+    if index_eq px qx then if index_eq py qy then if subset pi qi then ARimply else ARunknown else ARunknown else ARunknown
   | Afix px pc, Afix qx qc =>
-    if index_eq px qx then if Zle_bool qc pc then if pos then ARimply else ARcontradict else ARunknown else ARunknown
+    if index_eq px qx then if Zle_bool qc pc then ARimply else ARunknown else ARunknown
   | Aflt px pc, Aflt qx qc =>
-    if index_eq px qx then if Zle_bool (Zpos pc) (Zpos qc) then if pos then ARimply else ARcontradict else ARunknown else ARunknown
+    if index_eq px qx then if Zle_bool (Zpos pc) (Zpos qc) then ARimply else ARunknown else ARunknown
   | Anzr px, Anzr qx =>
-    if index_eq px qx then if pos then ARimply else ARcontradict else ARunknown
+    if index_eq px qx then ARimply else ARunknown
   | Aeql px py, Aeql qx qy =>
-    if index_eq px qx then if index_eq py qy then if pos then ARimply else ARcontradict else ARunknown else ARunknown
+    if index_eq px qx then if index_eq py qy then ARimply else ARunknown else ARunknown
   | Aleq px pu, Aleq qx qu =>
-    if index_eq px qx then if Fle2 pu qu then if pos then ARimply else ARcontradict else ARunknown else ARunknown
+    if index_eq px qx then if Fle2 pu qu then ARimply else ARunknown else ARunknown
   | Aleq px pu, Ageq qx ql =>
-    if index_eq px qx then if Flt2 pu ql then if pos then ARcontradict else ARimply else ARunknown else ARunknown
+    if index_eq px qx then if Flt2 pu ql then ARcontradict else ARunknown else ARunknown
   | Ageq px pl, Aleq qx qu =>
-    if index_eq px qx then if Flt2 qu pl then if pos then ARcontradict else ARimply else ARunknown else ARunknown
+    if index_eq px qx then if Flt2 qu pl then ARcontradict else ARunknown else ARunknown
   | Ageq px pl, Ageq qx ql =>
-    if index_eq px qx then if Fle2 ql pl then if pos then ARimply else ARcontradict else ARunknown else ARunknown
+    if index_eq px qx then if Fle2 ql pl then ARimply else ARunknown else ARunknown
   | _, _ => ARunknown
   end.
 
-Theorem relate_correct :
-  forall p q pos rm,
+Theorem relate'_correct :
+  forall p q rm,
   interp_pos_atom p rm ->
-  match relate p q pos with
-  | ARimply => interp_atom q pos rm
-  | ARcontradict => not (interp_atom q pos rm)
+  match relate' p q with
+  | ARimply => interp_pos_atom q rm
+  | ARcontradict => not (interp_pos_atom q rm)
   | ARunknown => True
   end.
 Proof.
-unfold interp_atom.
-intros [px pi|px pu|px pl|px pi|px py pi|px pc|px pc|px|px py] [qx qi|qx qu|qx ql|qx qi|qx qy qi|qx qc|qx qc|qx|qx qy] pos rm Hp ; try exact I ; simpl.
+intros [px pi|px pu|px pl|px pi|px py pi|px pc|px pc|px|px py] [qx qi|qx qu|qx ql|qx qi|qx qy qi|qx qc|qx qc|qx|qx qy] rm Hp ; try exact I ; simpl.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
 rewrite H in Hp by easy.
-generalize (compare_correct pi qi pos _ Hp).
+generalize (compare_correct pi qi _ Hp).
 now case compare.
 (* *)
 generalize (index_eq_correct px qx).
@@ -231,19 +188,14 @@ rewrite H in Hp by easy.
 generalize (Fle2_correct (upper pi) qu).
 case Fle2.
 intros H'.
-assert (Rle (get rm qx) qu).
 apply Rle_trans with (1 := proj2 Hp).
 now apply H'.
-now case pos.
 intros _.
 generalize (Flt2_correct qu (lower pi)).
 case Flt2 ; try easy.
-intros H'.
-assert (not (Rle (get rm qx) qu)).
-intros H''.
+intros H' H''.
 apply Rlt_not_le with (1 := H' eq_refl).
 now apply Rle_trans with (1 := proj1 Hp).
-now case pos.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -252,19 +204,14 @@ rewrite H in Hp by easy.
 generalize (Fle2_correct ql (lower pi)).
 case Fle2.
 intros H'.
-assert (Rle ql (get rm qx)).
 apply Rle_trans with (2 := proj1 Hp).
 now apply H'.
-now case pos.
 intros _.
 generalize (Flt2_correct (upper pi) ql).
 case Flt2 ; try easy.
-intros H'.
-assert (not (Rle ql (get rm qx))).
-intros H''.
+intros H' H''.
 apply Rlt_not_le with (1 := H' eq_refl).
 now apply Rle_trans with (2 := proj2 Hp).
-now case pos.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -273,10 +220,8 @@ rewrite H in Hp by easy.
 generalize (Fle2_correct pu qu).
 case Fle2 ; try easy.
 intros H'.
-assert (Rle (get rm qx) qu).
 apply Rle_trans with (1 := Hp).
 now apply H'.
-now case pos.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -285,11 +230,9 @@ rewrite H in Hp by easy.
 generalize (Flt2_correct pu ql).
 case Flt2 ; try easy.
 intros H'.
-assert (not (Rle ql (get rm qx))).
 apply Rlt_not_le.
 apply Rle_lt_trans with (1 := Hp).
 now apply H'.
-now case pos.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -298,11 +241,9 @@ rewrite H in Hp by easy.
 generalize (Flt2_correct qu pl).
 case Flt2 ; try easy.
 intros H'.
-assert (not (Rle (get rm qx) qu)).
 apply Rlt_not_le.
 apply Rlt_le_trans with (2 := Hp).
 now apply H'.
-now case pos.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -311,10 +252,8 @@ rewrite H in Hp by easy.
 generalize (Fle2_correct ql pl).
 case Fle2 ; try easy.
 intros H'.
-assert (Rle ql (get rm qx)).
 apply Rle_trans with (2 := Hp).
 now apply H'.
-now case pos.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -324,18 +263,11 @@ generalize (Fpos0_correct (lower qi)).
 case Fpos0 ; try easy.
 intros H'.
 specialize (H' eq_refl).
-generalize (compare_correct pi qi pos _ (proj2 Hp)).
+generalize (compare_correct pi qi _ (proj2 Hp)).
 case compare ; try easy.
-case pos ; intros H''.
-now split.
-contradict H''.
-apply H''.
 intros H''.
 contradict H''.
-destruct pos.
 apply H''.
-contradict H''.
-now split.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -347,18 +279,21 @@ case index_eq ; try easy.
 intros H.
 rewrite H in Hp by easy.
 clear H.
+unfold interp_pos_atom in Hp.
+unfold subset.
+generalize (Fle2_correct (lower qi) (lower pi)).
+case Fle2 ; try easy.
+intros Hl.
+generalize (Fle2_correct (upper pi) (upper qi)).
+case Fle2 ; try easy.
+intros Hu.
 destruct Hp as (e,(He,Hp)).
-generalize (weak_compare_correct pi qi pos _ He).
-case weak_compare ; try easy.
-case pos ; intros H ; try easy.
 exists e.
-now split.
-case pos ; intros H.
-now contradict H.
-contradict H.
-contradict H.
-exists e.
-now split.
+split.
+split.
+now apply Rle_trans with (1 := Hl eq_refl).
+now apply Rle_trans with (2 := Hu eq_refl).
+exact Hp.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -369,13 +304,6 @@ generalize (Zle_cases qc pc).
 case (Zle_bool qc pc) ; try easy.
 intros H.
 destruct Hp as ((m,e),(Hm,He)).
-case pos.
-exists (Float2 m e).
-split.
-exact Hm.
-now apply Zle_trans with (1 := H).
-intros H'.
-contradict H'.
 exists (Float2 m e).
 split.
 exact Hm.
@@ -390,17 +318,6 @@ generalize (Zle_cases (Zpos pc) (Zpos qc)).
 case Zle_bool ; try easy.
 intros H.
 destruct Hp as ((m,e),(Hm,He)).
-case pos.
-exists (Float2 m e).
-split.
-exact Hm.
-apply Zlt_le_trans with (1 := He).
-apply le_Z2R.
-change (Z2R (Zpower radix2 (Zpos pc)) <= Z2R (Zpower radix2 (Zpos qc)))%R.
-apply Z2R_le.
-now apply Zpower_le.
-intros H'.
-contradict H'.
 exists (Float2 m e).
 split.
 exact Hm.
@@ -412,9 +329,7 @@ now apply Zpower_le.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
-intros H.
-rewrite H in Hp by easy.
-now case pos.
+now intros <-.
 (* *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -423,10 +338,31 @@ rewrite H in Hp by easy.
 clear H.
 generalize (index_eq_correct py qy).
 case index_eq ; try easy.
-intros H.
-rewrite H in Hp by easy.
-clear H.
-now case pos.
+now intros <-.
+Qed.
+
+Definition relate (p : pos_atom) (q : pos_atom) (qpos : bool) : atom_relation :=
+  if qpos then relate' p q
+  else
+    match relate' p q with
+    | ARimply => ARcontradict
+    | ARcontradict => ARimply
+    | ARunknown => ARunknown
+    end.
+
+Theorem relate_correct :
+  forall p q qpos rm,
+  interp_pos_atom p rm ->
+  match relate p q qpos with
+  | ARimply => interp_atom q qpos rm
+  | ARcontradict => not (interp_atom q qpos rm)
+  | ARunknown => True
+  end.
+Proof.
+intros p q qpos rm Hp.
+unfold relate.
+generalize (relate'_correct p q rm Hp).
+now destruct relate' ; case qpos.
 Qed.
 
 Fixpoint simplify' t p :=
