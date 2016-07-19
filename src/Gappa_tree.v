@@ -152,10 +152,14 @@ Definition relate' (p : pos_atom) (q : pos_atom) : atom_relation :=
     if index_eq px qx then ARimply else ARunknown
   | Aeql px py, Aeql qx qy =>
     if index_eq px qx then if index_eq py qy then ARimply else ARunknown else ARunknown
+  | Aleq px pu, Abnd qx qi =>
+    if index_eq px qx then if Flt2 pu (lower qi) then ARcontradict else ARunknown else ARunknown
   | Aleq px pu, Aleq qx qu =>
     if index_eq px qx then if Fle2 pu qu then ARimply else ARunknown else ARunknown
   | Aleq px pu, Ageq qx ql =>
     if index_eq px qx then if Flt2 pu ql then ARcontradict else ARunknown else ARunknown
+  | Ageq px pl, Abnd qx qi =>
+    if index_eq px qx then if Flt2 (upper qi) pl then ARcontradict else ARunknown else ARunknown
   | Ageq px pl, Aleq qx qu =>
     if index_eq px qx then if Flt2 qu pl then ARcontradict else ARunknown else ARunknown
   | Ageq px pl, Ageq qx ql =>
@@ -173,14 +177,14 @@ Theorem relate'_correct :
   end.
 Proof.
 intros [px pi|px pu|px pl|px pi|px py pi|px pc|px pc|px|px py] [qx qi|qx qu|qx ql|qx qi|qx qy qi|qx qc|qx qc|qx|qx qy] rm Hp ; try exact I ; simpl.
-(* *)
+(* Abnd, Abnd *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
 rewrite H in Hp by easy.
 generalize (compare_correct pi qi _ Hp).
 now case compare.
-(* *)
+(* Abnd, Aleq *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
@@ -196,7 +200,7 @@ case Flt2 ; try easy.
 intros H' H''.
 apply Rlt_not_le with (1 := H' eq_refl).
 now apply Rle_trans with (1 := proj1 Hp).
-(* *)
+(* Abnd, Ageq *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
@@ -212,7 +216,18 @@ case Flt2 ; try easy.
 intros H' H''.
 apply Rlt_not_le with (1 := H' eq_refl).
 now apply Rle_trans with (2 := proj2 Hp).
-(* *)
+(* Aleq, Abnd *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+generalize (Flt2_correct pu (lower qi)).
+case Flt2 ; try easy.
+intros H' H''.
+apply (Rlt_not_le _ _ (H' eq_refl)).
+apply Rle_trans with (2 := Hp).
+apply H''.
+(* Aleq, Aleq *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
@@ -222,7 +237,7 @@ case Fle2 ; try easy.
 intros H'.
 apply Rle_trans with (1 := Hp).
 now apply H'.
-(* *)
+(* Aleq, Ageq *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
@@ -233,7 +248,18 @@ intros H'.
 apply Rlt_not_le.
 apply Rle_lt_trans with (1 := Hp).
 now apply H'.
-(* *)
+(* Ageq, Abnd *)
+generalize (index_eq_correct px qx).
+case index_eq ; try easy.
+intros H.
+rewrite H in Hp by easy.
+generalize (Flt2_correct (upper qi) pl).
+case Flt2 ; try easy.
+intros H' H''.
+apply (Rlt_not_le _ _ (H' eq_refl)).
+apply Rle_trans with (1 := Hp).
+apply H''.
+(* Ageq, Aleq *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
@@ -244,7 +270,7 @@ intros H'.
 apply Rlt_not_le.
 apply Rlt_le_trans with (2 := Hp).
 now apply H'.
-(* *)
+(* Ageq, Abnd *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
@@ -254,7 +280,7 @@ case Fle2 ; try easy.
 intros H'.
 apply Rle_trans with (2 := Hp).
 now apply H'.
-(* *)
+(* Aabs, Abs *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
@@ -268,7 +294,7 @@ case compare ; try easy.
 intros H''.
 contradict H''.
 apply H''.
-(* *)
+(* Arel, Aerl *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
@@ -294,7 +320,7 @@ split.
 now apply Rle_trans with (1 := Hl eq_refl).
 now apply Rle_trans with (2 := Hu eq_refl).
 exact Hp.
-(* *)
+(* Afix, Afix *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
@@ -308,7 +334,7 @@ exists (Float2 m e).
 split.
 exact Hm.
 now apply Zle_trans with (1 := H).
-(* *)
+(* Aflt, Aflt *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
@@ -326,11 +352,11 @@ apply le_Z2R.
 change (Z2R (Zpower radix2 (Zpos pc)) <= Z2R (Zpower radix2 (Zpos qc)))%R.
 apply Z2R_le.
 now apply Zpower_le.
-(* *)
+(* Anzr, Anzr *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 now intros <-.
-(* *)
+(* Aeql, Aeql *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
 intros H.
