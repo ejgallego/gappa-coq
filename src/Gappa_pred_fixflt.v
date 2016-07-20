@@ -103,6 +103,36 @@ exists (lower xi).
 exact (conj H H3).
 Qed.
 
+Theorem neg_fix :
+  forall x : R, forall xn zn : Z,
+  FIX x xn ->
+  Zle_bool zn xn = true ->
+  FIX (-x)%R zn.
+Proof.
+intros x xn zn [fx [Hx1 Hx2]] Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
+exists (Fopp2 fx).
+split.
+rewrite <- Hx1.
+apply Fopp2_correct.
+now apply Zle_trans with xn.
+Qed.
+
+Theorem abs_fix :
+  forall x : R, forall xn zn : Z,
+  FIX x xn ->
+  Zle_bool zn xn = true ->
+  FIX (Rabs x) zn.
+Proof.
+intros x xn zn [[mx ex] [Hx1 Hx2]] Hb.
+generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
+exists (Float2 (Zabs mx) ex).
+split.
+rewrite <- Hx1.
+apply F2R_Zabs.
+now apply Zle_trans with xn.
+Qed.
+
 Definition add_fix_helper (xn yn zn : Z) :=
  Zle_bool zn xn &&
  Zle_bool zn yn.
