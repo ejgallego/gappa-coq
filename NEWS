@@ -1,3 +1,11 @@
+Version 1.3.0:
+ - added support for Gappa 1.3.0 (incompatible with prior versions)
+ - improved support for half-bounded intervals during tree simplification
+ - proved neg_fix and abs_fix
+ - fixed opp_mibs statement
+ - added support for Flocq's FLX formats
+ - improved support for Coq 8.5
+
 Version 1.2.1:
  - fixed compilation with Coq 8.5 and/or camlp4
 
