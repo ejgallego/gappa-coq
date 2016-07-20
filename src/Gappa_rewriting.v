@@ -66,14 +66,12 @@ now rewrite H1.
 Qed.
 
 Theorem opp_mibs :
- forall a b : R, forall zi : FF,
- BND (-a - -b) zi ->
- BND (-(a - b)) zi.
+  forall a b : R, forall zi : FF,
+  BND (-(a - b)) zi ->
+  BND (-a - -b) zi.
 Proof.
 intros a b zi Hz.
-replace (-(a - b))%R with (-a - -b)%R.
-exact Hz.
-ring.
+now replace (-a - -b)%R with (-(a - b))%R by ring.
 Qed.
 
 Theorem opp_xibu :
