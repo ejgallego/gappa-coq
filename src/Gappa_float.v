@@ -828,17 +828,16 @@ Qed.
 Definition float_relative_ne := float_relative_n (fun x => negb (Zeven x)).
 Definition float_relative_na := float_relative_n (Zle_bool 0).
 
-Definition floatx_relative_n_helper (p : positive) (xi zi : FF) :=
+Definition floatx_relative_n_helper (p : positive) (zi : FF) :=
  Fle2 (lower zi) (Float2 (-1) (Zneg p)) &&
  Fle2 (Float2 1 (Zneg p)) (upper zi).
 
 Theorem floatx_relative_n :
-  forall c p x xi zi,
-  ABS x xi ->
-  floatx_relative_n_helper p xi zi = true ->
+  forall c p x zi,
+  floatx_relative_n_helper p zi = true ->
   REL (rounding_floatx (Znearest c) p x) x zi.
 Proof.
-intros c p x xi zi Hx Hb.
+intros c p x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). unfold float2R. simpl. rewrite (F2R_Zopp _ 1%Z), F2R_bpow. clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). unfold float2R. simpl. rewrite F2R_bpow. clear H2. intro H2.
