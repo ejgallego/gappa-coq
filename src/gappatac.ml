@@ -1,6 +1,6 @@
 (***************************************************)
 (* Copyright 2008 Jean-Christophe Filliâtre        *)
-(* Copyright 2008-2012 Guillaume Melquiond         *)
+(* Copyright 2008-2016 Guillaume Melquiond         *)
 (*                                                 *)
 (* This file is distributed under the terms of the *)
 (* GNU Lesser General Public License Version 2.1   *)
