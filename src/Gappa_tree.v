@@ -291,6 +291,7 @@ intros H'.
 specialize (H' eq_refl).
 generalize (compare_correct pi qi _ (proj2 Hp)).
 case compare ; try easy.
+try now split.
 intros H''.
 contradict H''.
 apply H''.
@@ -355,7 +356,8 @@ now apply Zpower_le.
 (* Anzr, Anzr *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
-now intros <-.
+intros H.
+now rewrite <- H.
 (* Aeql, Aeql *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
@@ -364,7 +366,8 @@ rewrite H in Hp by easy.
 clear H.
 generalize (index_eq_correct py qy).
 case index_eq ; try easy.
-now intros <-.
+intros H.
+now rewrite <- H.
 Qed.
 
 Definition relate (p : pos_atom) (q : pos_atom) (qpos : bool) : atom_relation :=

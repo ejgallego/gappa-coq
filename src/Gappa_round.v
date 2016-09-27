@@ -266,7 +266,7 @@ rewrite <- H4.
 replace (Zfloor (ms * 2)) with (1 + 2 * Zfloor ms)%Z.
 rewrite Zcompare_Eq.
 clear -H0.
-destruct (Zfloor ms) as [|p|p] ; try easy.
+destruct (Zfloor ms) as [|p|p] ; [easy|easy|].
 now elim H0.
 now rewrite Zmult_comm, Zplus_comm.
 clear -H1 H4.
@@ -306,7 +306,7 @@ apply Rle_refl.
 (* ... *)
 replace (Zfloor (ms * 2)) with (1 + 2 * Zfloor ms)%Z.
 revert H0.
-case (Zfloor ms) ; try easy.
+case (Zfloor ms) ; [easy|easy|].
 intros p H. now elim H.
 apply sym_eq.
 apply Zfloor_imp.
@@ -336,7 +336,7 @@ Qed.
 Lemma Z_of_N_ZtoN :
   forall n, (0 <= n)%Z -> Z_of_N (ZtoN n) = n.
 Proof.
-intros [|p|p] H ; try easy.
+intros [|p|p] H ; [easy|easy|].
 now elim H.
 Qed.
 

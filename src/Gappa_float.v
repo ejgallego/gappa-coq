@@ -577,7 +577,7 @@ rewrite Zx.
 unfold FLT_exp.
 clear ; zify ; omega.
 revert Zx.
-case Fnum ; simpl ; try easy.
+case Fnum ; simpl ; [|easy|easy].
 intros H.
 now elim H.
 (* *)

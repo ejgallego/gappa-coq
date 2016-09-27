@@ -587,7 +587,7 @@ rewrite H1, H2.
 apply Fcore_float_prop.F2R_ge_0_reg in Hx1.
 revert Hx1.
 unfold Fpos0.
-case (Fnum (lower xi)) ; try easy.
+case (Fnum (lower xi)) ; [easy|easy|].
 intros p H.
 now elim H.
 Qed.

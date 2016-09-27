@@ -31,21 +31,42 @@ let eq_constr = (=)
 let interp_open_constr = Constrintern.interp_open_constr
 
 let keep = Tactics.keep
+let generalize = Tactics.generalize
 let convert_concl_no_check = Tacmach.convert_concl_no_check
+
+let location_table = Lexer.location_table
+let restore_location_table = Lexer.restore_location_table
 
 ELSE
 
 open Vars
 open Universes
 open Globnames
+
+IFDEF COQ85 THEN
+
 open Errors
+
+let generalize = Tactics.generalize
+let location_table = Lexer.location_table
+let restore_location_table = Lexer.restore_location_table
+
+ELSE
+
+open CErrors
+
+let generalize a = Proofview.V82.of_tactic (Tactics.generalize a)
+let location_table = CLexer.location_table
+let restore_location_table = CLexer.restore_location_table
+
+END
 
 let interp_open_constr a b = Constrintern.interp_open_constr b a
 
 let keep a = Proofview.V82.of_tactic (Tactics.keep a)
 let convert_concl_no_check a b = Proofview.V82.of_tactic (Tactics.convert_concl_no_check a b)
 
-let anomalylabstrm label = Errors.anomaly ~label
+let anomalylabstrm label = anomaly ~label
 let dummy_loc = Loc.dummy_loc
 
 let coq_reference t1 t2 =
@@ -483,7 +504,7 @@ let gappa_quote gl =
     var_list := [];
     Tacticals.tclTHEN
       (Tacticals.tclTHEN
-        (Tactics.generalize (List.map (fun (n, _) -> mkVar n) (List.rev l)))
+        (generalize (List.map (fun (n, _) -> mkVar n) (List.rev l)))
         (keep []))
       (convert_concl_no_check e DEFAULTcast) gl
   with
@@ -732,16 +753,16 @@ let call_gappa c_of_s p =
 
 (** execute [f] after disabling globalization *)
 let no_glob f =
-  let dg = Lexer.location_table () in
+  let dg = location_table () in
   Dumpglob.pause ();
   let res =
     try f () with e ->
       Dumpglob.continue ();
-      Lexer.restore_location_table dg;
+      restore_location_table dg;
       raise e
     in
   Dumpglob.continue ();
-  Lexer.restore_location_table dg;
+  restore_location_table dg;
   res
 
 (** replace all evars of any type [ty] by [(refl_equal true : ty)] *)
@@ -798,7 +819,9 @@ let gappa_internal gl =
       errorlabstrm "gappa_internal"
         (Pp.str "execution of Gappa failed:" ++ Pp.fnl () ++ Pp.str s)
 
-IFDEF COQ85 THEN
+IFDEF COQ84 THEN
+
+ELSE
 
 let gappa_quote = Proofview.V82.tactic gappa_quote
 let gappa_internal = Proofview.V82.tactic gappa_internal

@@ -42,7 +42,7 @@ configure config.status: configure.in
 	@COQDEP@ -R src Gappa @COQINCML@ $< | @REMAKE@ -r $@
 	@COQC@ -R src Gappa @COQINCML@ $<
 
-COQSUBTREES = kernel interp intf lib library parsing pretyping printing proofs tactics toplevel
+COQSUBTREES = engine kernel interp intf lib library ltac parsing pretyping printing proofs tactics toplevel
 COQINCLUDES = $(addprefix -I @COQLIB@/, $(COQSUBTREES))
 
 src/gappatac.cmo: src/gappatac.ml
@@ -70,7 +70,7 @@ testsuite/check: src/Gappa_tactic.vo
 	cat /dev/null > "$logfile"
 	for f in *.v; do
 	  cp "$f" check_tmp.v
-	  @COQC@ -R ../src Gappa @COQINCML@ check_tmp.v > output.tmp 2>&1
+	  @COQC@ -R ../src Gappa @COQINCML_T@ check_tmp.v > output.tmp 2>&1
 	  return_code=$?
 	  if [ ${return_code} -ne 0 ]; then
 	    (echo "*** $f exited with error code ${return_code}"; cat output.tmp; echo) >> "$logfile"

@@ -51,6 +51,7 @@ AC_ARG_VAR(OCAMLC, [OCaml compiler command [ocamlc]])
 AC_MSG_CHECKING([for ocamlc])
 if test ! "$OCAMLC"; then
   OCAMLC=`$COQC -config | sed -n -e 's/^OCAMLC=\(.*\)/\1/p'`
+  if test ! "$OCAMLC"; then OCAMLC=ocamlc; fi
   OCAMLC=`which $OCAMLC`
 fi
 AC_MSG_RESULT([$OCAMLC])
@@ -68,6 +69,7 @@ AC_ARG_VAR(OCAMLOPT, [OCaml compiler command [ocamlopt]])
 AC_MSG_CHECKING([for ocamlopt >= 3.11])
 if test ! "$OCAMLOPT"; then
   OCAMLOPT=`$COQC -config | sed -n -e 's/^OCAMLOPT=\(.*\)/\1/p'`
+  if test ! "$OCAMLOPT"; then OCAMLOPT=ocamlopt; fi
   OCAMLOPT=`which $OCAMLOPT`
 fi
 ocamlopt_version=`$OCAMLOPT -version`
@@ -99,12 +101,20 @@ fi
 AC_SUBST(COQPPLIBS)
 AC_SUBST(COQDEFINE)
 AC_SUBST(COQINCML)
-AX_VERSION_GE([$coqc_version], [8.5],
+AC_SUBST(COQINCML_T)
+AX_VERSION_GE([$coqc_version], [8.6],
+  [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
+    COQDEFINE=COQ86
+    COQINCML="-I src"
+    COQINCML_T="-I ../src" ],
+[AX_VERSION_GE([$coqc_version], [8.5],
   [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
     COQDEFINE=COQ85
-    COQINCML="-I src" ],
+    COQINCML="-I src"
+    COQINCML_T="-I ../src" ],
   [ COQPPLIBS="$COQLIB/parsing/grammar.cma"
     COQDEFINE=COQ84 ])
+])
 
 AC_ARG_ENABLE([tactic],
   AS_HELP_STRING([--disable-tactic], [do not compile a "gappa" tactic]),

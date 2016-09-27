@@ -407,8 +407,7 @@ Theorem normalize_tree_correct :
 Proof.
 induction t as [| |a|t Ht|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2|t1 Ht1 t2 Ht2] ;
   destruct pos ; split ; simpl ; try easy.
-intros H.
-now apply H.
+try (intros H ; now apply H).
 apply (Ht false).
 apply (Ht false).
 intros H.
