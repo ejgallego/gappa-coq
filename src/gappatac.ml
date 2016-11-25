@@ -56,8 +56,8 @@ ELSE
 open CErrors
 
 let generalize a = Proofview.V82.of_tactic (Tactics.generalize a)
-let location_table = CLexer.location_table
-let restore_location_table = CLexer.restore_location_table
+let location_table () = ()
+let restore_location_table () = ()
 
 END
 
