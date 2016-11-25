@@ -563,6 +563,18 @@ field.
 exact Hc.
 Qed.
 
+Theorem div_firs :
+  forall a b c : R, forall zi : FF,
+  NZR b ->
+  BND ((a - c) / b) zi ->
+  BND (a / b - c / b) zi.
+Proof.
+intros a b c zi Hb Hz.
+replace (a / b - c / b)%R with ((a - c) / b)%R.
+exact Hz.
+now field.
+Qed.
+
 Theorem div_firq :
   forall a b c : R, forall zi : FF,
   REL a c zi ->
@@ -584,7 +596,7 @@ Theorem div_fir :
  BND ((a * b) / b) zi.
 Proof.
 intros a b zi Hb Hz.
-replace (( a * b) / b)%R with a.
+replace ((a * b) / b)%R with a.
 exact Hz.
 field.
 exact Hb.
