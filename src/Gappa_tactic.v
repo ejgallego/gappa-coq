@@ -874,7 +874,7 @@ split.
 (* . *)
 intros (H1, H2).
 destruct (Req_dec y 0) as [Hy|Hy].
-exists R0.
+exists 0%R.
 repeat split.
 rewrite <- Ropp_0.
 now apply Ropp_le_contravar.

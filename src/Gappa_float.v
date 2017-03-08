@@ -195,7 +195,7 @@ Lemma float_relative_n_whole :
   (Rabs ((rounding_float (Znearest c) p d x - x) / x) <= bpow radix2 (-Zpos p))%R.
 Proof.
 intros c p d x Hx.
-assert (Hx0: x <> R0).
+assert (Hx0: x <> 0%R).
 intros Hx0.
 apply Rle_not_lt with (1 := Hx).
 rewrite Hx0, Rabs_R0.
@@ -496,7 +496,7 @@ assert (Hm0: (Fnum (upper xi)) <> Z0).
 assert (Hx1 := Rabs_no_R0 _ Hx0).
 contradict Hx1.
 apply Rle_antisym.
-replace R0 with (float2R (upper xi)).
+replace 0%R with (float2R (upper xi)).
 apply Hx.
 clear -Hx1.
 destruct (upper xi).
@@ -925,7 +925,7 @@ generalize (Fle2_correct _ _ H3). unfold float2R. simpl. rewrite F2R_bpow. clear
 destruct (Rle_or_lt (Rabs x) (bpow radix2 (d + Zpos p))) as [He|He].
 (* *)
 rewrite round_generic...
-exists R0.
+exists 0%R.
 repeat split.
 apply Rle_trans with (1 := H2).
 rewrite <- Ropp_0.

@@ -481,7 +481,7 @@ now apply Rlt_le_trans with x.
 (* Z2R *)
 intros n.
 unfold rndG.
-change R0 with (Z2R 0).
+change 0%R with (Z2R 0).
 rewrite Rcompare_Z2R.
 rewrite <- Z2R_opp.
 rewrite 2!Zrnd_Z2R.

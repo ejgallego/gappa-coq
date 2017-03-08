@@ -241,7 +241,7 @@ split.
 apply Rle_trans with (1 := H2).
 replace xe with ye.
 apply Hy1.
-apply Rplus_eq_reg_l with R1.
+apply Rplus_eq_reg_l with 1%R.
 apply Rmult_eq_reg_l with (2 := H).
 now rewrite <- Hy2.
 now apply Rle_trans with (2 := H3).
@@ -270,7 +270,7 @@ rewrite Hz.
 now split.
 elim (Rle_not_lt xe ye).
 apply Req_le.
-apply Rplus_eq_reg_l with R1.
+apply Rplus_eq_reg_l with 1%R.
 apply Rmult_eq_reg_l with (2 := Hz).
 now rewrite <- Hy2.
 apply Rle_lt_trans with (1 := proj2 Hx1).
@@ -292,7 +292,7 @@ generalize (Rlt_le_trans _ _ _ H (proj1 Hy1)). clear H. intro H.
 elim (Rlt_irrefl _ H).
 clear H.
 apply sym_eq.
-apply Rplus_eq_reg_l with R1.
+apply Rplus_eq_reg_l with 1%R.
 apply Rmult_eq_reg_l with (2 := Hz).
 now rewrite <- Hx2.
 Qed.

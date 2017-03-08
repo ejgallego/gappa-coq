@@ -10,7 +10,7 @@ case (Rcase_abs x); intros.
 rewrite Rabs_left with (1 := r) in H.
 rewrite <- (Ropp_involutive x).
 apply Ropp_le_contravar with (1 := H).
-apply Rle_trans with R0.
+apply Rle_trans with 0%R.
 rewrite <- Ropp_0.
 apply Ropp_le_contravar.
 apply Rle_trans with (2 := H).

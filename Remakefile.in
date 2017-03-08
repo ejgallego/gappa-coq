@@ -42,7 +42,7 @@ configure config.status: configure.in
 	@COQDEP@ -R src Gappa @COQINCML@ $< | @REMAKE@ -r $@
 	@COQC@ -R src Gappa @COQINCML@ $<
 
-COQSUBTREES = engine kernel interp intf lib library ltac parsing pretyping printing proofs tactics toplevel
+COQSUBTREES = engine kernel interp intf lib library ltac parsing pretyping printing proofs tactics toplevel vernac plugins/ltac
 COQINCLUDES = $(addprefix -I @COQLIB@/, $(COQSUBTREES))
 
 src/gappatac.cmo: src/gappatac.ml

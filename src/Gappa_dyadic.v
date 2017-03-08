@@ -7,7 +7,7 @@ Require Import Flocq.Calc.Fcalc_ops.
 Require Import Gappa_definitions.
 
 Lemma float2_zero :
-  forall e : Z, Float2 0 e = R0 :>R.
+  forall e : Z, Float2 0 e = 0%R :>R.
 Proof.
 intro e.
 apply F2R_0.
@@ -241,7 +241,7 @@ Definition Fis0 (x : float2) :=
 
 Lemma Fis0_correct :
  forall x : float2,
- Fis0 x = true -> x = R0 :>R.
+ Fis0 x = true -> x = 0%R :>R.
 intros x.
 unfold Fis0.
 induction x.

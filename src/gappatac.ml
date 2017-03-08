@@ -81,9 +81,19 @@ let is_global c t = is_global (Lazy.force c) t
 
 let constr_of_global f = constr_of_global (Lazy.force f)
 
+IFDEF COQ87 THEN
+
+let errorlabstrm hdr msg = user_err ~hdr msg
+
+open Ltac_plugin
+
+END
+
 DECLARE PLUGIN "gappatac"
 
 END
+
+let has_izr = IFDEF COQ87 THEN true ELSE false END
 
 let debug = ref false
 
@@ -170,6 +180,7 @@ let coq_Rminus = coq_ref_Rdefinitions "Rminus"
 let coq_Rmult = coq_ref_Rdefinitions "Rmult"
 let coq_Rinv = coq_ref_Rdefinitions "Rinv"
 let coq_Rdiv = coq_ref_Rdefinitions "Rdiv"
+let coq_IZR = coq_ref_Rdefinitions "IZR"
 let coq_Rabs = coq_reference "Gappa" ["Reals"; "Rbasic_fun"] "Rabs"
 let coq_sqrt = coq_reference "Gappa" ["Reals"; "R_sqrt"] "sqrt"
 let coq_powerRZ = coq_reference "Gappa" ["Reals"; "Rfunctions"] "powerRZ"
@@ -286,6 +297,8 @@ let tr_real_constant t =
   let rec aux t =
     match decompose_app t with
       | c, [] when is_global coq_R1 c -> Itp_1
+      | c, [a] when has_izr && is_global coq_IZR c ->
+          Itp_int (tr_arith_constant a)
       | c, [a;b] ->
           if is_global coq_Rplus c then
             if aux a = Itp_1 then
@@ -380,6 +393,8 @@ and qt_no_Rint t =
     match decompose_app t with
       | c, [] when is_global coq_R0 c ->
         mkLApp coq_reInteger [|constr_of_global coq_Z0|]
+      | c, [a] when has_izr && is_global coq_IZR c ->
+        mkLApp coq_reInteger [|a|]
       | c, [a] ->
         begin
           let gen_un f = mkLApp coq_reUnary [|constr_of_global f; qt_term a|] in

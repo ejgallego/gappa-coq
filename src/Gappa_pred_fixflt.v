@@ -412,12 +412,12 @@ split ; apply Rmult_le_compat_l ; try easy.
 apply Rmult_le_reg_r with 2%R.
 now apply (Z2R_lt 0 2).
 rewrite Rmult_assoc, Rinv_l, Rmult_1_l, Rmult_1_r.
-apply Rplus_le_compat_l.
+apply (Rplus_le_compat_l _ _ 1%R).
 apply Rle_trans with (1 := Hxy2).
 now rewrite <- (Rmult_1_r 1).
 apply Rgt_not_eq.
 now apply (Z2R_lt 0 2).
-pattern R1 at 1 ; replace R1 with ((1 + -1 / 2)*2)%R by field.
+pattern 1%R at 1 ; replace R1 with ((1 + -1 / 2)*2)%R by field.
 apply Rmult_le_compat_r.
 now apply (Z2R_le 0 2).
 apply Rplus_le_compat_l.
@@ -442,7 +442,7 @@ split ; apply Rmult_le_compat_l ; try easy.
 replace (/2)%R with (1 + -1/2)%R by field.
 apply Rplus_le_compat_l.
 now apply Rle_trans with (2 := Hxy1).
-apply Rplus_le_compat_l.
+apply (Rplus_le_compat_l _ _ 1%R).
 apply Rle_trans with (1 := Hxy2).
 now rewrite <- (Rmult_1_r 1).
 Qed.
