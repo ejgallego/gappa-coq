@@ -13,17 +13,7 @@ Fine tuning of the installation directory:
 AS_HELP_STRING([--libdir=DIR], [library @<:@DIR=`$COQC -where`/user-contrib/Gappa@:>@])
 m4_divert_pop([HELP_ENABLE])
 
-AC_DEFUN([AX_VERSION_GE], [
-  cmp_ver_sed=['s/\([0-9]\+\)/%\1%/g;s/%\([0-9]\)%/%00\1%/g;s/%\([0-9][0-9]\)%/%0\1%/g;s/[^0-9]//g']
-  cmp_ver_1=`echo "$1" | sed -e "$cmp_ver_sed"`
-  cmp_ver_2=`echo "$2" | sed -e "$cmp_ver_sed"`
-  cmp_ver_3="$cmp_ver_1`echo $cmp_ver_2 | sed -e 's/./0/g'`"
-  cmp_ver_4="$cmp_ver_2`echo $cmp_ver_1 | sed -e 's/./0/g'`"
-  if test "0$cmp_ver_3" -ge "0$cmp_ver_4" ; then
-    m4_ifvaln([$3],[$3],[:])dnl
-    m4_ifvaln([$4],[else $4])dnl
-  fi
-])
+AC_DEFUN([AX_VERSION_GE], [AS_VERSION_COMPARE([$1],[$2],[$4],[$3],[$3])])
 
 AC_PROG_CXX
 
