@@ -16,6 +16,12 @@ open Coqlib
 open Libnames
 open Evarutil
 
+let global_env = ref Environ.empty_env
+let global_evd = ref Evd.empty
+
+let pr_constr = Printer.pr_constr
+let existential_type evd ex = Evd.existential_type evd ex
+
 IFDEF COQ84 THEN
 
 let is_global c t =
@@ -61,13 +67,38 @@ let restore_location_table () = ()
 
 END
 
+IFDEF COQ87 THEN
+
+open Ltac_plugin
+open EConstr
+
+let constr_of_global t = of_constr (constr_of_global t)
+
+let is_global t1 t2 = is_global !global_evd t1 t2
+
+let kind_of_term t = kind !global_evd t
+
+let decompose_app t = decompose_app !global_evd t
+
+let decompose_lam t = decompose_lam !global_evd t
+
+let closed0 t = Vars.closed0 !global_evd t
+
+let eq_constr t1 t2 = eq_constr !global_evd t1 t2
+
+let pr_constr = Printer.pr_econstr
+
+let map_constr f t =
+  of_constr (map_constr (fun x -> to_constr !global_evd (f (of_constr x))) (to_constr !global_evd t))
+
+END
+
 let interp_open_constr a b = Constrintern.interp_open_constr b a
 
 let keep a = Proofview.V82.of_tactic (Tactics.keep a)
 let convert_concl_no_check a b = Proofview.V82.of_tactic (Tactics.convert_concl_no_check a b)
 
 let anomalylabstrm label = anomaly ~label
-let dummy_loc = Loc.dummy_loc
 
 let coq_reference t1 t2 =
   let th = lazy (coq_reference t1 t2) in
@@ -80,14 +111,6 @@ let find_reference t1 t2 =
 let is_global c t = is_global (Lazy.force c) t
 
 let constr_of_global f = constr_of_global (Lazy.force f)
-
-IFDEF COQ87 THEN
-
-let errorlabstrm hdr msg = user_err ~hdr msg
-
-open Ltac_plugin
-
-END
 
 DECLARE PLUGIN "gappatac"
 
@@ -180,7 +203,11 @@ let coq_Rminus = coq_ref_Rdefinitions "Rminus"
 let coq_Rmult = coq_ref_Rdefinitions "Rmult"
 let coq_Rinv = coq_ref_Rdefinitions "Rinv"
 let coq_Rdiv = coq_ref_Rdefinitions "Rdiv"
+IFDEF COQ84 THEN
+let coq_IZR = coq_False
+ELSE
 let coq_IZR = coq_ref_Rdefinitions "IZR"
+END
 let coq_Rabs = coq_reference "Gappa" ["Reals"; "Rbasic_fun"] "Rabs"
 let coq_sqrt = coq_reference "Gappa" ["Reals"; "R_sqrt"] "sqrt"
 let coq_powerRZ = coq_reference "Gappa" ["Reals"; "Rfunctions"] "powerRZ"
@@ -261,7 +288,6 @@ exception NotGappa of constr
 let var_terms = Hashtbl.create 17
 let var_names = Hashtbl.create 17
 let var_list = ref []
-let global_env = ref Environ.empty_env
 
 let mkLApp f v = mkApp (constr_of_global f, v)
 
@@ -428,8 +454,9 @@ and qt_no_Rint t =
             mkLApp p [|(ignore (tr_arith_constant b); b)|] else
           if is_global coq_bpow c then
             let p =
-              match tr_arith_constant (Tacred.compute !global_env Evd.empty
-                (mkLApp coq_radix_val [|a|])) with
+              match tr_arith_constant
+                      (Tacred.compute !global_env !global_evd
+                                      (mkLApp coq_radix_val [|a|])) with
                 | 2 -> coq_reBpow2
                 | 10 -> coq_reBpow10
                 | _ -> raise (NotGappa t)
@@ -507,6 +534,7 @@ let qt_hyps =
 let gappa_quote gl =
   try
     global_env := pf_env gl;
+    global_evd := project gl;
     let l = qt_hyps (pf_hyps_types gl) in
     let _R = constr_of_global coq_R in
     let g = List.fold_left
@@ -514,7 +542,7 @@ let gappa_quote gl =
       (qt_pred (pf_concl gl)) l in
     let uv = mkList _R !var_list in
     let e = mkLApp coq_convert_tree [|uv; g|] in
-    (*Pp.msgerrnl (Printer.pr_constr e);*)
+    (*Pp.msgerrnl (pr_constr e);*)
     Hashtbl.clear var_terms;
     var_list := [];
     Tacticals.tclTHEN
@@ -527,7 +555,7 @@ let gappa_quote gl =
       Hashtbl.clear var_terms;
       var_list := [];
       anomalylabstrm "gappa_quote"
-        (Pp.str "something wrong happened with term " ++ Printer.pr_constr t)
+        (Pp.str "something wrong happened with term " ++ pr_constr t)
 
 (** {1 Goal parsing, call to Gappa, and proof building: the [gappa_internal] tactic} *)
 
@@ -784,7 +812,7 @@ let no_glob f =
 let evars_to_vmcast sigma (emap, c) =
   let emap = nf_evar_map emap in
   let change_exist evar =
-    let ty = Reductionops.nf_betaiota emap (Evd.existential_type emap evar) in
+    let ty = Reductionops.nf_betaiota emap (existential_type emap evar) in
     mkCast (mkLApp coq_eq_refl
       [|constr_of_global coq_bool; constr_of_global coq_true|], VMcast, ty) in
   let rec replace c =
@@ -794,8 +822,8 @@ let evars_to_vmcast sigma (emap, c) =
     in
   replace c
 
-let constr_of_stream gl s =
-  no_glob (fun () -> interp_open_constr (project gl) (pf_env gl)
+let constr_of_stream s =
+  no_glob (fun () -> interp_open_constr !global_evd !global_env
     (Pcoq.Gram.entry_parse Pcoq.Constr.constr (Pcoq.Gram.parsable s)))
 
 let var_name = function
@@ -815,6 +843,8 @@ let build_proof_term c =
 (** the [gappa_internal] tactic *)
 let gappa_internal gl =
   try
+    global_env := pf_env gl;
+    global_evd := project gl;
     Hashtbl.clear var_names;
     List.iter (let dummy = mkVar (id_of_string "dummy") in
       fun n -> Hashtbl.add var_names n dummy)
@@ -822,14 +852,15 @@ let gappa_internal gl =
        "homogen80x"; "homogen80x_init"; "float80x";
        "add_rel"; "sub_rel"; "mul_rel"; "fma_rel" ];
     let g = tr_goal (pf_concl gl) in
-    let (emap, pf) = call_gappa (constr_of_stream gl) g in
-    let pf = evars_to_vmcast (project gl) (emap, pf) in
+    let (emap, pf) = call_gappa constr_of_stream g in
+    global_evd := emap;
+    let pf = evars_to_vmcast emap (emap, pf) in
     let pf = build_proof_term pf in
     Tacmach.refine_no_check pf gl
   with
     | NotGappa t ->
       errorlabstrm "gappa_internal"
-        (Pp.str "translation to Gappa failed (not a reduced constant?): " ++ Printer.pr_constr t)
+        (Pp.str "translation to Gappa failed (not a reduced constant?): " ++ pr_constr t)
     | GappaFailed s ->
       errorlabstrm "gappa_internal"
         (Pp.str "execution of Gappa failed:" ++ Pp.fnl () ++ Pp.str s)
