@@ -680,7 +680,7 @@ let rec tr_pred uv t =
 
 let tr_var c = match kind_of_term c with
   | Var x ->
-    let s = string_of_id x in
+    let s = String.copy (string_of_id x) in
     for i = 0 to String.length s - 1 do
       let c = s.[i] in
       if not (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') ||
