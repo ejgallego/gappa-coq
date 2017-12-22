@@ -1,10 +1,7 @@
 Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
-Require Import Flocq.Core.Fcore.
-Require Import Flocq.Calc.Fcalc_digits.
-Require Import Flocq.Calc.Fcalc_round.
-Require Import Flocq.Prop.Fprop_relative.
+From Flocq Require Import Core Digits Round Relative.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_pred_bnd.
@@ -13,10 +10,10 @@ Require Import Gappa_round_aux.
 Require Import Gappa_round.
 
 Global Notation rounding_float rdir p d :=
-  (Fcore_generic_fmt.round radix2 (FLT_exp d (Zpos p)) rdir) (only parsing).
+  (Generic_fmt.round radix2 (FLT_exp d (Zpos p)) rdir) (only parsing).
 
 Global Notation rounding_floatx rdir p :=
-  (Fcore_generic_fmt.round radix2 (FLX_exp (Zpos p)) rdir) (only parsing).
+  (Generic_fmt.round radix2 (FLX_exp (Zpos p)) rdir) (only parsing).
 
 Definition float_ulp (p : positive) (d m e : Z) :=
  match m with
@@ -83,9 +80,9 @@ apply bpow_le.
 unfold Zminus.
 rewrite (Zplus_comm _ (-1)).
 apply Zplus_le_compat_l.
-unfold canonic_exp.
+unfold cexp.
 apply monotone_exp...
-now apply ln_beta_le_bpow.
+now apply mag_le_bpow.
 Qed.
 
 Lemma floatx_absolute_n_whole :
@@ -105,9 +102,9 @@ apply bpow_le.
 unfold Zminus.
 rewrite (Zplus_comm _ (-1)).
 apply Zplus_le_compat_l.
-unfold canonic_exp.
+unfold cexp.
 apply monotone_exp...
-now apply ln_beta_le_bpow.
+now apply mag_le_bpow.
 Qed.
 
 Lemma float_absolute_inv_n_whole :
@@ -127,10 +124,10 @@ apply bpow_le.
 unfold Zminus.
 rewrite (Zplus_comm _ (-1)).
 apply Zplus_le_compat_l.
-unfold canonic_exp.
-destruct (Zle_or_lt (ln_beta radix2 x) k) as [Hk1|Hk1].
+unfold cexp.
+destruct (Zle_or_lt (mag radix2 x) k) as [Hk1|Hk1].
 apply monotone_exp...
-destruct (Zle_or_lt (ln_beta radix2 x) d) as [Hk2|Hk2].
+destruct (Zle_or_lt (mag radix2 x) d) as [Hk2|Hk2].
 unfold FLT_exp.
 clear -Hk1 Hk2 ; zify ; omega.
 elim Rlt_not_le with (1 := Hx) ; clear Hx.
@@ -141,7 +138,7 @@ apply abs_round_ge_generic...
 apply generic_format_bpow.
 unfold FLT_exp.
 clear ; zify ; omega.
-destruct (ln_beta radix2 x) as (ex,Ex) ; simpl in *.
+destruct (mag radix2 x) as (ex,Ex) ; simpl in *.
 apply Rle_trans with (2 := proj1 (Ex Hx0)).
 apply bpow_le.
 clear -Hk1 Hk2 ; zify ; omega.
@@ -164,16 +161,16 @@ apply bpow_le.
 unfold Zminus.
 rewrite (Zplus_comm _ (-1)).
 apply Zplus_le_compat_l.
-unfold canonic_exp.
+unfold cexp.
 apply monotone_exp...
-destruct (Zle_or_lt (ln_beta radix2 x) k) as [Hk1|Hk1].
+destruct (Zle_or_lt (mag radix2 x) k) as [Hk1|Hk1].
 exact Hk1.
 elim Rlt_not_le with (1 := Hx) ; clear Hx.
 apply abs_round_ge_generic...
 apply generic_format_bpow.
 unfold FLX_exp.
 clear ; zify ; omega.
-destruct (ln_beta radix2 x) as (ex,Ex) ; simpl in *.
+destruct (mag radix2 x) as (ex,Ex) ; simpl in *.
 apply Rle_trans with (2 := proj1 (Ex Hx0)).
 apply bpow_le.
 clear -Hk1 ; omega.
@@ -237,7 +234,7 @@ generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FIX.
 eexists (Float2 _ _) ; repeat split.
 simpl.
-unfold canonic_exp.
+unfold cexp.
 apply Zle_trans with (1 := H).
 apply Zle_max_r.
 Qed.
@@ -250,8 +247,8 @@ Proof with auto with typeclass_instances.
 intros rdir Hrnd x p1 p2 k H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FLT.
-destruct (FLT_format_generic radix2 k (Zpos p1) (Fcore_generic_fmt.round radix2 (FLT_exp k (Zpos p1)) rdir x))
-  as ((m, e), (H1, (H2, _))).
+destruct (FLT_format_generic radix2 k (Zpos p1) (Generic_fmt.round radix2 (FLT_exp k (Zpos p1)) rdir x))
+  as ((m, e), H1, H2, _).
 apply generic_format_round...
 rewrite H1.
 eexists (Float2 _ _) ; repeat split.
@@ -268,8 +265,8 @@ Proof with auto with typeclass_instances.
 intros rdir Hrnd x p1 p2 H.
 generalize (Zle_bool_imp_le _ _ H). clear H. intro H.
 unfold FLT.
-destruct (FLX_format_generic radix2 (Zpos p1) (Fcore_generic_fmt.round radix2 (FLX_exp (Zpos p1)) rdir x))
-  as ((m, e), (H1, H2)).
+destruct (FLX_format_generic radix2 (Zpos p1) (Generic_fmt.round radix2 (FLX_exp (Zpos p1)) rdir x))
+  as ((m, e), H1, H2).
 apply generic_format_round...
 rewrite H1.
 eexists (Float2 _ _) ; repeat split.
@@ -298,17 +295,17 @@ rewrite <- Hx3.
 unfold float2R.
 rewrite Hm, F2R_0.
 apply generic_format_0.
-assert (ln_beta radix2 (F2R (Float radix2 m2 e2)) <= Zpos p2 + e2)%Z.
-rewrite ln_beta_F2R with (1 := Hm).
+assert (mag radix2 (F2R (Float radix2 m2 e2)) <= Zpos p2 + e2)%Z.
+rewrite mag_F2R with (1 := Hm).
 apply Zplus_le_compat_r.
 apply Zle_trans with (2 := H2).
 apply bpow_lt_bpow with radix2.
-destruct (ln_beta radix2 (Z2R m2)) as (n2, Hn).
+destruct (mag radix2 (IZR m2)) as (n2, Hn).
 simpl.
-specialize (Hn (Z2R_neq _ _ Hm)).
+specialize (Hn (IZR_neq _ _ Hm)).
 apply Rle_lt_trans with (1 := proj1 Hn).
-rewrite <- Z2R_abs.
-now apply Z2R_lt.
+rewrite <- abs_IZR.
+now apply IZR_lt.
 destruct (Zle_or_lt e1 e2) as [He|He].
 (* *)
 rewrite <- Hx3.
@@ -343,20 +340,20 @@ generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
 apply round_generic...
 rewrite <- Hx1.
 apply generic_format_F2R.
-unfold canonic_exp.
+unfold cexp.
 intros Hm ; simpl.
-rewrite ln_beta_F2R with (1 := Hm).
+rewrite mag_F2R with (1 := Hm).
 simpl.
 unfold FLX_exp.
-cut (ln_beta radix2 (Z2R m) <= Zpos p1)%Z.
+cut (mag radix2 (IZR m) <= Zpos p1)%Z.
 clear -H1 ; omega.
 apply bpow_lt_bpow with radix2.
-destruct (ln_beta radix2 (Z2R m)) as [n Hn].
+destruct (mag radix2 (IZR m)) as [n Hn].
 simpl.
-specialize (Hn (Z2R_neq _ _ Hm)).
+specialize (Hn (IZR_neq _ _ Hm)).
 apply Rle_lt_trans with (1 := proj1 Hn).
-rewrite <- Z2R_abs.
-now apply Z2R_lt.
+rewrite <- abs_IZR.
+now apply IZR_lt.
 Qed.
 
 Existing Instance valid_rnd_Gf.
@@ -486,7 +483,7 @@ apply error_le_half_ulp...
 apply Rmult_le_compat_l.
 apply Rlt_le.
 apply Rinv_0_lt_compat.
-now apply (Z2R_lt 0 2).
+now apply IZR_lt.
 rewrite <- ulp_abs.
 apply ulp_le_pos...
 apply Rabs_pos.
@@ -505,18 +502,18 @@ rewrite Hx1.
 apply float2_zero.
 apply Rabs_pos.
 rewrite ulp_neq_0.
-2: now apply F2R_neq_0_compat.
+2: now apply F2R_neq_0.
 rewrite <- (bpow_plus radix2 (-1)).
 unfold Zminus.
 rewrite (Zplus_comm _ (-1)).
 apply (f_equal (fun e => bpow radix2 (-1 + e))).
 clear -Hm0.
 destruct (upper xi) as (m, e).
-unfold canonic_exp, float2R.
-rewrite ln_beta_F2R with (1 := Hm0).
-rewrite <- Zdigits_ln_beta with (1 := Hm0).
+unfold cexp, float2R.
+rewrite mag_F2R with (1 := Hm0).
+rewrite <- Zdigits_mag with (1 := Hm0).
 simpl.
-rewrite <- Fcore_digits.Zdigits_abs.
+rewrite <- Zdigits_abs.
 rewrite Zplus_comm.
 destruct m as [|m|m] ; unfold Zabs.
 now elim Hm0.
@@ -541,7 +538,7 @@ rewrite F2R_bpow.
 now apply (Rle_trans _ _ _ (Rabs_idem _)).
 Qed.
 
-Definition float_absolute_ne := float_absolute_n (fun x => negb (Zeven x)).
+Definition float_absolute_ne := float_absolute_n (fun x => negb (Z.even x)).
 Definition float_absolute_na := float_absolute_n (Zle_bool 0).
 
 Theorem float_absolute_inv_n :
@@ -563,13 +560,13 @@ rewrite Zx, F2R_0.
 apply bpow_gt_0.
 rewrite digits2_digits.
 rewrite Zpos_pos_of_Z.
-rewrite Fcore_digits.Zdigits_abs, Zplus_comm.
-rewrite <- Fcalc_digits.ln_beta_F2R_Zdigits with (1 := Zx).
-destruct ln_beta as (ex,Ex) ; simpl.
+rewrite Zdigits_abs, Zplus_comm.
+rewrite <- mag_F2R_Zdigits with (1 := Zx).
+destruct mag as (ex,Ex) ; simpl.
 apply Rle_lt_trans with (1 := RRle_abs _).
 apply Ex.
 contradict Zx.
-apply F2R_eq_0_reg with (1 := Zx).
+apply eq_0_F2R with (1 := Zx).
 clear -Zx ; zify ; omega.
 unfold float_ulp.
 case Z_eq_dec ; intros Zx.
@@ -599,7 +596,7 @@ rewrite F2R_bpow.
 now apply (Rle_trans _ _ _ (Rabs_idem _)).
 Qed.
 
-Definition float_absolute_inv_ne := float_absolute_inv_n (fun x => negb (Zeven x)).
+Definition float_absolute_inv_ne := float_absolute_inv_n (fun x => negb (Z.even x)).
 Definition float_absolute_inv_na := float_absolute_inv_n (Zle_bool 0).
 
 Definition float_absolute_wide_ne_helper (p : positive) (d : Z) (xi : FF) (zi : FF) :=
@@ -666,7 +663,7 @@ rewrite float_absolute_ne_sym.
 cutrewrite (rounding_float rndNE p d (Rabs x) = bpow radix2 (Fexp + Zpos (digits p0) - 1) :>R).
 rewrite Rabs_left1.
 rewrite Ropp_minus_distr.
-apply Rle_trans with (Fcore_defs.F2R (Float radix2 (Zpos (xI (shift_pos p 1))) e) - bpow radix2 (Fexp + Zpos (digits p0) - 1))%R.
+apply Rle_trans with (F2R (Float radix2 (Zpos (xI (shift_pos p 1))) e) - bpow radix2 (Fexp + Zpos (digits p0) - 1))%R.
 unfold Rminus.
 apply Rplus_le_compat_r.
 exact (Rle_trans _ _ _ Hx H2).
@@ -697,7 +694,7 @@ unfold Rminus.
 now rewrite Rplus_assoc, Rplus_opp_l, Rplus_0_r, Rplus_0_l.
 apply Rle_antisym.
 cutrewrite (bpow radix2 (Fexp + Zpos (digits p0) - 1) =
-  Fcore_generic_fmt.round radix2 (FLT_exp d (Zpos p)) rndNE (F2R (Float radix2 (Zpos (xI (shift_pos p 1))) e)) :>R).
+  Generic_fmt.round radix2 (FLT_exp d (Zpos p)) rndNE (F2R (Float radix2 (Zpos (xI (shift_pos p 1))) e)) :>R).
 (* .. *)
 apply round_le...
 exact (Rle_trans _ _ _ Hx H2).
@@ -778,7 +775,7 @@ assert (H4 := Zgt_pos_0 p).
 repeat rewrite Zmax_inf_l ; omega.
 elim Rlt_not_le with (2 := Hx).
 apply Rlt_le_trans with (Float2 0 Fexp).
-now apply F2R_lt_compat.
+now apply F2R_lt.
 unfold float2R.
 rewrite F2R_0.
 apply Rabs_pos.
@@ -825,7 +822,7 @@ rewrite H, Rabs_R0.
 apply bpow_gt_0.
 Qed.
 
-Definition float_relative_ne := float_relative_n (fun x => negb (Zeven x)).
+Definition float_relative_ne := float_relative_n (fun x => negb (Z.even x)).
 Definition float_relative_na := float_relative_n (Zle_bool 0).
 
 Definition floatx_relative_n_helper (p : positive) (zi : FF) :=
@@ -858,7 +855,7 @@ apply Rle_trans with (2 := Hr1).
 apply Rabs_idem.
 Qed.
 
-Definition floatx_relative_ne := floatx_relative_n (fun x => negb (Zeven x)).
+Definition floatx_relative_ne := floatx_relative_n (fun x => negb (Z.even x)).
 Definition floatx_relative_na := floatx_relative_n (Zle_bool 0).
 
 Definition float_relative_inv_n_helper (p : positive) (d : Z) (xi zi : FF) :=
@@ -902,7 +899,7 @@ rewrite H, round_0, Rabs_R0...
 apply bpow_ge_0.
 Qed.
 
-Definition float_relative_inv_ne := float_relative_inv_n (fun x => negb (Zeven x)).
+Definition float_relative_inv_ne := float_relative_inv_n (fun x => negb (Z.even x)).
 Definition float_relative_inv_na := float_relative_inv_n (Zle_bool 0).
 
 Definition rel_of_fix_float_n_helper (p : positive) (d xn : Z) (zi : FF) :=
@@ -965,7 +962,7 @@ rewrite H0, Rabs_R0.
 apply bpow_ge_0.
 Qed.
 
-Definition rel_of_fix_float_ne := rel_of_fix_float_n (fun x => negb (Zeven x)).
+Definition rel_of_fix_float_ne := rel_of_fix_float_n (fun x => negb (Z.even x)).
 Definition rel_of_fix_float_na := rel_of_fix_float_n (Zle_bool 0).
 
 Theorem fix_float_of_fix :

@@ -1,4 +1,4 @@
-Require Import Flocq.Core.Fcore_defs.
+Require Import Flocq.Core.Defs.
 Require Import Gappa_common.
 
 Definition Dcompare (x : float2) (y : float10) :=
@@ -53,15 +53,15 @@ destruct ye as [|ye|ye] ; rewrite Fcomp2_correct.
 apply refl_equal.
 (* . *)
 apply f_equal.
-unfold float2R, Fcore_defs.F2R. simpl.
-rewrite Z2R_mult, Rmult_assoc, <- Z2R_mult.
-now apply (f_equal (fun v => Z2R ym * Z2R v)%R).
+unfold float2R, F2R. simpl.
+rewrite mult_IZR, Rmult_assoc, <- mult_IZR.
+now apply (f_equal (fun v => IZR ym * IZR v)%R).
 (* . *)
 unfold float2R at 1, F2R at 1. simpl.
-replace (Z2R (Fnum x * Zpower_pos 5 ye) * bpow radix2 (Fexp x))%R with (x * Z2R (Zpower_pos 5 ye))%R.
-rewrite <- (Rcompare_mult_r (Z2R (Zpower_pos 2 ye))).
-rewrite Rmult_assoc, <- Z2R_mult, H.
-rewrite <- (Rcompare_mult_r (Z2R (Zpower_pos 10 ye)) x).
+replace (IZR (Fnum x * Zpower_pos 5 ye) * bpow radix2 (Fexp x))%R with (x * IZR (Zpower_pos 5 ye))%R.
+rewrite <- (Rcompare_mult_r (IZR (Zpower_pos 2 ye))).
+rewrite Rmult_assoc, <- mult_IZR, H.
+rewrite <- (Rcompare_mult_r (IZR (Zpower_pos 10 ye)) x).
 apply f_equal.
 unfold float2R, F2R. simpl.
 rewrite 2!Rmult_assoc, 2!Rinv_l.
@@ -73,7 +73,7 @@ exact (bpow_gt_0 radix2 (Zpos ye)).
 exact (bpow_gt_0 radix10 (Zpos ye)).
 exact (bpow_gt_0 radix2 (Zpos ye)).
 unfold float2R, F2R. simpl.
-rewrite Z2R_mult.
+rewrite mult_IZR.
 ring.
 Qed.
 

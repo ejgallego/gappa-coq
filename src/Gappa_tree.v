@@ -349,9 +349,9 @@ exists (Float2 m e).
 split.
 exact Hm.
 apply Zlt_le_trans with (1 := He).
-apply le_Z2R.
-change (Z2R (Zpower radix2 (Zpos pc)) <= Z2R (Zpower radix2 (Zpos qc)))%R.
-apply Z2R_le.
+apply le_IZR.
+change (IZR (Zpower radix2 (Zpos pc)) <= IZR (Zpower radix2 (Zpos qc)))%R.
+apply IZR_le.
 now apply Zpower_le.
 (* Anzr, Anzr *)
 generalize (index_eq_correct px qx).

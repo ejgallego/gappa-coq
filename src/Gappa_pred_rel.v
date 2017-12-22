@@ -35,15 +35,15 @@ Lemma one_plus_correct :
   BND (1 + x) (one_plus xi).
 Proof.
 intros x xi Hx.
-apply IRplus with (xl := R1) (xu := R1) (4 := Hx) ; simpl.
+apply IRplus with (xl := 1%R) (xu := 1%R) (4 := Hx) ; simpl.
 rewrite Fplus2_correct.
 apply Rplus_le_compat_r.
-unfold float2R, Fcore_defs.F2R. simpl.
+unfold float2R, Defs.F2R. simpl.
 rewrite Rmult_1_l.
 apply Rle_refl.
 rewrite Fplus2_correct.
 apply Rplus_le_compat_r.
-unfold float2R, Fcore_defs.F2R. simpl.
+unfold float2R, Defs.F2R. simpl.
 rewrite Rmult_1_l.
 apply Rle_refl.
 split ; apply Rle_refl.
@@ -460,17 +460,17 @@ unfold FImult2.
 replace (Fpos0 x) with (Zle_bool 0 (Fnum x)) by now unfold Fpos0 ; case (Fnum x).
 case Zle_bool_spec ; split ; simpl ; rewrite Fmult2_correct.
 apply monotony_1p.
-now apply Fcore_float_prop.F2R_ge_0_compat.
+now apply Float_prop.F2R_ge_0.
 apply Hy.
 apply monotony_1p.
-now apply Fcore_float_prop.F2R_ge_0_compat.
+now apply Float_prop.F2R_ge_0.
 apply Hy.
 apply monotony_1n.
-apply Fcore_float_prop.F2R_le_0_compat.
+apply Float_prop.F2R_le_0.
 now apply Zlt_le_weak.
 apply Hy.
 apply monotony_1n.
-apply Fcore_float_prop.F2R_le_0_compat.
+apply Float_prop.F2R_le_0.
 now apply Zlt_le_weak.
 apply Hy.
 Qed.

@@ -1,5 +1,5 @@
 Require Import Reals.
-Require Import Flocq.Core.Fcore.
+Require Import Flocq.Core.Core.
 Require Import Gappa_tactic.
 Open Scope R_scope.
 

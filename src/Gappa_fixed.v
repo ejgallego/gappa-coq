@@ -1,7 +1,7 @@
 Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
-Require Import Flocq.Core.Fcore.
+Require Import Flocq.Core.Core.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_pred_bnd.
@@ -10,7 +10,7 @@ Require Import Gappa_round_aux.
 Require Import Gappa_round.
 
 Global Notation rounding_fixed rdir e :=
-  (Fcore_generic_fmt.round radix2 (FIX_exp e) rdir) (only parsing).
+  (Generic_fmt.round radix2 (FIX_exp e) rdir) (only parsing).
 
 Theorem fix_of_fixed :
   forall rdir,
@@ -171,7 +171,7 @@ intros e x zi Hb.
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Fle2_correct _ _ H1). clear H1. intro H1.
 generalize (Fle2_correct _ _ H2). clear H2. intro H2.
-assert (H := error_le_half_ulp radix2 (FIX_exp e) (fun x => negb (Zeven x)) x).
+assert (H := error_le_half_ulp radix2 (FIX_exp e) (fun x => negb (Z.even x)) x).
 replace (/2 * ulp radix2 (FIX_exp e) x)%R with (float2R (Float2 1 (e - 1))) in H.
 (* *)
 destruct (Rabs_le_inv _ _ H) as (H3,H4).

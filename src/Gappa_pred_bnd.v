@@ -1,7 +1,7 @@
 Require Import Gappa_common.
 Require Import Gappa_decimal.
 
-Definition Float1 := Z2R.
+Definition Float1 := IZR.
 
 Definition constant2_helper (x : float2) (zi : FF) :=
  Fle2 (lower zi) x && Fle2 x (upper zi).
@@ -584,12 +584,10 @@ rewrite Rsqr_abs.
 apply mul_pp with (1 := Hx2) (2 := Hx2).
 unfold mul_pp_helper.
 rewrite H1, H2.
-apply Fcore_float_prop.F2R_ge_0_reg in Hx1.
+apply Float_prop.ge_0_F2R in Hx1.
 revert Hx1.
 unfold Fpos0.
-case (Fnum (lower xi)) ; [easy|easy|].
-intros p H.
-now elim H.
+now case (Fnum (lower xi)).
 Qed.
 
 Definition div_pp_helper (xi yi zi : FF) :=

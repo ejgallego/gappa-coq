@@ -1,13 +1,6 @@
 Require Import ZArith.
 Require Import Reals.
-Require Import Flocq.Core.Fcore_Raux.
-Require Import Flocq.Core.Fcore_defs.
-Require Import Flocq.Core.Fcore_digits.
-Require Import Flocq.Calc.Fcalc_digits.
-Require Import Flocq.Core.Fcore_float_prop.
-Require Import Flocq.Core.Fcore_generic_fmt.
-Require Import Flocq.Core.Fcore_FIX.
-Require Import Flocq.Core.Fcore_FLX.
+From Flocq Require Import Raux Defs Digits Float_prop Generic_fmt FIX FLX.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 
@@ -18,8 +11,8 @@ Proof.
 intros e m.
 unfold float2R, F2R. simpl.
 rewrite bpow_plus.
-rewrite Z2R_mult.
-simpl.
+rewrite mult_IZR.
+change (bpow radix2 1) with 2%R.
 ring.
 Qed.
 
@@ -42,19 +35,19 @@ now rewrite 2!Zpos_succ_morphism, IHm.
 now rewrite 2!Zpos_succ_morphism, IHm.
 easy.
 (* *)
-rewrite Zdigits_ln_beta. 2: easy.
+rewrite Zdigits_mag. 2: easy.
 apply sym_eq.
-apply ln_beta_unique.
+apply mag_unique.
 generalize (digits2_Pnat_correct m).
 generalize (digits2_Pnat m).
 intros d H.
 simpl in H.
 replace (Z_of_nat (S d) - 1)%Z with (Z_of_nat d).
-rewrite <- Z2R_abs.
-rewrite <- 2!Z2R_Zpower_nat.
+rewrite <- abs_IZR.
+rewrite <- 2!IZR_Zpower_nat.
 split.
-now apply Z2R_le.
-now apply Z2R_lt.
+now apply IZR_le.
+now apply IZR_lt.
 rewrite inj_S.
 apply Zpred_succ.
 Qed.
@@ -83,7 +76,7 @@ intros ((m,e),(H1,H2)).
 rewrite <- H1.
 now apply generic_format_F2R.
 intros H.
-destruct (FIX_format_generic _ _ _ H) as ((m,e),(H1,H2)).
+destruct (FIX_format_generic _ _ _ H) as ((m,e),H1,H2).
 exists (Float2 m e) ; repeat split.
 easy.
 rewrite <- H2.
@@ -99,9 +92,10 @@ split.
 intros ((m,e),(H1,H2)).
 apply generic_format_FLX.
 exists (Float radix2 m e).
-now split.
+now apply sym_eq.
+exact H2.
 intros H.
-destruct (@FLX_format_generic _ (Zpos p) (refl_equal Lt) _ H) as ((m,e),(H1,H2)).
+destruct (@FLX_format_generic _ (Zpos p) (refl_equal Lt) _ H) as ((m,e),H1,H2).
 now exists (Float2 m e) ; repeat split.
 Qed.
 
@@ -129,8 +123,8 @@ exists xf.
 split.
 exact Hx1.
 apply Zlt_le_trans with (1 := Hx2).
-apply le_Z2R.
-change (Z2R (Zpower radix2 (Zpos xn)) <= Z2R (Zpower radix2 (Zpos zn)))%R.
-apply Z2R_le.
+apply le_IZR.
+change (IZR (Zpower radix2 (Zpos xn)) <= IZR (Zpower radix2 (Zpos zn)))%R.
+apply IZR_le.
 now apply Zpower_le.
 Qed.

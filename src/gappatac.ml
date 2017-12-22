@@ -212,7 +212,7 @@ let coq_Rabs = coq_reference "Gappa" ["Reals"; "Rbasic_fun"] "Rabs"
 let coq_sqrt = coq_reference "Gappa" ["Reals"; "R_sqrt"] "sqrt"
 let coq_powerRZ = coq_reference "Gappa" ["Reals"; "Rfunctions"] "powerRZ"
 
-let coq_radix_val = find_reference "Gappa" ["Flocq"; "Core"; "Fcore_Zaux"] "radix_val"
+let coq_radix_val = find_reference "Gappa" ["Flocq"; "Core"; "Zaux"] "radix_val"
 
 let coq_ref_Gappa_Private = find_reference "Gappa" ["Gappa"; "Gappa_tactic"; "Gappa_Private"]
 let coq_convert_tree = coq_ref_Gappa_Private "convert_tree"
@@ -260,7 +260,7 @@ let coq_uoNeg = coq_ref_Gappa_Private "uoNeg"
 let coq_uoInv = coq_ref_Gappa_Private "uoInv"
 let coq_uoSqrt = coq_ref_Gappa_Private "uoSqrt"
 
-let coq_ref_Fcore_Raux = find_reference "Gappa" ["Flocq"; "Core"; "Fcore_Raux"]
+let coq_ref_Fcore_Raux = find_reference "Gappa" ["Flocq"; "Core"; "Raux"]
 let coq_bpow = coq_ref_Fcore_Raux "bpow"
 let coq_rndDN = coq_ref_Fcore_Raux "Zfloor"
 let coq_rndUP = coq_ref_Fcore_Raux "Zceil"
@@ -268,16 +268,16 @@ let coq_rndZR = coq_ref_Fcore_Raux "Ztrunc"
 let coq_ref_Gappa_round_def = find_reference "Gappa" ["Gappa"; "Gappa_round_def"]
 let coq_rndNE = coq_ref_Gappa_round_def "rndNE"
 let coq_rndNA = coq_ref_Gappa_round_def "rndNA"
-let coq_ref_Fcore_generic_fmt = find_reference "Gappa" ["Flocq"; "Core"; "Fcore_generic_fmt"]
+let coq_ref_Fcore_generic_fmt = find_reference "Gappa" ["Flocq"; "Core"; "Generic_fmt"]
 let coq_round = coq_ref_Fcore_generic_fmt "round"
 let coq_generic_format = coq_ref_Fcore_generic_fmt "generic_format"
-let coq_ref_Fcore_FLT = find_reference "Gappa" ["Flocq"; "Core"; "Fcore_FLT"]
+let coq_ref_Fcore_FLT = find_reference "Gappa" ["Flocq"; "Core"; "FLT"]
 let coq_FLT_format = coq_ref_Fcore_FLT "FLT_format"
 let coq_FLT_exp = coq_ref_Fcore_FLT "FLT_exp"
-let coq_ref_Fcore_FLX = find_reference "Gappa" ["Flocq"; "Core"; "Fcore_FLX"]
+let coq_ref_Fcore_FLX = find_reference "Gappa" ["Flocq"; "Core"; "FLX"]
 let coq_FLX_format = coq_ref_Fcore_FLX "FLX_format"
 let coq_FLX_exp = coq_ref_Fcore_FLX "FLX_exp"
-let coq_ref_Fcore_FIX = find_reference "Gappa" ["Flocq"; "Core"; "Fcore_FIX"]
+let coq_ref_Fcore_FIX = find_reference "Gappa" ["Flocq"; "Core"; "FIX"]
 let coq_FIX_format = coq_ref_Fcore_FIX "FIX_format"
 let coq_FIX_exp = coq_ref_Fcore_FIX "FIX_exp"
 

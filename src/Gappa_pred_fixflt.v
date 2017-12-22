@@ -1,5 +1,4 @@
-Require Import Flocq.Core.Fcore.
-Require Import Flocq.Prop.Fprop_Sterbenz.
+From Flocq Require Import Core Sterbenz.
 Require Import Gappa_common.
 Require Import Gappa_round_aux.
 
@@ -228,8 +227,8 @@ exists (Float2 my (ex + ey)).
 split.
 2: exact Hy.
 unfold float2R ; simpl.
-rewrite <- Fcalc_ops.F2R_mult.
-unfold Fcalc_ops.Fmult.
+rewrite <- Operations.F2R_mult.
+unfold Operations.Fmult.
 now rewrite Zmult_1_l.
 destruct mx ; try now destruct mx.
 destruct Hy as [[my ey] [<- Hy]].
@@ -237,8 +236,8 @@ exists (Float2 (-my) (ex + ey)).
 split.
 2: simpl ; now rewrite Zabs_Zopp.
 unfold float2R ; simpl.
-rewrite <- Fcalc_ops.F2R_mult.
-unfold Fcalc_ops.Fmult.
+rewrite <- Operations.F2R_mult.
+unfold Operations.Fmult.
 now replace (-1 * my)%Z with (Zopp my) by ring.
 Qed.
 
@@ -299,13 +298,13 @@ rewrite Zpos_pos_of_Z with (1 := H0).
 assert (H0': ml <> Z0).
 intros H.
 now rewrite H in H0.
-rewrite Fcalc_digits.Zdigits_ln_beta with (1 := H0').
-rewrite <- ln_beta_F2R with (1 := H0').
-apply Zle_trans with (ln_beta radix2 (Rabs (Float2 mx ex))).
-apply ln_beta_le.
-now apply F2R_gt_0_compat.
+rewrite Zdigits_mag with (1 := H0').
+rewrite <- mag_F2R with (1 := H0').
+apply Zle_trans with (mag radix2 (Rabs (Float2 mx ex))).
+apply mag_le.
+now apply F2R_gt_0.
 now rewrite Hx1.
-rewrite ln_beta_abs.
+rewrite mag_abs.
 unfold float2R.
 assert (Hx0: mx <> Z0).
 intros H.
@@ -313,18 +312,18 @@ apply Rle_not_lt with (1 := Hxi).
 rewrite <- Hx1, H.
 unfold float2R.
 rewrite F2R_0, Rabs_R0.
-now apply F2R_gt_0_compat.
-rewrite ln_beta_F2R with (1 := Hx0).
+now apply F2R_gt_0.
+rewrite mag_F2R with (1 := Hx0).
 apply Zplus_le_compat_r.
-destruct (ln_beta radix2 (Z2R mx)) as (e, He).
+destruct (mag radix2 (IZR mx)) as (e, He).
 simpl.
 apply bpow_lt_bpow with radix2.
-apply Rle_lt_trans with (Rabs (Z2R mx)).
+apply Rle_lt_trans with (Rabs (IZR mx)).
 apply He.
-now apply (Z2R_neq _ 0).
-rewrite <- Z2R_abs.
-rewrite <- Z2R_Zpower. 2: easy.
-now apply Z2R_lt.
+now apply (IZR_neq _ 0).
+rewrite <- abs_IZR.
+rewrite <- IZR_Zpower. 2: easy.
+now apply IZR_lt.
 Qed.
 
 Theorem flt_of_fix_bnd :
@@ -340,7 +339,7 @@ split.
 exact Hx1.
 unfold float2R in Hx1. simpl in Hx1.
 simpl Fnum in H. simpl Fexp in H.
-apply (F2R_lt_reg radix2 e).
+apply (lt_F2R radix2 e).
 rewrite F2R_Zabs.
 apply Rle_lt_trans with (F2R (Float radix2 mu eu)).
 simpl. rewrite Hx1.
@@ -348,22 +347,22 @@ apply Hxi.
 apply Rlt_le_trans with (bpow radix2 (n + Zpos p)).
 destruct (Zle_or_lt mu 0) as [Hu|Hu].
 apply Rle_lt_trans with R0.
-now apply F2R_le_0_compat.
+now apply F2R_le_0.
 apply bpow_gt_0.
-apply Rlt_le_trans with (bpow radix2 (Fcore_digits.Zdigits radix2 mu + eu)).
-rewrite Fcalc_digits.Zdigits_ln_beta. 2: intros Hu' ; now rewrite Hu' in Hu.
-rewrite <- ln_beta_F2R. 2: intros Hu' ; now rewrite Hu' in Hu.
-destruct (ln_beta radix2 (F2R (Float radix2 mu eu))) as (e', He).
+apply Rlt_le_trans with (bpow radix2 (Digits.Zdigits radix2 mu + eu)).
+rewrite Zdigits_mag. 2: intros Hu' ; now rewrite Hu' in Hu.
+rewrite <- mag_F2R. 2: intros Hu' ; now rewrite Hu' in Hu.
+destruct (mag radix2 (F2R (Float radix2 mu eu))) as (e', He).
 apply (Rle_lt_trans _ _ _ (RRle_abs _)).
 apply He.
 apply Rgt_not_eq.
-now apply F2R_gt_0_compat.
+now apply F2R_gt_0.
 rewrite <- (Zpos_pos_of_Z _ Hu).
 rewrite <- digits2_digits.
 now apply bpow_le.
 unfold F2R. simpl.
 change (Zpower_pos 2 p) with (Zpower radix2 (Zpos p)).
-rewrite Z2R_Zpower. 2: easy.
+rewrite IZR_Zpower. 2: easy.
 rewrite <- bpow_plus.
 apply bpow_le.
 rewrite Zplus_comm.
@@ -394,6 +393,7 @@ apply <- FLT_iff_generic.
 unfold Rminus.
 rewrite <- (Ropp_involutive x), Rplus_comm.
 apply sterbenz.
+now apply FLX_exp_valid.
 apply FLX_exp_monotone.
 apply generic_format_opp.
 apply -> FLT_iff_generic.
@@ -410,16 +410,16 @@ apply Rlt_le.
 now apply Ropp_0_gt_lt_contravar.
 split ; apply Rmult_le_compat_l ; try easy.
 apply Rmult_le_reg_r with 2%R.
-now apply (Z2R_lt 0 2).
+now apply IZR_lt.
 rewrite Rmult_assoc, Rinv_l, Rmult_1_l, Rmult_1_r.
 apply (Rplus_le_compat_l _ _ 1%R).
 apply Rle_trans with (1 := Hxy2).
 now rewrite <- (Rmult_1_r 1).
 apply Rgt_not_eq.
-now apply (Z2R_lt 0 2).
-pattern 1%R at 1 ; replace R1 with ((1 + -1 / 2)*2)%R by field.
+now apply IZR_lt.
+replace 1%R with ((1 + -1 / 2)*2)%R at 1 by field.
 apply Rmult_le_compat_r.
-now apply (Z2R_le 0 2).
+now apply IZR_le.
 apply Rplus_le_compat_l.
 now apply Rle_trans with (2 := Hxy1).
 (* *)
@@ -428,6 +428,7 @@ now apply flt_subset with xn.
 (* *)
 apply <- FLT_iff_generic.
 apply sterbenz.
+now apply FLX_exp_valid.
 apply FLX_exp_monotone.
 apply -> FLT_iff_generic.
 now apply flt_subset with xn.

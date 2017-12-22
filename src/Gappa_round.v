@@ -2,9 +2,7 @@ Require Import Decidable.
 Require Import Bool.
 Require Import ZArith.
 Require Import Reals.
-Require Import Flocq.Core.Fcore.
-Require Import Flocq.Calc.Fcalc_bracket.
-Require Import Flocq.Calc.Fcalc_digits.
+From Flocq Require Import Core Bracket Digits.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
 Require Import Gappa_round_def.
@@ -60,7 +58,7 @@ Section rndG.
 
 Lemma bracket_aux :
   forall x,
-  (Z2R (Zfloor x) <= x < Z2R (Zfloor x) + 1)%R.
+  (IZR (Zfloor x) <= x < IZR (Zfloor x) + 1)%R.
 Proof.
 split.
 apply Zfloor_lb.
@@ -71,7 +69,7 @@ Variable rdir : rnd_record -> bool.
 Variable good_rdir : good_rdir rdir.
 
 Definition hrndG_aux mx x :=
-  match inbetween_loc (Z2R mx) (Z2R mx + 1) x with
+  match inbetween_loc (IZR mx) (IZR mx + 1) x with
   | loc_Exact => (false, false)
   | loc_Inexact Lt => (false, true)
   | loc_Inexact Eq => (true, false)
@@ -81,7 +79,7 @@ Definition hrndG_aux mx x :=
 Definition hrndG x :=
   let mx := Zfloor x in
   let m := ZtoN mx in
-  let l := inbetween_loc (Z2R mx) (Z2R mx + 1) x in
+  let l := inbetween_loc (IZR mx) (IZR mx + 1) x in
   let r := let (r, s) := hrndG_aux mx x in rnd_record_mk m r s in
   if rdir r then Zceil x else Zfloor x.
 
@@ -116,7 +114,7 @@ unfold hrndG, hrndG_aux.
 destruct (inbetween_spec _ _ x (bracket_aux _)) as [H|l H1 H2].
 rewrite Hx2.
 rewrite H at 2.
-now rewrite Zceil_Z2R.
+now rewrite Zceil_IZR.
 now case l ; rewrite ?Hx1, ?Hx3, ?Hx4.
 Qed.
 
@@ -131,12 +129,12 @@ unfold hrndG, hrndG_aux.
 destruct (inbetween_spec _ _ x (bracket_aux _)) as [Hx4|l Hx4 Hx5].
 rewrite Hx2.
 rewrite Hx4 at 2.
-rewrite Zrnd_Z2R...
+rewrite Zrnd_IZR...
 unfold Znearest.
-rewrite Rcompare_floor_ceil_mid with (1 := Rlt_not_eq _ _ (proj1 Hx4)).
+rewrite Rcompare_floor_ceil_middle with (1 := Rlt_not_eq _ _ (proj1 Hx4)).
 rewrite Rcompare_middle.
 rewrite Zceil_floor_neq with (1 := Rlt_not_eq _ _ (proj1 Hx4)).
-rewrite Z2R_plus. simpl Z2R.
+rewrite plus_IZR.
 rewrite Hx5.
 now case l ; rewrite ?Hx1, ?Hx2.
 Qed.
@@ -172,41 +170,41 @@ apply Zle_trans with (Zceil x).
 unfold hrndG.
 case rdir.
 apply Zle_refl.
-apply le_Z2R.
+apply le_IZR.
 exact (Rle_trans _ _ _ (Zfloor_lb x) (Zceil_ub x)).
 apply Zle_trans with (Zfloor y).
 apply Zle_trans with (Zfloor x + 1)%Z.
 apply Zceil_glb.
-rewrite Z2R_plus.
+rewrite plus_IZR.
 apply Rlt_le.
 apply Zfloor_ub.
 generalize (Zfloor_le x y Hxy).
 omega.
 unfold hrndG.
 case rdir.
-apply le_Z2R.
+apply le_IZR.
 exact (Rle_trans _ _ _ (Zfloor_lb y) (Zceil_ub y)).
 apply Zle_refl.
 (* Z2R *)
 intros n.
 unfold hrndG.
 case rdir.
-apply Zceil_Z2R.
-apply Zfloor_Z2R.
+apply Zceil_IZR.
+apply Zfloor_IZR.
 Qed.
 
 Lemma hrndG_pos :
   forall x, (0 <= x)%R -> (0 <= hrndG x)%Z.
 Proof with auto with typeclass_instances.
 intros x Hx.
-rewrite <- (Zrnd_Z2R hrndG 0).
+rewrite <- (Zrnd_IZR hrndG 0).
 apply Zrnd_le...
 Qed.
 
 Lemma shr_conversion :
   forall m d,
-  shr m d = let (r, s) := hrndG_aux (Zfloor (Z2R (Zpos m) * bpow radix2 (- Zpos d))) (Z2R (Zpos m) * bpow radix2 (- Zpos d)) in
-    rnd_record_mk (ZtoN (Zfloor (Z2R (Zpos m) * bpow radix2 (- Zpos d)))) r s.
+  shr m d = let (r, s) := hrndG_aux (Zfloor (IZR (Zpos m) * bpow radix2 (- Zpos d))) (IZR (Zpos m) * bpow radix2 (- Zpos d)) in
+    rnd_record_mk (ZtoN (Zfloor (IZR (Zpos m) * bpow radix2 (- Zpos d)))) r s.
 Proof.
 intros m d.
 unfold shr.
@@ -216,42 +214,40 @@ induction (nat_of_P d).
 (* *)
 simpl.
 rewrite Rmult_1_r.
-change (P2R m) with (Z2R (Zpos m)).
-rewrite Zfloor_Z2R.
+rewrite Zfloor_IZR.
 unfold hrndG_aux, inbetween_loc.
 now rewrite Rcompare_Eq.
 (* *)
 rewrite iter_nat_S.
 rewrite IHn. clear IHn.
 unfold hrndG_aux.
-set (ms := (Z2R (Zpos m) * bpow radix2 (- Z_of_nat (S n)))%R).
-replace (Z2R (Zpos m) * bpow radix2 (- Z_of_nat n))%R with (ms * 2)%R.
+set (ms := (IZR (Zpos m) * bpow radix2 (- Z_of_nat (S n)))%R).
+replace (IZR (Zpos m) * bpow radix2 (- Z_of_nat n))%R with (ms * 2)%R.
 assert (H0: (0 <= Zfloor ms)%Z).
 apply Zfloor_lub.
 unfold ms.
 apply Rmult_le_pos.
-now apply (Z2R_le 0).
+now apply IZR_le.
 apply bpow_ge_0.
 clearbody ms. clear -H0.
 destruct (inbetween_spec _ _ ms (bracket_aux _)) as [H|l H1 H2].
 (* . *)
 replace (Zfloor (ms * 2)) with (Zfloor ms * 2)%Z.
 unfold inbetween_loc.
-rewrite Z2R_mult.
+rewrite mult_IZR.
 rewrite Rcompare_Eq.
 destruct (Zfloor ms) as [|p|p] ; try easy.
 now rewrite Zmult_comm.
 now rewrite <- H.
 rewrite H at 2.
-change 2%R with (Z2R 2).
-rewrite <- Z2R_mult.
-now rewrite Zfloor_Z2R.
+rewrite <- mult_IZR.
+now rewrite Zfloor_IZR.
 (* . *)
 unfold inbetween_loc.
-assert (H3: Rcompare (ms * 2) (Z2R (Zfloor ms) * 2 + 1) = l).
+assert (H3: Rcompare (ms * 2) (IZR (Zfloor ms) * 2 + 1) = l).
 rewrite <- (Rcompare_mult_r 2) in H2.
-now replace (Z2R (Zfloor ms) * 2 + 1)%R with ((Z2R (Zfloor ms) + (Z2R (Zfloor ms) + 1)) / 2 * 2)%R by field.
-now apply (Z2R_lt 0 2).
+now replace (IZR (Zfloor ms) * 2 + 1)%R with ((IZR (Zfloor ms) + (IZR (Zfloor ms) + 1)) / 2 * 2)%R by field.
+now apply IZR_lt.
 clear H2. rewrite <- H3. clear H3.
 case Rcompare_spec ; intros H4.
 elim Rlt_not_le with (1 := H4).
@@ -259,9 +255,8 @@ apply Zfloor_lb.
 (* .. *)
 unfold shr_aux. simpl.
 rewrite H4.
-change (Z2R (Zfloor ms) * 2 + 1)%R with (Z2R (Zfloor ms) * Z2R 2 + Z2R 1)%R.
-rewrite <- Z2R_mult, <- Z2R_plus.
-rewrite Rcompare_Z2R.
+rewrite <- mult_IZR, <- plus_IZR.
+rewrite Rcompare_IZR.
 rewrite <- H4.
 replace (Zfloor (ms * 2)) with (1 + 2 * Zfloor ms)%Z.
 rewrite Zcompare_Eq.
@@ -271,14 +266,14 @@ now elim H0.
 now rewrite Zmult_comm, Zplus_comm.
 clear -H1 H4.
 assert (Zfloor ms * 2 < Zfloor (ms * 2) < (Zfloor ms + 1) * 2)%Z.
-split ; apply lt_Z2R ; rewrite <- H4 ; rewrite Z2R_mult ; apply Rmult_lt_compat_r.
-now apply (Z2R_lt 0 2).
+split ; apply lt_IZR ; rewrite <- H4 ; rewrite mult_IZR ; apply Rmult_lt_compat_r.
+now apply IZR_lt.
 apply H1.
-now apply (Z2R_lt 0 2).
-now rewrite Z2R_plus.
+now apply IZR_lt.
+now rewrite plus_IZR.
 omega.
 (* .. *)
-set (rs := match Rcompare (ms * 2) ((Z2R (Zfloor (ms * 2)) + (Z2R (Zfloor (ms * 2)) + 1)) / 2) with
+set (rs := match Rcompare (ms * 2) ((IZR (Zfloor (ms * 2)) + (IZR (Zfloor (ms * 2)) + 1)) / 2) with
   Eq => (true, false) | Lt => (false, true) | Gt => (true, true) end).
 rewrite (surjective_pairing rs).
 unfold shr_aux. simpl.
@@ -291,17 +286,16 @@ now case (Zfloor ms).
 apply sym_eq.
 rewrite Zmult_comm.
 apply Zfloor_imp.
-rewrite Z2R_plus, Z2R_mult.
+rewrite plus_IZR, mult_IZR.
 refine (conj _ H2).
 apply Rmult_le_compat_r.
-now apply (Z2R_le 0 2).
+now apply IZR_le.
 apply Zfloor_lb.
 (* ... *)
 elim Rlt_not_le with (1 := H4).
 rewrite H2.
-change (Z2R (Zfloor ms) * 2 + 1)%R with (Z2R (Zfloor ms) * Z2R 2 + Z2R 1)%R.
-rewrite <- Z2R_mult, <- Z2R_plus.
-rewrite Zfloor_Z2R.
+rewrite <- mult_IZR, <- plus_IZR.
+rewrite Zfloor_IZR.
 apply Rle_refl.
 (* ... *)
 replace (Zfloor (ms * 2)) with (1 + 2 * Zfloor ms)%Z.
@@ -310,15 +304,15 @@ case (Zfloor ms) ; [easy|easy|].
 intros p H. now elim H.
 apply sym_eq.
 apply Zfloor_imp.
-rewrite Z2R_plus, Z2R_mult.
+rewrite plus_IZR, mult_IZR.
 split.
 rewrite Rplus_comm, Rmult_comm.
 now apply Rlt_le.
-rewrite 2!Z2R_plus, Z2R_mult.
+rewrite 2!plus_IZR, mult_IZR.
 simpl.
-replace (1 + 2 * Z2R (Zfloor ms) + 1)%R with ((Z2R (Zfloor ms) + 1) * 2)%R by ring.
+replace (1 + 2 * IZR (Zfloor ms) + 1)%R with ((IZR (Zfloor ms) + 1) * 2)%R by ring.
 apply Rmult_lt_compat_r.
-now apply (Z2R_lt 0 2).
+now apply IZR_lt.
 apply H1.
 (* ... *)
 unfold rs.
@@ -343,14 +337,14 @@ Qed.
 Theorem hrndG_conversion :
   forall rexp m e,
   float2R (tofloat (round_pos rdir rexp m e)) =
-    Fcore_generic_fmt.round radix2 rexp hrndG (F2R (Float radix2 (Zpos m) e)).
+    Generic_fmt.round radix2 rexp hrndG (F2R (Float radix2 (Zpos m) e)).
 Proof with auto with typeclass_instances.
 intros rexp m e.
-assert (He: canonic_exp radix2 rexp (F2R (Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
+assert (He: cexp radix2 rexp (F2R (Float radix2 (Zpos m) e)) = rexp (e + Zpos (digits m))%Z).
 rewrite digits2_digits.
-rewrite Zdigits_ln_beta. 2: easy.
-unfold canonic_exp.
-rewrite ln_beta_F2R. 2: easy.
+rewrite Zdigits_mag. 2: easy.
+unfold cexp.
+rewrite mag_F2R. 2: easy.
 now rewrite Zplus_comm.
 unfold round_pos.
 case_eq (rexp (e + Zpos (digits m)) - e)%Z.
@@ -365,7 +359,7 @@ rewrite Zminus_eq with (1 := H).
 apply Zle_refl.
 (* *)
 intros p H.
-unfold Fcore_generic_fmt.round, scaled_mantissa.
+unfold Generic_fmt.round, scaled_mantissa.
 rewrite He.
 unfold F2R, float2R. simpl.
 rewrite Rmult_assoc, <- bpow_plus.
@@ -373,20 +367,20 @@ assert (rexp (e + Zpos (digits m)) = e + Zpos p)%Z.
 omega.
 rewrite H0.
 ring_simplify (e + -(e + Zpos p))%Z.
-apply (f_equal (fun m => Z2R m * _)%R).
+apply (f_equal (fun m => IZR m * _)%R).
 unfold hrndG.
 rewrite (shr_conversion m p).
 simpl.
-set (rs := hrndG_aux (Zfloor (P2R m * / Z2R (Zpower_pos 2 p))) (P2R m * / Z2R (Zpower_pos 2 p))).
+set (rs := hrndG_aux (Zfloor (IZR (Zpos m) * / IZR (Zpower_pos 2 p))) (IZR (Zpos m) * / IZR (Zpower_pos 2 p))).
 rewrite (surjective_pairing rs).
 simpl.
-assert (H1: rdir (rnd_record_mk (ZtoN (Zfloor (P2R m * / Z2R (Zpower_pos 2 p)))) (fst rs) (snd rs)) = true ->
-  (Z2R (Zfloor (P2R m * / Z2R (Zpower_pos 2 p))) <> P2R m * / Z2R (Zpower_pos 2 p))%R).
+assert (H1: rdir (rnd_record_mk (ZtoN (Zfloor (IZR (Zpos m) * / IZR (Zpower_pos 2 p)))) (fst rs) (snd rs)) = true ->
+  (IZR (Zfloor (IZR (Zpos m) * / IZR (Zpower_pos 2 p))) <> IZR (Zpos m) * / IZR (Zpower_pos 2 p))%R).
 unfold rs, hrndG_aux.
-destruct (inbetween_spec _ _ (P2R m * / Z2R (Zpower_pos 2 p)) (bracket_aux _)) as [H1|l H1 H2].
+destruct (inbetween_spec _ _ (IZR (Zpos m) * / IZR (Zpower_pos 2 p)) (bracket_aux _)) as [H1|l H1 H2].
 simpl.
 intros H2 _.
-destruct (good_rdir (ZtoN (Zfloor (P2R m * / Z2R (Zpower_pos 2 p))))) as (H3, _).
+destruct (good_rdir (ZtoN (Zfloor (IZR (Zpos m) * / IZR (Zpower_pos 2 p))))) as (H3, _).
 now rewrite H2 in H3.
 intros _.
 now apply Rlt_not_eq.
@@ -399,12 +393,12 @@ apply sym_eq.
 apply Zceil_floor_neq.
 now apply H1.
 apply Zfloor_lub.
-now apply (F2R_ge_0_compat radix2 (Float radix2 (Zpos m) (- (Zpos p)))).
+now apply (F2R_ge_0 radix2 (Float radix2 (Zpos m) (- (Zpos p)))).
 intros _.
 rewrite Z_of_N_ZtoN.
 apply refl_equal.
 apply Zfloor_lub.
-now apply (F2R_ge_0_compat radix2 (Float radix2 (Zpos m) (- (Zpos p)))).
+now apply (F2R_ge_0 radix2 (Float radix2 (Zpos m) (- (Zpos p)))).
 (* *)
 intros p H.
 apply sym_eq.
@@ -481,10 +475,9 @@ now apply Rlt_le_trans with x.
 (* Z2R *)
 intros n.
 unfold rndG.
-change 0%R with (Z2R 0).
-rewrite Rcompare_Z2R.
-rewrite <- Z2R_opp.
-rewrite 2!Zrnd_Z2R.
+rewrite Rcompare_IZR.
+rewrite <- opp_IZR.
+rewrite 2!Zrnd_IZR.
 rewrite Zopp_involutive.
 now case n.
 apply valid_rnd_hG.
@@ -495,7 +488,7 @@ Qed.
 
 Lemma rndG_conversion_aux :
   forall rexp f,
-  float2R (round rdir rexp f) = Fcore_generic_fmt.round radix2 rexp rndG (float2R f).
+  float2R (round rdir rexp f) = Generic_fmt.round radix2 rexp rndG (float2R f).
 Proof with auto with typeclass_instances.
 intros rexp (m, e).
 unfold float2R. simpl.
@@ -504,7 +497,7 @@ rewrite 2!F2R_0, round_0...
 (* *)
 unfold round. simpl.
 generalize (hrndG_conversion (rpos rdir) (rpos_good _) rexp m e).
-unfold Fcore_generic_fmt.round, rndG. simpl.
+unfold Generic_fmt.round, rndG. simpl.
 rewrite Rcompare_Gt.
 intros H.
 rewrite <- H.
@@ -515,16 +508,16 @@ now rewrite 2!F2R_0.
 apply refl_equal.
 unfold scaled_mantissa.
 apply Rmult_lt_0_compat.
-now apply F2R_gt_0_compat.
+now apply F2R_gt_0.
 apply bpow_gt_0.
 (* *)
 unfold round. simpl.
 change (Zneg m) with (- Zpos m)%Z.
 rewrite F2R_Zopp.
 generalize (hrndG_conversion (rneg rdir) (rneg_good _) rexp m e).
-unfold Fcore_generic_fmt.round, rndG. simpl.
+unfold Generic_fmt.round, rndG. simpl.
 rewrite Rcompare_Lt.
-rewrite canonic_exp_opp.
+rewrite cexp_opp.
 rewrite scaled_mantissa_opp.
 rewrite Ropp_involutive.
 rewrite F2R_Zopp.
@@ -540,7 +533,7 @@ rewrite scaled_mantissa_opp.
 apply Ropp_lt_gt_0_contravar.
 unfold scaled_mantissa.
 apply Rmult_lt_0_compat.
-now apply F2R_gt_0_compat.
+now apply F2R_gt_0.
 apply bpow_gt_0.
 Qed.
 
@@ -556,7 +549,7 @@ Record rndG_prop := {
 
 Theorem rndG_conversion :
   forall rdir rexp f,
-  float2R (round (rndG_g rdir) rexp f) = Fcore_generic_fmt.round radix2 rexp (rndG_f rdir) (float2R f).
+  float2R (round (rndG_g rdir) rexp f) = Generic_fmt.round radix2 rexp (rndG_f rdir) (float2R f).
 Proof.
 intros (rf, rg, req) rexp f.
 simpl.
@@ -572,7 +565,7 @@ rewrite <- 2!rndG_eq.
 apply Zrnd_le...
 intros n.
 rewrite <- rndG_eq.
-apply Zrnd_Z2R...
+apply Zrnd_IZR...
 Qed.
 
 Lemma roundDN_eq :
@@ -591,7 +584,7 @@ apply roundDN.
 apply refl_equal.
 rewrite H.
 apply sym_eq.
-exact (Zfloor_Z2R 0).
+apply Zfloor_IZR.
 rewrite hrndG_DN ; try easy.
 apply roundDN.
 Qed.
@@ -610,7 +603,7 @@ rewrite hrndG_DN ; try easy.
 apply roundUP.
 rewrite H.
 apply sym_eq.
-exact (Zceil_Z2R 0).
+apply Zceil_IZR.
 rewrite hrndG_UP ; try easy.
 apply roundUP.
 Qed.
@@ -634,7 +627,7 @@ apply roundZR.
 rewrite <- Hx.
 rewrite Rcompare_Eq with (1 := refl_equal _).
 apply sym_eq.
-exact (Zfloor_Z2R 0).
+apply Zfloor_IZR.
 Qed.
 
 Canonical Structure roundZR_cs := Build_rndG_prop _ _ roundZR_eq.
@@ -648,9 +641,9 @@ Lemma roundN_eq :
 Proof with auto with typeclass_instances.
 intros r f Hn Hp x.
 simpl.
-destruct (Req_dec (Z2R (Zfloor x)) x) as [H1|H1].
+destruct (Req_dec (IZR (Zfloor x)) x) as [H1|H1].
 rewrite <- H1.
-rewrite 2!Zrnd_Z2R...
+rewrite 2!Zrnd_IZR...
 unfold rndG.
 case Rcompare_spec ; intros H2.
 (* *)
@@ -663,7 +656,7 @@ simpl.
 replace (- (- (Zfloor x + 1) + 1))%Z with (Zfloor x) by ring.
 now rewrite negb_involutive.
 cut (Zfloor x < 0)%Z. omega.
-apply lt_Z2R.
+apply lt_IZR.
 apply Rle_lt_trans with (2 := H2).
 apply Zfloor_lb.
 intros b.
@@ -675,7 +668,7 @@ now apply Ropp_0_gt_lt_contravar.
 (* *)
 rewrite H2.
 apply sym_eq.
-apply (Zrnd_Z2R _ 0).
+apply Zrnd_IZR...
 (* *)
 rewrite hrndG_N. 2: apply rpos_good.
 unfold Znearest.
@@ -699,11 +692,9 @@ apply roundN_eq ;
   intros m Hm r s ;
   unfold roundNE, GrndNE ; simpl ;
   apply (f_equal (fun v => r && (s || negb v))).
-rewrite Zeven_opp, Zeven_plus.
-destruct m as [|[m|m|]|] ; simpl ; trivial.
-now elim Hm.
-destruct m as [|m|m] ; simpl ; trivial.
-now elim Hm.
+rewrite Z.even_opp, Z.even_add.
+now destruct m as [|[m|m|]|].
+now destruct m as [|[m|m|]|].
 Qed.
 
 Canonical Structure roundNE_cs := Build_rndG_prop _ _ roundNE_eq.

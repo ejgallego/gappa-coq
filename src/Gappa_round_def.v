@@ -1,8 +1,6 @@
 Require Import Bool.
 Require Import ZArith.
-Require Import Flocq.Core.Fcore_Raux.
-Require Import Flocq.Core.Fcore_generic_fmt.
-Require Import Flocq.Core.Fcore_rnd_ne.
+From Flocq Require Import Raux Generic_fmt Round_NE.
 
 Record rnd_record : Set := rnd_record_mk {
   rnd_m : N ;

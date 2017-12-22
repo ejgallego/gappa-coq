@@ -1,9 +1,6 @@
 Require Import ZArith.
 Require Import Reals.
-Require Import Flocq.Core.Fcore_Raux.
-Require Import Flocq.Core.Fcore_defs.
-Require Import Flocq.Core.Fcore_float_prop.
-Require Import Flocq.Calc.Fcalc_ops.
+From Flocq Require Import Raux Defs Float_prop Operations.
 Require Import Gappa_definitions.
 
 Lemma float2_zero :
@@ -104,7 +101,7 @@ destruct (Fshift2 x y) as ((mx, my), e).
 intros (Hx, Hy).
 rewrite <- Hx, <- Hy.
 unfold float2R, F2R. simpl.
-rewrite Z2R_plus.
+rewrite plus_IZR.
 apply Rmult_plus_distr_r.
 Qed.
 
@@ -124,7 +121,7 @@ destruct (Fshift2 x y) as ((mx, my), e).
 intros (Hx, Hy).
 rewrite <- Hx, <- Hy.
 unfold float2R, F2R. simpl.
-rewrite Z2R_minus.
+rewrite minus_IZR.
 apply Rmult_minus_distr_r.
 Qed.
 
@@ -145,17 +142,8 @@ intros (Hx, Hy).
 rewrite <- Hx, <- Hy.
 unfold float2R, F2R. simpl.
 rewrite Rcompare_mult_r.
-now rewrite Rcompare_Z2R.
+now rewrite Rcompare_IZR.
 apply bpow_gt_0.
-Qed.
-
-Lemma power_radix_pos :
-  forall r e, (0 < powerRZ (P2R r) e)%R.
-intros.
-apply powerRZ_lt.
-change (P2R r) with (Z2R (Zpos r)).
-apply (Z2R_lt 0).
-exact (refl_equal _).
 Qed.
 
 Definition Feq2 (x y : float2) :=
@@ -261,7 +249,7 @@ Lemma Fpos_correct :
 Proof.
 intros (m, e) H.
 unfold float2R.
-apply F2R_gt_0_compat. simpl.
+apply F2R_gt_0. simpl.
 revert H.
 unfold Fpos. simpl.
 now case m.
@@ -279,7 +267,7 @@ Lemma Fneg_correct :
 Proof.
 intros (m, e) H.
 unfold float2R.
-apply F2R_lt_0_compat. simpl.
+apply F2R_lt_0. simpl.
 revert H.
 unfold Fpos. simpl.
 now case m.
@@ -297,7 +285,7 @@ Lemma Fpos0_correct :
 Proof.
 intros (m, e) H.
 unfold float2R.
-apply F2R_ge_0_compat. simpl.
+apply F2R_ge_0. simpl.
 revert H.
 unfold Fpos. simpl.
 now case m.
@@ -315,7 +303,7 @@ Lemma Fneg0_correct :
 Proof.
 intros (m, e) H.
 unfold float2R.
-apply F2R_le_0_compat. simpl.
+apply F2R_le_0. simpl.
 revert H.
 unfold Fpos. simpl.
 now case m.

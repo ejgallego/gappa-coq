@@ -1,9 +1,9 @@
 Require Import Reals.
 Require Import List.
-Require Import Flocq.Core.Fcore.
+Require Import Flocq.Core.Core.
 Require Export Gappa_library.
 
-Strategy 1000 [Fcore_generic_fmt.round].
+Strategy 1000 [Generic_fmt.round].
 
 Module Gappa_Private.
 
@@ -17,12 +17,12 @@ Definition float2_of_pos x :=
   aux x Z0.
 
 Lemma float2_of_pos_correct :
-  forall x, float2R (float2_of_pos x) = Z2R (Zpos x).
+  forall x, float2R (float2_of_pos x) = IZR (Zpos x).
 Proof.
 intros x.
 unfold float2_of_pos.
-rewrite <- (Rmult_1_r (Z2R (Zpos x))).
-change (Z2R (Zpos x) * 1)%R with (float2R (Float2 (Zpos x) 0%Z)).
+rewrite <- (Rmult_1_r (IZR (Zpos x))).
+change (IZR (Zpos x) * 1)%R with (float2R (Float2 (Zpos x) 0%Z)).
 generalize 0%Z.
 induction x ; intros e ; try apply refl_equal.
 rewrite IHx.
@@ -52,19 +52,18 @@ Proof.
 unfold float2R, F2R. simpl.
 intros [|m|m] e ; simpl.
 now rewrite 2!Rmult_0_l.
-change (P2R m) with (Z2R (Zpos m)).
 rewrite <- (float2_of_pos_correct m).
 destruct (float2_of_pos m) as (m1, e1).
 simpl.
 rewrite Zplus_comm.
 now rewrite bpow_plus, <- Rmult_assoc.
-change (- P2R m)%R with (- (Z2R (Zpos m)))%R.
+change (IZR (Zneg m)) with (- IZR (Zpos m))%R.
 rewrite <- (float2_of_pos_correct m).
 destruct (float2_of_pos m) as (m1, e1).
 simpl.
 rewrite Zplus_comm.
 rewrite bpow_plus, <- Rmult_assoc.
-now rewrite Z2R_opp, Ropp_mult_distr_l_reverse.
+now rewrite opp_IZR, Ropp_mult_distr_l_reverse.
 Qed.
 
 Inductive UnaryOp : Set :=
@@ -159,7 +158,7 @@ Fixpoint convert_expr (t : RExpr) : R :=
   match t with
   | reUnknown x =>
     nth (nat_of_P x) (R0 :: unknown_values) R0
-  | reInteger x => Z2R x
+  | reInteger x => IZR x
   | reFloat2 x y => float2R (Float2 x y)
   | reFloat10 x y => float10R (Float10 x y)
   | reUnary o x =>
@@ -189,7 +188,7 @@ Fixpoint convert_expr (t : RExpr) : R :=
   | reIZR x =>
     IZR x
   | reRound f m x =>
-    Fcore_generic_fmt.round radix2 (convert_exp f) (convert_mode m) (convert_expr x)
+    Generic_fmt.round radix2 (convert_exp f) (convert_mode m) (convert_expr x)
   end.
 
 (* convert to an atomic proposition *)
@@ -306,20 +305,18 @@ destruct (Req_EM_T (convert_expr x) 0) as [H|H].
 left.
 rewrite H.
 exists (Float radix2 0 e).
-split.
 apply sym_eq, F2R_0.
-split.
 apply eq_refl.
 apply Zle_refl.
 right.
-intros ((xm,xe)&H1&H2&H3).
+intros ((xm,xe),H1,H2,H3).
 simpl in H2.
 assert (xm = Z0).
 clear -H2 ; zify ; omega.
 now rewrite H0, F2R_0 in H1.
 now elim Hp.
 right.
-intros ((xm,xe)&H1&H2&H3).
+intros ((xm,xe),H1,H2,H3).
 apply Zlt_not_le with (1 := H2).
 apply Zabs_pos.
 destruct (Z_lt_le_dec 0 p) as [Hp|Hp].
@@ -338,18 +335,17 @@ destruct (Req_EM_T (convert_expr x) 0) as [H|H].
 left.
 rewrite H.
 exists (Float radix2 0 0).
-split.
 apply sym_eq, F2R_0.
-split.
+apply eq_refl.
 right.
-intros ((xm,xe)&H1&H2).
+intros ((xm,xe),H1,H2).
 simpl in H2.
 assert (xm = Z0).
 clear -H2 ; zify ; omega.
 now rewrite H0, F2R_0 in H1.
 now elim Hp.
 right.
-intros ((xm,xe)&H1&H2).
+intros ((xm,xe),H1,H2).
 apply Zlt_not_le with (1 := H2).
 apply Zabs_pos.
 Qed.
@@ -713,9 +709,9 @@ unfold convert_expr.
 unfold float2R, F2R at 2. simpl.
 now rewrite Rmult_1_l.
 (* INR *)
-exact (P2R_INR _).
-(* IZR *)
-exact (Z2R_IZR _).
+simpl.
+rewrite <- positive_nat_Z.
+apply sym_eq, INR_IZR_INZ.
 Qed.
 
 (* remove pending powerRZ *)
@@ -773,7 +769,7 @@ intros [x|x|x y|x y|o x|o x y|x|x|x|x|x|x|f m x] ; try apply refl_equal ; try ex
 simpl.
 unfold merge_float2_aux.
 generalize (compact_float2_correct x 0).
-rewrite <- (Rmult_1_r (Z2R x)).
+rewrite <- (Rmult_1_r (IZR x)).
 now destruct (compact_float2 x 0).
 (* unary ops *)
 destruct o ; try apply refl_equal.
