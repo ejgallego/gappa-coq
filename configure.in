@@ -1,4 +1,4 @@
-AC_INIT([Coq support library for Gappa], [1.3.2],
+AC_INIT([Coq support library for Gappa], [1.3.3],
         [Guillaume Melquiond <guillaume.melquiond@inria.fr>],
         [gappalib-coq])
 
@@ -68,7 +68,7 @@ AX_VERSION_GE([$ocamlopt_version], [3.11],
   [ AC_MSG_RESULT([no])
     native_tactic=no ])
 
-AC_MSG_CHECKING([for Flocq])
+AC_MSG_CHECKING([for Flocq >= 2.5])
 AS_IF(
   [ echo "Require Import Flocq.Flocq_version BinNat." \
          "Goal (20500 <= Flocq_version)%N. easy. Qed." > conftest.v
