@@ -46,10 +46,10 @@ COQSUBTREES = engine kernel interp intf lib library ltac parsing pretyping print
 COQINCLUDES = $(addprefix -I @COQLIB@/, $(COQSUBTREES))
 
 src/gappatac.cmo: src/gappatac.ml
-	@OCAMLC@ -pp "@CAMLP4@o @COQPPLIBS@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) -c $< -o $@
+	@OCAMLC@ -pp "@CAMLP4@o @COQPPLIBS@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) @OCAMLFLAGS@ -c $< -o $@
 
 src/gappatac.cmxs: src/gappatac.ml
-	@OCAMLOPT@ -pp "@CAMLP4@o @COQPPLIBS@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) -shared $< -o $@
+	@OCAMLOPT@ -pp "@CAMLP4@o @COQPPLIBS@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) @OCAMLFLAGS@ -shared $< -o $@
 
 MLTARGETS = $(addprefix src/, @TACTIC_TARGETS@)
 

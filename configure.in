@@ -81,6 +81,11 @@ rm -f conftest.v conftest.vo conftest.err
 AC_SUBST(OCAMLLIB)
 OCAMLLIB=`$OCAMLC -where`
 
+AC_SUBST(OCAMLFLAGS)
+ocamlc_version=`$OCAMLC -version`
+AX_VERSION_GE([$ocamlc_version], [4.02],
+  [ OCAMLFLAGS=-unsafe-string ])
+
 AC_SUBST(COQLIB)
 COQLIB=`$COQC -where`
 
