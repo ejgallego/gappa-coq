@@ -104,6 +104,9 @@ Definition roundNA := round_dir_mk GrndNA GrndNA GrndNA_good GrndNA_good.
 Definition roundNU := round_dir_mk GrndNA GrndNZ GrndNA_good GrndNZ_good.
 Definition roundND := round_dir_mk GrndNZ GrndNA GrndNZ_good GrndNA_good.
 
+Global Notation rndDN := Zfloor (only parsing).
+Global Notation rndUP := Zceil  (only parsing).
+Global Notation rndZR := Ztrunc (only parsing).
 Definition rndNE := ZnearestE.
 Definition rndNA := ZnearestA.
 Typeclasses Transparent rndNE rndNA.

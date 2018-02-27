@@ -1,4 +1,4 @@
-AC_INIT([Coq support library for Gappa], [1.3.2],
+AC_INIT([Coq support library for Gappa], [1.3.3],
         [Guillaume Melquiond <guillaume.melquiond@inria.fr>],
         [gappalib-coq])
 
@@ -26,7 +26,7 @@ if test ${COQBIN##*/}; then COQBIN=$COQBIN/; fi
 AC_ARG_VAR(COQC, [Coq compiler command [coqc]])
 AC_MSG_CHECKING([for coqc >= 8.4])
 if test ! "$COQC"; then COQC=`which ${COQBIN}coqc`; fi
-coqc_version=[`$COQC -v | sed -n -e 's/^.*version \([0-9.]\+\).*$/\1/p'`]
+coqc_version=[`$COQC -v | sed -n -e 's/^.*version \([0-9][0-9.]*\).*$/\1/p'`]
 AX_VERSION_GE([$coqc_version], [8.4],
   [ AC_MSG_RESULT([$COQC]) ],
   [ AC_MSG_RESULT([no])
@@ -68,7 +68,7 @@ AX_VERSION_GE([$ocamlopt_version], [3.11],
   [ AC_MSG_RESULT([no])
     native_tactic=no ])
 
-AC_MSG_CHECKING([for Flocq])
+AC_MSG_CHECKING([for Flocq >= 2.5])
 AS_IF(
   [ echo "Require Import Flocq.Version BinNat." \
          "Goal (20500 <= Flocq_version)%N. easy. Qed." > conftest.v
@@ -80,6 +80,11 @@ rm -f conftest.v conftest.vo conftest.err
 
 AC_SUBST(OCAMLLIB)
 OCAMLLIB=`$OCAMLC -where`
+
+AC_SUBST(OCAMLFLAGS)
+ocamlc_version=`$OCAMLC -version`
+AX_VERSION_GE([$ocamlc_version], [4.02],
+  [ OCAMLFLAGS=-unsafe-string ])
 
 AC_SUBST(COQLIB)
 COQLIB=`$COQC -where`
