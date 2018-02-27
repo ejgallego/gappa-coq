@@ -293,7 +293,7 @@ rewrite Zplus_comm.
 apply Zle_trans with (1 := H1). clear H1.
 rewrite digits2_digits.
 assert (H0: (0 < ml)%Z).
-apply F2R_gt_0_reg with (1 := H2).
+apply gt_0_F2R with (1 := H2).
 rewrite Zpos_pos_of_Z with (1 := H0).
 assert (H0': ml <> Z0).
 intros H.
