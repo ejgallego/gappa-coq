@@ -420,6 +420,7 @@ and qt_no_Rint t =
       | c, [] when is_global coq_R0 c ->
         mkLApp coq_reInteger [|constr_of_global coq_Z0|]
       | c, [a] when has_izr && is_global coq_IZR c ->
+        ignore (tr_arith_constant a);
         mkLApp coq_reInteger [|a|]
       | c, [a] ->
         begin
