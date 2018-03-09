@@ -30,7 +30,7 @@ Definition Fmult2_correct :
   Fmult2 x y = (x * y)%R :>R.
 Proof.
 intros (mx, ex) (my, ey).
-exact (F2R_mult radix2 (Float radix2 mx ex) (Float radix2 my ey)).
+exact (F2R_mult (Float radix2 mx ex) (Float radix2 my ey)).
 Qed.
 
 Definition shl (m : Z) (d : positive) :=
