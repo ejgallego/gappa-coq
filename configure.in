@@ -49,8 +49,7 @@ AC_MSG_RESULT([$OCAMLC])
 AC_ARG_VAR(CAMLP4, [OCaml preprocessor [camlp4]])
 AC_MSG_CHECKING([for camlp4])
 if test ! "$CAMLP4"; then
-  CAMLP4BIN=`$COQC -config | sed -n -e 's/^CAMLP4BIN=\(.*\)/\1/p'`
-  CAMLP4=`$COQC -config | sed -n -e 's/^CAMLP4=\(.*\)/\1/p'`
+  CAMLP4=`$COQC -config | sed -n -e 's/^CAMLP4=\(.*\)/\1o/p;s/^CAMLP5O=\(.*\)/\1/p'`
   CAMLP4=`which $CAMLP4`
 fi
 AC_MSG_RESULT([$CAMLP4])
@@ -97,7 +96,12 @@ AC_SUBST(COQPPLIBS)
 AC_SUBST(COQDEFINE)
 AC_SUBST(COQINCML)
 AC_SUBST(COQINCML_T)
-AX_VERSION_GE([$coqc_version], [8.7],
+AX_VERSION_GE([$coqc_version], [8.8],
+  [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
+    COQDEFINE=COQ88
+    COQINCML="-I src"
+    COQINCML_T="-I ../src" ],
+[AX_VERSION_GE([$coqc_version], [8.7],
   [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
     COQDEFINE=COQ87
     COQINCML="-I src"
@@ -114,7 +118,7 @@ AX_VERSION_GE([$coqc_version], [8.7],
     COQINCML_T="-I ../src" ],
   [ COQPPLIBS="$COQLIB/parsing/grammar.cma"
     COQDEFINE=COQ84 ])
-])])
+])])])
 
 AC_ARG_ENABLE([tactic],
   AS_HELP_STRING([--disable-tactic], [do not compile a "gappa" tactic]),

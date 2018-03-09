@@ -42,14 +42,14 @@ configure config.status: configure.in
 	@COQDEP@ -R src Gappa @COQINCML@ $< | @REMAKE@ -r $@
 	@COQC@ -R src Gappa @COQINCML@ $<
 
-COQSUBTREES = engine kernel interp intf lib library ltac parsing pretyping printing proofs tactics toplevel vernac plugins/ltac
+COQSUBTREES = clib engine kernel interp intf lib library ltac parsing pretyping printing proofs tactics toplevel vernac plugins/ltac
 COQINCLUDES = $(addprefix -I @COQLIB@/, $(COQSUBTREES))
 
 src/gappatac.cmo: src/gappatac.ml
-	@OCAMLC@ -pp "@CAMLP4@o @COQPPLIBS@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) @OCAMLFLAGS@ -c $< -o $@
+	@OCAMLC@ -pp "@CAMLP4@ @COQPPLIBS@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) @OCAMLFLAGS@ -c $< -o $@
 
 src/gappatac.cmxs: src/gappatac.ml
-	@OCAMLOPT@ -pp "@CAMLP4@o @COQPPLIBS@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) @OCAMLFLAGS@ -shared $< -o $@
+	@OCAMLOPT@ -pp "@CAMLP4@ @COQPPLIBS@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) @OCAMLFLAGS@ -shared $< -o $@
 
 MLTARGETS = $(addprefix src/, @TACTIC_TARGETS@)
 

@@ -21,6 +21,7 @@ let global_evd = ref Evd.empty
 
 let pr_constr = Printer.pr_constr
 let existential_type evd ex = Evd.existential_type evd ex
+let nf_betaiota = Reductionops.nf_betaiota
 
 IFDEF COQ84 THEN
 
@@ -65,9 +66,9 @@ let generalize a = Proofview.V82.of_tactic (Tactics.generalize a)
 let location_table () = ()
 let restore_location_table () = ()
 
-END
+IFDEF COQ86 THEN
 
-IFDEF COQ87 THEN
+ELSE
 
 open Ltac_plugin
 open EConstr
@@ -90,6 +91,18 @@ let pr_constr = Printer.pr_econstr
 
 let map_constr f t =
   of_constr (map_constr (fun x -> to_constr !global_evd (f (of_constr x))) (to_constr !global_evd t))
+
+let errorlabstrm hdr s = user_err ~hdr s
+
+IFDEF COQ87 THEN
+
+ELSE
+
+let nf_betaiota = Reductionops.nf_betaiota !global_env
+
+END
+
+END
 
 END
 
@@ -813,7 +826,7 @@ let no_glob f =
 let evars_to_vmcast sigma (emap, c) =
   let emap = nf_evar_map emap in
   let change_exist evar =
-    let ty = Reductionops.nf_betaiota emap (existential_type emap evar) in
+    let ty = nf_betaiota emap (existential_type emap evar) in
     mkCast (mkLApp coq_eq_refl
       [|constr_of_global coq_bool; constr_of_global coq_true|], VMcast, ty) in
   let rec replace c =
