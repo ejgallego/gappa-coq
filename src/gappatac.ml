@@ -129,7 +129,7 @@ DECLARE PLUGIN "gappatac"
 
 END
 
-let has_izr = IFDEF COQ87 THEN true ELSE false END
+let has_izr = IFDEF COQ87 THEN true ELSE IFDEF COQ88 THEN true ELSE false END END
 
 let debug = ref false
 
