@@ -24,10 +24,10 @@ AC_ARG_VAR(COQBIN, [path to Coq executables [empty]])
 if test ${COQBIN##*/}; then COQBIN=$COQBIN/; fi
 
 AC_ARG_VAR(COQC, [Coq compiler command [coqc]])
-AC_MSG_CHECKING([for coqc >= 8.4])
+AC_MSG_CHECKING([for coqc >= 8.7])
 if test ! "$COQC"; then COQC=`which ${COQBIN}coqc`; fi
 coqc_version=[`$COQC -v | sed -n -e 's/^.*version \([0-9][0-9.]*\).*$/\1/p'`]
-AX_VERSION_GE([$coqc_version], [8.4],
+AX_VERSION_GE([$coqc_version], [8.7],
   [ AC_MSG_RESULT([$COQC]) ],
   [ AC_MSG_RESULT([no])
     AC_MSG_ERROR([ *** Unable to find Coq (http://coq.inria.fr/)]) ])
@@ -46,14 +46,13 @@ if test ! "$OCAMLC"; then
 fi
 AC_MSG_RESULT([$OCAMLC])
 
-AC_ARG_VAR(CAMLP4, [OCaml preprocessor [camlp4]])
-AC_MSG_CHECKING([for camlp4])
-if test ! "$CAMLP4"; then
-  CAMLP4BIN=`$COQC -config | sed -n -e 's/^CAMLP4BIN=\(.*\)/\1/p'`
-  CAMLP4=`$COQC -config | sed -n -e 's/^CAMLP4=\(.*\)/\1/p'`
-  CAMLP4=`which $CAMLP4`
+AC_ARG_VAR(CAMLP4O, [OCaml preprocessor [camlpXo]])
+AC_MSG_CHECKING([for camlpXo])
+if test ! "$CAMLP4O"; then
+  CAMLP4O=`$COQC -config | sed -n -e 's/^CAMLP.O=\(.*\)/\1/p'`
+  CAMLP4O=`which $CAMLP4O`
 fi
-AC_MSG_RESULT([$CAMLP4])
+AC_MSG_RESULT([$CAMLP4O])
 
 AC_ARG_VAR(OCAMLOPT, [OCaml compiler command [ocamlopt]])
 AC_MSG_CHECKING([for ocamlopt >= 3.11])
@@ -68,14 +67,14 @@ AX_VERSION_GE([$ocamlopt_version], [3.11],
   [ AC_MSG_RESULT([no])
     native_tactic=no ])
 
-AC_MSG_CHECKING([for Flocq >= 2.5])
+AC_MSG_CHECKING([for Flocq >= 3.0])
 AS_IF(
   [ echo "Require Import Flocq.Version BinNat." \
-         "Goal (20500 <= Flocq_version)%N. easy. Qed." > conftest.v
+         "Goal (30000 <= Flocq_version)%N. easy. Qed." > conftest.v
     $COQC conftest.v > conftest.err ],
   [ AC_MSG_RESULT([yes]) ],
   [ AC_MSG_RESULT([no])
-    AC_MSG_ERROR([ *** Unable to find library Flocq >= 2.5 (http://flocq.gforge.inria.fr/)])])
+    AC_MSG_ERROR([ *** Unable to find library Flocq >= 3.0 (http://flocq.gforge.inria.fr/)])])
 rm -f conftest.v conftest.vo conftest.err
 
 AC_SUBST(OCAMLLIB)
@@ -97,24 +96,17 @@ AC_SUBST(COQPPLIBS)
 AC_SUBST(COQDEFINE)
 AC_SUBST(COQINCML)
 AC_SUBST(COQINCML_T)
+AX_VERSION_GE([$coqc_version], [8.8],
+  [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
+    COQDEFINE=COQ88
+    COQINCML="-I src"
+    COQINCML_T="-I ../src" ], [
 AX_VERSION_GE([$coqc_version], [8.7],
   [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
     COQDEFINE=COQ87
     COQINCML="-I src"
-    COQINCML_T="-I ../src" ],
-[AX_VERSION_GE([$coqc_version], [8.6],
-  [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
-    COQDEFINE=COQ86
-    COQINCML="-I src"
-    COQINCML_T="-I ../src" ],
-[AX_VERSION_GE([$coqc_version], [8.5],
-  [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
-    COQDEFINE=COQ85
-    COQINCML="-I src"
-    COQINCML_T="-I ../src" ],
-  [ COQPPLIBS="$COQLIB/parsing/grammar.cma"
-    COQDEFINE=COQ84 ])
-])])
+    COQINCML_T="-I ../src" ])
+])
 
 AC_ARG_ENABLE([tactic],
   AS_HELP_STRING([--disable-tactic], [do not compile a "gappa" tactic]),

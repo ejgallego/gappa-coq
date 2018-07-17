@@ -22,52 +22,14 @@ let global_evd = ref Evd.empty
 let pr_constr = Printer.pr_constr
 let existential_type evd ex = Evd.existential_type evd ex
 
-IFDEF COQ84 THEN
-
-let is_global c t =
-  match c, kind_of_term t with
-  | ConstRef c, Const c' -> eq_constant c c'
-  | IndRef i, Ind i' -> eq_ind i i'
-  | ConstructRef i, Construct i' -> eq_constructor i i'
-  | VarRef id, Var id' -> id = id'
-  | _ -> false
-
-let eq_constr = (=)
-
-let interp_open_constr = Constrintern.interp_open_constr
-
-let keep = Tactics.keep
-let generalize = Tactics.generalize
-let convert_concl_no_check = Tacmach.convert_concl_no_check
-
-let location_table = Lexer.location_table
-let restore_location_table = Lexer.restore_location_table
-
-ELSE
-
 open Vars
 open Universes
 open Globnames
-
-IFDEF COQ85 THEN
-
-open Errors
-
-let generalize = Tactics.generalize
-let location_table = Lexer.location_table
-let restore_location_table = Lexer.restore_location_table
-
-ELSE
-
 open CErrors
 
 let generalize a = Proofview.V82.of_tactic (Tactics.generalize a)
 let location_table () = ()
 let restore_location_table () = ()
-
-END
-
-IFDEF COQ87 THEN
 
 open Ltac_plugin
 open EConstr
@@ -91,14 +53,19 @@ let pr_constr = Printer.pr_econstr
 let map_constr f t =
   of_constr (map_constr (fun x -> to_constr !global_evd (f (of_constr x))) (to_constr !global_evd t))
 
-END
-
 let interp_open_constr a b = Constrintern.interp_open_constr b a
 
 let keep a = Proofview.V82.of_tactic (Tactics.keep a)
 let convert_concl_no_check a b = Proofview.V82.of_tactic (Tactics.convert_concl_no_check a b)
 
+let errorlabstrm hdr = user_err ~hdr
 let anomalylabstrm label = anomaly ~label
+
+IFDEF COQ87 THEN
+let nf_betaiota env emap x = Reductionops.nf_betaiota emap x
+ELSE
+let nf_betaiota = Reductionops.nf_betaiota
+END
 
 let coq_reference t1 t2 =
   let th = lazy (coq_reference t1 t2) in
@@ -113,10 +80,6 @@ let is_global c t = is_global (Lazy.force c) t
 let constr_of_global f = constr_of_global (Lazy.force f)
 
 DECLARE PLUGIN "gappatac"
-
-END
-
-let has_izr = IFDEF COQ87 THEN true ELSE false END
 
 let debug = ref false
 
@@ -203,11 +166,7 @@ let coq_Rminus = coq_ref_Rdefinitions "Rminus"
 let coq_Rmult = coq_ref_Rdefinitions "Rmult"
 let coq_Rinv = coq_ref_Rdefinitions "Rinv"
 let coq_Rdiv = coq_ref_Rdefinitions "Rdiv"
-IFDEF COQ84 THEN
-let coq_IZR = coq_False
-ELSE
 let coq_IZR = coq_ref_Rdefinitions "IZR"
-END
 let coq_Rabs = coq_reference "Gappa" ["Reals"; "Rbasic_fun"] "Rabs"
 let coq_sqrt = coq_reference "Gappa" ["Reals"; "R_sqrt"] "sqrt"
 let coq_powerRZ = coq_reference "Gappa" ["Reals"; "Rfunctions"] "powerRZ"
@@ -323,7 +282,7 @@ let tr_real_constant t =
   let rec aux t =
     match decompose_app t with
       | c, [] when is_global coq_R1 c -> Itp_1
-      | c, [a] when has_izr && is_global coq_IZR c ->
+      | c, [a] when is_global coq_IZR c ->
           Itp_int (tr_arith_constant a)
       | c, [a;b] ->
           if is_global coq_Rplus c then
@@ -419,7 +378,7 @@ and qt_no_Rint t =
     match decompose_app t with
       | c, [] when is_global coq_R0 c ->
         mkLApp coq_reInteger [|constr_of_global coq_Z0|]
-      | c, [a] when has_izr && is_global coq_IZR c ->
+      | c, [a] when is_global coq_IZR c ->
         ignore (tr_arith_constant a);
         mkLApp coq_reInteger [|a|]
       | c, [a] ->
@@ -810,10 +769,10 @@ let no_glob f =
   res
 
 (** replace all evars of any type [ty] by [(refl_equal true : ty)] *)
-let evars_to_vmcast sigma (emap, c) =
+let evars_to_vmcast env (emap, c) =
   let emap = nf_evar_map emap in
   let change_exist evar =
-    let ty = Reductionops.nf_betaiota emap (existential_type emap evar) in
+    let ty = nf_betaiota env emap (existential_type emap evar) in
     mkCast (mkLApp coq_eq_refl
       [|constr_of_global coq_bool; constr_of_global coq_true|], VMcast, ty) in
   let rec replace c =
@@ -855,7 +814,7 @@ let gappa_internal gl =
     let g = tr_goal (pf_concl gl) in
     let (emap, pf) = call_gappa constr_of_stream g in
     global_evd := emap;
-    let pf = evars_to_vmcast emap (emap, pf) in
+    let pf = evars_to_vmcast !global_env (emap, pf) in
     let pf = build_proof_term pf in
     Tacmach.refine_no_check pf gl
   with
@@ -866,14 +825,8 @@ let gappa_internal gl =
       errorlabstrm "gappa_internal"
         (Pp.str "execution of Gappa failed:" ++ Pp.fnl () ++ Pp.str s)
 
-IFDEF COQ84 THEN
-
-ELSE
-
 let gappa_quote = Proofview.V82.tactic gappa_quote
 let gappa_internal = Proofview.V82.tactic gappa_internal
-
-END
 
 TACTIC EXTEND gappatac_gappa_internal
 | [ "gappa_internal" ] -> [ gappa_internal ]
