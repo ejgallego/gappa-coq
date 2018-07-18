@@ -640,7 +640,7 @@ let rec tr_pred uv t =
 
 let tr_var c = match kind_of_term c with
   | Var x ->
-    let s = string_of_id x in
+    let s = Id.to_string x in
     let l = String.length s in
     let s = Bytes.init l (fun i ->
       let c = s.[i] in
@@ -791,7 +791,7 @@ let constr_of_stream s =
 
 let var_name = function
   | Name id ->
-      let s = string_of_id id in
+      let s = Id.to_string id in
       let s = String.sub s 1 (String.length s - 1) in
       Hashtbl.find var_names s
   | Anonymous ->
@@ -809,7 +809,7 @@ let gappa_internal gl =
     global_env := pf_env gl;
     global_evd := project gl;
     Hashtbl.clear var_names;
-    List.iter (let dummy = mkVar (id_of_string "dummy") in
+    List.iter (let dummy = mkVar (Id.of_string "dummy") in
       fun n -> Hashtbl.add var_names n dummy)
       ["fma"; "sqrt"; "not"; "in"; "float"; "fixed"; "int";
        "homogen80x"; "homogen80x_init"; "float80x";
