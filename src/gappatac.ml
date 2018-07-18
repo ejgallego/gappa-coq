@@ -640,23 +640,26 @@ let rec tr_pred uv t =
 
 let tr_var c = match kind_of_term c with
   | Var x ->
-    let s = String.copy (string_of_id x) in
-    for i = 0 to String.length s - 1 do
+    let s = string_of_id x in
+    let l = String.length s in
+    let s = Bytes.init l (fun i ->
       let c = s.[i] in
-      if not (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') ||
-        ('0' <= c && c <= '9') || c == '_') then s.[i] <- '_';
-    done;
-    if s.[0] = '_' then s.[0] <- 'G';
-    let s = ref s in
+      if ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') ||
+        ('0' <= c && c <= '9') || c == '_' then c else '_';
+    ) in
+    if Bytes.get s 0 = '_' then Bytes.set s 0 'G';
+    let b = Buffer.create l in
+    Buffer.add_bytes b s;
     begin try
       while true do
-        ignore (Hashtbl.find var_names !s);
-        s := !s ^ "_";
+        ignore (Hashtbl.find var_names (Buffer.contents b));
+        Buffer.add_string b "_";
       done;
       assert false
     with Not_found ->
-      Hashtbl.add var_names !s c;
-      !s
+      let s = Buffer.contents b in
+      Hashtbl.add var_names s c;
+      s
     end
   | _ -> raise (NotGappa c)
 
@@ -741,10 +744,10 @@ let call_gappa c_of_s p =
   if out <> 0 then begin
     let c = open_in_bin gappa_err in
     let len = in_channel_length c in
-    let buf = String.create len in
+    let buf = Bytes.create len in
     ignore (input c buf 0 len);
     close_in c;
-    raise (GappaFailed buf)
+    raise (GappaFailed (Bytes.unsafe_to_string buf))
   end;
   remove_file gappa_err;
   let cin = open_in gappa_out in
