@@ -19,7 +19,6 @@ open Evarutil
 let global_env = ref Environ.empty_env
 let global_evd = ref Evd.empty
 
-let pr_constr = Printer.pr_constr
 let existential_type evd ex = Evd.existential_type evd ex
 
 open Vars
@@ -28,21 +27,15 @@ open Globnames
 open CErrors
 
 let generalize a = Proofview.V82.of_tactic (Tactics.generalize a)
-let location_table () = ()
-let restore_location_table () = ()
 
 open Ltac_plugin
 open EConstr
-
-let constr_of_global t = of_constr (constr_of_global t)
 
 let is_global t1 t2 = is_global !global_evd t1 t2
 
 let kind_of_term t = kind !global_evd t
 
 let decompose_app t = decompose_app !global_evd t
-
-let decompose_lam t = decompose_lam !global_evd t
 
 let closed0 t = Vars.closed0 !global_evd t
 
@@ -53,13 +46,8 @@ let pr_constr = Printer.pr_econstr
 let map_constr f t =
   of_constr (map_constr (fun x -> to_constr !global_evd (f (of_constr x))) (to_constr !global_evd t))
 
-let interp_open_constr a b = Constrintern.interp_open_constr b a
-
 let keep a = Proofview.V82.of_tactic (Tactics.keep a)
 let convert_concl_no_check a b = Proofview.V82.of_tactic (Tactics.convert_concl_no_check a b)
-
-let errorlabstrm hdr = user_err ~hdr
-let anomalylabstrm label = anomaly ~label
 
 IFDEF COQ87 THEN
 let nf_betaiota env emap x = Reductionops.nf_betaiota emap x
@@ -77,7 +65,7 @@ let find_reference t1 t2 =
 
 let is_global c t = is_global (Lazy.force c) t
 
-let constr_of_global f = constr_of_global (Lazy.force f)
+let constr_of_global f = of_constr (constr_of_global (Lazy.force f))
 
 DECLARE PLUGIN "gappatac"
 
@@ -514,7 +502,7 @@ let gappa_quote gl =
     | NotGappa t ->
       Hashtbl.clear var_terms;
       var_list := [];
-      anomalylabstrm "gappa_quote"
+      anomaly ~label:"gappa_quote"
         (Pp.str "something wrong happened with term " ++ pr_constr t)
 
 (** {1 Goal parsing, call to Gappa, and proof building: the [gappa_internal] tactic} *)
@@ -759,20 +747,17 @@ let call_gappa c_of_s p =
 
 (** execute [f] after disabling globalization *)
 let no_glob f =
-  let dg = location_table () in
   Dumpglob.pause ();
   let res =
     try f () with e ->
       Dumpglob.continue ();
-      restore_location_table dg;
       raise e
     in
   Dumpglob.continue ();
-  restore_location_table dg;
   res
 
 (** replace all evars of any type [ty] by [(refl_equal true : ty)] *)
-let evars_to_vmcast env (emap, c) =
+let evars_to_vmcast env emap c =
   let emap = nf_evar_map emap in
   let change_exist evar =
     let ty = nf_betaiota env emap (existential_type emap evar) in
@@ -785,8 +770,8 @@ let evars_to_vmcast env (emap, c) =
     in
   replace c
 
-let constr_of_stream s =
-  no_glob (fun () -> interp_open_constr !global_evd !global_env
+let constr_of_stream env evd s =
+  no_glob (fun () -> Constrintern.interp_open_constr env evd
     (Pcoq.Gram.entry_parse Pcoq.Constr.constr (Pcoq.Gram.parsable s)))
 
 let var_name = function
@@ -799,8 +784,8 @@ let var_name = function
 
 (** apply to the proof term [c] all the needed variables from the context
     and as many metas as needed to match hypotheses *)
-let build_proof_term c =
-  let bl, _ = decompose_lam c in
+let build_proof_term evd c =
+  let bl, _ = decompose_lam evd c in
   List.fold_right (fun (x,t) pf -> mkApp (pf, [| var_name x |])) bl c
 
 (** the [gappa_internal] tactic *)
@@ -815,17 +800,17 @@ let gappa_internal gl =
        "homogen80x"; "homogen80x_init"; "float80x";
        "add_rel"; "sub_rel"; "mul_rel"; "fma_rel" ];
     let g = tr_goal (pf_concl gl) in
-    let (emap, pf) = call_gappa constr_of_stream g in
+    let (emap, pf) = call_gappa (constr_of_stream !global_env !global_evd) g in
     global_evd := emap;
-    let pf = evars_to_vmcast !global_env (emap, pf) in
-    let pf = build_proof_term pf in
+    let pf = evars_to_vmcast !global_env emap pf in
+    let pf = build_proof_term emap pf in
     Tacmach.refine_no_check pf gl
   with
     | NotGappa t ->
-      errorlabstrm "gappa_internal"
+      user_err ~hdr:"gappa_internal"
         (Pp.str "translation to Gappa failed (not a reduced constant?): " ++ pr_constr t)
     | GappaFailed s ->
-      errorlabstrm "gappa_internal"
+      user_err ~hdr:"gappa_internal"
         (Pp.str "execution of Gappa failed:" ++ Pp.fnl () ++ Pp.str s)
 
 let gappa_quote = Proofview.V82.tactic gappa_quote
