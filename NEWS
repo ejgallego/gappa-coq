@@ -1,5 +1,6 @@
 Version 1.3.4:
  - fixed some integer variables being recognized as constant with Coq 8.7
+ - ensured compatibility from Coq 8.4 to 8.8
 
 Version 1.3.3:
  - fixed compilation with Coq 8.7

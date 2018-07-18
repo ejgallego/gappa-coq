@@ -1,8 +1,8 @@
 Prerequisites
 -------------
 
-You will need the Coq proof assistant (>= 8.4) with a Reals theory compiled
-in. You will also need the Flocq library (>= 2.5, http://flocq.gforge.inria.fr/)
+You will need the Coq proof assistant (>= 8.4) with a Reals theory compiled in.
+You will also need the Flocq library (>= 2.5, < 3.0, http://flocq.gforge.inria.fr/)
 to be installed. In order to use the "gappa" tactic, Gappa needs to be installed.
 
 The .tar.gz file is distributed with a working set of configure files. They

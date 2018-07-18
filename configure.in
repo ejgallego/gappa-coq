@@ -1,4 +1,4 @@
-AC_INIT([Coq support library for Gappa], [1.3.3],
+AC_INIT([Coq support library for Gappa], [1.3.4],
         [Guillaume Melquiond <guillaume.melquiond@inria.fr>],
         [gappalib-coq])
 
@@ -67,14 +67,14 @@ AX_VERSION_GE([$ocamlopt_version], [3.11],
   [ AC_MSG_RESULT([no])
     native_tactic=no ])
 
-AC_MSG_CHECKING([for Flocq >= 2.5])
+AC_MSG_CHECKING([for Flocq >= 2.5, < 3.0])
 AS_IF(
   [ echo "Require Import Flocq.Flocq_version BinNat." \
          "Goal (20500 <= Flocq_version)%N. easy. Qed." > conftest.v
     $COQC conftest.v > conftest.err ],
   [ AC_MSG_RESULT([yes]) ],
   [ AC_MSG_RESULT([no])
-    AC_MSG_ERROR([ *** Unable to find library Flocq >= 2.5 (http://flocq.gforge.inria.fr/)])])
+    AC_MSG_ERROR([ *** Unable to find library Flocq >= 2.5, < 3.0 (http://flocq.gforge.inria.fr/)])])
 rm -f conftest.v conftest.vo conftest.err
 
 AC_SUBST(OCAMLLIB)
