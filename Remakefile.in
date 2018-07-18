@@ -39,8 +39,8 @@ configure config.status: configure.in
 	./config.status --recheck
 
 %.vo: %.v
-	@COQDEP@ -R src Gappa @COQINCML@ $< | @REMAKE@ -r $@
-	@COQC@ -R src Gappa @COQINCML@ $<
+	@COQDEP@ -R src Gappa -I src $< | @REMAKE@ -r $@
+	@COQC@ -R src Gappa -I src $<
 
 COQSUBTREES = clib engine kernel interp intf lib library ltac parsing pretyping printing proofs tactics toplevel vernac plugins/ltac
 COQINCLUDES = $(addprefix -I @COQLIB@/, $(COQSUBTREES))
@@ -54,8 +54,8 @@ src/gappatac.cmxs: src/gappatac.ml
 MLTARGETS = $(addprefix src/, @TACTIC_TARGETS@)
 
 src/Gappa_tactic.vo: src/Gappa_tactic.v $(MLTARGETS)
-	@COQDEP@ -R src Gappa @COQINCML@ $< | @REMAKE@ -r $@
-	@COQC@ @TACTIC_PARAM@ -R src Gappa @COQINCML@ $<
+	@COQDEP@ -R src Gappa -I src $< | @REMAKE@ -r $@
+	@COQC@ @TACTIC_PARAM@ -R src Gappa -I src $<
 
 src/clean:
 	rm -f $(OBJS)
@@ -70,7 +70,7 @@ testsuite/check: src/Gappa_tactic.vo
 	cat /dev/null > "$logfile"
 	for f in *.v; do
 	  cp "$f" check_tmp.v
-	  @COQC@ -R ../src Gappa @COQINCML_T@ check_tmp.v > output.tmp 2>&1
+	  @COQC@ -R ../src Gappa -I ../src check_tmp.v > output.tmp 2>&1
 	  return_code=$?
 	  if [ ${return_code} -ne 0 ]; then
 	    (echo "*** $f exited with error code ${return_code}"; cat output.tmp; echo) >> "$logfile"
