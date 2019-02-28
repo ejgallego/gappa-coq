@@ -44,7 +44,7 @@ let eq_constr t1 t2 = eq_constr !global_evd t1 t2
 let pr_constr = Printer.pr_econstr
 
 let map_constr f t =
-  of_constr (map_constr (fun x -> to_constr !global_evd (f (of_constr x))) (to_constr !global_evd t))
+  EConstr.map !global_evd f t
 
 let keep a = Proofview.V82.of_tactic (Tactics.keep a)
 let convert_concl_no_check a b = Proofview.V82.of_tactic (Tactics.convert_concl_no_check a b)
@@ -53,6 +53,16 @@ IFDEF COQ87 THEN
 let nf_betaiota env emap x = Reductionops.nf_betaiota emap x
 ELSE
 let nf_betaiota = Reductionops.nf_betaiota
+END
+
+IFDEF COQ87 THEN
+let parse_entry e s = Pcoq.Gram.entry_parse e (Pcoq.Gram.parsable s)
+ELSE
+IFDEF COQ88 THEN
+let parse_entry e s = Pcoq.Gram.entry_parse e (Pcoq.Gram.parsable s)
+ELSE
+let parse_entry e s = Pcoq.Entry.parse e (Pcoq.Parsable.make s)
+END
 END
 
 let coq_reference t1 t2 =
@@ -251,18 +261,18 @@ type int_type_partial = Itp_1 | Itp_2 | Itp_even of int | Itp_int of int
 
 (** translate a closed Coq term [p:positive] into [int] *)
 let rec tr_positive p = match kind_of_term p with
-  | Term.Construct _ when is_global coq_xH p -> 1
-  | Term.App (f, [|a|]) when is_global coq_xI f -> 2 * (tr_positive a) + 1
-  | Term.App (f, [|a|]) when is_global coq_xO f -> 2 * (tr_positive a)
-  | Term.Cast (p, _, _) -> tr_positive p
+  | Constr.Construct _ when is_global coq_xH p -> 1
+  | Constr.App (f, [|a|]) when is_global coq_xI f -> 2 * (tr_positive a) + 1
+  | Constr.App (f, [|a|]) when is_global coq_xO f -> 2 * (tr_positive a)
+  | Constr.Cast (p, _, _) -> tr_positive p
   | _ -> raise (NotGappa p)
 
 (** translate a closed Coq term [t:Z] into [int] *)
 let rec tr_arith_constant t = match kind_of_term t with
-  | Term.Construct _ when is_global coq_Z0 t -> 0
-  | Term.App (f, [|a|]) when is_global coq_Zpos f -> tr_positive a
-  | Term.App (f, [|a|]) when is_global coq_Zneg f -> - (tr_positive a)
-  | Term.Cast (t, _, _) -> tr_arith_constant t
+  | Constr.Construct _ when is_global coq_Z0 t -> 0
+  | Constr.App (f, [|a|]) when is_global coq_Zpos f -> tr_positive a
+  | Constr.App (f, [|a|]) when is_global coq_Zneg f -> - (tr_positive a)
+  | Constr.Cast (t, _, _) -> tr_arith_constant t
   | _ -> raise (NotGappa t)
 
 (** translate a closed Coq term [t:R] into [int] *)
@@ -509,24 +519,24 @@ let gappa_quote gl =
 
 (** translate a closed Coq term [p:positive] into [bigint] *)
 let rec tr_bigpositive p = match kind_of_term p with
-  | Term.Construct _ when is_global coq_xH p ->
+  | Constr.Construct _ when is_global coq_xH p ->
       Bigint.one
-  | Term.App (f, [|a|]) when is_global coq_xI f ->
+  | Constr.App (f, [|a|]) when is_global coq_xI f ->
       Bigint.add_1 (Bigint.mult_2 (tr_bigpositive a))
-  | Term.App (f, [|a|]) when is_global coq_xO f ->
+  | Constr.App (f, [|a|]) when is_global coq_xO f ->
       (Bigint.mult_2 (tr_bigpositive a))
-  | Term.Cast (p, _, _) ->
+  | Constr.Cast (p, _, _) ->
       tr_bigpositive p
   | _ ->
       raise (NotGappa p)
 
 (** translate a closed Coq term [t:Z] into [bigint] *)
 let rec tr_arith_bigconstant t = match kind_of_term t with
-  | Term.Construct _ when is_global coq_Z0 t -> Bigint.zero
-  | Term.App (f, [|a|]) when is_global coq_Zpos f -> tr_bigpositive a
-  | Term.App (f, [|a|]) when is_global coq_Zneg f ->
+  | Constr.Construct _ when is_global coq_Z0 t -> Bigint.zero
+  | Constr.App (f, [|a|]) when is_global coq_Zpos f -> tr_bigpositive a
+  | Constr.App (f, [|a|]) when is_global coq_Zneg f ->
       Bigint.neg (tr_bigpositive a)
-  | Term.Cast (t, _, _) -> tr_arith_bigconstant t
+  | Constr.Cast (t, _, _) -> tr_arith_bigconstant t
   | _ -> raise (NotGappa t)
 
 let tr_float b m e =
@@ -772,7 +782,7 @@ let evars_to_vmcast env emap c =
 
 let constr_of_stream env evd s =
   no_glob (fun () -> Constrintern.interp_open_constr env evd
-    (Pcoq.Gram.entry_parse Pcoq.Constr.constr (Pcoq.Gram.parsable s)))
+    (parse_entry Pcoq.Constr.constr s))
 
 let var_name = function
   | Name id ->

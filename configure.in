@@ -89,13 +89,16 @@ fi
 
 AC_SUBST(COQPPLIBS)
 AC_SUBST(COQDEFINE)
+AX_VERSION_GE([$coqc_version], [8.9],
+  [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
+    COQDEFINE=COQ89 ], [
 AX_VERSION_GE([$coqc_version], [8.8],
   [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
     COQDEFINE=COQ88 ], [
 AX_VERSION_GE([$coqc_version], [8.7],
   [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
     COQDEFINE=COQ87 ])
-])
+])])
 
 AC_ARG_ENABLE([tactic],
   AS_HELP_STRING([--disable-tactic], [do not compile a "gappa" tactic]),
