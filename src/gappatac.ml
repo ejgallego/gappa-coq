@@ -433,7 +433,7 @@ and qt_no_Rint t =
 
 (** reify a Coq term [p:Prop] *)
 let rec qt_pred p = match kind_of_term p with
-  | Prod (_,a,b) ->
+  | Constr.Prod (_,a,b) ->
     if not (closed0 b) then raise (NotGappa p);
     mkLApp coq_rtImpl [|qt_pred a; qt_pred b|]
   | _ ->
@@ -507,7 +507,7 @@ let gappa_quote gl =
       (Tacticals.tclTHEN
         (generalize (List.map (fun (n, _) -> mkVar n) (List.rev l)))
         (keep []))
-      (convert_concl_no_check e DEFAULTcast) gl
+      (convert_concl_no_check e Constr.DEFAULTcast) gl
   with
     | NotGappa t ->
       Hashtbl.clear var_terms;
@@ -637,7 +637,7 @@ let rec tr_pred uv t =
         raise (NotGappa t)
 
 let tr_var c = match kind_of_term c with
-  | Var x ->
+  | Constr.Var x ->
     let s = Id.to_string x in
     let l = String.length s in
     let s = Bytes.init l (fun i ->
@@ -772,10 +772,10 @@ let evars_to_vmcast env emap c =
   let change_exist evar =
     let ty = nf_betaiota env emap (existential_type emap evar) in
     mkCast (mkLApp coq_eq_refl
-      [|constr_of_global coq_bool; constr_of_global coq_true|], VMcast, ty) in
+      [|constr_of_global coq_bool; constr_of_global coq_true|], Constr.VMcast, ty) in
   let rec replace c =
     match kind_of_term c with
-      | Evar ev -> change_exist ev
+      | Constr.Evar ev -> change_exist ev
       | _ -> map_constr replace c
     in
   replace c
