@@ -348,7 +348,7 @@ destruct Hp as ((m,e),(Hm,He)).
 exists (Float2 m e).
 split.
 exact Hm.
-apply Zlt_le_trans with (1 := He).
+apply Z.lt_le_trans with (1 := He).
 apply le_IZR.
 change (IZR (Zpower radix2 (Zpos pc)) <= IZR (Zpower radix2 (Zpos qc)))%R.
 apply IZR_le.

@@ -29,7 +29,7 @@ Definition round_pos (rdir : rnd_record -> bool)
  match (e' - e)%Z with
  | Zpos d =>
    let r := shr m d in
-   ((if rdir r then Nsucc (rnd_m r) else rnd_m r), e')
+   ((if rdir r then N.succ (rnd_m r) else rnd_m r), e')
  | _ => (Npos m, e)
  end.
 
@@ -144,7 +144,7 @@ Proof with auto with typeclass_instances.
 split.
 (* monotone *)
 intros x y Hxy.
-destruct (Z_eq_dec (Zfloor x) (Zfloor y)) as [H|H].
+destruct (Z.eq_dec (Zfloor x) (Zfloor y)) as [H|H].
 (* *)
 case_eq (rdir (rnd_record_mk (ZtoN (Zfloor x)) true true)) ; intros Hb1.
 case_eq (rdir (rnd_record_mk (ZtoN (Zfloor x)) false true)) ; intros Hb2.
@@ -417,7 +417,7 @@ Variable rdir : round_dir.
 Definition rndG x :=
   match Rcompare x 0 with
   | Gt => hrndG (rpos rdir) x
-  | Lt => Zopp (hrndG (rneg rdir) (-x))
+  | Lt => Z.opp (hrndG (rneg rdir) (-x))
   | _ => Z0
   end.
 
@@ -432,14 +432,14 @@ destruct (Rcompare_spec x 0) as [Hx|Hx|Hx].
 destruct (Rcompare_spec y 0) as [Hy|Hy|Hy].
 (* . *)
 apply Zopp_le_cancel.
-rewrite 2!Zopp_involutive.
+rewrite 2!Z.opp_involutive.
 apply Zrnd_le.
 apply valid_rnd_hG.
 apply rneg_good.
 now apply Ropp_le_contravar.
 (* . *)
 apply Zopp_le_cancel.
-rewrite Zopp_involutive.
+rewrite Z.opp_involutive.
 apply hrndG_pos.
 apply rneg_good.
 rewrite <- Ropp_0.
@@ -448,7 +448,7 @@ now apply Rlt_le.
 (* . *)
 apply Z.le_trans with Z0.
 apply Zopp_le_cancel.
-rewrite Zopp_involutive.
+rewrite Z.opp_involutive.
 apply hrndG_pos.
 apply rneg_good.
 rewrite <- Ropp_0.
@@ -478,7 +478,7 @@ unfold rndG.
 rewrite Rcompare_IZR.
 rewrite <- opp_IZR.
 rewrite 2!Zrnd_IZR.
-rewrite Zopp_involutive.
+rewrite Z.opp_involutive.
 now case n.
 apply valid_rnd_hG.
 apply rpos_good.
@@ -579,7 +579,7 @@ case Rcompare_spec ; intros H.
 rewrite hrndG_UP.
 unfold Zceil.
 rewrite Ropp_involutive.
-apply Zopp_involutive.
+apply Z.opp_involutive.
 apply roundDN.
 apply refl_equal.
 rewrite H.
@@ -648,7 +648,7 @@ unfold rndG.
 case Rcompare_spec ; intros H2.
 (* *)
 rewrite hrndG_N. 2: apply rneg_good.
-rewrite Znearest_opp, Zopp_involutive.
+rewrite Znearest_opp, Z.opp_involutive.
 unfold Znearest.
 case Rcompare ; trivial.
 rewrite Hn.

@@ -200,7 +200,7 @@ unfold Rabs.
 case Rcase_abs ; intros Hx.
 2: easy.
 split ; intros [[mx ex] [Hx1 Hx2]] ;
-  exists (Float2 (Zopp mx) ex) ; split ; simpl.
+  exists (Float2 (Z.opp mx) ex) ; split ; simpl.
 rewrite <- (Ropp_involutive x), <- Hx1.
 apply F2R_Zopp.
 now rewrite Zabs_Zopp.
@@ -238,7 +238,7 @@ split.
 unfold float2R ; simpl.
 rewrite <- Operations.F2R_mult.
 unfold Operations.Fmult.
-now replace (-1 * my)%Z with (Zopp my) by ring.
+now replace (-1 * my)%Z with (Z.opp my) by ring.
 Qed.
 
 Theorem mul_flt :

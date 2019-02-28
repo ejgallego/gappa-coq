@@ -131,9 +131,9 @@ destruct (Zle_or_lt (mag radix2 x) d) as [Hk2|Hk2].
 unfold FLT_exp.
 clear -Hk1 Hk2 ; zify ; omega.
 elim Rlt_not_le with (1 := Hx) ; clear Hx.
-apply Rle_trans with (bpow radix2 (Zmax k d)).
+apply Rle_trans with (bpow radix2 (Z.max k d)).
 apply bpow_le.
-apply Zle_max_l.
+apply Z.le_max_l.
 apply abs_round_ge_generic...
 apply generic_format_bpow.
 unfold FLT_exp.
@@ -177,10 +177,10 @@ clear -Hk1 ; omega.
 Qed.
 
 Lemma Zmax_inf_l :
- forall m n : Z, (n <= m)%Z -> Zmax m n = m.
+ forall m n : Z, (n <= m)%Z -> Z.max m n = m.
 intros m n H.
 generalize (Z.le_ge _ _ H).
-unfold Zmax, Zge.
+unfold Z.max, Z.ge.
 case (m ?= n)%Z ; intros ; try exact (refl_equal _).
 elim H0.
 exact (refl_equal _).
@@ -236,7 +236,7 @@ eexists (Float2 _ _) ; repeat split.
 simpl.
 unfold cexp.
 apply Z.le_trans with (1 := H).
-apply Zle_max_r.
+apply Z.le_max_r.
 Qed.
 
 Theorem flt_of_float :
@@ -252,7 +252,7 @@ destruct (FLT_format_generic radix2 k (Zpos p1) (Generic_fmt.round radix2 (FLT_e
 apply generic_format_round...
 rewrite H1.
 eexists (Float2 _ _) ; repeat split.
-apply Zlt_le_trans with (1 := H2).
+apply Z.lt_le_trans with (1 := H2).
 change (Zpower_pos 2 p2) with (Zpower radix2 (Zpos p2)).
 now apply Zpower_le.
 Qed.
@@ -270,7 +270,7 @@ destruct (FLX_format_generic radix2 (Zpos p1) (Generic_fmt.round radix2 (FLX_exp
 apply generic_format_round...
 rewrite H1.
 eexists (Float2 _ _) ; repeat split.
-apply Zlt_le_trans with (1 := H2).
+apply Z.lt_le_trans with (1 := H2).
 change (Zpower_pos 2 p2) with (Zpower radix2 (Zpos p2)).
 now apply Zpower_le.
 Qed.
@@ -290,7 +290,7 @@ generalize (Zle_bool_imp_le _ _ H2). clear H2. intro H2.
 apply round_generic...
 destruct f1 as (m1, e1).
 destruct f2 as (m2, e2).
-destruct (Z_eq_dec m2 0) as [Hm|Hm].
+destruct (Z.eq_dec m2 0) as [Hm|Hm].
 rewrite <- Hx3.
 unfold float2R.
 rewrite Hm, F2R_0.
@@ -311,7 +311,7 @@ destruct (Zle_or_lt e1 e2) as [He|He].
 rewrite <- Hx3.
 apply generic_format_F2R.
 intros _ ; simpl.
-apply Zmax_lub.
+apply Z.max_lub.
 clear -H ; omega.
 apply Z.le_trans with (1 := H1).
 now apply Z.le_trans with e1.
@@ -319,7 +319,7 @@ now apply Z.le_trans with e1.
 rewrite <- Hx1.
 apply generic_format_F2R.
 intros _ ; simpl.
-apply Zmax_lub.
+apply Z.max_lub.
 unfold float2R in Hx1. simpl in Hx1.
 rewrite Hx1, <- Hx3.
 unfold float2R. simpl.
@@ -551,11 +551,11 @@ intros c p d x xi zi Hx Hb.
 assert (H: (Rabs (rounding_float (Znearest c) p d x - x) <= bpow radix2 (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1))%R).
 (* *)
 replace (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi))) with
-  (FLT_exp d (Zpos p) (if Z_eq_dec (Fnum (upper xi)) Z0 then d else (Fexp (upper xi) + Zpos (digits (pos_of_Z (Z.abs (Fnum (upper xi))))))%Z)).
+  (FLT_exp d (Zpos p) (if Z.eq_dec (Fnum (upper xi)) Z0 then d else (Fexp (upper xi) + Zpos (digits (pos_of_Z (Z.abs (Fnum (upper xi))))))%Z)).
 apply float_absolute_inv_n_whole.
 apply Rle_lt_trans with (1 := proj2 (proj2 Hx)).
 unfold float2R.
-case Z_eq_dec ; intros Zx.
+case Z.eq_dec ; intros Zx.
 rewrite Zx, F2R_0.
 apply bpow_gt_0.
 rewrite digits2_digits.
@@ -569,7 +569,7 @@ contradict Zx.
 apply eq_0_F2R with (1 := Zx).
 clear -Zx ; zify ; omega.
 unfold float_ulp.
-case Z_eq_dec ; intros Zx.
+case Z.eq_dec ; intros Zx.
 rewrite Zx.
 unfold FLT_exp.
 clear ; zify ; omega.
@@ -702,7 +702,7 @@ change (F2R (Float radix2 (Zpos (shift_pos p 1)~1) e)) with (float2R (Float2 (Zp
 rewrite <- (rndG_conversion roundNE_cs).
 unfold round, round_pos.
 simpl.
-cutrewrite (FLT_exp d (Zpos p) (e + Zpos (Psucc (digits (shift_pos p 1)))) = e + 2)%Z.
+cutrewrite (FLT_exp d (Zpos p) (e + Zpos (Pos.succ (digits (shift_pos p 1)))) = e + 2)%Z.
 cutrewrite (e + 2 - e = 2)%Z. 2: ring.
 unfold shr, shr_aux, shift_pos.
 simpl.
@@ -722,7 +722,7 @@ rewrite <- H5.
 now rewrite <- F2R_bpow.
 rewrite <- F2R_bpow.
 change (F2R (Float radix2 1 (Fexp + Zpos (digits p0) - 1))) with (float2R (Float2 1 (Fexp + Zpos (digits p0) - 1))).
-rewrite <- (float2_shl_correct 1 (Fexp + Zpos (digits p0) - 1)%Z (Ppred p)).
+rewrite <- (float2_shl_correct 1 (Fexp + Zpos (digits p0) - 1)%Z (Pos.pred p)).
 simpl.
 unfold shift_pos.
 rewrite iter_nat_of_P.
@@ -731,14 +731,14 @@ rewrite nat_of_P_succ_morphism in H3.
 injection H3.
 intro H5.
 rewrite H5.
-cutrewrite (Fexp + Zpos (digits p0) - Zpos p = Fexp + Zpos (digits p0) - 1 - Zpos (Ppred p))%Z.
+cutrewrite (Fexp + Zpos (digits p0) - Zpos p = Fexp + Zpos (digits p0) - 1 - Zpos (Pos.pred p))%Z.
 exact (refl_equal _).
 pattern p at 1 ; rewrite <- H4.
 rewrite Zpos_succ_morphism.
 unfold Z.succ.
 ring.
 rewrite H9.
-cutrewrite (digits (shift_pos p 1) = Psucc p)%Z.
+cutrewrite (digits (shift_pos p 1) = Pos.succ p)%Z.
 repeat rewrite Zpos_succ_morphism.
 unfold Z.succ.
 cutrewrite (Fexp + Zpos (digits p0) - Zpos p - 2 + (Zpos p + 1 + 1) = Fexp + Zpos (digits p0))%Z. 2: ring.

@@ -19,8 +19,8 @@ Qed.
 Fixpoint digits (m : positive) : positive :=
  match m with
  | xH => xH
- | xI p => Psucc (digits p)
- | xO p => Psucc (digits p)
+ | xI p => Pos.succ (digits p)
+ | xO p => Pos.succ (digits p)
  end.
 
 Lemma digits2_digits :
@@ -122,7 +122,7 @@ intros x xn zn (xf,(Hx1,Hx2)) H.
 exists xf.
 split.
 exact Hx1.
-apply Zlt_le_trans with (1 := Hx2).
+apply Z.lt_le_trans with (1 := Hx2).
 apply le_IZR.
 change (IZR (Zpower radix2 (Zpos xn)) <= IZR (Zpower radix2 (Zpos zn)))%R.
 apply IZR_le.
