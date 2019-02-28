@@ -11,7 +11,7 @@ Module Gappa_Private.
 Definition float2_of_pos x :=
   let fix aux (m : positive) e { struct m } :=
     match m with
-    | xO p => aux p (Zsucc e)
+    | xO p => aux p (Z.succ e)
     | _ => Float2 (Zpos m) e
     end in
   aux x Z0.
@@ -307,7 +307,7 @@ rewrite H.
 exists (Float radix2 0 e).
 apply sym_eq, F2R_0.
 apply eq_refl.
-apply Zle_refl.
+apply Z.le_refl.
 right.
 intros ((xm,xe),H1,H2,H3).
 simpl in H2.

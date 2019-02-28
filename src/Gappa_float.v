@@ -179,7 +179,7 @@ Qed.
 Lemma Zmax_inf_l :
  forall m n : Z, (n <= m)%Z -> Zmax m n = m.
 intros m n H.
-generalize (Zle_ge _ _ H).
+generalize (Z.le_ge _ _ H).
 unfold Zmax, Zge.
 case (m ?= n)%Z ; intros ; try exact (refl_equal _).
 elim H0.
@@ -235,7 +235,7 @@ unfold FIX.
 eexists (Float2 _ _) ; repeat split.
 simpl.
 unfold cexp.
-apply Zle_trans with (1 := H).
+apply Z.le_trans with (1 := H).
 apply Zle_max_r.
 Qed.
 
@@ -298,7 +298,7 @@ apply generic_format_0.
 assert (mag radix2 (F2R (Float radix2 m2 e2)) <= Zpos p2 + e2)%Z.
 rewrite mag_F2R with (1 := Hm).
 apply Zplus_le_compat_r.
-apply Zle_trans with (2 := H2).
+apply Z.le_trans with (2 := H2).
 apply bpow_lt_bpow with radix2.
 destruct (mag radix2 (IZR m2)) as (n2, Hn).
 simpl.
@@ -313,8 +313,8 @@ apply generic_format_F2R.
 intros _ ; simpl.
 apply Zmax_lub.
 clear -H ; omega.
-apply Zle_trans with (1 := H1).
-now apply Zle_trans with e1.
+apply Z.le_trans with (1 := H1).
+now apply Z.le_trans with e1.
 (* *)
 rewrite <- Hx1.
 apply generic_format_F2R.
@@ -324,7 +324,7 @@ unfold float2R in Hx1. simpl in Hx1.
 rewrite Hx1, <- Hx3.
 unfold float2R. simpl.
 omega.
-now apply Zle_trans with d1.
+now apply Z.le_trans with d1.
 Qed.
 
 Theorem floatx_of_flt :
@@ -515,7 +515,7 @@ rewrite <- Zdigits_mag with (1 := Hm0).
 simpl.
 rewrite <- Zdigits_abs.
 rewrite Zplus_comm.
-destruct m as [|m|m] ; unfold Zabs.
+destruct m as [|m|m] ; unfold Z.abs.
 now elim Hm0.
 now rewrite <- digits2_digits.
 now rewrite <- digits2_digits.
@@ -551,7 +551,7 @@ intros c p d x xi zi Hx Hb.
 assert (H: (Rabs (rounding_float (Znearest c) p d x - x) <= bpow radix2 (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi)) - 1))%R).
 (* *)
 replace (float_ulp p d (Fnum (upper xi)) (Fexp (upper xi))) with
-  (FLT_exp d (Zpos p) (if Z_eq_dec (Fnum (upper xi)) Z0 then d else (Fexp (upper xi) + Zpos (digits (pos_of_Z (Zabs (Fnum (upper xi))))))%Z)).
+  (FLT_exp d (Zpos p) (if Z_eq_dec (Fnum (upper xi)) Z0 then d else (Fexp (upper xi) + Zpos (digits (pos_of_Z (Z.abs (Fnum (upper xi))))))%Z)).
 apply float_absolute_inv_n_whole.
 apply Rle_lt_trans with (1 := proj2 (proj2 Hx)).
 unfold float2R.
@@ -735,12 +735,12 @@ cutrewrite (Fexp + Zpos (digits p0) - Zpos p = Fexp + Zpos (digits p0) - 1 - Zpo
 exact (refl_equal _).
 pattern p at 1 ; rewrite <- H4.
 rewrite Zpos_succ_morphism.
-unfold Zsucc.
+unfold Z.succ.
 ring.
 rewrite H9.
 cutrewrite (digits (shift_pos p 1) = Psucc p)%Z.
 repeat rewrite Zpos_succ_morphism.
-unfold Zsucc.
+unfold Z.succ.
 cutrewrite (Fexp + Zpos (digits p0) - Zpos p - 2 + (Zpos p + 1 + 1) = Fexp + Zpos (digits p0))%Z. 2: ring.
 unfold FLT_exp.
 rewrite Zmax_inf_l.
@@ -935,7 +935,7 @@ apply generic_format_FLT_FIX...
 rewrite <- Hx1.
 apply generic_format_F2R.
 intros _.
-now apply Zle_trans with xn.
+now apply Z.le_trans with xn.
 (* *)
 exists ((rounding_float (Znearest c) p d x - x) / x)%R.
 assert (Rabs ((rounding_float (Znearest c) p d x - x) / x) <= bpow radix2 (- Zpos p))%R.

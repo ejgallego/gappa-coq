@@ -65,7 +65,7 @@ Qed.
 Definition flt_of_singleton_bnd_helper (xi : FF) (n : positive) :=
  Zeq_bool (Fnum (lower xi)) (Fnum (upper xi)) &&
  Zeq_bool (Fexp (lower xi)) (Fexp (upper xi)) &&
- Zlt_bool (Zabs (Fnum (lower xi))) (two_power_pos n).
+ Zlt_bool (Z.abs (Fnum (lower xi))) (two_power_pos n).
 
 Theorem flt_of_singleton_bnd :
  forall x : R, forall xi : FF, forall n : positive,
@@ -78,7 +78,7 @@ generalize (andb_prop _ _ Hb). clear Hb. intros (Hb,H3).
 generalize (andb_prop _ _ Hb). clear Hb. intros (H1,H2).
 generalize (Zeq_bool_correct_t _ _ H1). clear H1. intro H1.
 generalize (Zeq_bool_correct_t _ _ H2). clear H2. intro H2.
-generalize (Zlt_cases (Zabs (Fnum (lower xi))) (two_power_pos n)). rewrite H3. rewrite two_power_pos_correct. clear H3. intro H3.
+generalize (Zlt_cases (Z.abs (Fnum (lower xi))) (two_power_pos n)). rewrite H3. rewrite two_power_pos_correct. clear H3. intro H3.
 assert (float2R (lower xi) = Rabs x).
 apply Rle_antisym.
 exact Hx1.
@@ -114,7 +114,7 @@ exists (Fopp2 fx).
 split.
 rewrite <- Hx1.
 apply Fopp2_correct.
-now apply Zle_trans with xn.
+now apply Z.le_trans with xn.
 Qed.
 
 Theorem abs_fix :
@@ -125,11 +125,11 @@ Theorem abs_fix :
 Proof.
 intros x xn zn [[mx ex] [Hx1 Hx2]] Hb.
 generalize (Zle_bool_imp_le _ _ Hb). clear Hb. intro H1.
-exists (Float2 (Zabs mx) ex).
+exists (Float2 (Z.abs mx) ex).
 split.
 rewrite <- Hx1.
 apply F2R_Zabs.
-now apply Zle_trans with xn.
+now apply Z.le_trans with xn.
 Qed.
 
 Definition add_fix_helper (xn yn zn : Z) :=
@@ -153,9 +153,9 @@ rewrite <- Hy1.
 apply Fplus2_correct.
 unfold Fplus2, Fshift2.
 case (Fexp fx - Fexp fy)%Z ; intros.
-exact (Zle_trans _ _ _ H1 Hx2).
-exact (Zle_trans _ _ _ H2 Hy2).
-exact (Zle_trans _ _ _ H1 Hx2).
+exact (Z.le_trans _ _ _ H1 Hx2).
+exact (Z.le_trans _ _ _ H2 Hy2).
+exact (Z.le_trans _ _ _ H1 Hx2).
 Qed.
 
 Theorem sub_fix :
@@ -187,7 +187,7 @@ exists (Fmult2 fx fy).
 split.
 rewrite <- Hx1. rewrite <- Hy1.
 apply Fmult2_correct.
-apply Zle_trans with (1 := H1).
+apply Z.le_trans with (1 := H1).
 exact (Zplus_le_compat _ _ _ _ Hx2 Hy2).
 Qed.
 
@@ -268,7 +268,7 @@ rewrite <- Hx1. rewrite <- Hy1.
 apply Fmult2_correct.
 change (Z.pow_pos 2 (xn + yn)) with (Zpower radix2 (Zpos xn + Zpos yn)).
 rewrite Zpower_plus by easy.
-simpl Zabs.
+simpl Z.abs.
 rewrite Zabs_Zmult.
 apply Zmult_lt_compat ; split ;
   try assumption ; apply Zabs_pos.
@@ -290,7 +290,7 @@ split.
 exact Hx1.
 apply Zplus_le_reg_l with (Zpos p).
 rewrite Zplus_comm.
-apply Zle_trans with (1 := H1). clear H1.
+apply Z.le_trans with (1 := H1). clear H1.
 rewrite digits2_digits.
 assert (H0: (0 < ml)%Z).
 apply gt_0_F2R with (1 := H2).
@@ -300,7 +300,7 @@ intros H.
 now rewrite H in H0.
 rewrite Zdigits_mag with (1 := H0').
 rewrite <- mag_F2R with (1 := H0').
-apply Zle_trans with (mag radix2 (Rabs (Float2 mx ex))).
+apply Z.le_trans with (mag radix2 (Rabs (Float2 mx ex))).
 apply mag_le.
 now apply F2R_gt_0.
 now rewrite Hx1.

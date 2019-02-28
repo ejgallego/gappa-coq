@@ -37,7 +37,7 @@ apply round_generic with (1 := Hrnd).
 rewrite <- Hx1.
 apply generic_format_F2R.
 intros _.
-now apply Zle_trans with e1.
+now apply Z.le_trans with e1.
 Qed.
 
 Theorem fix_fixed_of_fix :

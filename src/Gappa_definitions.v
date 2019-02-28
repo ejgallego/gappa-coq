@@ -20,5 +20,5 @@ Definition REL (x1 x2 : R) (xi : FF) :=
 Definition FIX (x : R) (n : Z) :=
  exists f : float2, float2R f = x /\ (n <= Fexp f)%Z.
 Definition FLT (x : R) (n : positive) :=
- exists f : float2, float2R f = x /\ (Zabs (Fnum f) < Zpower_pos 2 n)%Z.
+ exists f : float2, float2R f = x /\ (Z.abs (Fnum f) < Zpower_pos 2 n)%Z.
 Definition NZR (x : R) := (x <> 0)%R.

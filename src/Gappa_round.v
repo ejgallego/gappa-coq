@@ -166,14 +166,14 @@ rewrite H in Hb1.
 rewrite hrndG_DN with (1 := Hb1).
 now apply Zfloor_le.
 (* *)
-apply Zle_trans with (Zceil x).
+apply Z.le_trans with (Zceil x).
 unfold hrndG.
 case rdir.
-apply Zle_refl.
+apply Z.le_refl.
 apply le_IZR.
 exact (Rle_trans _ _ _ (Zfloor_lb x) (Zceil_ub x)).
-apply Zle_trans with (Zfloor y).
-apply Zle_trans with (Zfloor x + 1)%Z.
+apply Z.le_trans with (Zfloor y).
+apply Z.le_trans with (Zfloor x + 1)%Z.
 apply Zceil_glb.
 rewrite plus_IZR.
 apply Rlt_le.
@@ -184,7 +184,7 @@ unfold hrndG.
 case rdir.
 apply le_IZR.
 exact (Rle_trans _ _ _ (Zfloor_lb y) (Zceil_ub y)).
-apply Zle_refl.
+apply Z.le_refl.
 (* Z2R *)
 intros n.
 unfold hrndG.
@@ -323,7 +323,7 @@ change 2%R with (bpow radix2 1).
 rewrite <- bpow_plus.
 apply (f_equal (fun e => _ * bpow radix2 e)%R).
 rewrite inj_S.
-unfold Zsucc.
+unfold Z.succ.
 ring.
 Qed.
 
@@ -356,7 +356,7 @@ apply generic_format_F2R.
 intros _ ; simpl.
 rewrite He.
 rewrite Zminus_eq with (1 := H).
-apply Zle_refl.
+apply Z.le_refl.
 (* *)
 intros p H.
 unfold Generic_fmt.round, scaled_mantissa.
@@ -446,7 +446,7 @@ rewrite <- Ropp_0.
 apply Ropp_le_contravar.
 now apply Rlt_le.
 (* . *)
-apply Zle_trans with Z0.
+apply Z.le_trans with Z0.
 apply Zopp_le_cancel.
 rewrite Zopp_involutive.
 apply hrndG_pos.
@@ -461,7 +461,7 @@ now apply Rlt_le.
 destruct (Rcompare_spec y 0) as [Hy|Hy|Hy].
 elim Rle_not_lt with (1 := Hxy).
 now rewrite Hx.
-apply Zle_refl.
+apply Z.le_refl.
 apply hrndG_pos.
 apply rpos_good.
 now apply Rlt_le.

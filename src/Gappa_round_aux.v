@@ -80,7 +80,7 @@ destruct (FIX_format_generic _ _ _ H) as ((m,e),H1,H2).
 exists (Float2 m e) ; repeat split.
 easy.
 rewrite <- H2.
-apply Zle_refl.
+apply Z.le_refl.
 Qed.
 
 Lemma FLT_iff_generic :
@@ -109,7 +109,7 @@ intros x xn zn (xf,(Hx1,Hx2)) H.
 exists xf.
 split.
 exact Hx1.
-apply Zle_trans with (1 := H) (2 := Hx2).
+apply Z.le_trans with (1 := H) (2 := Hx2).
 Qed.
 
 Lemma flt_le :

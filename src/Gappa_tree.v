@@ -334,7 +334,7 @@ destruct Hp as ((m,e),(Hm,He)).
 exists (Float2 m e).
 split.
 exact Hm.
-now apply Zle_trans with (1 := H).
+now apply Z.le_trans with (1 := H).
 (* Aflt, Aflt *)
 generalize (index_eq_correct px qx).
 case index_eq ; try easy.
