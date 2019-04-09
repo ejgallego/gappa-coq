@@ -22,7 +22,6 @@ let global_evd = ref Evd.empty
 let existential_type evd ex = Evd.existential_type evd ex
 
 open Vars
-open Universes
 open Globnames
 open CErrors
 
@@ -41,7 +40,30 @@ let closed0 t = Vars.closed0 !global_evd t
 
 let eq_constr t1 t2 = eq_constr !global_evd t1 t2
 
+IFDEF COQ810 THEN
+
+let pr_constr t =
+  let sigma, env = Vernacstate.Proof_global.get_current_context () in
+  Printer.pr_econstr_env env sigma t
+
+let constr_of_global = UnivGen.constr_of_monomorphic_global
+
+let binder_name = Context.binder_name
+
+let refine_no_check t gl =
+  Refiner.refiner ~check:false (EConstr.Unsafe.to_constr t) gl
+
+ELSE
+
 let pr_constr = Printer.pr_econstr
+
+let constr_of_global = Universes.constr_of_global
+
+let binder_name x = x
+
+let refine_no_check = Tacmach.refine_no_check
+
+END
 
 let map_constr f t =
   EConstr.map !global_evd f t
@@ -77,7 +99,8 @@ let is_global c t = is_global (Lazy.force c) t
 
 let constr_of_global f = of_constr (constr_of_global (Lazy.force f))
 
-DECLARE PLUGIN "gappatac"
+let __coq_plugin_name = "gappatac"
+let _ = Mltop.add_known_module __coq_plugin_name
 
 let debug = ref false
 
@@ -505,7 +528,7 @@ let gappa_quote gl =
     var_list := [];
     Tacticals.tclTHEN
       (Tacticals.tclTHEN
-        (generalize (List.map (fun (n, _) -> mkVar n) (List.rev l)))
+        (generalize (List.map (fun (n, _) -> mkVar (binder_name n)) (List.rev l)))
         (keep []))
       (convert_concl_no_check e Constr.DEFAULTcast) gl
   with
@@ -796,7 +819,7 @@ let var_name = function
     and as many metas as needed to match hypotheses *)
 let build_proof_term evd c =
   let bl, _ = decompose_lam evd c in
-  List.fold_right (fun (x,t) pf -> mkApp (pf, [| var_name x |])) bl c
+  List.fold_right (fun (x,t) pf -> mkApp (pf, [| var_name (binder_name x) |])) bl c
 
 (** the [gappa_internal] tactic *)
 let gappa_internal gl =
@@ -814,7 +837,7 @@ let gappa_internal gl =
     global_evd := emap;
     let pf = evars_to_vmcast !global_env emap pf in
     let pf = build_proof_term emap pf in
-    Tacmach.refine_no_check pf gl
+    refine_no_check pf gl
   with
     | NotGappa t ->
       user_err ~hdr:"gappa_internal"
@@ -826,10 +849,14 @@ let gappa_internal gl =
 let gappa_quote = Proofview.V82.tactic gappa_quote
 let gappa_internal = Proofview.V82.tactic gappa_internal
 
-TACTIC EXTEND gappatac_gappa_internal
-| [ "gappa_internal" ] -> [ gappa_internal ]
-END
+let () =
+  Tacentries.tactic_extend __coq_plugin_name "gappatac_gappa_internal" ~level:0
+    [Tacentries.TyML
+       (Tacentries.TyIdent ("gappa_internal", Tacentries.TyNil),
+        (fun ist -> gappa_internal))]
 
-TACTIC EXTEND gappatac_gappa_quote
-| [ "gappa_quote" ] -> [ gappa_quote ]
-END
+let () =
+  Tacentries.tactic_extend __coq_plugin_name "gappatac_gappa_quote" ~level:0
+    [Tacentries.TyML
+       (Tacentries.TyIdent ("gappa_quote", Tacentries.TyNil),
+        (fun ist -> gappa_quote))]

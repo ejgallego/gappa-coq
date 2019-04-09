@@ -24,10 +24,10 @@ AC_ARG_VAR(COQBIN, [path to Coq executables [empty]])
 if test ${COQBIN##*/}; then COQBIN=$COQBIN/; fi
 
 AC_ARG_VAR(COQC, [Coq compiler command [coqc]])
-AC_MSG_CHECKING([for coqc >= 8.7])
+AC_MSG_CHECKING([for coqc >= 8.8])
 if test ! "$COQC"; then COQC=`which ${COQBIN}coqc`; fi
 coqc_version=[`$COQC -v | sed -n -e 's/^.*version \([0-9][0-9.]*\).*$/\1/p'`]
-AX_VERSION_GE([$coqc_version], [8.7],
+AX_VERSION_GE([$coqc_version], [8.8],
   [ AC_MSG_RESULT([$COQC]) ],
   [ AC_MSG_RESULT([no])
     AC_MSG_ERROR([ *** Unable to find Coq (http://coq.inria.fr/)]) ])
@@ -50,6 +50,9 @@ AC_ARG_VAR(CAMLP4O, [OCaml preprocessor [camlpXo]])
 AC_MSG_CHECKING([for camlpXo])
 if test ! "$CAMLP4O"; then
   CAMLP4O=`$COQC -config | sed -n -e 's/^CAMLP.O=\(.*\)/\1/p'`
+  if test ! "$CAMLP4O"; then
+    CAMLP4O=camlp5o
+  fi
   CAMLP4O=`which $CAMLP4O`
 fi
 AC_MSG_RESULT([$CAMLP4O])
@@ -87,17 +90,13 @@ if test "$libdir" = '${exec_prefix}/lib'; then
   libdir="$COQLIB/user-contrib/Gappa"
 fi
 
-AC_SUBST(COQPPLIBS)
 AC_SUBST(COQDEFINE)
+AX_VERSION_GE([$coqc_version], [8.10],
+  [ COQDEFINE=COQ810 ], [
 AX_VERSION_GE([$coqc_version], [8.9],
-  [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
-    COQDEFINE=COQ89 ], [
+  [ COQDEFINE=COQ89 ], [
 AX_VERSION_GE([$coqc_version], [8.8],
-  [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
-    COQDEFINE=COQ88 ], [
-AX_VERSION_GE([$coqc_version], [8.7],
-  [ COQPPLIBS="$OCAMLLIB/unix.cma $OCAMLLIB/threads/threads.cma $COQLIB/grammar/grammar.cma"
-    COQDEFINE=COQ87 ])
+  [ COQDEFINE=COQ88 ])
 ])])
 
 AC_ARG_ENABLE([tactic],
