@@ -71,20 +71,10 @@ let map_constr f t =
 let keep a = Proofview.V82.of_tactic (Tactics.keep a)
 let convert_concl_no_check a b = Proofview.V82.of_tactic (Tactics.convert_concl_no_check a b)
 
-IFDEF COQ87 THEN
-let nf_betaiota env emap x = Reductionops.nf_betaiota emap x
-ELSE
-let nf_betaiota = Reductionops.nf_betaiota
-END
-
-IFDEF COQ87 THEN
-let parse_entry e s = Pcoq.Gram.entry_parse e (Pcoq.Gram.parsable s)
-ELSE
 IFDEF COQ88 THEN
 let parse_entry e s = Pcoq.Gram.entry_parse e (Pcoq.Gram.parsable s)
 ELSE
 let parse_entry e s = Pcoq.Entry.parse e (Pcoq.Parsable.make s)
-END
 END
 
 let coq_reference t1 t2 =
@@ -793,7 +783,7 @@ let no_glob f =
 let evars_to_vmcast env emap c =
   let emap = nf_evar_map emap in
   let change_exist evar =
-    let ty = nf_betaiota env emap (existential_type emap evar) in
+    let ty = Reductionops.nf_betaiota env emap (existential_type emap evar) in
     mkCast (mkLApp coq_eq_refl
       [|constr_of_global coq_bool; constr_of_global coq_true|], Constr.VMcast, ty) in
   let rec replace c =
