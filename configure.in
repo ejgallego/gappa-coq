@@ -53,7 +53,17 @@ if test ! "$CAMLP4O"; then
   if test ! "$CAMLP4O"; then
     CAMLP4O=camlp5o
   fi
-  CAMLP4O=`which $CAMLP4O`
+  case `uname -s` in
+    CYGWIN*)
+      case "$CAMLP4O" in
+        *:*) CAMLP4O=`cygpath -m "$CAMLP4O"` ;;
+        *)   CAMLP4O=`cygpath -u "$CAMLP4O"` ;;
+      esac
+      ;;
+    *)
+      CAMLP4O=`which $CAMLP4O`
+      ;;
+  esac
 fi
 AC_MSG_RESULT([$CAMLP4O])
 
@@ -81,10 +91,10 @@ AS_IF(
 rm -f conftest.v conftest.vo conftest.err
 
 AC_SUBST(OCAMLLIB)
-OCAMLLIB=`$OCAMLC -where`
+OCAMLLIB=`$OCAMLC -where | tr -d '\r' | tr '\\\\' '/'`
 
 AC_SUBST(COQLIB)
-COQLIB=`$COQC -where`
+COQLIB=`$COQC -where | tr -d '\r' | tr '\\\\' '/'`
 
 if test "$libdir" = '${exec_prefix}/lib'; then
   libdir="$COQLIB/user-contrib/Gappa"

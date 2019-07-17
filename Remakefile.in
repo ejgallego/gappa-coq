@@ -43,7 +43,7 @@ configure config.status: configure.in
 	@COQC@ -R src Gappa -I src $<
 
 COQSUBTREES = clib engine kernel interp intf lib library ltac parsing pretyping printing proofs tactics toplevel vernac plugins/ltac
-COQINCLUDES = $(addprefix -I @COQLIB@/, $(COQSUBTREES))
+COQINCLUDES = $(addprefix -I "@COQLIB@"/, $(COQSUBTREES))
 
 src/gappatac.cmo: src/gappatac.ml
 	@OCAMLC@ -pp "@CAMLP4O@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) -c $< -o $@
