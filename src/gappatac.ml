@@ -1,10 +1,10 @@
-(***************************************************)
-(* Copyright 2008 Jean-Christophe Filliâtre        *)
-(* Copyright 2008-2016 Guillaume Melquiond         *)
-(*                                                 *)
-(* This file is distributed under the terms of the *)
-(* GNU Lesser General Public License Version 2.1   *)
-(***************************************************)
+(********************************************************)
+(* Copyright 2008 Jean-Christophe Filliâtre             *)
+(* Copyright 2008-2020 Guillaume Melquiond              *)
+(*                                                      *)
+(* This file is distributed under the terms of the      *)
+(* GNU Lesser General Public License Version 3 or later *)
+(********************************************************)
 
 open Format
 open Util
