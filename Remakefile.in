@@ -63,7 +63,7 @@ src/Gappa_tactic.vo: src/Gappa_tactic.v $(MLTARGETS)
 src/clean:
 	rm -f $(OBJS)
 	cd src
-	rm -f gappatac.cmi gappatac.cmo gappatac.cmx gappatac.cmxs gappatac.o *.glob
+	rm -f gappatac.ml gappatac.cmi gappatac.cmo gappatac.cmx gappatac.cmxs gappatac.o *.glob *.vos *.vok
 
 testsuite/check: src/Gappa_tactic.vo
 	set +e
