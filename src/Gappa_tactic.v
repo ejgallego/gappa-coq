@@ -66,6 +66,79 @@ rewrite bpow_plus, <- Rmult_assoc.
 now rewrite opp_IZR, Ropp_mult_distr_l_reverse.
 Qed.
 
+Definition float10_of_pos x :=
+  let fix aux (n : nat) m e { struct n } :=
+    match n, m with
+    | S n, xO p =>
+      let (q,r) := Z.pos_div_eucl p 5 in
+      match r, q with
+      | Z0, Zpos q => aux n q (Z.succ e)
+      | _, _ => Float10 (Zpos m) e
+      end
+    | _, _ => Float10 (Zpos m) e
+    end in
+  aux (Digits.digits2_Pnat x) x Z0.
+
+Lemma float10_of_pos_correct :
+  forall x, float10R (float10_of_pos x) = IZR (Zpos x).
+Proof.
+intros x.
+unfold float10_of_pos.
+rewrite <- (Rmult_1_r (IZR (Zpos x))).
+change (IZR (Zpos x) * 1)%R with (float10R (Float10 (Zpos x) 0%Z)).
+generalize (Digits.digits2_Pnat x) 0%Z.
+intros n. revert x.
+induction n ; intros m e. easy.
+destruct m as [m|m|] ; try easy.
+generalize (Z.pos_div_eucl_eq m 5 eq_refl).
+destruct Z.pos_div_eucl as [q r].
+intros Hm.
+destruct r as [|r|r] ; try easy.
+destruct q as [|q|q] ; try easy.
+rewrite IHn.
+rewrite Pos2Z.pos_xO, Hm.
+replace (2 * (Zpos q * 5 + 0))%Z with (Zpos q * 10)%Z by ring.
+unfold float10R, F2R. simpl.
+unfold Z.succ.
+rewrite Zplus_comm.
+rewrite bpow_plus, <- Rmult_assoc.
+change (Zpos (q * 10)) with (Zpos q * 10)%Z.
+now rewrite mult_IZR.
+Qed.
+
+Definition compact_float10 m e :=
+  match m with
+  | Z0 => Float10 0 0
+  | Zpos p =>
+    match float10_of_pos p with
+    | Float10 m e1 => Float10 m (e + e1)
+    end
+  | Zneg p =>
+    match float10_of_pos p with
+    | Float10 m e1 => Float10 (-m) (e + e1)
+    end
+  end.
+
+Lemma compact_float10_correct :
+  forall m e, float10R (compact_float10 m e) = float10R (Float10 m e).
+Proof.
+unfold float10R, F2R. simpl.
+intros [|m|m] e ; simpl.
+now rewrite 2!Rmult_0_l.
+rewrite <- (float10_of_pos_correct m).
+destruct (float10_of_pos m) as [m1 e1].
+simpl.
+rewrite Zplus_comm.
+now rewrite bpow_plus, <- Rmult_assoc.
+change (IZR (Zneg m)) with (- IZR (Zpos m))%R.
+rewrite <- (float10_of_pos_correct m).
+destruct (float10_of_pos m) as [m1 e1].
+simpl.
+rewrite Zplus_comm.
+rewrite bpow_plus, <- Rmult_assoc.
+now rewrite opp_IZR, Ropp_mult_distr_l_reverse.
+Qed.
+
 Inductive UnaryOp : Set :=
   | uoNeg | uoSqrt | uoAbs | uoInv.
 
@@ -656,6 +729,62 @@ Qed.
 
 End StableTree'.
 
+Definition compact_posfloat2 m e :=
+  match compact_float2 m e with
+  | Float2 m1 0 => reInteger m1
+  | Float2 m1 e1 =>
+    match m1 with
+    | Zneg m1 => reUnary uoNeg (reFloat2 (Zpos m1) e1)
+    | _ => reFloat2 m1 e1
+    end
+  end.
+
+Lemma compact_posfloat2_correct :
+  forall m e, convert_expr (compact_posfloat2 m e) = (IZR m * bpow radix2 e)%R.
+Proof.
+intros m e.
+unfold compact_posfloat2.
+generalize (compact_float2_correct m e).
+destruct compact_float2 as [m' e'].
+destruct e'.
+unfold float2R, F2R. simpl.
+now rewrite Rmult_1_r.
+destruct m' as [|m'|m'] ; try easy.
+simpl.
+now rewrite <- Gappa_dyadic.Fopp2_correct.
+destruct m' as [|m'|m'] ; try easy.
+simpl.
+now rewrite <- Gappa_dyadic.Fopp2_correct.
+Qed.
+
+Definition compact_posfloat10 m e :=
+  match compact_float10 m e with
+  | Float10 m1 0 => reInteger m1
+  | Float10 m1 e1 =>
+    match m1 with
+    | Zneg m1 => reUnary uoNeg (reFloat10 (Zpos m1) e1)
+    | _ => reFloat10 m1 e1
+    end
+  end.
+
+Lemma compact_posfloat10_correct :
+  forall m e, convert_expr (compact_posfloat10 m e) = (IZR m * bpow radix10 e)%R.
+Proof.
+intros m e.
+unfold compact_posfloat10.
+generalize (compact_float10_correct m e).
+destruct compact_float10 as [m' e'].
+destruct e'.
+unfold float10R, F2R. simpl.
+now rewrite Rmult_1_r.
+destruct m' as [|m'|m'] ; try easy.
+simpl. unfold float10R, F2R. simpl.
+now rewrite Ropp_mult_distr_l.
+destruct m' as [|m'|m'] ; try easy.
+simpl. unfold float10R, F2R. simpl.
+now rewrite Ropp_mult_distr_l.
+Qed.
+
 (* transform INR and IZR into real integers, change a/b and a*2^b into floats *)
 Definition gen_float_func t :=
   match t with
@@ -663,17 +792,17 @@ Definition gen_float_func t :=
     reInteger (Zneg x)
   | reBinary boDiv (reInteger x) (reInteger (Zpos y)) =>
     match float2_of_pos y with
-    | Float2 1 (Zpos y') => reFloat2 x (Zneg y')
+    | Float2 1 (Zpos y') => compact_posfloat2 x (Zneg y')
     | _ => t
     end
   | reBinary boMul (reInteger x) (reBpow2 y) =>
-    reFloat2 x y
+    compact_posfloat2 x y
   | reBinary boMul (reInteger x) (reBpow10 y) =>
-    reFloat10 x y
+    compact_posfloat10 x y
   | reBinary boMul (reInteger x) (rePow2 y) =>
-    reFloat2 x y
+    compact_posfloat2 x y
   | reBinary boMul (reInteger x) (rePow10 y) =>
-    reFloat10 x y
+    compact_posfloat10 x y
   | reINR x =>
     reInteger (Zpos x)
   | reIZR x =>
@@ -694,19 +823,25 @@ destruct o ; try apply refl_equal ;
   destruct x ; try apply refl_equal ;
   destruct y ; try apply refl_equal.
 (* . x * 2^y *)
+apply compact_posfloat2_correct.
+(* . x * 10^y *)
+apply compact_posfloat10_correct.
+(* . x * 2^y *)
 simpl.
-now rewrite <- (bpow_powerRZ radix2).
+rewrite <- (bpow_powerRZ radix2).
+apply compact_posfloat2_correct.
 (* . x * 10^y *)
 simpl.
-now rewrite <- (bpow_powerRZ radix10).
+rewrite <- (bpow_powerRZ radix10).
+apply compact_posfloat10_correct.
 (* . x / 2*2*2*2 *)
 destruct z0 ; try apply refl_equal.
 generalize (float2_of_pos_correct p).
 simpl.
 destruct (float2_of_pos p) as ([|[m|m|]|m], [|e|e]) ; intros H ; try apply refl_equal.
+rewrite compact_posfloat2_correct.
 rewrite <- H.
-unfold convert_expr.
-unfold float2R, F2R at 2. simpl.
+unfold float2R, F2R. simpl.
 now rewrite Rmult_1_l.
 (* INR *)
 simpl.
