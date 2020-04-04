@@ -40,7 +40,7 @@ let closed0 t = Vars.closed0 !global_evd t
 
 let eq_constr t1 t2 = eq_constr !global_evd t1 t2
 
-IFDEF COQ810 THEN
+#if COQVERSION >= 81000
 
 let pr_constr t =
   let sigma, env = Vernacstate.Proof_global.get_current_context () in
@@ -53,7 +53,7 @@ let binder_name = Context.binder_name
 let refine_no_check t gl =
   Refiner.refiner ~check:false (EConstr.Unsafe.to_constr t) gl
 
-ELSE
+#else
 
 let pr_constr = Printer.pr_econstr
 
@@ -63,7 +63,7 @@ let binder_name x = x
 
 let refine_no_check = Tacmach.refine_no_check
 
-END
+#endif
 
 let map_constr f t =
   EConstr.map !global_evd f t
@@ -71,11 +71,11 @@ let map_constr f t =
 let keep a = Proofview.V82.of_tactic (Tactics.keep a)
 let convert_concl_no_check a b = Proofview.V82.of_tactic (Tactics.convert_concl_no_check a b)
 
-IFDEF COQ88 THEN
+#if COQVERSION < 80900
 let parse_entry e s = Pcoq.Gram.entry_parse e (Pcoq.Gram.parsable s)
-ELSE
+#else
 let parse_entry e s = Pcoq.Entry.parse e (Pcoq.Parsable.make s)
-END
+#endif
 
 let coq_reference t1 t2 =
   let th = lazy (coq_reference t1 t2) in

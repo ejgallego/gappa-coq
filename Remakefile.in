@@ -45,11 +45,14 @@ configure config.status: configure.in
 COQSUBTREES = clib engine kernel interp intf lib library ltac parsing pretyping printing proofs tactics toplevel vernac plugins/ltac
 COQINCLUDES = $(addprefix -I "@COQLIB@"/, $(COQSUBTREES))
 
+src/gappatac.ml: src/gappatac.c
+	@CPP@ -DCOQVERSION=@COQVERSION@ $< -o $@
+
 src/gappatac.cmo: src/gappatac.ml
-	@OCAMLC@ -pp "@CAMLP4O@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) -c $< -o $@
+	@OCAMLC@ -rectypes $(COQINCLUDES) -c $< -o $@
 
 src/gappatac.cmxs: src/gappatac.ml
-	@OCAMLOPT@ -pp "@CAMLP4O@ pa_macro.cmo -D@COQDEFINE@" -rectypes $(COQINCLUDES) -shared $< -o $@
+	@OCAMLOPT@ -rectypes $(COQINCLUDES) -shared $< -o $@
 
 MLTARGETS = $(addprefix src/, @TACTIC_TARGETS@)
 
