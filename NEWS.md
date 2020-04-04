@@ -1,3 +1,10 @@
+Version 1.4.3
+-------------
+
+- ensured compatibility from Coq 8.8 to 8.11
+- fixed normalization issues with floating-point literals
+- removed dependency on camlp5
+
 Version 1.4.2
 -------------
 

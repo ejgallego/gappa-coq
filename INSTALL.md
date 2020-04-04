@@ -24,8 +24,7 @@ Similarly, `COQDEP` can be used to specify the location of `coqdep`. The
 
 The same OCaml compiler used for compiling Coq should be used for
 compiling the tactic. It is found by calling `$COQC -config`. The `OCAMLC`
-environment variable can be used to override this choice. Variable `CAMLP4`
-plays a similar role for the OCaml preprocessor.
+environment variable can be used to override this choice.
 
 Option `--libdir=DIR` sets the directory where the compiled library files
 should be installed by `./remake install`. By default, the target directory
