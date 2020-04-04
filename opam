@@ -12,7 +12,7 @@ build: [
 install: ["./remake" "install"]
 depends: [
   "ocaml"
-  "coq" {>= "8.8.1" & < "8.11~"}
+  "coq" {>= "8.8.1" & < "8.12~"}
   "coq-flocq" {>= "3.0"}
   "conf-autoconf" {build & dev}
   ("conf-g++" {build} | "conf-clang" {build})
