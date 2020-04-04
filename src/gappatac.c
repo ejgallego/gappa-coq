@@ -77,6 +77,8 @@ let parse_entry e s = Pcoq.Gram.entry_parse e (Pcoq.Gram.parsable s)
 let parse_entry e s = Pcoq.Entry.parse e (Pcoq.Parsable.make s)
 #endif
 
+#if COQVERSION < 81100
+
 let coq_reference t1 t2 =
   let th = lazy (coq_reference t1 t2) in
   fun x -> lazy (Lazy.force th x)
@@ -88,6 +90,19 @@ let find_reference t1 t2 =
 let is_global c t = is_global (Lazy.force c) t
 
 let constr_of_global f = of_constr (constr_of_global (Lazy.force f))
+
+#else
+
+let find_reference t1 t2 x =
+  lazy (of_constr (constr_of_global (gen_reference_in_modules t1 [t2] x)))
+
+let coq_reference t1 t2 x = find_reference t1 ("Coq" :: t2) x
+
+let is_global c t = eq_constr (Lazy.force c) t
+
+let constr_of_global f = Lazy.force f
+
+#endif
 
 let __coq_plugin_name = "gappatac"
 let _ = Mltop.add_known_module __coq_plugin_name
