@@ -1,7 +1,7 @@
 Require Import Reals List Bool.
 Require Import Gappa_common.
 
-Notation index := nat.
+Local Notation index := nat (only parsing).
 Definition realmap := list R.
 Definition get rm n := nth n rm R0.
 
