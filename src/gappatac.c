@@ -42,16 +42,27 @@ let eq_constr t1 t2 = eq_constr !global_evd t1 t2
 
 #if COQVERSION >= 81000
 
+#if COQVERSION >= 81200
+let get_current_context = Vernacstate.Declare.get_current_context
+#else
+let get_current_context = Vernacstate.Proof_global.get_current_context
+#endif
+
 let pr_constr t =
-  let sigma, env = Vernacstate.Proof_global.get_current_context () in
+  let sigma, env = get_current_context () in
   Printer.pr_econstr_env env sigma t
 
 let constr_of_global = UnivGen.constr_of_monomorphic_global
 
 let binder_name = Context.binder_name
 
+#if COQVERSION >= 81200
+let refine_no_check t gl =
+  Proofview.V82.of_tactic (Refiner.refiner ~check:false (EConstr.Unsafe.to_constr t)) gl
+#else
 let refine_no_check t gl =
   Refiner.refiner ~check:false (EConstr.Unsafe.to_constr t) gl
+#endif
 
 #else
 
