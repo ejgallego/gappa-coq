@@ -1,3 +1,8 @@
+Version 1.4.4
+-------------
+
+- ensured compatibility from Coq 8.8 to 8.12
+
 Version 1.4.3
 -------------
 
