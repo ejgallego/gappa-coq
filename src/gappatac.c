@@ -56,7 +56,10 @@ let constr_of_global = UnivGen.constr_of_monomorphic_global
 
 let binder_name = Context.binder_name
 
-#if COQVERSION >= 81200
+#if COQVERSION >= 81300
+let refine_no_check t gl =
+  Proofview.V82.of_tactic (Logic.refiner ~check:false (EConstr.Unsafe.to_constr t)) gl
+#elif COQVERSION >= 81200
 let refine_no_check t gl =
   Proofview.V82.of_tactic (Refiner.refiner ~check:false (EConstr.Unsafe.to_constr t)) gl
 #else
