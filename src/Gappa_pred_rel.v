@@ -7,7 +7,7 @@ Theorem bnd_of_nzr_rel :
  BND ((a - b) / b) zi.
 Proof.
 intros a b zi Hb (x,(Hr1,Hr2)).
-cutrewrite ((a - b) / b = x)%R.
+replace ((a - b) / b)%R with x.
 exact Hr1.
 rewrite Hr2.
 field.
@@ -172,7 +172,7 @@ Lemma error_of_rel_generic :
  BND (a - b) zi.
 Proof.
 intros f t a b xi yi zi (x,(Hr1,Hr2)).
-cutrewrite (a - b = x * b)%R.
+replace (a - b)%R with (x * b)%R.
 now apply t.
 rewrite Hr2.
 ring.

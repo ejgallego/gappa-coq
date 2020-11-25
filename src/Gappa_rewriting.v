@@ -444,18 +444,18 @@ apply Rplus_le_compat_l with (1 := H4).
 rewrite H0 in H.
 rewrite Rplus_0_l in H.
 rewrite H. rewrite H0.
-cutrewrite (a = 0)%R.
-cutrewrite (b = 0)%R.
+assert (a = 0)%R as ->.
+  apply sqrt_eq_0 with (2 := H0).
+  apply Rle_trans with (1 := H1) (2 := proj1 Ha).
+assert (b = 0)%R as ->.
+  apply sqrt_eq_0 with (2 := H).
+  apply Rle_trans with (1 := H2) (2 := proj1 Hb).
 rewrite Rminus_0_r.
 unfold Rdiv.
 apply Rmult_0_l.
-apply sqrt_eq_0 with (2 := H).
-apply Rle_trans with (1 := H2) (2 := proj1 Hb).
-apply sqrt_eq_0 with (2 := H0).
-apply Rle_trans with (1 := H1) (2 := proj1 Ha).
 replace (a - b)%R with (sqrt a * sqrt a - sqrt b * sqrt b)%R.
 field.
-auto with real.
+now apply Rgt_not_eq.
 repeat rewrite sqrt_def.
 exact (refl_equal _).
 apply Rle_trans with (1 := H2) (2 := proj1 Hb).
