@@ -123,24 +123,28 @@ let _ = Mltop.add_known_module __coq_plugin_name
 
 let debug = ref false
 
+#if COQVERSION < 81300
+open Big_int
+#else
+open Big_int_Z
+#endif
+
 (* 1. gappa syntax trees and output *)
 
 module Constant = struct
 
-  open Bigint
-
-  type t = { mantissa : bigint; base : int; exp : bigint }
+  type t = { mantissa : big_int; base : int; exp : big_int }
 
   let create (b, m, e) =
     { mantissa = m; base = b; exp = e }
 
   let of_int x =
-    { mantissa = x; base = 1; exp = zero }
+    { mantissa = x; base = 1; exp = zero_big_int }
 
   let print fmt x = match x.base with
-    | 1 -> fprintf fmt "%s" (to_string x.mantissa)
-    | 2 -> fprintf fmt "%sb%s" (to_string x.mantissa) (to_string x.exp)
-    | 10 -> fprintf fmt "%se%s" (to_string x.mantissa) (to_string x.exp)
+    | 1 -> fprintf fmt "%s" (string_of_big_int x.mantissa)
+    | 2 -> fprintf fmt "%sb%s" (string_of_big_int x.mantissa) (string_of_big_int x.exp)
+    | 10 -> fprintf fmt "%se%s" (string_of_big_int x.mantissa) (string_of_big_int x.exp)
     | _ -> assert false
 
 end
@@ -562,11 +566,11 @@ let gappa_quote gl =
 (** translate a closed Coq term [p:positive] into [bigint] *)
 let rec tr_bigpositive p = match kind_of_term p with
   | Constr.Construct _ when is_global coq_xH p ->
-      Bigint.one
+      unit_big_int
   | Constr.App (f, [|a|]) when is_global coq_xI f ->
-      Bigint.add_1 (Bigint.mult_2 (tr_bigpositive a))
+      add_int_big_int 1 (shift_left_big_int (tr_bigpositive a) 1)
   | Constr.App (f, [|a|]) when is_global coq_xO f ->
-      (Bigint.mult_2 (tr_bigpositive a))
+      shift_left_big_int (tr_bigpositive a) 1
   | Constr.Cast (p, _, _) ->
       tr_bigpositive p
   | _ ->
@@ -574,10 +578,10 @@ let rec tr_bigpositive p = match kind_of_term p with
 
 (** translate a closed Coq term [t:Z] into [bigint] *)
 let rec tr_arith_bigconstant t = match kind_of_term t with
-  | Constr.Construct _ when is_global coq_Z0 t -> Bigint.zero
+  | Constr.Construct _ when is_global coq_Z0 t -> zero_big_int
   | Constr.App (f, [|a|]) when is_global coq_Zpos f -> tr_bigpositive a
   | Constr.App (f, [|a|]) when is_global coq_Zneg f ->
-      Bigint.neg (tr_bigpositive a)
+      minus_big_int (tr_bigpositive a)
   | Constr.Cast (t, _, _) -> tr_arith_bigconstant t
   | _ -> raise (NotGappa t)
 
@@ -609,7 +613,7 @@ let rec tr_term uv t =
     | c, [a; b] when is_global coq_reFloat10 c ->
         Tconst (Constant.create (tr_float 10 a b))
     | c, [a] when is_global coq_reInteger c ->
-        Tconst (Constant.create (1, tr_arith_bigconstant a, Bigint.zero))
+        Tconst (Constant.create (1, tr_arith_bigconstant a, zero_big_int))
     | c, [op;a;b] when is_global coq_reBinary c ->
         Tbinop (tr_binop op, tr_term uv a, tr_term uv b)
     | c, [op;a] when is_global coq_reUnary c ->

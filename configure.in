@@ -50,11 +50,51 @@ fi
 AC_MSG_RESULT([$OCAMLC])
 
 AC_ARG_VAR(OCAMLOPT, [OCaml compiler command [ocamlopt]])
-AC_MSG_CHECKING([for ocamlopt >= 4.02])
+AC_MSG_CHECKING([for ocamlopt])
 if test ! "$OCAMLOPT"; then
   OCAMLOPT=`$COQC -config | sed -n -e 's/^OCAMLOPT=\(.*\)/\1/p'`
   if test ! "$OCAMLOPT"; then OCAMLOPT=ocamlopt; fi
   OCAMLOPT=`which $OCAMLOPT`
+fi
+AC_MSG_RESULT([$OCAMLOPT])
+
+AC_ARG_VAR(OCAMLFIND, [OCaml package manager [ocamlfind]])
+AC_MSG_CHECKING([for ocamlfind])
+if test ! "$OCAMLFIND"; then
+  OCAMLFIND=`$COQC -config | sed -n -e 's/^OCAMLFIND=\(.*\)/\1/p'`
+  if test ! "$OCAMLFIND"; then OCAMLFIND=ocamlfind; fi
+  OCAMLFIND=`which $OCAMLFIND`
+fi
+AC_MSG_RESULT([$OCAMLFIND])
+
+AC_SUBST(BIGINTINCLUDE)
+AX_VERSION_GE([$COQVERSION], [81300],
+  [ BIGINT=zarith
+    BIGINTDIR=`$OCAMLFIND query zarith`
+    BIGINTINCLUDE="-I $BIGINTDIR"
+    AC_CHECK_FILE($BIGINTDIR/zarith.cma,,BIGINT=)
+    AC_CHECK_FILE($BIGINTDIR/z.cmi,,BIGINT=)
+  ],
+  [ BIGINT=num
+    if test -n "$OCAMLFIND"; then
+      BIGINTDIR=`$OCAMLFIND query num`
+      BIGINTINCLUDE="-I $BIGINTDIR"
+      AC_CHECK_FILE($BIGINTDIR/nums.cma,,BIGINTINCLUDE=)
+      AC_CHECK_FILE($BIGINTDIR/num.cmi,,BIGINTINCLUDE=)
+    fi
+    if test -z "$BIGINTINCLUDE"; then
+      BIGINT=num
+      BIGINTDIR=`$OCAMLC -where | tr -d '\\r'`
+      AC_CHECK_FILE($BIGINTDIR/nums.cma,,BIGINT=)
+      AC_CHECK_FILE($BIGINTDIR/num.cmi,,BIGINT=)
+    fi
+  ])
+AC_MSG_CHECKING([for Big_int])
+if test -n "$BIGINT"; then
+  AC_MSG_RESULT([$BIGINT: $BIGINTDIR])
+else
+  AC_MSG_RESULT([no])
+  AC_MSG_ERROR([ *** Unable to find Big_int ])
 fi
 
 AC_MSG_CHECKING([for Flocq >= 3.0])
