@@ -8,11 +8,6 @@ if test "$ac_init_help" = "long"; then
 fi
 m4_divert_pop(99)
 
-m4_divert_push([HELP_ENABLE])
-Fine tuning of the installation directory:
-AS_HELP_STRING([--libdir=DIR], [library @<:@DIR=`$COQC -where`/user-contrib/Gappa@:>@])
-m4_divert_pop([HELP_ENABLE])
-
 AC_DEFUN([AX_VERSION_GE], [AS_VERSION_COMPARE([$1],[$2],[$4],[$3],[$3])])
 
 AC_PROG_CPP
@@ -115,8 +110,10 @@ OCAMLLIB=`$OCAMLC -where | tr -d '\r' | tr '\\\\' '/'`
 AC_SUBST(COQLIB)
 COQLIB=`$COQC -where | tr -d '\r' | tr '\\\\' '/'`
 
-if test "$libdir" = '${exec_prefix}/lib'; then
-  libdir="$COQLIB/user-contrib/Gappa"
+AC_ARG_VAR(COQUSERCONTRIB, [installation directory [`$COQC -where`/user-contrib]])
+
+if test -z "$COQUSERCONTRIB"; then
+  COQUSERCONTRIB="$COQLIB/user-contrib"
 fi
 
 AC_ARG_ENABLE([tactic],
