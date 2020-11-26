@@ -1,6 +1,4 @@
-Require Import Bool.
-Require Import ZArith.
-Require Import Reals.
+From Coq Require Import Bool ZArith Reals Lia.
 From Flocq Require Import Core Digits Round Relative.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
@@ -129,7 +127,7 @@ destruct (Zle_or_lt (mag radix2 x) k) as [Hk1|Hk1].
 apply monotone_exp...
 destruct (Zle_or_lt (mag radix2 x) d) as [Hk2|Hk2].
 unfold FLT_exp.
-clear -Hk1 Hk2 ; zify ; omega.
+clear -Hk1 Hk2 ; zify ; lia.
 elim Rlt_not_le with (1 := Hx) ; clear Hx.
 apply Rle_trans with (bpow radix2 (Z.max k d)).
 apply bpow_le.
@@ -137,11 +135,11 @@ apply Z.le_max_l.
 apply abs_round_ge_generic...
 apply generic_format_bpow.
 unfold FLT_exp.
-clear ; zify ; omega.
+clear ; zify ; lia.
 destruct (mag radix2 x) as (ex,Ex) ; simpl in *.
 apply Rle_trans with (2 := proj1 (Ex Hx0)).
 apply bpow_le.
-clear -Hk1 Hk2 ; zify ; omega.
+clear -Hk1 Hk2 ; zify ; lia.
 Qed.
 
 Lemma floatx_absolute_inv_n_whole :
@@ -169,11 +167,11 @@ elim Rlt_not_le with (1 := Hx) ; clear Hx.
 apply abs_round_ge_generic...
 apply generic_format_bpow.
 unfold FLX_exp.
-clear ; zify ; omega.
+clear ; zify ; lia.
 destruct (mag radix2 x) as (ex,Ex) ; simpl in *.
 apply Rle_trans with (2 := proj1 (Ex Hx0)).
 apply bpow_le.
-clear -Hk1 ; omega.
+clear -Hk1 ; lia.
 Qed.
 
 Lemma Zmax_inf_l :
@@ -220,7 +218,7 @@ apply generic_format_bpow.
 unfold FLT_exp.
 ring_simplify (d + Zpos p - 1 + 1 - Zpos p)%Z.
 rewrite Zmax_idempotent.
-clear ; zify ; omega.
+clear ; zify ; lia.
 now apply Rlt_le.
 Qed.
 
@@ -312,7 +310,7 @@ rewrite <- Hx3.
 apply generic_format_F2R.
 intros _ ; simpl.
 apply Z.max_lub.
-clear -H ; omega.
+clear -H ; lia.
 apply Z.le_trans with (1 := H1).
 now apply Z.le_trans with e1.
 (* *)
@@ -323,7 +321,7 @@ apply Z.max_lub.
 unfold float2R in Hx1. simpl in Hx1.
 rewrite Hx1, <- Hx3.
 unfold float2R. simpl.
-omega.
+lia.
 now apply Z.le_trans with d1.
 Qed.
 
@@ -346,7 +344,7 @@ rewrite mag_F2R with (1 := Hm).
 simpl.
 unfold FLX_exp.
 cut (mag radix2 (IZR m) <= Zpos p1)%Z.
-clear -H1 ; omega.
+clear -H1 ; lia.
 apply bpow_lt_bpow with radix2.
 destruct (mag radix2 (IZR m)) as [n Hn].
 simpl.
@@ -567,12 +565,12 @@ apply Rle_lt_trans with (1 := RRle_abs _).
 apply Ex.
 contradict Zx.
 apply eq_0_F2R with (1 := Zx).
-clear -Zx ; zify ; omega.
+clear -Zx ; zify ; lia.
 unfold float_ulp.
 case Z.eq_dec ; intros Zx.
 rewrite Zx.
 unfold FLT_exp.
-clear ; zify ; omega.
+clear ; zify ; lia.
 revert Zx.
 case Fnum ; simpl ; [|easy|easy].
 intros H.
@@ -655,7 +653,7 @@ unfold e, FLT_exp.
 rewrite Zmax_inf_l.
 exact (refl_equal _).
 generalize (Zgt_pos_0 (digits p0)).
-omega.
+lia.
 destruct (Rle_or_lt (bpow radix2 (Fexp + Zpos (digits p0) - 1)) (Rabs x)).
 (* . *)
 rewrite float_absolute_ne_sym.
@@ -747,7 +745,7 @@ unfold FLT_exp.
 rewrite Zmax_inf_l.
 ring.
 generalize (Zgt_pos_0 (digits p0)).
-omega.
+lia.
 (* .. *)
 rewrite <- (round_generic radix2 (FLT_exp d (Zpos p)) rndNE (bpow radix2 (Fexp + Zpos (digits p0) - 1))).
 apply round_le...
@@ -755,16 +753,16 @@ apply generic_format_bpow.
 unfold FLT_exp.
 rewrite Zmax_inf_l.
 generalize (Zgt_pos_0 p).
-omega.
+lia.
 generalize (Zgt_pos_0 (digits p0)).
-omega.
+lia.
 (* . *)
 replace e with (FLT_exp d (Zpos p) (Fexp + Zpos (digits p0) - 1) - 1)%Z.
 now apply float_absolute_n_whole.
 unfold e, FLT_exp.
 assert (H3 := Zgt_pos_0 (digits p0)).
 assert (H4 := Zgt_pos_0 p).
-repeat rewrite Zmax_inf_l ; omega.
+repeat rewrite Zmax_inf_l ; lia.
 elim Rlt_not_le with (2 := Hx).
 apply Rlt_le_trans with (Float2 0 Fexp).
 now apply F2R_lt.

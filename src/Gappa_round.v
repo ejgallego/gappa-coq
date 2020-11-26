@@ -1,7 +1,4 @@
-Require Import Decidable.
-Require Import Bool.
-Require Import ZArith.
-Require Import Reals.
+From Coq Require Import Decidable Bool ZArith Reals Lia.
 From Flocq Require Import Core Bracket Digits.
 Require Import Gappa_definitions.
 Require Import Gappa_dyadic.
@@ -179,7 +176,7 @@ rewrite plus_IZR.
 apply Rlt_le.
 apply Zfloor_ub.
 generalize (Zfloor_le x y Hxy).
-omega.
+lia.
 unfold hrndG.
 case rdir.
 apply le_IZR.
@@ -271,7 +268,7 @@ now apply IZR_lt.
 apply H1.
 now apply IZR_lt.
 now rewrite plus_IZR.
-omega.
+lia.
 (* .. *)
 set (rs := match Rcompare (ms * 2) ((IZR (Zfloor (ms * 2)) + (IZR (Zfloor (ms * 2)) + 1)) / 2) with
   Eq => (true, false) | Lt => (false, true) | Gt => (true, true) end).
@@ -364,7 +361,7 @@ rewrite He.
 unfold F2R, float2R. simpl.
 rewrite Rmult_assoc, <- bpow_plus.
 assert (rexp (e + Zpos (digits m)) = e + Zpos p)%Z.
-omega.
+lia.
 rewrite H0.
 ring_simplify (e + -(e + Zpos p))%Z.
 apply (f_equal (fun m => IZR m * _)%R).
@@ -407,7 +404,7 @@ apply generic_format_F2R.
 intros _ ; simpl.
 rewrite He.
 generalize (Zlt_neg_0 p).
-omega.
+lia.
 Qed.
 
 End rndG.
@@ -655,7 +652,7 @@ rewrite Hn.
 simpl.
 replace (- (- (Zfloor x + 1) + 1))%Z with (Zfloor x) by ring.
 now rewrite negb_involutive.
-cut (Zfloor x < 0)%Z. omega.
+cut (Zfloor x < 0)%Z. lia.
 apply lt_IZR.
 apply Rle_lt_trans with (2 := H2).
 apply Zfloor_lb.
@@ -707,7 +704,7 @@ apply roundN_eq ;
   intros m Hm r s ; simpl.
 rewrite Zle_bool_false.
 now rewrite orb_comm, andb_comm.
-omega.
+lia.
 rewrite Zle_bool_true with (1 := Hm).
 now rewrite orb_comm, andb_comm.
 Qed.

@@ -1,5 +1,4 @@
-Require Import ZArith.
-Require Import Reals.
+From Coq Require Import ZArith Reals Lia.
 From Flocq Require Import Raux Defs Float_prop Operations.
 Require Import Gappa_definitions.
 
@@ -51,7 +50,7 @@ rewrite (F2R_change_exp _ (e - Zpos d) _ e).
 simpl.
 now replace (e - (e - Zpos d))%Z with (Zpos d) by ring.
 generalize (Zgt_pos_0 d).
-omega.
+lia.
 rewrite Zmult_comm.
 destruct m as [|m|m] ; simpl.
 apply Zmult_0_r.

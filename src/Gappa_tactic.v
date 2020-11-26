@@ -1,6 +1,5 @@
-Require Import Reals.
-Require Import List.
-Require Import Flocq.Core.Core.
+From Coq Require Import Reals List Lia.
+From Flocq Require Import Core.
 Require Export Gappa_library.
 
 Strategy 1000 [Generic_fmt.round].
@@ -385,7 +384,7 @@ right.
 intros ((xm,xe),H1,H2,H3).
 simpl in H2.
 assert (xm = Z0).
-clear -H2 ; zify ; omega.
+clear -H2 ; zify ; lia.
 now rewrite H0, F2R_0 in H1.
 now elim Hp.
 right.
@@ -414,7 +413,7 @@ right.
 intros ((xm,xe),H1,H2).
 simpl in H2.
 assert (xm = Z0).
-clear -H2 ; zify ; omega.
+clear -H2 ; zify ; lia.
 now rewrite H0, F2R_0 in H1.
 now elim Hp.
 right.
