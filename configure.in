@@ -40,6 +40,8 @@ AC_MSG_CHECKING([for coqdep])
 if test ! "$COQDEP"; then COQDEP=`which ${COQBIN}coqdep`; fi
 AC_MSG_RESULT([$COQDEP])
 
+AC_ARG_VAR(COQEXTRAFLAGS, [extra flags passed to Coq compiler [empty]])
+
 AC_ARG_VAR(OCAMLC, [OCaml compiler command [ocamlc]])
 AC_MSG_CHECKING([for ocamlc])
 if test ! "$OCAMLC"; then

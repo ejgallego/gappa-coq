@@ -40,7 +40,7 @@ configure config.status: configure.in
 
 %.vo: %.v
 	@COQDEP@ -R src Gappa -I src $< | @REMAKE@ -r $@
-	@COQC@ -R src Gappa -I src $<
+	@COQC@ @COQEXTRAFLAGS@ -R src Gappa -I src $<
 
 COQSUBTREES = clib engine kernel interp intf lib library ltac parsing pretyping printing proofs tactics toplevel vernac plugins/ltac
 COQINCLUDES = $(addprefix -I "@COQLIB@"/, $(COQSUBTREES)) @BIGINTINCLUDE@
@@ -58,7 +58,7 @@ MLTARGETS = $(addprefix src/, @TACTIC_TARGETS@)
 
 src/Gappa_tactic.vo: src/Gappa_tactic.v $(MLTARGETS)
 	@COQDEP@ -R src Gappa -I src $< | @REMAKE@ -r $@
-	@COQC@ @TACTIC_PARAM@ -R src Gappa -I src $<
+	@COQC@ @COQEXTRAFLAGS@ @TACTIC_PARAM@ -R src Gappa -I src $<
 
 src/clean:
 	rm -f $(OBJS)
