@@ -37,24 +37,6 @@ AC_MSG_RESULT([$COQDEP])
 
 AC_ARG_VAR(COQEXTRAFLAGS, [extra flags passed to Coq compiler [empty]])
 
-AC_ARG_VAR(OCAMLC, [OCaml compiler command [ocamlc]])
-AC_MSG_CHECKING([for ocamlc])
-if test ! "$OCAMLC"; then
-  OCAMLC=`$COQC -config | sed -n -e 's/^OCAMLC=\(.*\)/\1/p'`
-  if test ! "$OCAMLC"; then OCAMLC=ocamlc; fi
-  OCAMLC=`which $OCAMLC`
-fi
-AC_MSG_RESULT([$OCAMLC])
-
-AC_ARG_VAR(OCAMLOPT, [OCaml compiler command [ocamlopt]])
-AC_MSG_CHECKING([for ocamlopt])
-if test ! "$OCAMLOPT"; then
-  OCAMLOPT=`$COQC -config | sed -n -e 's/^OCAMLOPT=\(.*\)/\1/p'`
-  if test ! "$OCAMLOPT"; then OCAMLOPT=ocamlopt; fi
-  OCAMLOPT=`which $OCAMLOPT`
-fi
-AC_MSG_RESULT([$OCAMLOPT])
-
 AC_ARG_VAR(OCAMLFIND, [OCaml package manager [ocamlfind]])
 AC_MSG_CHECKING([for ocamlfind])
 if test ! "$OCAMLFIND"; then
@@ -63,36 +45,6 @@ if test ! "$OCAMLFIND"; then
   OCAMLFIND=`which $OCAMLFIND`
 fi
 AC_MSG_RESULT([$OCAMLFIND])
-
-AC_SUBST(BIGINTINCLUDE)
-AX_VERSION_GE([$COQVERSION], [81300],
-  [ BIGINT=zarith
-    BIGINTDIR=`$OCAMLFIND query zarith`
-    BIGINTINCLUDE="-I $BIGINTDIR"
-    AC_CHECK_FILE($BIGINTDIR/zarith.cma,,BIGINT=)
-    AC_CHECK_FILE($BIGINTDIR/z.cmi,,BIGINT=)
-  ],
-  [ BIGINT=num
-    if test -n "$OCAMLFIND"; then
-      BIGINTDIR=`$OCAMLFIND query num`
-      BIGINTINCLUDE="-I $BIGINTDIR"
-      AC_CHECK_FILE($BIGINTDIR/nums.cma,,BIGINTINCLUDE=)
-      AC_CHECK_FILE($BIGINTDIR/num.cmi,,BIGINTINCLUDE=)
-    fi
-    if test -z "$BIGINTINCLUDE"; then
-      BIGINT=num
-      BIGINTDIR=`$OCAMLC -where | tr -d '\\r'`
-      AC_CHECK_FILE($BIGINTDIR/nums.cma,,BIGINT=)
-      AC_CHECK_FILE($BIGINTDIR/num.cmi,,BIGINT=)
-    fi
-  ])
-AC_MSG_CHECKING([for Big_int])
-if test -n "$BIGINT"; then
-  AC_MSG_RESULT([$BIGINT: $BIGINTDIR])
-else
-  AC_MSG_RESULT([no])
-  AC_MSG_ERROR([ *** Unable to find Big_int ])
-fi
 
 AC_MSG_CHECKING([for Flocq >= 3.0])
 AS_IF(
@@ -124,6 +76,35 @@ AC_ARG_ENABLE([native-tactic],
 AC_ARG_ENABLE([byte-tactic],
   AS_HELP_STRING([--disable-byte-tactic], [do not compile a bytecode "gappa" tactic]),
   [if test "$enable_byte_tactic" = "no"; then byte_tactic=no ; fi], [])
+
+AX_VERSION_GE([$COQVERSION], [81300],
+  [ BIGINTPKG=zarith
+    BIGINTMOD=Big_int_Z ],
+  [ BIGINTPKG=num
+    BIGINTMOD=Big_int ])
+AC_SUBST(BIGINTPKG)
+
+if test "$native_tactic" = yes; then
+  AC_MSG_CHECKING([for native development files])
+  AS_IF(
+    [ echo "let _ = (Evd.empty, $BIGINTMOD.zero_big_int)" > conftest.ml
+      $OCAMLFIND ocamlopt -rectypes -thread -package coq.engine -package $BIGINTPKG -shared conftest.ml -o conftest.cmxs ],
+    [ AC_MSG_RESULT(yes) ],
+    [ AC_MSG_RESULT(no)
+      AC_MSG_ERROR([ *** Failed to compile a native OCaml library ]) ])
+fi
+
+if test "$byte_tactic" = yes; then
+  AC_MSG_CHECKING([for bytecode development files])
+  AS_IF(
+    [ echo "let _ = (Evd.empty, $BIGINTMOD.zero_big_int)" > conftest.ml
+      $OCAMLFIND ocamlc -rectypes -thread -package coq.engine -package $BIGINTPKG -c conftest.ml -o conftest.cmo ],
+    [ AC_MSG_RESULT(yes) ],
+    [ AC_MSG_RESULT(no)
+      AC_MSG_ERROR([ *** Failed to compile a bytecode OCaml library ]) ])
+fi
+
+rm -f conftest.ml conftest.cm*
 
 AC_MSG_NOTICE([building remake...])
 case `$CXX -v 2>&1 | grep -e "^Target:"` in
