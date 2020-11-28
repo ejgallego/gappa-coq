@@ -104,9 +104,6 @@ AS_IF(
     AC_MSG_ERROR([ *** Unable to find library Flocq >= 3.0 (http://flocq.gforge.inria.fr/)])])
 rm -f conftest.v conftest.vo conftest.err
 
-AC_SUBST(OCAMLLIB)
-OCAMLLIB=`$OCAMLC -where | tr -d '\r' | tr '\\\\' '/'`
-
 AC_SUBST(COQLIB)
 COQLIB=`$COQC -where | tr -d '\r' | tr '\\\\' '/'`
 
@@ -165,7 +162,7 @@ if test -z "$tactic_mode"; then tactic_mode=" none"; fi
 
 echo
 echo "=== Summary ==="
-echo "Installation directory   $libdir"
+echo "Installation directory   $COQUSERCONTRIB"
 echo "Gappa tactic            $tactic_mode"
 echo
 
