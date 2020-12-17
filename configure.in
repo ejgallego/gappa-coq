@@ -11,7 +11,6 @@ m4_divert_pop(99)
 AC_DEFUN([AX_VERSION_GE], [AS_VERSION_COMPARE([$1],[$2],[$4],[$3],[$3])])
 
 AC_PROG_CPP
-AC_PROG_CXX
 
 native_tactic=yes
 byte_tactic=yes
@@ -106,19 +105,25 @@ fi
 
 rm -f conftest.ml conftest.cm*
 
+AC_ARG_VAR(REMAKE, [Remake [vendored version]])
+
+if test -z "$REMAKE"; then
+AC_PROG_CXX
+
 AC_MSG_NOTICE([building remake...])
 case `$CXX -v 2>&1 | grep -e "^Target:"` in
 *mingw*)
 	$CXX -Wall -O2 -o remake.exe remake.cpp -lws2_32
 	if test $? != 0; then AC_MSG_FAILURE([failed]); fi
-	AC_SUBST([REMAKE], [./remake.exe])
+	REMAKE=./remake.exe
 	;;
 *)
 	$CXX -Wall -O2 -o remake remake.cpp
 	if test $? != 0; then AC_MSG_FAILURE([failed]); fi
-	AC_SUBST([REMAKE], [./remake])
+	REMAKE=./remake
 	;;
 esac
+fi
 
 AC_SUBST(TACTIC_TARGETS)
 AC_SUBST(TACTIC_PARAM)
