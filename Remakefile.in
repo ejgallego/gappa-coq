@@ -97,7 +97,7 @@ testsuite/clean:
 	rm -f testsuite/failures-*.log
 
 install:
-	dir="$DESTDIR@COQUSERCONTRIB@/Gappa"
+	dir="${DESTDIR}@COQUSERCONTRIB@/Gappa"
 	mkdir -p $dir
 	cp $(OBJS) $(MLTARGETS) $dir
 	( cd src && find . -type d -name ".coq-native" -exec cp -RT "{}" "$dir/{}" \; )
