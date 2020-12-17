@@ -22,12 +22,12 @@ to set the Coq compiler command. The configure script defaults to `coqc`.
 Similarly, `COQDEP` can be used to specify the location of `coqdep`. The
 `COQBIN` environment variable can be used to set both variables at once.
 
-The same OCaml compiler used for compiling Coq should be used for
-compiling the tactic. It is found by calling `$COQC -config`. The `OCAMLC`
+The same OCaml environment used for compiling Coq should be used for
+compiling the tactic. It is found by calling `$COQC -config`. The `OCAMLFIND`
 environment variable can be used to override this choice.
 
-Option `--libdir=DIR` sets the directory where the compiled library files
-should be installed by `./remake install`. By default, the target directory
-is `` `$COQC -where`/user-contrib/Gappa ``.
-
-The files are compiled at a logical location starting with `Gappa`.
+The library files are compiled at the logical location `Gappa`. The
+`COQUSERCONTRIB` environment variable can be used to override the
+physical location where the `Gappa` directory containing these files will
+be installed by `./remake install`. By default, the target directory is
+`` `$COQC -where`/user-contrib ``.
