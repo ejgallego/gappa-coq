@@ -1,3 +1,8 @@
+Version 1.4.6
+-------------
+
+- switched to ocamlfind
+
 Version 1.4.5
 -------------
 
