@@ -83,7 +83,7 @@ let map_constr f t =
   EConstr.map !global_evd f t
 
 let keep a = Proofview.V82.of_tactic (Tactics.keep a)
-let convert_concl_no_check a b = Proofview.V82.of_tactic (Tactics.convert_concl_no_check a b)
+let convert_concl_no_check a b = Proofview.V82.of_tactic (Tactics.convert_concl ~check:false a b)
 
 #if COQVERSION < 80900
 let parse_entry e s = Pcoq.Gram.entry_parse e (Pcoq.Gram.parsable s)
