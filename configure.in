@@ -44,6 +44,7 @@ if test ! "$OCAMLFIND"; then
   OCAMLFIND=`which $OCAMLFIND`
 fi
 AC_MSG_RESULT([$OCAMLFIND])
+if test ! "$OCAMLFIND"; then OCAMLFIND=ocamlfind; fi
 
 AC_MSG_CHECKING([for Flocq >= 3.0])
 AS_IF(
