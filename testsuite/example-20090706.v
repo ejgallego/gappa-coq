@@ -1,6 +1,6 @@
-Require Import Reals.
-Require Import Flocq.Core.Core.
-Require Import Gappa_tactic.
+From Coq Require Import Reals.
+From Flocq Require Import Core.
+From Gappa Require Import Gappa_tactic.
 Open Scope R_scope.
 
 Definition floor := rounding_fixed rndDN 0.

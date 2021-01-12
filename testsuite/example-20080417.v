@@ -1,12 +1,12 @@
-Require Import Reals.
-Require Import Flocq.Core.Core.
-Require Import Gappa_tactic.
+From Coq Require Import Reals.
+From Flocq Require Import Core.
+From Gappa Require Import Gappa_tactic.
 Open Scope R_scope.
 
 Goal
   forall x y : R,
   3/4 <= x <= 3 ->
-  0 <= sqrt x <= 1775 * (powerRZ 2 (-10)).
+  0 <= sqrt x <= 1775 * powerRZ 2 (-10).
 Proof.
   gappa.
 Qed.

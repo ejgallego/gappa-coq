@@ -1,12 +1,10 @@
-Require Import Reals.
-Require Import Flocq.Core.Core.
-Require Import Gappa_tactic.
+From Coq Require Import Reals.
+From Flocq Require Import Core.
+From Gappa Require Import Gappa_tactic.
 Open Scope R_scope.
 
-Notation format :=
-  (generic_format radix2 (FLT_exp (-1074) 53)).
-Notation rnd :=
-  (round radix2 (FLT_exp (-1074) 53) rndZR).
+Definition format :=
+  generic_format radix2 (FLT_exp (-1074) 53).
 
 Goal
   forall a b : R,
@@ -15,6 +13,5 @@ Goal
   22 / 16 <= b <= 30 / 16 ->
   format (a - b).
 Proof.
-  intros a b Ha Hb Ia Ib.
-  gappa.
+  unfold format ; gappa.
 Qed.
