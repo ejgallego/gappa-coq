@@ -43,7 +43,7 @@ configure config.status: configure.in
 	@COQC@ @COQEXTRAFLAGS@ -R src Gappa -I src $<
 
 COQPKGS = clib engine kernel interp lib library parsing pretyping printing proofs tactics toplevel vernac plugins.ltac
-PACKAGES = $(addprefix -package coq., $(COQPKGS)) -package @BIGINTPKG@
+PACKAGES = $(addprefix -package coq-core., $(COQPKGS)) -package @BIGINTPKG@
 
 src/gappatac.ml: src/gappatac.c
 	@CPP@ -DCOQVERSION=@COQVERSION@ $< -o $@
